@@ -208,6 +208,11 @@ endfunction
 
 " FIXME: add description
 function! coqtail#Start(...)
+    " Highlighting for checked parts
+    hi default CheckedByCoq ctermbg=17 guibg=LightGreen
+    hi default SentToCoq ctermbg=60 guibg=LimeGreen
+    hi link CoqError Error
+
     if b:coq_running == 1
         echo 'Coq is already running.'
     else
@@ -261,11 +266,6 @@ endfunction
 
 " FIXME: add description
 function! coqtail#Register()
-    " Highlighting for checked parts
-    hi default CheckedByCoq ctermbg=17 guibg=LightGreen
-    hi default SentToCoq ctermbg=60 guibg=LimeGreen
-    hi link CoqError Error
-
     " Initialize once
     if !exists('b:coq_running')
         let b:coq_running = 0
