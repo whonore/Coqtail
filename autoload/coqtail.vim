@@ -238,7 +238,7 @@ function! coqtail#Start(...)
             command! -buffer CoqNext Py coqtail.next()
             command! -buffer CoqUndo Py coqtail.rewind()
             command! -buffer CoqToCursor Py coqtail.to_cursor()
-            command! -buffer CoqToTop coqtail.to_top()
+            command! -buffer CoqToTop Py coqtail.to_top()
 
             " Coq query
             command! -buffer -nargs=* Coq call coqtail#Query(<f-args>)
