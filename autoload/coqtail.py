@@ -275,6 +275,8 @@ class Coqtail(object):
                             search = '(Variables?|Context)'
                         elif ltype == 'Ltac':
                             search = '(Ltac)'
+                        elif ltype == 'Module':
+                            search = '(Module)'
                         else:
                             search = ''
 
@@ -282,7 +284,8 @@ class Coqtail(object):
                         try:
                             vim.command(r"0/\v<{}>\s*<{}>".format(search, lname))
                         except vim.error:
-                            vim.command(r"0/\v<{}>".format(lname))
+                            if ltype != 'Module':
+                                vim.command(r"0/\v<{}>".format(lname))
         elif isinstance(response, CT.Err):
             print(response.err)
         else:
@@ -384,8 +387,6 @@ class Coqtail(object):
             if ltype == 'No':
                 break
 
-            # TODO: bug with long paths, such as with le
-            # Find longest matching substring for file
             where = loc[1].split('.')
             if where[0] == 'Coq':
                 locs.append((ltype, 'Coq', None))
@@ -393,14 +394,16 @@ class Coqtail(object):
                 lfile = vim.eval('expand("%:p")')
                 locs.append((ltype, 'Top', where[-1]))
             else:
-                if ltype == 'Module':
-                    libpath = path_map['.'.join(where[:-1])]
-                    lfile = os.path.abspath(os.path.join(libpath, where[-1])) + '.v'
-                    lname = None
+                for end in range(-1, -len(where), -1):
+                    logpath = '.'.join(where[:end])
+                    if logpath in path_map:
+                        libpath = path_map[logpath]
+                        lfile = os.path.abspath(os.path.join(libpath, where[end])) + '.v'
+                        lname = where[-1]
+                        break
                 else:
-                    libpath = path_map['.'.join(where[:-2])]
-                    lfile = os.path.abspath(os.path.join(libpath, where[-2])) + '.v'
-                    lname = where[-1]
+                    # Shouldn't reach here
+                    unexpected('no matching path', 'parse_locate()')
 
                 locs.append((ltype, lfile, lname))
 
