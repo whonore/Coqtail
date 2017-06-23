@@ -207,6 +207,53 @@ function! coqtail#Stop()
 endfunction
 
 " FIXME: add description
+function! coqtail#ParseCoqProj(file, dir_dif)
+    let l:proj_args = []
+
+    for line in readfile(a:file)
+        if line == ''
+            continue
+        endif
+
+        let l:parts = split(line, ' ')
+
+        " TODO: recognize more options
+        if l:parts[0] == '-R'
+            let l:parts[1] = join([a:dir_dif, l:parts[1]], '/')
+            let l:proj_args = add(l:proj_args, join(l:parts, ' '))
+        endif
+    endfor
+
+    return split(join(l:proj_args))
+endfunction
+
+" FIXME: add description
+function! coqtail#FindCoqProj()
+    let l:cwd = ':p:h'
+    let l:dir_dif = ['.']
+    let l:proj_args = []
+
+    while 1
+        let l:proj_dir = fnamemodify(getcwd(), l:cwd)
+        let l:proj_file = join([l:proj_dir, g:coq_proj_file], '/')
+
+        if filereadable(l:proj_file)
+            let l:proj_args = coqtail#ParseCoqProj(l:proj_file, join(l:dir_dif, '/'))
+            break
+        endif
+
+        if l:proj_dir != '/'
+            let l:cwd = l:cwd . ':h'
+            let l:dir_dif = add(l:dir_dif, '..')
+        else
+            break
+        endif
+    endwhile
+
+    return l:proj_args
+endfunction
+
+" FIXME: add description
 function! coqtail#Start(...)
     " Highlighting for checked parts
     hi default CheckedByCoq ctermbg=17 guibg=LightGreen
@@ -219,11 +266,7 @@ function! coqtail#Start(...)
         let b:coq_running = 1
 
         " Check for a Coq project file
-        if filereadable(g:coq_proj_file)
-            let l:proj_args = split(join(readfile(g:coq_proj_file)))
-        else
-            let l:proj_args = []
-        endif
+        let l:proj_args = coqtail#FindCoqProj()
 
         " Launch coqtop
         try
