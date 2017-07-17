@@ -194,14 +194,14 @@ function! coqtail#Stop()
 
         try
             Py coqtail.stop()
-
+        catch
+        finally
             execute 'bdelete' . b:goal_buf
             execute 'bdelete' . b:info_buf
 
             autocmd! coqtail#Autocmds * <buffer>
 
             unlet b:goal_buf b:info_buf
-        catch
         endtry
     endif
 endfunction

@@ -30,6 +30,7 @@ import vim
 import os
 import subprocess
 import signal
+import sys
 import threading
 import time
 import xml.etree.ElementTree as ET
@@ -65,6 +66,17 @@ Evar = namedtuple('Evar', ['info'])
 TIMEOUT_ERR = Err('Coq timed out. You can change the timeout with '
                   '<leader>ct and try again.',
                   None, True)
+
+
+def get_message(ok_err):
+    ''' FIXME: add description
+    '''
+    if isinstance(ok_err, Ok) and ok_err.msg is not None:
+        return ok_err.msg
+    elif isinstance(ok_err, Err) and ok_err.err is not None:
+        return ok_err.err
+    else:
+        return ''
 
 
 def parse_response(xml):
@@ -236,20 +248,18 @@ class Coqtop(object):
                    '-main-channel', 'stdfds',
                    '-async-proofs', 'on']
         try:
-            # TODO: instead of ignoring warnings on startup, print to vim message or put in info
-            with open(os.devnull, 'wb') as null:
-                self.coqtop = subprocess.Popen(
-                    options + list(args),
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=null,
-                    bufsize=0)
-                self.coqtop.stderr = None
+            self.coqtop = subprocess.Popen(
+                options + list(args),
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                bufsize=0)
 
-            # Spawn a thread to monitor Coqtop's stdout
-            read_thread = threading.Thread(target=self.capture_out)
-            read_thread.daemon = True
-            read_thread.start()
+            # Spawn threads to monitor Coqtop's stdout and stderr
+            for f in (self.capture_out, self.capture_err):
+                read_thread = threading.Thread(target=f)
+                read_thread.daemon = True
+                read_thread.start()
 
             # Initialize Coqtop
             result = self.call('Init', Option(None), use_timeout=True)
@@ -287,14 +297,20 @@ class Coqtop(object):
                            ((cmd, -1),
                             (self.cur_state(), True)),
                            encoding, use_timeout=True)
-        if result is None or isinstance(result, Err):
-            return result
-
         goals = self.goals()
+
+        if result is None:
+            return (result, '')
+
+        msgs = [get_message(res) for res in (result, goals) if res is not None]
+
+        if result is None or isinstance(result, Err):
+            return (result, msgs)
+
         if isinstance(goals, Err):
             # Reset position to get goals back
             self.call('Edit_at', self.state_id)
-            return goals
+            return (goals, msgs)
 
         self.states.append(self.state_id)
         self.state_id = result.val[0]
@@ -303,11 +319,12 @@ class Coqtop(object):
         # resend as a query
         try:
             if 'Query commands should not' in result.msg:
-                return self.query(cmd, encoding)
+                result = self.query(cmd, encoding)
+                return (result, [] if result.msg is None else [result.msg])
         except (AttributeError, TypeError):
             pass
 
-        return result
+        return (result, msgs)
 
     def rewind(self, step=1):
         ''' FIXME: add description
@@ -424,6 +441,20 @@ class Coqtop(object):
             try:
                 self.out_q.put(os.read(fd, 0x10000))
                 # self.out_q.put(self.coqtop.stdout.read(0x10000))
+            except (AttributeError, OSError, ValueError):
+                # Coqtop died
+                return
+
+    # TODO: figure out why printing to stderr causes hide_colors() to fail on
+    # quit
+    def capture_err(self):
+        ''' FIXME: add description '''
+        fd = self.coqtop.stderr.fileno()
+
+        while True:
+            try:
+                print(os.read(fd, 0x10000).decode())
+                # print(os.read(fd, 0x10000).decode(), file=sys.stderr)
             except (AttributeError, OSError, ValueError):
                 # Coqtop died
                 return

@@ -305,7 +305,7 @@ class Coqtail(object):
             to_send = self.send_queue.popleft()
             message = _between(to_send['start'], to_send['stop'])
 
-            response = self.coqtop.advance(message, encoding)
+            (response, res_msgs) = self.coqtop.advance(message, encoding)
             if response is None:
                 fail('Coq seems to have stopped running.')
                 return
@@ -316,13 +316,12 @@ class Coqtail(object):
 
                 if len(response.val) > 1 and isinstance(response.val[1], tuple):
                     msgs.append(response.val[1][1])
-                if response.msg is not None:
-                    msgs.append(response.msg)
+                msgs.extend(res_msgs)
             else:
                 self.send_queue.clear()
 
                 if isinstance(response, CT.Err):
-                    msgs.append(response.err)
+                    msgs.extend(res_msgs)
 
                     if response.loc is not None:
                         loc_s, loc_e = response.loc
