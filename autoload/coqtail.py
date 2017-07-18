@@ -28,6 +28,7 @@ from __future__ import print_function
 import vim
 
 import os
+import re
 import sys
 from collections import deque
 from collections import defaultdict as ddict
@@ -265,27 +266,14 @@ class Coqtail(object):
                         vim.command('hide argedit ' + lfile)
 
                     if lname is not None:
-                        if ltype == 'Inductive':
-                            search = '(Inductive|Class|Record)'
-                        elif ltype == 'Constant':
-                            search = '(Definition|Fixpoint|Function|Instance|Fact|Remark|Lemma|Corollary|Theorem)'
-                        elif ltype == 'Notation':
-                            search = '(Notation)'
-                        elif ltype == 'Variable':
-                            search = '(Variables?|Context)'
-                        elif ltype == 'Ltac':
-                            search = '(Ltac)'
-                        elif ltype == 'Module':
-                            search = '(Module)'
-                        else:
-                            search = ''
+                        searches = get_searches(ltype, lname)
 
-                        # TODO: could search more intelligently by searching only within relevant section/module
-                        try:
-                            vim.command(r"0/\v<{}>\s*<{}>".format(search, lname))
-                        except vim.error:
-                            if ltype != 'Module':
-                                vim.command(r"0/\v<{}>".format(lname))
+                        for search in searches:
+                            try:
+                                vim.command(r"0/\v{}".format(search))
+                                break
+                            except vim.error:
+                                pass
         elif isinstance(response, CT.Err):
             print(response.err)
         else:
@@ -316,12 +304,12 @@ class Coqtail(object):
 
                 if len(response.val) > 1 and isinstance(response.val[1], tuple):
                     msgs.append(response.val[1][1])
-                msgs.extend(res_msgs)
+                msgs += res_msgs
             else:
                 self.send_queue.clear()
 
                 if isinstance(response, CT.Err):
-                    msgs.extend(res_msgs)
+                    msgs += res_msgs
 
                     if response.loc is not None:
                         loc_s, loc_e = response.loc
@@ -563,6 +551,47 @@ class Coqtail(object):
         top_pad = [''] * ((h // 2) - (len(msg) // 2 + 1))
 
         self.info_msg = '\n'.join(top_pad + msg)
+
+
+# Searching for Coq Definitions #
+# TODO: could search more intelligently by searching only within relevant
+# section/module, or sometimes by looking at the type (for constructors for
+# example, or record projections)
+def get_searches(ltype, lname):
+    ''' FIXME: add description
+    '''
+    auto_names = [('Constructor', 'Inductive', 'Build_(.*)', 1),
+                  ('Constant', 'Inductive', '(.*)_(ind|rect?)', 1)]
+    searches = []
+    type_to_vernac = {
+        'Inductive': ['Inductive', 'Class', 'Record'],
+        'Constant': ['Definition', 'Fixpoint', 'Function', 'Instance', 'Fact',
+                     'Remark', 'Lemma', 'Corollary', 'Theorem', 'Axiom',
+                     'Conjecture'],
+        'Notation': ['Notation'],
+        'Variable': ['Variables?', 'Context'],
+        'Ltac': ['Ltac'],
+        'Module': ['Module']
+    }
+
+    # Look for some implicitly generated names
+    search_name = [lname]
+    search_type = [ltype]
+    for from_type, to_type, pat, grp in auto_names:
+        if ltype == from_type and re.match(pat, lname) is not None:
+            search_name.append(re.match(pat, lname).groups(grp)[0])
+            search_type.append(to_type)
+    search_name = '|'.join(search_name)
+
+    # What Vernacular command to look for
+    search_vernac = '|'.join(vernac
+                             for typ in search_type
+                             for vernac in type_to_vernac.get(typ, ''))
+
+    searches.append(r"<({})>\s*<({})>".format(search_vernac, search_name))
+    searches.append(r"<({})>".format(search_name))
+
+    return searches
 
 
 # Finding Start and End of Coq Chunks #
