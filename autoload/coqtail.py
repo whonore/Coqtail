@@ -387,12 +387,12 @@ class Coqtail(object):
                         libpath = path_map[logpath]
                         lfile = os.path.abspath(os.path.join(libpath, where[end])) + '.v'
                         lname = where[-1]
+                        locs.append((ltype, lfile, lname))
                         break
                 else:
-                    # Shouldn't reach here
-                    unexpected('no matching path', 'parse_locate()')
-
-                locs.append((ltype, lfile, lname))
+                    # Could be a module name inside a module definition
+                    lfile = vim.eval('expand("%:p")')
+                    locs.append((ltype, 'Top', where[-1]))
 
         if locs == []:
             return [('Err', msg, None)]
