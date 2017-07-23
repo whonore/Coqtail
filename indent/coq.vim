@@ -25,7 +25,8 @@ setlocal tabstop=2
 if !exists("no_coq_comments")
   if (has("comments"))
     setlocal comments=srn:(*,mb:*,exn:*)
-    setlocal fo=cqort
+    " setlocal fo=cqort
+    setlocal fo=cqt
   endif
 endif
 
