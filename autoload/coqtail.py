@@ -286,7 +286,7 @@ class Coqtail(object):
         msgs = []
         encoding = vim.eval('&fileencoding') or 'utf-8'
 
-        while len(self.send_queue) > 0:
+        while self.send_queue:
             self.reset_color()
             vim.command('redraw')
 
@@ -770,15 +770,15 @@ def _easy_matcher(start, stop):
     startc = ''
 
     if start['line'] > 0:
-        startl = "\%>{0}l".format(start['line'] - 1)
+        startl = r"\%>{0}l".format(start['line'] - 1)
     if start['col'] > 0:
-        startc = "\%>{0}c".format(start['col'])
+        startc = r"\%>{0}c".format(start['col'])
 
     start_match = "{0}{1}".format(startl, startc)
     if stop['col'] is not None:
-        end_match = "\%<{0}l\%<{1}c".format(stop['line'] + 1, stop['col'] + 1)
+        end_match = r"\%<{0}l\%<{1}c".format(stop['line'] + 1, stop['col'] + 1)
     else:
-        end_match = "\%<{0}l".format(stop['line'] + 1)
+        end_match = r"\%<{0}l".format(stop['line'] + 1)
 
     return ''.join((start_match, end_match))
 
@@ -798,7 +798,7 @@ def _hard_matcher(start, stop):
     last_stop = {'line': stop['line'], 'col': stop['col']}
     last_line = _easy_matcher(last_start, last_stop)
 
-    return "{0}\|{1}\|{2}".format(first_line, middle, last_line)
+    return r"{0}\|{1}\|{2}".format(first_line, middle, last_line)
 
 
 # Method Dispatch #
