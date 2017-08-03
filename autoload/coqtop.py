@@ -32,7 +32,6 @@ import subprocess
 import signal
 import sys
 import threading
-import time
 import xml.etree.ElementTree as ET
 from collections import namedtuple
 try:
@@ -284,7 +283,6 @@ class Coqtop(object):
                 pass
             self.coqtop = None
 
-    # TODO: make timeout work for things like infinite loop in a tactic
     def advance(self, cmd, encoding='utf-8'):
         ''' FIXME: add description
         '''
@@ -351,7 +349,7 @@ class Coqtop(object):
     def goals(self):
         ''' FIXME: add description
         '''
-        return self.call('Goal', ())
+        return self.call('Goal', (), use_timeout=True)
 
     # Interacting with Coqtop #
     def call(self, name, arg, encoding='utf-8', use_timeout=False):
@@ -370,34 +368,39 @@ class Coqtop(object):
         else:
             timeout = None
 
-        response = self.get_answer(timeout)
-        if response is None:
+        # The got_response event tells the timeout_thread that get_answer()
+        # returned normally, while timed_out will be set by timeout_thread if
+        # time runs out without receiving a response.
+        got_response = threading.Event()
+        timed_out = threading.Event()
+        timeout_thread = threading.Thread(target=self.timeout_thread,
+                                          args=(timeout, got_response, timed_out))
+        timeout_thread.daemon = True
+
+        timeout_thread.start()
+        response = self.get_answer()
+
+        got_response.set()
+        if timed_out.is_set():
             response = TIMEOUT_ERR
-            self.coqtop.send_signal(signal.SIGINT)
-            # N.B. Need to send something to Coqtop after interrupt to prompt
-            # it to send the 'User interrupt' error so we can ignore it with
-            # 'empty_out'
-            self.call('About', ())
 
         return response
 
-    def get_answer(self, timeout):
+    def timeout_thread(self, timeout, got_response, timed_out):
         ''' FIXME: add description
         '''
-        start_time = time.time()
-        time_left = timeout
+        if not got_response.wait(timeout):
+            self.coqtop.send_signal(signal.SIGINT)
+            timed_out.set()
+
+    def get_answer(self):
+        ''' FIXME: add description
+        '''
         data = []
 
         while True:
-            if timeout is not None:
-                end_time = time.time()
-                time_left -= (end_time - start_time)
-                start_time = end_time
-                if time_left <= 0:
-                    return None
-
             try:
-                data.append(self.out_q.get(timeout=time_left))
+                data.append(self.out_q.get())
                 elt = ET.fromstring(b'<coqtoproot>' + escape(b''.join(data)) + b'</coqtoproot>')
 
                 keep_waiting = True
