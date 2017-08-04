@@ -53,8 +53,10 @@ Py import coqtail
 
 " FIXME: add description
 function! coqtail#GetCurWord()
-    " Add '.' to definition of a keyword
+    " Add '.' and ''' to definition of a keyword
+    let old_keywd = &iskeyword
     setlocal iskeyword+=.
+    setlocal iskeyword+='
 
     " Check if current word ends in '.' and remove it if so
     let l:cword = expand('<cword>')
@@ -64,7 +66,7 @@ function! coqtail#GetCurWord()
 
     " Reset iskeyword
     " TODO: actually restore in case '.' was already in keyword
-    setlocal iskeyword-=.
+    let &l:iskeyword = old_keywd
 
     return l:cword
 endfunction
