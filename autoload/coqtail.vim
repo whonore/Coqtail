@@ -16,7 +16,8 @@
 " OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 " PERFORMANCE OF THIS SOFTWARE.
 "
-" FIXME: add description
+" Provides an interface to the Python functions in coqtail.py and coqtop.py,
+" and manages windows.
 
 " Only source once
 if exists('g:coqtail_sourced')
@@ -37,6 +38,7 @@ endif
 " Initialize global variables
 let g:counter = 0
 
+" Default CoqProject file name
 if !exists('g:coq_proj_file')
     let g:coq_proj_file = '_CoqProject'
 endif
@@ -51,7 +53,9 @@ Py if not vim.eval('s:current_dir') in sys.path:
 \    sys.path.append(vim.eval('s:current_dir'))
 Py import coqtail
 
-" FIXME: add description
+" Gets the word under the cursor using the special '<cword>' variable. First
+" adds some characters to the 'iskeyword' option to treat them as part of the
+" current word.
 function! coqtail#GetCurWord()
     " Add '.' and ''' to definition of a keyword
     let old_keywd = &iskeyword
@@ -65,17 +69,19 @@ function! coqtail#GetCurWord()
     endif
 
     " Reset iskeyword
-    " TODO: actually restore in case '.' was already in keyword
     let &l:iskeyword = old_keywd
 
     return l:cword
 endfunction
 
-" FIXME: add description
+" Set the maximum time Coqtail will wait after sending a command before
+" interrupting coqtop. Ideally the user could just use <Ctrl-C>, but Vim seems
+" to hang if a plugin goes into an infinite loop.
 function! coqtail#SetTimeout()
     let l:old_timeout = b:coq_timeout
 
     let b:coq_timeout = input('Set timeout to (secs): ')
+    echo "\n"
 
     " TODO: recognize string vs number
     if b:coq_timeout < 0
@@ -118,11 +124,12 @@ function! coqtail#InitPanels()
     let g:counter += 1
 endfunction
 
-" FIXME: add description
+" Reopens goals and info panels and rehighlights.
 " TODO: loses highlighting when switching back from another window
 function! coqtail#OpenPanels()
     let l:coq_win = winnr()
 
+    " Need to save in local vars because will be changing buffers
     let l:goal_buf = b:goal_buf
     let l:info_buf = b:info_buf
 
@@ -137,7 +144,7 @@ function! coqtail#OpenPanels()
     Py coqtail.show_info()
 endfunction
 
-" FIXME: add description
+" Closes goal and info panels and clears highlighting.
 function! coqtail#HidePanels()
     " Switch back to main panel
     " Assumes that there are only the 3 expected panels
@@ -152,12 +159,12 @@ function! coqtail#HidePanels()
     Py coqtail.hide_color()
 endfunction
 
-" FIXME: add description
+" Interface to Python query function.
 function! coqtail#Query(...)
     Py coqtail.query(*vim.eval('a:000'))
 endfunction
 
-" FIXME: add description
+" Mappings for Coq queries on the current word.
 function! coqtail#QueryMapping()
     map <silent> <leader>cs :Coq SearchAbout <C-r>=expand(coqtail#GetCurWord())<CR>.<CR>
     map <silent> <leader>ch :Coq Check <C-r>=expand(coqtail#GetCurWord())<CR>.<CR>
@@ -168,7 +175,7 @@ function! coqtail#QueryMapping()
     map <silent> <leader>co :FindDef <C-r>=expand(coqtail#GetCurWord())<CR><CR>
 endfunction
 
-" FIXME: add description
+" Mappings for Coqtail commands.
 function! coqtail#Mapping()
     map <silent> <leader>cc :CoqStart<CR>
     map <silent> <leader>cq :CoqStop<CR>
@@ -181,6 +188,7 @@ function! coqtail#Mapping()
     imap <silent> <leader>cj <C-\><C-o>:CoqNext<CR>
     imap <silent> <leader>ck <C-\><C-o>:CoqUndo<CR>
     imap <silent> <leader>cl <C-\><C-o>:CoqToCursor<CR>
+    imap <silent> <leader>cT <C-\><C-o>:CoqToTop<CR>
 
     map <silent> <leader>cG :JumpToEnd<CR>
 
@@ -189,7 +197,7 @@ function! coqtail#Mapping()
     call coqtail#QueryMapping()
 endfunction
 
-" FIXME: add description
+" Stop the coqtop interface and clean up goal and info buffers.
 function! coqtail#Stop()
     if b:coq_running == 1
         let b:coq_running = 0
@@ -208,7 +216,9 @@ function! coqtail#Stop()
     endif
 endfunction
 
-" FIXME: add description
+" Reads a CoqProject file and parses it into options that can be passed to
+" coqtop. dir_dif is tracks the relative location of the CoqProject file to the
+" current file.
 function! coqtail#ParseCoqProj(file, dir_dif)
     let l:proj_args = []
 
@@ -229,7 +239,9 @@ function! coqtail#ParseCoqProj(file, dir_dif)
     return split(join(l:proj_args))
 endfunction
 
-" FIXME: add description
+" Searches for a CoqProject file using 'g:coq_proj_file' starting in the
+" current directory and recursively trying parent directories until '/' is
+" reached. Returns a list of arguments to pass to coqtop.
 function! coqtail#FindCoqProj()
     let l:cwd = ':p:h'
     let l:dir_dif = ['.']
@@ -239,11 +251,13 @@ function! coqtail#FindCoqProj()
         let l:proj_dir = fnamemodify(getcwd(), l:cwd)
         let l:proj_file = join([l:proj_dir, g:coq_proj_file], '/')
 
+        " Check if 'proj_dir/coq_proj_file' exists and is readable
         if filereadable(l:proj_file)
             let l:proj_args = coqtail#ParseCoqProj(l:proj_file, join(l:dir_dif, '/'))
             break
         endif
 
+        " If 'proj_dir' is not '/' go up a level
         if l:proj_dir != '/'
             let l:cwd = l:cwd . ':h'
             let l:dir_dif = add(l:dir_dif, '..')
@@ -255,7 +269,8 @@ function! coqtail#FindCoqProj()
     return l:proj_args
 endfunction
 
-" FIXME: add description
+" Initializes Python interface, commands, autocommands, and initializes goals
+" and info panels.
 function! coqtail#Start(...)
     " Highlighting for checked parts
     hi default CheckedByCoq ctermbg=17 guibg=LightGreen
@@ -296,8 +311,9 @@ function! coqtail#Start(...)
             call coqtail#InitPanels()
             call coqtail#OpenPanels()
 
-            " Autocmds to do some detection when editing an already check portion of
-            " the code, and to hide and restore the info and goal panels as needed.
+            " Autocmds to do some detection when editing an already checked
+            " portion of the code, and to hide and restore the info and goal
+            " panels as needed.
             augroup coqtail#Autocmds
                 autocmd InsertEnter <buffer> Py coqtail.sync()
                 autocmd BufWinLeave <buffer> call coqtail#HidePanels()
@@ -309,7 +325,7 @@ function! coqtail#Start(...)
     endif
 endfunction
 
-" FIXME: add description
+" Initialize buffer local variables and the 'CoqStart' command.
 function! coqtail#Register()
     " Initialize once
     if !exists('b:coq_running')
@@ -320,7 +336,8 @@ function! coqtail#Register()
         let b:coq_timeout = 3
 
         " TODO: find a less hacky solution
-        " Define a dummy command for Coq so it does not autocomplete to CoqStart and cause coqtop to hang
+        " Define a dummy command for 'Coq' so it does not autocomplete to
+        " 'CoqStart' and cause coqtop to hang
         command! -buffer -nargs=* Coq echoerr 'Coq is not running.'
 
         command! -bar -buffer -nargs=* -complete=file CoqStart call coqtail#Start(<f-args>)
