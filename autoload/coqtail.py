@@ -18,7 +18,8 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
-FIXME: add description
+Provides classes and functions for managing goals and info panels and coqtop
+interfaces.
 '''
 
 from __future__ import absolute_import
@@ -41,32 +42,27 @@ vimbufsync.check_version('0.1.0', who='coqtail')
 
 # Error Messages #
 def fail(err):
-    ''' FIXME: add description
-    '''
+    '''Print an error and stop Coqtail.'''
     print(err, file=sys.stderr)
     vim.command('call coqtail#Stop()')
 
 
 def unexpected(response, where):
-    ''' FIXME: add description
-    '''
+    '''Print a debugging error about an unexpected response.'''
     print("Coqtail receieved unexpected response {} in {}".format(response, where),
           file=sys.stderr)
 
 
 class Coqtail(object):
-    ''' FIXME: add description
-    '''
+    '''Manage coqtop interfaces and goal and info buffers for each Coq file.'''
 
     def __init__(self):
-        ''' FIXME: add description
-        '''
+        '''Initialize variables.'''
         self.coqtop = None
         self._reset()
 
     def _reset(self):
-        ''' FIXME: add description
-        '''
+        '''Reset variables to initial state.'''
         self.saved_sync = None
         self.endpoints = []
         self.send_queue = deque([])
@@ -77,8 +73,7 @@ class Coqtail(object):
         self.reset_color()
 
     def sync(self):
-        ''' FIXME: add description
-        '''
+        '''Check if buffer has been updated and rewind coqtop if so.'''
         curr_sync = vimbufsync.sync()
 
         if self.saved_sync is None or curr_sync.buf() != self.saved_sync.buf():
@@ -90,8 +85,7 @@ class Coqtail(object):
         self.saved_sync = curr_sync
 
     def check_coq(self):
-        ''' FIXME: add description
-        '''
+        '''Check if coqtop is running.'''
         if not self.coqtop.running():
             print('Coq is not running.', file=sys.stderr)
             return False
@@ -100,22 +94,19 @@ class Coqtail(object):
 
     # Coqtop Interface #
     def start(self, *args):
-        ''' FIXME: add description
-        '''
+        '''Start a new coqtop instance.'''
         self.coqtop = CT.Coqtop()
         if not self.coqtop.start(*args):
             print('Failed to launch Coq', file=sys.stderr)
             raise vim.error('coq_start_fail')
 
     def stop(self):
-        ''' FIXME: add description
-        '''
+        '''Stop coqtop and reset variables.'''
         self.coqtop.stop()
         self._reset()
 
     def next(self):
-        ''' FIXME: add description
-        '''
+        '''Advance Coq by one step.'''
         if not self.check_coq():
             return
 
@@ -135,8 +126,7 @@ class Coqtail(object):
         self.send_until_fail()
 
     def rewind(self, steps=1):
-        ''' FIXME: add description
-        '''
+        '''Rewind Coq by 'steps' steps.'''
         if not self.check_coq():
             return
 
@@ -156,8 +146,7 @@ class Coqtail(object):
         self.refresh()
 
     def to_cursor(self):
-        ''' FIXME: add description
-        '''
+        '''Advance Coq to the cursor position.'''
         if not self.check_coq():
             return
 
@@ -169,6 +158,7 @@ class Coqtail(object):
         else:
             (line, col) = (0, 0)
 
+        # Check if should rewind or advance.
         if cline < line or (cline == line and ccol < col):
             self.rewind_to(cline - 1, ccol)
         else:
@@ -181,13 +171,11 @@ class Coqtail(object):
             self.send_until_fail()
 
     def to_top(self):
-        ''' FIXME: add description
-        '''
+        '''Rewind to the beginning of the file.'''
         self.rewind_to(0, 1)
 
     def query(self, *args):
-        ''' FIXME: add description
-        '''
+        '''Forward Coq query to coqtop interface.'''
         if not self.check_coq():
             return
 
@@ -212,8 +200,7 @@ class Coqtail(object):
         self.show_info()
 
     def jump_to_end(self):
-        ''' FIXME: add description
-        '''
+        '''Move the cursor to the end of the Coq checked section.'''
         # Get the location of the last '.'
         if self.endpoints != []:
             (line, col) = self.endpoints[-1]
@@ -223,11 +210,12 @@ class Coqtail(object):
         vim.current.window.cursor = (line + 1, col)
 
     def find_def(self, target):
-        ''' FIXME: add description
-        '''
+        '''Locate where the current word is defined and jump to it.'''
         if not self.check_coq():
             return
 
+        # 'Locate target' returns the kind of object (Constant, Inductive, etc)
+        # and the logical path to where it is defined
         encoding = vim.eval('&encoding') or 'utf-8'
         message = "Locate {}.".format(target)
 
@@ -240,6 +228,7 @@ class Coqtail(object):
             if response.msg is not None:
                 locs = self.parse_locate(response.msg)
 
+                # Ask user to choose which definition to find.
                 if len(locs) == 1:
                     ltype, lfile, lname = locs[0]
                 else:
@@ -260,7 +249,8 @@ class Coqtail(object):
                 if lfile == 'Coq':
                     print("{} is part of the Coq StdLib".format(target))
                 elif ltype == 'Err':
-                    print("Failed to locate {}:\n{}".format(target, lfile), file=sys.stderr)
+                    print("Failed to locate {}:\n{}".format(target, lfile),
+                          file=sys.stderr)
                 else:
                     if lfile != 'Top':
                         vim.command('hide argedit ' + lfile)
@@ -281,8 +271,7 @@ class Coqtail(object):
 
     # Helpers #
     def send_until_fail(self):
-        ''' FIXME: add description
-        '''
+        '''Send all chunks in 'send_queue' until an error is encountered.'''
         msgs = []
         encoding = vim.eval('&fileencoding') or 'utf-8'
 
@@ -311,6 +300,7 @@ class Coqtail(object):
                 if isinstance(response, CT.Err):
                     msgs += res_msgs
 
+                    # Highlight error location
                     if response.loc is not None:
                         loc_s, loc_e = response.loc
                         if loc_s == loc_e == -1:
@@ -331,16 +321,17 @@ class Coqtail(object):
         self.refresh()
 
     def rewind_to(self, line, col):
-        ''' FIXME: add description
-        '''
+        '''Rewind to a specific location.'''
         if not self.check_coq():
             return
 
-        steps_too_far = len([() for pos in self.endpoints if pos > (line, col)])
+        # Count the number of endpoints after the specified location.
+        steps_too_far = sum(pos > (line, col) for pos in self.endpoints)
         self.rewind(steps_too_far)
 
     def parse_locate(self, msg):
-        ''' FIXME: add description
+        '''Parse the response from 'Locate target' and return the physical path
+        to the file where it is defined, plus the type of object and name.
         '''
         # Build a map from logical to physical paths using LoadPath
         encoding = vim.eval('&encoding') or 'utf-8'
@@ -400,15 +391,13 @@ class Coqtail(object):
 
     # Goals and Infos #
     def refresh(self):
-        ''' FIXME: add description
-        '''
+        '''Refresh the goals and info panels.'''
         self.show_goal()
         self.show_info()
         self.reset_color()
 
     def show_goal(self):
-        ''' FIXME: add description
-        '''
+        '''Display the current goals.'''
         response = self.coqtop.goals()
         if response is None:
             fail('Coq seems to have stopped running.')
@@ -436,7 +425,6 @@ class Coqtail(object):
                         msg.append(hyp)
 
                 msg.append('\n' + '=' * 25 + " ({} / {})\n".format(idx + 1, ngoals))
-
                 msg.append(goal.ccl)
 
             self.goal_msg = '\n'.join(msg)
@@ -444,8 +432,7 @@ class Coqtail(object):
         self.restore_goal()
 
     def restore_goal(self):
-        ''' FIXME: add description
-        '''
+        '''Restore the last-displayed goals.'''
         bufn = int(vim.eval('b:goal_buf'))
         goal_buf = vim.buffers[bufn]
         del goal_buf[:]
@@ -453,8 +440,7 @@ class Coqtail(object):
         goal_buf.append(self.goal_msg.split('\n'))
 
     def show_info(self):
-        ''' FIXME: add description
-        '''
+        '''Display the info_msg buffer in the info panel.'''
         bufn = int(vim.eval('b:info_buf'))
         info_buf = vim.buffers[bufn]
         del info_buf[:]
@@ -463,14 +449,12 @@ class Coqtail(object):
         info_buf.append(lines)
 
     def clear_info(self):
-        ''' FIXME: add description
-        '''
+        '''Clear the info panel.'''
         self.info_msg = ''
         self.show_info()
 
     def hide_color(self):
-        ''' FIXME: add description
-        '''
+        '''Clear highlighting.'''
         # Clear checked highlighting
         if int(vim.eval('b:checked')) != -1:
             vim.command('call matchdelete(b:checked)')
@@ -485,8 +469,7 @@ class Coqtail(object):
             vim.command('let b:errors = -1')
 
     def reset_color(self):
-        ''' FIXME: add description
-        '''
+        '''Recolor sections.'''
         self.hide_color()
 
         # Recolor
@@ -498,7 +481,7 @@ class Coqtail(object):
             zone = _make_matcher(start, stop)
             vim.command("let b:checked = matchadd('CheckedByCoq', '{}')".format(zone))
 
-        if len(self.send_queue) > 0:
+        if self.send_queue:
             if self.endpoints != []:
                 (sline, scol) = self.endpoints[-1]
             else:
@@ -523,8 +506,7 @@ class Coqtail(object):
             self.error_at = None
 
     def splash(self):
-        ''' FIXME: add description
-        '''
+        '''Display the logo in the info panel.'''
         # This is called before the panels are displayed so the window size is
         # actually half
         w = vim.current.window.width // 2
@@ -558,8 +540,7 @@ class Coqtail(object):
 # section/module, or sometimes by looking at the type (for constructors for
 # example, or record projections)
 def get_searches(ltype, lname):
-    ''' FIXME: add description
-    '''
+    '''Construct a search expression given an object type and name.'''
     auto_names = [('Constructor', 'Inductive', 'Build_(.*)', 1),
                   ('Constant', 'Inductive', '(.*)_(ind|rect?)', 1)]
     searches = []
@@ -597,8 +578,7 @@ def get_searches(ltype, lname):
 # Finding Start and End of Coq Chunks #
 # From here on is largely copied from Coquille
 def _pos_from_offset(col, msg, offset):
-    ''' FIXME: add description
-    '''
+    '''Calculate the line and column of a given offset.'''
     msg = msg[:offset]
     lines = msg.split('\n')
 
@@ -609,8 +589,7 @@ def _pos_from_offset(col, msg, offset):
 
 
 def _between(start, end):
-    ''' FIXME: add description
-    '''
+    '''Return the text between a given start and end point.'''
     (sline, scol) = start
     (eline, ecol) = end
 
@@ -626,7 +605,7 @@ def _between(start, end):
 
 
 def _get_message_range(after):
-    ''' FIXME: add description'''
+    '''Return the next chunk to send after a given point.'''
     end_pos = _find_next_chunk(*after)
 
     if end_pos is not None:
@@ -635,8 +614,7 @@ def _get_message_range(after):
 
 
 def _find_next_chunk(sline, scol):
-    ''' FIXME: add description
-    '''
+    '''Find the next chunk to send to Coq.'''
     buf = vim.current.buffer
     blen = len(buf)
     bullets = ['{', '}', '-', '+', '*']
@@ -651,7 +629,7 @@ def _find_next_chunk(sline, scol):
                 break
 
             col = 0
-        else:  # break was not reached, nothing left in the buffer but whitespace
+        else:  # break not reached, nothing left in the buffer but whitespace
             return None
 
         # Skip leading comments
@@ -673,8 +651,7 @@ def _find_next_chunk(sline, scol):
 
 
 def _find_dot_after(sline, scol):
-    ''' FIXME: add description
-    '''
+    '''Find the next '.' after a given point.'''
     buf = vim.current.buffer
     if sline >= len(buf):
         return None
@@ -713,20 +690,17 @@ def _find_dot_after(sline, scol):
 
 
 def _skip_str(sline, scol):
-    ''' FIXME: add description
-    '''
+    '''Skip the next block contained in " ".'''
     return _skip_block(sline, scol, '"')
 
 
 def _skip_comment(sline, scol):
-    ''' FIXME: add description
-    '''
+    '''Skip the next block contained in (* *).'''
     return _skip_block(sline, scol, '*)', '(*', 1)
 
 
 def _skip_block(sline, scol, estr, sstr=None, nesting=1):
-    ''' FIXME: add description
-    '''
+    '''A generic function to skip the next block contained in sstr estr.'''
     if nesting == 0:
         return (sline, scol)
 
@@ -756,16 +730,14 @@ def _skip_block(sline, scol, estr, sstr=None, nesting=1):
 
 # Region Highlighting #
 def _make_matcher(start, stop):
-    ''' FIXME: add description
-    '''
+    '''A wrapper function to call the appropriate _matcher function.'''
     if start['line'] == stop['line']:
         return _easy_matcher(start, stop)
     return _hard_matcher(start, stop)
 
 
 def _easy_matcher(start, stop):
-    ''' FIXME: add description
-    '''
+    '''Create a single-line Vim match expression.'''
     startl = ''
     startc = ''
 
@@ -784,8 +756,7 @@ def _easy_matcher(start, stop):
 
 
 def _hard_matcher(start, stop):
-    ''' FIXME: add description
-    '''
+    '''Create a multi-line Vim match expression.'''
     first_start = {'line': start['line'], 'col': start['col']}
     first_stop = {'line': start['line'], 'col': None}
     first_line = _easy_matcher(first_start, first_stop)
@@ -806,76 +777,62 @@ def _hard_matcher(start, stop):
 bufmap = ddict(Coqtail)
 
 
+# Calls the corresponding method on the current buffer.
 def sync(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].sync(*args)
 
 
 def start(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].start(*args)
 
 
 def stop(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].stop(*args)
 
 
 def next(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].next(*args)
 
 
 def rewind(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].rewind(*args)
 
 
 def to_cursor(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].to_cursor(*args)
 
 
 def to_top(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].to_top(*args)
 
 
 def query(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].query(*args)
 
 
 def jump_to_end(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].jump_to_end(*args)
 
 
 def find_def(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].find_def(*args)
 
 
 def hide_color(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].hide_color(*args)
 
 
 def reset_color(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].reset_color(*args)
 
 
 def restore_goal(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].restore_goal(*args)
 
 
 def show_info(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].show_info(*args)
 
 
 def splash(*args):
-    ''' FIXME: add description '''
     bufmap[vim.current.buffer].splash(*args)
