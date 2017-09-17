@@ -104,16 +104,26 @@ function! coqtail#InitPanels()
     setlocal buftype=nofile
     setlocal filetype=coq-goals
     setlocal noswapfile
+    setlocal bufhidden=hide
     let b:coq_buf = l:coq_buf  " Assumes buffer number won't change
     let l:goal_buf = bufnr('%')
+    augroup coqtail#PanelCmd
+        autocmd! * <buffer>
+        autocmd BufWinLeave <buffer> call coqtail#HidePanels()
+    augroup end
 
     " Add info panel
     execute 'hide edit Infos' . g:counter
     setlocal buftype=nofile
     setlocal filetype=coq-infos
     setlocal noswapfile
+    setlocal bufhidden=hide
     let b:coq_buf = l:coq_buf
     let l:info_buf = bufnr('%')
+    augroup coqtail#PanelCmd
+        autocmd! * <buffer>
+        autocmd BufWinLeave <buffer> call coqtail#HidePanels()
+    augroup end
 
     " Switch back to main panel
     execute 'hide edit #' . l:coq_buf
@@ -146,15 +156,29 @@ endfunction
 
 " Closes goal and info panels and clears highlighting.
 function! coqtail#HidePanels()
-    " Switch back to main panel
-    " Assumes that there are only the 3 expected panels
+    " If changing files from goal or info buf
+    " N.B. Switching files from anywhere other than the 3 main windows may
+    " cause unexpected behaviors
     if exists('b:coq_buf')
-        let l:coq_win = bufwinnr(b:coq_buf)
-        execute l:coq_win . 'wincmd w'
+        " Do nothing if main window isn't up yet
+        if bufwinnr(b:coq_buf) == -1
+            return
+        endif
+
+        " Switch to main panel and hide as usual
+        execute bufwinnr(b:coq_buf) . 'wincmd w'
+        call coqtail#HidePanels()
+        close!
+        return
     endif
 
     " Hide other panels
-    only
+    if bufwinnr(b:goal_buf) != -1
+        execute bufwinnr(b:goal_buf) . 'close!'
+    endif
+    if bufwinnr(b:info_buf) != -1
+        execute bufwinnr(b:info_buf) . 'close!'
+    endif
 
     Py coqtail.hide_color()
 endfunction
@@ -315,6 +339,7 @@ function! coqtail#Start(...)
             " portion of the code, and to hide and restore the info and goal
             " panels as needed.
             augroup coqtail#Autocmds
+                autocmd! * <buffer>
                 autocmd InsertEnter <buffer> Py coqtail.sync()
                 autocmd BufWinLeave <buffer> call coqtail#HidePanels()
                 autocmd BufWinEnter <buffer> call coqtail#OpenPanels()
