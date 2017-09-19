@@ -83,8 +83,7 @@ function! coqtail#SetTimeout()
     let b:coq_timeout = input('Set timeout to (secs): ')
     echo "\n"
 
-    " TODO: recognize string vs number
-    if b:coq_timeout < 0
+    if b:coq_timeout !~ '^[0-9]\+$' || b:coq_timeout < 0
         echoerr 'Invalid timeout, keeping old value.'
         let b:coq_timeout = l:old_timeout
     elseif b:coq_timeout == 0
