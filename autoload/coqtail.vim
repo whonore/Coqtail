@@ -171,13 +171,20 @@ function! coqtail#HidePanels()
         return
     endif
 
+    let l:coq_win = bufwinnr('%')
+    let l:goal_win = bufwinnr(b:goal_buf)
+    let l:info_win = bufwinnr(b:info_buf)
+
     " Hide other panels
-    if bufwinnr(b:goal_buf) != -1
-        execute bufwinnr(b:goal_buf) . 'close!'
+    if l:goal_win != -1
+        execute l:goal_win . 'wincmd w'
+        close!
     endif
-    if bufwinnr(b:info_buf) != -1
-        execute bufwinnr(b:info_buf) . 'close!'
+    if l:info_win != -1
+        execute l:info_win . 'wincmd w'
+        close!
     endif
+    execute l:coq_win . 'wincmd w'
 
     Py coqtail.hide_color()
 endfunction
