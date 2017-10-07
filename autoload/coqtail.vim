@@ -16,8 +16,8 @@
 " OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 " PERFORMANCE OF THIS SOFTWARE.
 "
-" Provides an interface to the Python functions in coqtail.py and coqtop.py,
-" and manages windows.
+" Description: Provides an interface to the Python functions in coqtail.py and
+" coqtop.py, and manages windows.
 
 " Only source once
 if exists('g:coqtail_sourced')

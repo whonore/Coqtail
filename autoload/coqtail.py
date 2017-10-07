@@ -18,8 +18,8 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
-Provides classes and functions for managing goals and info panels and coqtop
-interfaces.
+Description: Provides classes and functions for managing goals and info panels
+and coqtop interfaces.
 '''
 
 from __future__ import absolute_import

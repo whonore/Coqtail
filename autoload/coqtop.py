@@ -18,7 +18,8 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
-FIXME: add description
+Description: Provides an interface to Coqtop with functions to send commands
+and parse responses.
 '''
 
 from __future__ import absolute_import
@@ -284,8 +285,9 @@ class Coqtop(object):
     def advance(self, cmd, encoding='utf-8', timeout=None):
         ''' FIXME: add description
         '''
-        # Python 2 will throw an error if unicode is in 'cmd' unless we decode it,
-        # but in Python 3 'cmd' is 'str' not 'bytes' and doesn't need to be decoded
+        # Python 2 will throw an error if unicode is in 'cmd' unless we decode
+        # it, but in Python 3 'cmd' is 'str' not 'bytes' and doesn't need to be
+        # decoded
         if isinstance(cmd, bytes):
             cmd = cmd.decode(encoding)
 
