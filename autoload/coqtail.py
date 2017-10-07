@@ -96,7 +96,7 @@ class Coqtail(object):
     def start(self, *args):
         '''Start a new coqtop instance.'''
         self.coqtop = CT.Coqtop()
-        if not self.coqtop.start(*args):
+        if not self.coqtop.start(*args, timeout=get_timeout()):
             print('Failed to launch Coq', file=sys.stderr)
             raise vim.error('coq_start_fail')
 
@@ -282,7 +282,9 @@ class Coqtail(object):
             to_send = self.send_queue.popleft()
             message = _between(to_send['start'], to_send['stop'])
 
-            (response, res_msgs) = self.coqtop.advance(message, encoding)
+            (response, res_msgs) = self.coqtop.advance(message,
+                                                       encoding,
+                                                       timeout=get_timeout())
             if response is None:
                 fail('Coq seems to have stopped running.')
                 return
@@ -337,7 +339,7 @@ class Coqtail(object):
         encoding = vim.eval('&encoding') or 'utf-8'
         message = 'Print LoadPath.'
 
-        response = self.coqtop.query(message, encoding)
+        response = self.coqtop.query(message, encoding, timeout=get_timeout())
         if response is None:
             fail('Coq seems to have stopped running.')
             return
@@ -398,7 +400,7 @@ class Coqtail(object):
 
     def show_goal(self):
         '''Display the current goals.'''
-        response = self.coqtop.goals()
+        response = self.coqtop.goals(timeout=get_timeout())
         if response is None:
             fail('Coq seems to have stopped running.')
             return
@@ -533,6 +535,12 @@ class Coqtail(object):
         top_pad = [''] * ((h // 2) - (len(msg) // 2 + 1))
 
         self.info_msg = '\n'.join(top_pad + msg)
+
+
+# Vim Helpers #
+def get_timeout():
+    '''Get the current timeout value.'''
+    return int(vim.eval('b:coq_timeout'))
 
 
 # Searching for Coq Definitions #

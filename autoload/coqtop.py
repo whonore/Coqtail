@@ -25,8 +25,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import vim
-
 import os
 import subprocess
 import signal
@@ -236,7 +234,7 @@ class Coqtop(object):
         self.out_q = queue.Queue()
 
     # Coqtop Interface #
-    def start(self, *args):
+    def start(self, *args, timeout=None):
         ''' FIXME: add description
         '''
         if self.running():
@@ -261,7 +259,7 @@ class Coqtop(object):
                 read_thread.start()
 
             # Initialize Coqtop
-            result = self.call('Init', Option(None), use_timeout=True)
+            result = self.call('Init', Option(None), timeout=timeout)
             if not isinstance(result, Ok):
                 return False
 
@@ -283,7 +281,7 @@ class Coqtop(object):
                 pass
             self.coqtop = None
 
-    def advance(self, cmd, encoding='utf-8'):
+    def advance(self, cmd, encoding='utf-8', timeout=None):
         ''' FIXME: add description
         '''
         # Python 2 will throw an error if unicode is in 'cmd' unless we decode it,
@@ -294,8 +292,8 @@ class Coqtop(object):
         result = self.call('Add',
                            ((cmd, -1),
                             (self.cur_state(), True)),
-                           encoding, use_timeout=True)
-        goals = self.goals()
+                           encoding, timeout=timeout)
+        goals = self.goals(timeout=timeout)
 
         if result is None:
             return (result, '')
@@ -317,7 +315,7 @@ class Coqtop(object):
         # resend as a query
         try:
             if 'Query commands should not' in result.msg:
-                result = self.query(cmd, encoding)
+                result = self.query(cmd, encoding, timeout)
                 return (result, [] if result.msg is None else [result.msg])
         except (AttributeError, TypeError):
             pass
@@ -335,7 +333,7 @@ class Coqtop(object):
 
         return self.call('Edit_at', self.state_id)
 
-    def query(self, cmd, encoding='utf-8'):
+    def query(self, cmd, encoding='utf-8', timeout=None):
         ''' FIXME: add description
         '''
         # See 'advance' for an explanation of this
@@ -344,15 +342,15 @@ class Coqtop(object):
 
         return self.call('Query',
                          (cmd, self.cur_state()),
-                         encoding, use_timeout=True)
+                         encoding, timeout=timeout)
 
-    def goals(self):
+    def goals(self, timeout=None):
         ''' FIXME: add description
         '''
-        return self.call('Goal', (), use_timeout=True)
+        return self.call('Goal', (), timeout=timeout)
 
     # Interacting with Coqtop #
-    def call(self, name, arg, encoding='utf-8', use_timeout=False):
+    def call(self, name, arg, encoding='utf-8', timeout=None):
         ''' FIXME: add description
         '''
         self.empty_out()
@@ -361,11 +359,7 @@ class Coqtop(object):
         msg = ET.tostring(xml, encoding)
         self.send_cmd(msg)
 
-        if use_timeout:
-            timeout = int(vim.eval('b:coq_timeout'))
-            if timeout == 0:
-                timeout = None
-        else:
+        if timeout == 0:
             timeout = None
 
         # The got_response event tells the timeout_thread that get_answer()
