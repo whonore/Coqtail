@@ -235,11 +235,13 @@ class Coqtop(object):
         self.out_q = queue.Queue()
 
     # Coqtop Interface #
-    def start(self, *args, timeout=None):
+    def start(self, *args, **kwargs):
         ''' FIXME: add description
         '''
         if self.running():
             self.stop()
+
+        timeout = kwargs.get('timeout', None)
 
         options = ['coqtop',
                    '-ideslave',
