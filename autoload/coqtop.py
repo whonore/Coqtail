@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-'''
+"""
 File: coqtop.py
 Author: Wolf Honore (inspired by/partially adapted from Coquille)
 
@@ -20,7 +20,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 Description: Provides an interface to Coqtop with functions to send commands
 and parse responses.
-'''
+"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -67,8 +67,7 @@ TIMEOUT_ERR = Err('Coq timed out. You can change the timeout with '
 
 
 def get_message(ok_err):
-    ''' FIXME: add description
-    '''
+    """Extract the text from an Ok or Err tuple."""
     if isinstance(ok_err, Ok) and ok_err.msg is not None:
         return ok_err.msg
     elif isinstance(ok_err, Err) and ok_err.err is not None:
@@ -78,8 +77,7 @@ def get_message(ok_err):
 
 
 def parse_response(xml):
-    ''' FIXME: add description
-    '''
+    """Parse an xml response into an Ok or Err tuple."""
     assert xml.tag == 'value'
 
     if xml.get('val') == 'good':
@@ -92,8 +90,7 @@ def parse_response(xml):
 
 
 def parse_value(xml):
-    ''' FIXME: add description
-    '''
+    """Parse an xml value into a corresponding Python type."""
     if xml.tag == 'unit':
         return ()
     elif xml.tag == 'bool':
@@ -146,8 +143,8 @@ def parse_value(xml):
 
 
 def parse_error(xml):
-    ''' FIXME: add description
-    '''
+    """Return the text of an error message, plus the location if it is
+    provided."""
     loc_s = int(xml.get('loc_s', -1))
     loc_e = int(xml.get('loc_e', -1))
 
@@ -155,8 +152,7 @@ def parse_error(xml):
 
 
 def build(tag, val=None, children=()):
-    ''' FIXME: add description
-    '''
+    """Construct an xml element with a given tag, value, and children."""
     attribs = {'val': val} if val is not None else {}
 
     xml = ET.Element(tag, attribs)
@@ -166,14 +162,12 @@ def build(tag, val=None, children=()):
 
 
 def encode_call(name, arg):
-    ''' FIXME: add description
-    '''
+    """Construct a 'call' xml element."""
     return build('call', name, [encode_value(arg)])
 
 
 def encode_value(v):
-    ''' FIXME: add description
-    '''
+    """Construct an xml element from a corresponding Python type."""
     if v == ():
         return build('unit')
     elif isinstance(v, bool):
@@ -212,9 +206,8 @@ def encode_value(v):
         assert False, "unrecognized type in encode_value: {}".format(type(v))
 
 
-def escape(cmd):
-    ''' FIXME: add description
-    '''
+def unescape(cmd):
+    """Replace escaped characters with the unescaped version."""
     return cmd.replace(b'&nbsp;', b' ') \
               .replace(b'&apos;', b'\'') \
               .replace(b'&#40;', b'(') \
@@ -222,12 +215,12 @@ def escape(cmd):
 
 
 class Coqtop(object):
-    ''' FIXME: add description
-    '''
+    """ FIXME: add description
+    """
 
     def __init__(self):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         self.coqtop = None
         self.states = []
         self.state_id = None
@@ -236,8 +229,8 @@ class Coqtop(object):
 
     # Coqtop Interface #
     def start(self, *args, **kwargs):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         if self.running():
             self.stop()
 
@@ -274,8 +267,8 @@ class Coqtop(object):
             return False
 
     def stop(self):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         if self.running():
             try:
                 self.coqtop.terminate()
@@ -285,8 +278,8 @@ class Coqtop(object):
             self.coqtop = None
 
     def advance(self, cmd, encoding='utf-8', timeout=None):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         # Python 2 will throw an error if unicode is in 'cmd' unless we decode
         # it, but in Python 3 'cmd' is 'str' not 'bytes' and doesn't need to be
         # decoded
@@ -327,8 +320,8 @@ class Coqtop(object):
         return (result, msgs)
 
     def rewind(self, step=1):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         if step > len(self.states):
             self.state_id = self.root_state
         else:
@@ -338,8 +331,8 @@ class Coqtop(object):
         return self.call('Edit_at', self.state_id)
 
     def query(self, cmd, encoding='utf-8', timeout=None):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         # See 'advance' for an explanation of this
         if isinstance(cmd, bytes):
             cmd = cmd.decode(encoding)
@@ -349,14 +342,14 @@ class Coqtop(object):
                          encoding, timeout=timeout)
 
     def goals(self, timeout=None):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         return self.call('Goal', (), timeout=timeout)
 
     # Interacting with Coqtop #
     def call(self, name, arg, encoding='utf-8', timeout=None):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         self.empty_out()
 
         xml = encode_call(name, arg)
@@ -385,21 +378,21 @@ class Coqtop(object):
         return response
 
     def timeout_thread(self, timeout, got_response, timed_out):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         if not got_response.wait(timeout):
             self.coqtop.send_signal(signal.SIGINT)
             timed_out.set()
 
     def get_answer(self):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         data = []
 
         while True:
             try:
                 data.append(self.out_q.get())
-                elt = ET.fromstring(b'<coqtoproot>' + escape(b''.join(data)) + b'</coqtoproot>')
+                elt = ET.fromstring(b'<coqtoproot>' + unescape(b''.join(data)) + b'</coqtoproot>')
 
                 keep_waiting = True
                 msg_node = []
@@ -426,7 +419,7 @@ class Coqtop(object):
                 return None
 
     def empty_out(self):
-        ''' FIXME: add description '''
+        """ FIXME: add description """
         while not self.out_q.empty():
             try:
                 self.out_q.get_nowait()
@@ -435,7 +428,7 @@ class Coqtop(object):
 
     # TODO: figure out why python 2 needs os.read vs stdout.read but 3 doesnt'
     def capture_out(self):
-        ''' FIXME: add description '''
+        """ FIXME: add description """
         fd = self.coqtop.stdout.fileno()
 
         while True:
@@ -449,7 +442,7 @@ class Coqtop(object):
     # TODO: figure out why printing to stderr causes hide_colors() to fail on
     # quit
     def capture_err(self):
-        ''' FIXME: add description '''
+        """ FIXME: add description """
         fd = self.coqtop.stderr.fileno()
 
         while True:
@@ -461,20 +454,20 @@ class Coqtop(object):
                 return
 
     def send_cmd(self, cmd):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         self.coqtop.stdin.write(cmd)
         self.coqtop.stdin.flush()
 
     # Current State #
     def running(self):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         return self.coqtop is not None
 
     def cur_state(self):
-        ''' FIXME: add description
-        '''
+        """ FIXME: add description
+        """
         if self.states == []:
             return self.root_state
         return self.state_id
