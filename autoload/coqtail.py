@@ -514,21 +514,21 @@ class Coqtail(object):
         w = vim.current.window.width // 2
         h = vim.current.window.height // 2
 
-        msg = ['___________________',
-               'λ                 /',
-               ' λ    Coqtail    / ',
-               '  λ Wolf Honoré /  ',
-               '   λ           /   ',
-               '    λ         /    ',
-               '     λ       /     ',
-               '      λ     /      ',
-               '       λ   /       ',
-               '        λ /        ',
-               '         ‖         ',
-               '         ‖         ',
-               '         ‖         ',
-               '        / λ        ',
-               '       /___λ       ']
+        msg = [u'___________________',
+               u'λ                 /',
+               u' λ    Coqtail    / ',
+               u'  λ Wolf Honoré /  ',
+               u'   λ           /   ',
+               u'    λ         /    ',
+               u'     λ       /     ',
+               u'      λ     /      ',
+               u'       λ   /       ',
+               u'        λ /        ',
+               u'         ‖         ',
+               u'         ‖         ',
+               u'         ‖         ',
+               u'        / λ        ',
+               u'       /___λ       ']
         msg_maxw = max(len(line) for line in msg)
         msg = [line.center(w - msg_maxw // 2) for line in msg]
 
