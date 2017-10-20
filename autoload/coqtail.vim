@@ -129,7 +129,7 @@ function! coqtail#InitPanels()
     let b:goal_buf = l:goal_buf
     let b:info_buf = l:info_buf
 
-    Py coqtail.splash()
+    Py coqtail.splash(vim.eval('b:version'))
     let g:counter += 1
 endfunction
 

@@ -507,28 +507,30 @@ class Coqtail(object):
 
             self.error_at = None
 
-    def splash(self):
+    def splash(self, version):
         '''Display the logo in the info panel.'''
         # This is called before the panels are displayed so the window size is
         # actually half
         w = vim.current.window.width // 2
         h = vim.current.window.height // 2
 
-        msg = [u'___________________',
-               u'λ                 /',
-               u' λ    Coqtail    / ',
-               u'  λ Wolf Honoré /  ',
-               u'   λ           /   ',
-               u'    λ         /    ',
-               u'     λ       /     ',
-               u'      λ     /      ',
-               u'       λ   /       ',
-               u'        λ /        ',
-               u'         ‖         ',
-               u'         ‖         ',
-               u'         ‖         ',
-               u'        / λ        ',
-               u'       /___λ       ']
+        msg = [u'~~~~~~~~~~~~~~~~~~~~~~~',
+               u'λ                     /',
+               u' λ      Coqtail      / ',
+               u'  λ   Wolf Honoré   /  ',
+               u'   λ               /   ',
+               u"    λ{}/    ".format(('Coq ' + version).center(13)),
+               u'     λ           /     ',
+               u'      λ         /      ',
+               u'       λ       /       ',
+               u'        λ     /        ',
+               u'         λ   /         ',
+               u'          λ /          ',
+               u'           ‖           ',
+               u'           ‖           ',
+               u'           ‖           ',
+               u'          / λ          ',
+               u'         /___λ         ']
         msg_maxw = max(len(line) for line in msg)
         msg = [line.center(w - msg_maxw // 2) for line in msg]
 
