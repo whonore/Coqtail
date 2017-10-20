@@ -15,7 +15,7 @@ Follow the setup instructions and then:
 Coqtail requires:
 - vim compiled with either +python or +python3
 - [vimbufsync](https://github.com/let-def/vimbufsync)
-- [Coq 8.6](https://coq.inria.fr/download)
+- [Coq 8.6](https://coq.inria.fr/coq-86) (support for 8.7 (and maybe 8.5) coming soon)
 
 Usage
 ---
