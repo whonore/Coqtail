@@ -362,7 +362,7 @@ function! coqtail#Start(...)
 endfunction
 
 " Initialize buffer local variables and the 'CoqStart' command.
-function! coqtail#Register()
+function! coqtail#Register(version, supported)
     " Initialize once
     if !exists('b:coq_running')
         let b:coq_running = 0
@@ -370,12 +370,17 @@ function! coqtail#Register()
         let b:sent    = -1
         let b:errors  = -1
         let b:coq_timeout = 3
+        let b:version = a:version
 
         " TODO: find a less hacky solution
         " Define a dummy command for 'Coq' so it does not autocomplete to
         " 'CoqStart' and cause coqtop to hang
         command! -buffer -nargs=* Coq echoerr 'Coq is not running.'
 
-        command! -bar -buffer -nargs=* -complete=file CoqStart call coqtail#Start(<f-args>)
+        if a:supported
+            command! -bar -buffer -nargs=* -complete=file CoqStart call coqtail#Start(<f-args>)
+        else
+            command! -bar -buffer -nargs=* -complete=file CoqStart echoerr 'Coqtail does not support Coq version ' . b:version
+        endif
     endif
 endfunction
