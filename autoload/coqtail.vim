@@ -322,7 +322,7 @@ function! coqtail#Start(...)
 
         " Launch coqtop
         try
-            Py coqtail.start(*vim.eval('map(copy(l:proj_args+a:000),"expand(v:val)")'))
+            Py coqtail.start(vim.eval('b:version'), *vim.eval('map(copy(l:proj_args+a:000),"expand(v:val)")'))
 
             " Coqtail commands
 

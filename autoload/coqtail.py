@@ -93,9 +93,9 @@ class Coqtail(object):
         return True
 
     # Coqtop Interface #
-    def start(self, *args):
+    def start(self, version, *args):
         """Start a new coqtop instance."""
-        self.coqtop = CT.Coqtop()
+        self.coqtop = CT.Coqtop(version)
         if not self.coqtop.start(*args, timeout=get_timeout()):
             print('Failed to launch Coq', file=sys.stderr)
             raise vim.error('coq_start_fail')
@@ -134,11 +134,8 @@ class Coqtail(object):
             return
 
         response = self.coqtop.rewind(steps)
-        if response is None:
-            fail('Coq seems to have stopped running.')
-            return
 
-        if isinstance(response, CT.Ok):
+        if response.is_ok():
             self.endpoints = self.endpoints[:-steps]
         else:
             unexpected(response, 'rewind()')
@@ -184,18 +181,9 @@ class Coqtail(object):
         encoding = vim.eval('&encoding') or 'utf-8'
         message = ' '.join(args)
 
-        response = self.coqtop.query(message, encoding)
-        if response is None:
-            fail('Coq seems to have stopped running.')
-            return
+        response = self.coqtop.query(message, encoding=encoding)
 
-        if isinstance(response, CT.Ok):
-            if response.msg is not None:
-                self.info_msg = response.msg
-        elif isinstance(response, CT.Err):
-            self.info_msg = response.err
-        else:
-            unexpected(response, 'query()')
+        self.info_msg = str(response)
 
         self.show_info()
 
@@ -219,14 +207,13 @@ class Coqtail(object):
         encoding = vim.eval('&encoding') or 'utf-8'
         message = "Locate {}.".format(target)
 
-        response = self.coqtop.query(message, encoding)
-        if response is None:
-            fail('Coq seems to have stopped running.')
-            return
+        response = self.coqtop.query(message, encoding=encoding)
 
-        if isinstance(response, CT.Ok):
-            if response.msg is not None:
-                locs = self.parse_locate(response.msg)
+        if response.is_ok():
+            res_msg = str(response)
+
+            if res_msg != '':
+                locs = self.parse_locate(res_msg)
 
                 # Ask user to choose which definition to find.
                 if len(locs) == 1:
@@ -264,10 +251,8 @@ class Coqtail(object):
                                 break
                             except vim.error:
                                 pass
-        elif isinstance(response, CT.Err):
-            print(response.err)
         else:
-            unexpected(response, 'find_def()')
+            print(str(response))
 
     # Helpers #
     def send_until_fail(self):
@@ -282,40 +267,28 @@ class Coqtail(object):
             to_send = self.send_queue.popleft()
             message = _between(to_send['start'], to_send['stop'])
 
-            (response, res_msgs) = self.coqtop.advance(message,
-                                                       encoding,
-                                                       timeout=get_timeout())
-            if response is None:
-                fail('Coq seems to have stopped running.')
-                return
+            response = self.coqtop.advance(message,
+                                           encoding=encoding,
+                                           timeout=get_timeout())
 
-            if isinstance(response, CT.Ok):
+            msgs.append(str(response))
+            if response.is_ok():
                 (line, col) = to_send['stop']
                 self.endpoints.append((line, col + 1))
-
-                if len(response.val) > 1 and isinstance(response.val[1], tuple):
-                    msgs.append(response.val[1][1])
-                msgs += res_msgs
             else:
                 self.send_queue.clear()
 
-                if isinstance(response, CT.Err):
-                    msgs += res_msgs
-
-                    # Highlight error location
-                    if response.loc is not None:
-                        loc_s, loc_e = response.loc
-                        if loc_s == loc_e == -1:
-                            self.error_at = (to_send['start'], to_send['stop'])
-                            (sline, scol) = to_send['start']
-                            (eline, ecol) = to_send['stop']
-                        else:
-                            (line, col) = to_send['start']
-                            (sline, scol) = _pos_from_offset(col, message, loc_s)
-                            (eline, ecol) = _pos_from_offset(col, message, loc_e)
-                            self.error_at = ((line + sline, scol), (line + eline, ecol))
+                # Highlight error location
+                loc_s, loc_e = response.loc
+                if loc_s == loc_e == -1:
+                    self.error_at = (to_send['start'], to_send['stop'])
+                    (sline, scol) = to_send['start']
+                    (eline, ecol) = to_send['stop']
                 else:
-                    unexpected(response, 'send_until_fail()')
+                    (line, col) = to_send['start']
+                    (sline, scol) = _pos_from_offset(col, message, loc_s)
+                    (eline, ecol) = _pos_from_offset(col, message, loc_e)
+                    self.error_at = ((line + sline, scol), (line + eline, ecol))
 
         self.clear_info()
         self.info_msg = '\n\n'.join(msg for msg in msgs if msg != '')
@@ -339,13 +312,12 @@ class Coqtail(object):
         encoding = vim.eval('&encoding') or 'utf-8'
         message = 'Print LoadPath.'
 
-        response = self.coqtop.query(message, encoding, timeout=get_timeout())
-        if response is None:
-            fail('Coq seems to have stopped running.')
-            return
+        response = self.coqtop.query(message,
+                                     encoding=encoding,
+                                     timeout=get_timeout())
 
-        if isinstance(response, CT.Ok):
-            paths = response.msg.split()[2:]
+        if response.is_ok():
+            paths = str(response).split()[2:]
             logic = paths[::2]
             physic = paths[1::2]
 
@@ -401,21 +373,18 @@ class Coqtail(object):
     def show_goal(self):
         """Display the current goals."""
         response = self.coqtop.goals(timeout=get_timeout())
-        if response is None:
-            fail('Coq seems to have stopped running.')
-            return
 
-        if isinstance(response, CT.Err):
+        if not response.is_ok():
             unexpected(response, 'show_goal()')
             return
 
-        if response.msg is not None:
-            self.info_msg = response.msg
+        if str(response) != '':
+            self.info_msg = str(response)
 
-        if response.val.val is None:
+        if response.val is None:
             self.goal_msg = 'No goals.'
         else:
-            goals = response.val.val.fg
+            goals = response.val
             ngoals = len(goals)
             plural = '' if ngoals == 1 else 's'
             msg = ["{} subgoal{}\n".format(ngoals, plural)]
