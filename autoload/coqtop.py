@@ -126,7 +126,7 @@ class Coqtop(object):
         # TODO: is goals actually needed or is it just that messages are only
         # showing up after the original call?
         result = self.call(self.xml.add(cmd,
-                                        self.cur_state(),
+                                        self.state_id,
                                         encoding=encoding),
                            timeout=timeout)
         goals = self.goals(timeout=timeout)
@@ -178,7 +178,7 @@ class Coqtop(object):
             cmd = cmd.decode(encoding)
 
         return self.call(self.xml.query(cmd,
-                                        self.cur_state(),
+                                        self.state_id,
                                         encoding=encoding),
                          timeout=timeout)
 
@@ -294,10 +294,3 @@ class Coqtop(object):
     def running(self):
         """Check if Coqtop has already been started."""
         return self.coqtop is not None
-
-    # TODO: unnecessary?
-    def cur_state(self):
-        """Return the current state_id."""
-        if self.states == []:
-            return self.root_state
-        return self.state_id
