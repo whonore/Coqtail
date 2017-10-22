@@ -104,6 +104,8 @@ function! coqtail#InitPanels()
     setlocal filetype=coq-goals
     setlocal noswapfile
     setlocal bufhidden=hide
+    setlocal nocursorline
+    setlocal wrap
     let b:coq_buf = l:coq_buf  " Assumes buffer number won't change
     let l:goal_buf = bufnr('%')
     augroup coqtail#PanelCmd
@@ -117,6 +119,8 @@ function! coqtail#InitPanels()
     setlocal filetype=coq-infos
     setlocal noswapfile
     setlocal bufhidden=hide
+    setlocal nocursorline
+    setlocal wrap
     let b:coq_buf = l:coq_buf
     let l:info_buf = bufnr('%')
     augroup coqtail#PanelCmd

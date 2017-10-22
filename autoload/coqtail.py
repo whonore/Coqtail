@@ -423,18 +423,15 @@ class Coqtail(object):
         """Restore the last-displayed goals."""
         bufn = int(vim.eval('b:goal_buf'))
         goal_buf = vim.buffers[bufn]
-        del goal_buf[:]
 
-        goal_buf.append(self.goal_msg.split('\n'))
+        goal_buf[:] = self.goal_msg.split('\n')
 
     def show_info(self):
         """Display the info_msg buffer in the info panel."""
         bufn = int(vim.eval('b:info_buf'))
         info_buf = vim.buffers[bufn]
-        del info_buf[:]
 
-        lines = [line for line in self.info_msg.split('\n')]
-        info_buf.append(lines)
+        info_buf[:] = self.info_msg.split('\n')
 
     def clear_info(self):
         """Clear the info panel."""
