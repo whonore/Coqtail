@@ -73,6 +73,7 @@ OptionState = namedtuple('OptionState', ['sync', 'depr', 'name', 'value'])
 OptionValue = namedtuple('OptionValue', ['val'])
 
 StateId = namedtuple('StateId', ['id'])
+RouteId = namedtuple('RouteId', ['id'])
 Status = namedtuple('Status', ['path', 'proofname', 'allproofs', 'proofnum'])
 CoqInfo = namedtuple('CoqInfo', ['coq_version',
                                  'protocol_version',
@@ -81,7 +82,7 @@ CoqInfo = namedtuple('CoqInfo', ['coq_version',
 
 # All the Coqtop namedtuples
 namedtuples = (Option, Inl, Inr, Goal, Goals, Evar, OptionState, OptionValue,
-               StateId, Status, CoqInfo)
+               StateId, RouteId, Status, CoqInfo)
 
 # The error in case of a timeout
 TIMEOUT_ERR = Err('Coq timed out. You can change the timeout with '
@@ -136,10 +137,6 @@ class XmlInterfaceBase(object):
             cmd = cmd.replace(escape, unescape)
 
         return cmd
-
-
-class XmlInterface86(XmlInterfaceBase):
-    """The version 8.6.* XML interface."""
 
     # XML Parsing and Marshalling #
     def _to_response(self, xml):
@@ -227,6 +224,9 @@ class XmlInterface86(XmlInterfaceBase):
         elif tag == 'state_id':
             # <state_id val="int" />
             return StateId(int(xml.get('val')))
+        elif tag == 'route_id':
+            # <route_id val="int" />
+            return RouteId(int(xml.get('val')))
         elif tag == 'status':
             # <status>(list string) (option string) (list string) int</string>
             return Status(*map(self._to_value, xml))
@@ -270,8 +270,43 @@ class XmlInterface86(XmlInterfaceBase):
             return self._build_xml('union', 'in_r', val.val)
         elif isinstance(val, StateId):
             return self._build_xml('state_id', str(val.id))
+        elif isinstance(val, RouteId):
+            return self._build_xml('route_id', str(val.id))
         else:
             unexpected((), type(val))
+
+    def raw_response(self, data):
+        """Try to parse an XML response from Coqtop into an Ok or Err."""
+        val = None
+        msgs = []
+
+        try:
+            responses = ET.fromstring(b'<coqtoproot>' +
+                                      self._unescape(data) +
+                                      b'</coqtoproot>')
+        except ET.ParseError:
+            # If not all data has been read, the XML might not be well-formed
+            return None
+
+        # Wait for a 'value' node and store any 'message' nodes
+        for response in responses:
+            if response.tag == 'value':
+                val = self._to_response(response)
+            if response.tag == 'message':
+                msgs.append(self._to_value(response))
+            if response.tag == 'feedback':
+                for feedbk in response.findall('feedback_content'):
+                    if feedbk.get('val') == 'message':
+                        msgs.append(self._to_value(feedbk[0]))
+
+        if val is not None:
+            val.msg += '\n\n'.join(msgs)
+
+        return val
+
+
+class XmlInterface86(XmlInterfaceBase):
+    """The version 8.6.* XML interface."""
 
     # Coqtop Commands #
     def init(self, *args, **kwargs):
@@ -317,33 +352,21 @@ class XmlInterface86(XmlInterfaceBase):
         return ET.tostring(self._build_xml('call', 'Goal', ()),
                            kwargs.get('encoding', 'utf-8'))
 
-    def raw_response(self, data):
-        """Try to parse an XML response from Coqtop into an Ok or Err."""
-        val = None
-        msgs = []
 
-        try:
-            responses = ET.fromstring(b'<coqtoproot>' +
-                                      self._unescape(data) +
-                                      b'</coqtoproot>')
-        except ET.ParseError:
-            # If not all data has been read, the XML might not be well-formed
-            return None
+class XmlInterface87(XmlInterface86):
+    """The version 8.7.* XML interface."""
 
-        # Wait for a 'value' node and store any 'message' nodes
-        for response in responses:
-            if response.tag == 'value':
-                val = self._to_response(response)
-            if response.tag == 'message':
-                msgs.append(self._to_value(response))
-            if response.tag == 'feedback':
-                # TODO: handle feedback messages
-                pass
-
-        if val is not None:
-            val.msg += '\n\n'.join(msgs)
-
-        return val
+    # Coqtop Commands #
+    def query(self, cmd, state, *args, **kwargs):
+        """Create an XML string for the 'Query' command."""
+        # Args:
+        #   route_id - The routeId ?
+        #   string - The command to query
+        #   state_id - The current state_id
+        return ET.tostring(self._build_xml('call',
+                                           'Query',
+                                           (RouteId(0), (cmd, state))),
+                           kwargs.get('encoding', 'utf-8'))
 
 
 def XmlInterface(version):
@@ -356,5 +379,7 @@ def XmlInterface(version):
 
     if (8, 6, 0) <= versions < (8, 7, 0):
         return XmlInterface86()
+    elif (8, 7, 0) <= versions < (8, 8, 0):
+        return XmlInterface87()
     else:
         raise ValueError("Invalid version: {}".format(version))

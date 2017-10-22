@@ -360,7 +360,7 @@ function! coqtail#Start(...)
                 autocmd BufWinLeave <buffer> call coqtail#HidePanels()
                 autocmd BufWinEnter <buffer> call coqtail#OpenPanels()
             augroup end
-        catch /py/
+        catch /Failed to launch Coq/
             echoerr v:exception
             call coqtail#Stop()
         endtry
