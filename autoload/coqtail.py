@@ -105,10 +105,17 @@ class Coqtail(object):
     # Coqtop Interface #
     def start(self, version, *args):
         """Start a new coqtop instance."""
-        self.coqtop = CT.Coqtop(version)
-        if not self.coqtop.start(*args, timeout=get_timeout()):
-            print('Failed to launch Coq', file=sys.stderr)
-            raise vim.error('coq_start_fail')
+        success = False
+        errmsg = ['Failed to launch Coq']
+
+        try:
+            self.coqtop = CT.Coqtop(version)
+            success = self.coqtop.start(*args, timeout=get_timeout())
+        except ValueError as e:
+            errmsg.append(str(e))
+
+        if not success:
+            print('. '.join(errmsg), file=sys.stderr)
 
     def stop(self):
         """Stop coqtop and reset variables."""

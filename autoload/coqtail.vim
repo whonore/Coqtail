@@ -241,12 +241,15 @@ function! coqtail#Stop()
             Py coqtail.stop()
         catch
         finally
-            execute 'bdelete' . b:goal_buf
-            execute 'bdelete' . b:info_buf
+            try
+                execute 'bdelete' . b:goal_buf
+                execute 'bdelete' . b:info_buf
 
-            autocmd! coqtail#Autocmds * <buffer>
+                autocmd! coqtail#Autocmds * <buffer>
 
-            unlet b:goal_buf b:info_buf
+                unlet b:goal_buf b:info_buf
+            catch
+            endtry
         endtry
     endif
 endfunction
@@ -322,7 +325,9 @@ function! coqtail#Start(...)
 
         " Launch coqtop
         try
-            Py coqtail.start(vim.eval('b:version'), *vim.eval('map(copy(l:proj_args+a:000),"expand(v:val)")'))
+            Py coqtail.start(vim.eval('b:version'),
+            \                *vim.eval('map(copy(l:proj_args+a:000),'
+            \                          '"expand(v:val)")'))
 
             " Coqtail commands
 
@@ -355,7 +360,8 @@ function! coqtail#Start(...)
                 autocmd BufWinLeave <buffer> call coqtail#HidePanels()
                 autocmd BufWinEnter <buffer> call coqtail#OpenPanels()
             augroup end
-        catch /coq_start_fail/
+        catch /py/
+            echoerr v:exception
             call coqtail#Stop()
         endtry
     endif

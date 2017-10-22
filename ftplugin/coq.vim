@@ -4,11 +4,12 @@ let s:supported = [
 \]
 
 " Check that Coq version is supported
-" Assumes message is of the following form
-" (where the 2nd ._ is optional and the 2nd . can be 'pl'):
+" Assumes message is of the following form:
 " The Coq Proof Assistant, version _._._ (_ _)
+" The 2nd '._' is optional and the 2nd '.' can also be 'pl'. Other text, such
+" as '+beta_' will be stripped and ignored by str2nr()
 let s:version = system("coqtop --version | awk '/version/{printf \"%s\", $6}'")
-let s:versions = split(s:version, '\v(\.|pl)')
+let s:versions = map(split(s:version, '\v(\.|pl)'), 'str2nr(v:val)')
 
 " Pad missing version numbers with 0
 while len(s:versions) < 3

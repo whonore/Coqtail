@@ -11,6 +11,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import re
 import xml.etree.ElementTree as ET
 from collections import namedtuple
 try:
@@ -348,10 +349,12 @@ class XmlInterface86(XmlInterfaceBase):
 def XmlInterface(version):
     """Return the appropriate XmlInterface class for the given version."""
     versions = version.replace('pl', '.').split('.')
-    versions += [0] * (3 - len(versions))
 
-    if (8, 6, 0) <= tuple(map(int, versions)) < (8, 7, 0):
+    # Strip any trailing text (e.g. '+beta1')
+    versions = tuple(int(re.match('[0-9]+', v).group(0)) for v in versions)
+    versions += (0,) * (3 - len(versions))
+
+    if (8, 6, 0) <= versions < (8, 7, 0):
         return XmlInterface86()
     else:
-        raise ValueError("Invalid version {}"
-                         .format('.'.join(map(int, version))))
+        raise ValueError("Invalid version: {}".format(version))
