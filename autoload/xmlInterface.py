@@ -300,7 +300,11 @@ class XmlInterfaceBase(object):
                         msgs.append(self._to_value(feedbk[0]))
 
         if val is not None:
-            val.msg += '\n\n'.join(msgs)
+            # Use set() because error messages might have been duplicated by
+            # 'feedback' and 'value' tags
+            msgs.insert(0, val.msg)
+            val.msg = '\n\n'.join(set(msg.strip()
+                                      for msg in msgs if msg != ''))
 
         return val
 
