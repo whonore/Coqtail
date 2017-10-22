@@ -20,6 +20,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 Description: Provides classes and functions for managing goals and info panels
 and coqtop interfaces.
+TODO: handle cases where Coqtop dies
 """
 
 from __future__ import absolute_import
@@ -62,7 +63,16 @@ class Coqtail(object):
         self._reset()
 
     def _reset(self):
-        """Reset variables to initial state."""
+        """Reset variables to initial state.
+
+        saved_sync - The last vimbufsync BufferRevision object
+        endpoints - A stack of the end positions of the lines sent to Coqtop
+                    (grows to the right)
+        send_queue - A queue of the lines to send to Coqtop
+        error_at - The position of the last error
+        info_msg - The text to display in the info panel
+        goal_msg - The text to display in the goal panel
+        """
         self.saved_sync = None
         self.endpoints = []
         self.send_queue = deque([])
@@ -155,7 +165,7 @@ class Coqtail(object):
         else:
             (line, col) = (0, 0)
 
-        # Check if should rewind or advance.
+        # Check if should rewind or advance
         if cline < line or (cline == line and ccol < col):
             self.rewind_to(cline - 1, ccol)
         else:
@@ -215,7 +225,7 @@ class Coqtail(object):
             if res_msg != '':
                 locs = self.parse_locate(res_msg)
 
-                # Ask user to choose which definition to find.
+                # Ask user to choose which definition to find
                 if len(locs) == 1:
                     ltype, lfile, lname = locs[0]
                 else:
@@ -300,7 +310,7 @@ class Coqtail(object):
         if not self.check_coq():
             return
 
-        # Count the number of endpoints after the specified location.
+        # Count the number of endpoints after the specified location
         steps_too_far = sum(pos > (line, col) for pos in self.endpoints)
         self.rewind(steps_too_far)
 
@@ -756,62 +766,77 @@ def _hard_matcher(start, stop):
 bufmap = ddict(Coqtail)
 
 
-# Calls the corresponding method on the current buffer.
+# Call the corresponding method on the current buffer
 def sync(*args):
+    """Call sync() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].sync(*args)
 
 
 def start(*args):
+    """Call start() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].start(*args)
 
 
 def stop(*args):
+    """Call stop() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].stop(*args)
 
 
 def next(*args):
+    """Call next() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].next(*args)
 
 
 def rewind(*args):
+    """Call def () on current buffer's Coqtop."""
     bufmap[vim.current.buffer].rewind(*args)
 
 
 def to_cursor(*args):
+    """Call to_cursor() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].to_cursor(*args)
 
 
 def to_top(*args):
+    """Call to_top() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].to_top(*args)
 
 
 def query(*args):
+    """Call query() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].query(*args)
 
 
 def jump_to_end(*args):
+    """Call jump_to_end() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].jump_to_end(*args)
 
 
 def find_def(*args):
+    """Call find_def() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].find_def(*args)
 
 
 def hide_color(*args):
+    """Call hide_color() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].hide_color(*args)
 
 
 def reset_color(*args):
+    """Call reset_color() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].reset_color(*args)
 
 
 def restore_goal(*args):
+    """Call restore_goal() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].restore_goal(*args)
 
 
 def show_info(*args):
+    """Call show_info() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].show_info(*args)
 
 
 def splash(*args):
+    """Call splash() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].splash(*args)

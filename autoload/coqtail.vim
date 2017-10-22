@@ -53,8 +53,8 @@ Py if not vim.eval('s:current_dir') in sys.path:
 \    sys.path.append(vim.eval('s:current_dir'))
 Py import coqtail
 
-" Gets the word under the cursor using the special '<cword>' variable. First
-" adds some characters to the 'iskeyword' option to treat them as part of the
+" Get the word under the cursor using the special '<cword>' variable. First
+" add some characters to the 'iskeyword' option to treat them as part of the
 " current word.
 function! coqtail#GetCurWord()
     " Add '.' and ''' to definition of a keyword
@@ -133,7 +133,7 @@ function! coqtail#InitPanels()
     let g:counter += 1
 endfunction
 
-" Reopens goals and info panels and rehighlights.
+" Reopen goals and info panels and rehighlights.
 " TODO: loses highlighting when switching back from another window
 function! coqtail#OpenPanels()
     let l:coq_win = winnr()
@@ -153,7 +153,7 @@ function! coqtail#OpenPanels()
     Py coqtail.show_info()
 endfunction
 
-" Closes goal and info panels and clears highlighting.
+" Close goal and info panels and clears highlighting.
 function! coqtail#HidePanels()
     " If changing files from goal or info buf
     " N.B. Switching files from anywhere other than the 3 main windows may
@@ -251,8 +251,8 @@ function! coqtail#Stop()
     endif
 endfunction
 
-" Reads a CoqProject file and parses it into options that can be passed to
-" coqtop. dir_dif is tracks the relative location of the CoqProject file to the
+" Read a CoqProject file and parses it into options that can be passed to
+" coqtop. dir_dif tracks the relative location of the CoqProject file to the
 " current file.
 function! coqtail#ParseCoqProj(file, dir_dif)
     let l:proj_args = []
@@ -274,9 +274,9 @@ function! coqtail#ParseCoqProj(file, dir_dif)
     return split(join(l:proj_args))
 endfunction
 
-" Searches for a CoqProject file using 'g:coq_proj_file' starting in the
+" Search for a CoqProject file using 'g:coq_proj_file' starting in the
 " current directory and recursively trying parent directories until '/' is
-" reached. Returns a list of arguments to pass to coqtop.
+" reached. Return a list of arguments to pass to coqtop.
 function! coqtail#FindCoqProj()
     let l:cwd = ':p:h'
     let l:dir_dif = ['.']
@@ -304,7 +304,7 @@ function! coqtail#FindCoqProj()
     return l:proj_args
 endfunction
 
-" Initializes Python interface, commands, autocommands, and initializes goals
+" Initialize Python interface, commands, autocommands, and initialize goals
 " and info panels.
 function! coqtail#Start(...)
     " Highlighting for checked parts
@@ -348,7 +348,7 @@ function! coqtail#Start(...)
 
             " Autocmds to do some detection when editing an already checked
             " portion of the code, and to hide and restore the info and goal
-            " panels as needed.
+            " panels as needed
             augroup coqtail#Autocmds
                 autocmd! * <buffer>
                 autocmd InsertEnter <buffer> Py coqtail.sync()
