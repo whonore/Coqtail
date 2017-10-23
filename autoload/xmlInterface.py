@@ -107,6 +107,8 @@ class XmlInterfaceBase(object):
             'Inl': self._from_union, 'Inr': self._from_union
         }
 
+        self.launch_args = ['-ideslave']
+
     # XML Parsing and Marshalling #
     def _to_unit(self, xml):
         """XML: <unit />"""
@@ -341,6 +343,9 @@ class XmlInterface85(XmlInterfaceBase):
         self._from_value_funcs.update({
             'StateId': self._from_state_id
         })
+
+        self.launch_args += ['-main-channel', 'stdfds',
+                             '-async-proofs', 'on']
 
     # XML Parsing and Marshalling #
     def _to_goal(self, xml):

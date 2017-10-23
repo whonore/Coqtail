@@ -67,10 +67,7 @@ class Coqtop(object):
 
         timeout = kwargs.get('timeout', None)
 
-        options = ['coqtop',
-                   '-ideslave',
-                   '-main-channel', 'stdfds',
-                   '-async-proofs', 'on']
+        options = ['coqtop'] + self.xml.launch_args
         try:
             self.coqtop = subprocess.Popen(
                 options + list(args),
