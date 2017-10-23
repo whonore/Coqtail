@@ -150,12 +150,12 @@ class Coqtail(object):
         if steps < 1 or self.endpoints == []:
             return
 
-        response = self.coqtop.rewind(steps)
+        success = self.coqtop.rewind(steps)
 
-        if response.is_ok():
+        if success:
             self.endpoints = self.endpoints[:-steps]
         else:
-            unexpected(response, 'rewind()')
+            unexpected(success, 'rewind()')
 
         self.refresh()
 
@@ -198,9 +198,7 @@ class Coqtail(object):
         encoding = vim.eval('&encoding') or 'utf-8'
         message = ' '.join(args)
 
-        response = self.coqtop.query(message, encoding=encoding)
-
-        self.info_msg = str(response)
+        _, self.info_msg = self.coqtop.query(message, encoding=encoding)
 
         self.show_info()
 
@@ -224,11 +222,9 @@ class Coqtail(object):
         encoding = vim.eval('&encoding') or 'utf-8'
         message = "Locate {}.".format(target)
 
-        response = self.coqtop.query(message, encoding=encoding)
+        success, res_msg = self.coqtop.query(message, encoding=encoding)
 
-        if response.is_ok():
-            res_msg = str(response)
-
+        if success:
             if res_msg != '':
                 locs = self.parse_locate(res_msg)
 
@@ -269,7 +265,7 @@ class Coqtail(object):
                             except vim.error:
                                 pass
         else:
-            print(str(response))
+            print(res_msg)
 
     # Helpers #
     def send_until_fail(self):
@@ -284,19 +280,19 @@ class Coqtail(object):
             to_send = self.send_queue.popleft()
             message = _between(to_send['start'], to_send['stop'])
 
-            response = self.coqtop.advance(message,
-                                           encoding=encoding,
-                                           timeout=get_timeout())
+            success, msg, err_loc = self.coqtop.advance(message,
+                                                        encoding=encoding,
+                                                        timeout=get_timeout())
 
-            msgs.append(str(response))
-            if response.is_ok():
+            msgs.append(msg)
+            if success:
                 (line, col) = to_send['stop']
                 self.endpoints.append((line, col + 1))
             else:
                 self.send_queue.clear()
 
                 # Highlight error location
-                loc_s, loc_e = response.loc
+                loc_s, loc_e = err_loc
                 if loc_s == loc_e == -1:
                     self.error_at = (to_send['start'], to_send['stop'])
                     (sline, scol) = to_send['start']
@@ -329,12 +325,12 @@ class Coqtail(object):
         encoding = vim.eval('&encoding') or 'utf-8'
         message = 'Print LoadPath.'
 
-        response = self.coqtop.query(message,
-                                     encoding=encoding,
-                                     timeout=get_timeout())
+        success, msg = self.coqtop.query(message,
+                                         encoding=encoding,
+                                         timeout=get_timeout())
 
-        if response.is_ok():
-            paths = str(response).split()[2:]
+        if success:
+            paths = msg.split()[2:]
             logic = paths[::2]
             physic = paths[1::2]
 
@@ -389,19 +385,18 @@ class Coqtail(object):
 
     def show_goal(self):
         """Display the current goals."""
-        response = self.coqtop.goals(timeout=get_timeout())
+        success, msg, goals = self.coqtop.goals(timeout=get_timeout())
 
-        if not response.is_ok():
-            unexpected(response, 'show_goal()')
+        if not success:
+            unexpected(success, 'show_goal()')
             return
 
-        if str(response) != '':
-            self.info_msg = str(response)
+        if msg != '':
+            self.info_msg = msg
 
-        if response.val is None:
+        if goals is None:
             self.goal_msg = 'No goals.'
         else:
-            goals = response.val
             ngoals = len(goals)
             plural = '' if ngoals == 1 else 's'
             msg = ["{} subgoal{}\n".format(ngoals, plural)]
