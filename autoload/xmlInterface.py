@@ -30,10 +30,6 @@ class Ok(object):
         self.val = val
         self.msg = msg
 
-    def __str__(self):
-        """Return the message field."""
-        return self.msg
-
     @staticmethod
     def is_ok():
         """Check if this is a success response."""
@@ -48,10 +44,6 @@ class Err(object):
         self.msg = msg
         self.loc = loc
         self.timed_out = timed_out
-
-    def __str__(self):
-        """Return the message field."""
-        return self.msg
 
     @staticmethod
     def is_ok():
