@@ -130,7 +130,7 @@ class Coqtop(object):
 
         # Add the message from 'Add'
         if response.is_ok():
-            msgs = [response.val[1][1]]
+            msgs = [response.res_msg]
         else:
             msgs = []
 
@@ -144,11 +144,11 @@ class Coqtop(object):
         if not goals.is_ok():
             # Reset position so goals() will return the previous goals instead
             # of an error
-            self.call(self.xml.edit_at(self.state_id))
+            self.call(self.xml.edit_at(self.state_id, 1))
             return False, str(goals), goals.loc
 
         self.states.append(self.state_id)
-        self.state_id = response.val[0]
+        self.state_id = response.state_id
 
         # Coqtop refuses to show queries in a script so catch the error and
         # resend as a query
@@ -174,7 +174,8 @@ class Coqtop(object):
             self.state_id = self.states[-step]
             self.states = self.states[:-step]
 
-        return self.call(self.xml.edit_at(self.state_id)).is_ok()
+        response = self.call(self.xml.edit_at(self.state_id, step))
+        return response.is_ok(), response.extra_steps
 
     def query(self, cmd, encoding='utf-8', timeout=None):
         """Query Coqtop with 'cmd'."""
@@ -193,19 +194,20 @@ class Coqtop(object):
         """Get the current set of hypotheses and goals."""
         response = self.call(self.xml.goal(), timeout=timeout)
 
-        if response.is_ok():
-            if response.val.val is None:
-                response.val = None
-            else:
-                response.val = response.val.val.fg
-
         return response.is_ok(), str(response), response.val
 
     # Interacting with Coqtop #
-    def call(self, msg, timeout=None):
+    def call(self, cmdtype_msg, timeout=None):
         """Send 'msg' to the Coqtop process and wait for the response."""
         # Throw away any unread messages
         self.empty_out()
+
+        cmd, msg = cmdtype_msg
+
+        # 'msg' can be None if a command does not exist for a particular
+        # version and is being faked
+        if msg is None:
+            return self.xml.standardize(cmd, None)
 
         self.send_cmd(msg)
 
@@ -233,7 +235,7 @@ class Coqtop(object):
         if timed_out.is_set():
             response = TIMEOUT_ERR
 
-        return response
+        return self.xml.standardize(cmd, response)
 
     def timeout_thread(self, timeout, got_response, timed_out):
         """Wait on the 'got_response' Event for timeout seconds and set

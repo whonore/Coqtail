@@ -150,10 +150,10 @@ class Coqtail(object):
         if steps < 1 or self.endpoints == []:
             return
 
-        success = self.coqtop.rewind(steps)
+        success, extra_steps = self.coqtop.rewind(steps)
 
         if success:
-            self.endpoints = self.endpoints[:-steps]
+            self.endpoints = self.endpoints[:-(steps + extra_steps)]
         else:
             unexpected(success, 'rewind()')
 
@@ -325,12 +325,12 @@ class Coqtail(object):
         encoding = vim.eval('&encoding') or 'utf-8'
         message = 'Print LoadPath.'
 
-        success, msg = self.coqtop.query(message,
-                                         encoding=encoding,
-                                         timeout=get_timeout())
+        success, loadpath = self.coqtop.query(message,
+                                              encoding=encoding,
+                                              timeout=get_timeout())
 
         if success:
-            paths = msg.split()[2:]
+            paths = loadpath.split()[2:]
             logic = paths[::2]
             physic = paths[1::2]
 
