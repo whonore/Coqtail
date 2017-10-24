@@ -30,10 +30,6 @@ class Ok(object):
         self.val = val
         self.msg = msg
 
-    def __str__(self):
-        """Return the message field."""
-        return self.msg
-
     @staticmethod
     def is_ok():
         """Check if this is a success response."""
@@ -48,10 +44,6 @@ class Err(object):
         self.msg = msg
         self.loc = loc
         self.timed_out = timed_out
-
-    def __str__(self):
-        """Return the message field."""
-        return self.msg
 
     @staticmethod
     def is_ok():
@@ -84,6 +76,8 @@ class XmlInterfaceBase(object):
 
     def __init__(self):
         """Initialize maps for converting between XML and Python values."""
+        self.launch_args = ['-ideslave']
+
         self._to_value_funcs = {
             'unit': self._to_unit,
             'bool': self._to_bool,
@@ -96,8 +90,8 @@ class XmlInterfaceBase(object):
         }
 
         self._from_value_funcs = {
-            # Special case for tuple, must distinguish between 'unit' and 'pair' by
-            # checking for '()'
+            # Special case for tuple, must distinguish between 'unit' and
+            # 'pair' by checking for '()'
             'tuple': lambda v: self._from_pair(v) if v else self._from_unit(v),
             'bool': self._from_bool,
             'int': self._from_int,
@@ -106,6 +100,8 @@ class XmlInterfaceBase(object):
             'Option': self._from_option,
             'Inl': self._from_union, 'Inr': self._from_union
         }
+
+        self._standardize_funcs = {}
 
     # XML Parsing and Marshalling #
     def _to_unit(self, xml):
@@ -285,6 +281,14 @@ class XmlInterfaceBase(object):
 
         return val
 
+    def standardize(self, cmd, val):
+        """Put the information in 'val' into a version-independent form."""
+        # By default return unchanged
+        try:
+            return self._standardize_funcs[cmd](val)
+        except KeyError:
+            return val
+
     # Helpers #
     @staticmethod
     def _unescape(cmd):
@@ -302,6 +306,194 @@ class XmlInterfaceBase(object):
         return cmd
 
 
+class XmlInterface84(XmlInterfaceBase):
+    """The version 8.4.* XML interface."""
+
+    # Coqtop Types #
+    Goal = namedtuple('Goal', ['id', 'hyp', 'ccl'])
+    Goals = namedtuple('Goals', ['fg', 'bg'])
+    Evar = namedtuple('Evar', ['info'])
+
+    OptionState = namedtuple('OptionState', ['sync', 'depr', 'name', 'value'])
+    OptionValue = namedtuple('OptionValue', ['val'])
+
+    Status = namedtuple('Status',
+                        ['path', 'proofname', 'allproofs', 'proofnum'])
+    CoqInfo = namedtuple('CoqInfo', ['coq_version',
+                                     'protocol_version',
+                                     'release_data',
+                                     'compile_data'])
+
+    def __init__(self):
+        """Add to conversion maps."""
+        super(XmlInterface84, self).__init__()
+
+        self._to_value_funcs.update({
+            'goal': self._to_goal,
+            'goals': self._to_goals,
+            'evar': self._to_evar,
+            'option_state': self._to_option_state,
+            'option_value': self._to_option_value,
+            'status': self._to_status,
+            'coq_info': self._to_coq_info,
+            'message': self._to_message,
+            'feedback': self._to_feedback
+        })
+
+        self._standardize_funcs.update({
+            'Init': self._standardize_init,
+            'Add': self._standardize_add,
+            'Edit_at': self._standardize_edit_at,
+            'Query': self._standardize_query,
+            'Goal': self._standardize_goal
+        })
+
+    # XML Parsing and Marshalling #
+    def _to_goal(self, xml):
+        """<goal>string (list string) string</goal>"""
+        return self.Goal(*map(self._to_value, xml))
+
+    def _to_goals(self, xml):
+        """<goals>(list goal) (list goal)</goals>"""
+        return self.Goals(*map(self._to_value, xml))
+
+    def _to_evar(self, xml):
+        """<evar>string</evar>"""
+        return self.Evar(self._to_value(xml[0]))
+
+    def _to_option_state(self, xml):
+        """<option_state>bool bool string option_value</option_state>"""
+        return self.OptionState(*map(self._to_value, xml))
+
+    def _to_option_value(self, xml):
+        """<option_value>bool|option int|string|option string</option_value>"""
+        return self.OptionValue(self._to_value(xml[0]))
+
+    def _to_status(self, xml):
+        """<status>(list string) (option string) (list string) int</string>"""
+        return self.Status(*map(self._to_value, xml))
+
+    def _to_coq_info(self, xml):
+        """<coq_info>string string string string</coq_info>"""
+        return self.CoqInfo(*map(self._to_value, xml))
+
+    def _to_message(self, xml):
+        """<message>message_level string</message>"""
+        return self._to_value(xml[1])
+
+    def _to_feedback(self, xml):
+        """<feedback object="?" route="int">feedback_content</feedback>
+        <feedback_content val="errormsg">loc string</feedback_content>"""
+        content = xml[0]
+
+        if content.get('val') == 'errormsg':
+            return self._to_value(content[1])
+        else:
+            # TODO: maybe make use of this info?
+            print('feedback', ET.tostring(xml))
+            return ''
+
+    # Coqtop Commands #
+    def init(self, *args, **kwargs):
+        """Fake the 'Init' command."""
+        return ('Init', None)
+
+    def _standardize_init(self, val):
+        """Standardize the info returned by 'Init'."""
+        # Ret:
+        #   val : int - The current state id
+        return Ok(0)
+
+    def add(self, cmd, state, *args, **kwargs):
+        """Create an XML string for the 'interp' command."""
+        # Attrs:
+        #   bool - Verbose output
+        #   int - The current state id
+        # Args:
+        #   string - The command to evaluate
+        elt = ET.Element('call', {'val': 'interp',
+                                  'verbose': 'true',
+                                  'id': str(state)})
+        elt.text = cmd
+        return ('Add',
+                ET.tostring(elt,
+                            kwargs.get('encoding', 'utf-8')))
+
+    def _standardize_add(self, val):
+        """Standardize the info returned by 'Add'."""
+        # Ret:
+        #   res_msg : string - Message
+        #   state_id : string - The new state id
+        if val.is_ok():
+            val.res_msg = val.val
+            val.state_id = 0
+        return val
+
+    def edit_at(self, _, steps, *args, **kwargs):
+        """Create an XML string for the 'rewind' command."""
+        # Attrs:
+        #   int - The number of steps to rewind
+        elt = ET.Element('call', {'val': 'rewind',
+                                  'steps': str(steps)})
+        return ('Edit_at',
+                ET.tostring(elt,
+                            kwargs.get('encoding', 'utf-8')))
+
+    def _standardize_edit_at(self, val):
+        """Standardize the info returned by 'Edit_at'."""
+        # Ret:
+        #   extra_steps : int - How many extra steps were moved
+        if val.is_ok():
+            val.extra_steps = val.val
+        return val
+
+    def query(self, cmd, state, *args, **kwargs):
+        """Create an XML string for the 'interp' command."""
+        # Attrs:
+        #   raw - ?
+        #   bool - Verbose output
+        #   int - The current state id
+        # Args:
+        #   string - The query to evaluate
+        elt = ET.Element('call', {'val': 'interp',
+                                  'raw': 'true',
+                                  'verbose': 'true',
+                                  'id': str(state)})
+        elt.text = cmd
+        return ('Query',
+                ET.tostring(elt,
+                            kwargs.get('encoding', 'utf-8')))
+
+    def _standardize_query(self, val):
+        """Standardize the info returned by 'Query'."""
+        # Ret:
+        #   msg : string - Message
+        if val.is_ok():
+            val.msg = val.val
+        return val
+
+    def goal(self, *args, **kwargs):
+        """Create an XML string for the 'goal' command."""
+        # Args:
+        #   unit - Empty arg
+        return ('Goal',
+                ET.tostring(self._build_xml('call', 'goal', ()),
+                            kwargs.get('encoding', 'utf-8')))
+
+    def _standardize_goal(self, val):
+        """Standardize the info returned by 'Goal'."""
+        # Ret:
+        #   val : list Goal - A list of the current goals
+        if val.is_ok():
+            if val.val.val is None:
+                val.val = None
+            else:
+                val.val = val.val.val.fg
+        return val
+
+
+# The XML interface is different enough between 8.4 and > 8.4 that the
+# following interfaces will not inherit from XmlInterface84
 class XmlInterface85(XmlInterfaceBase):
     """The version 8.5.* XML interface."""
 
@@ -325,6 +517,9 @@ class XmlInterface85(XmlInterfaceBase):
         """Add to conversion maps."""
         super(XmlInterface85, self).__init__()
 
+        self.launch_args += ['-main-channel', 'stdfds',
+                             '-async-proofs', 'on']
+
         self._to_value_funcs.update({
             'goal': self._to_goal,
             'goals': self._to_goals,
@@ -340,6 +535,12 @@ class XmlInterface85(XmlInterfaceBase):
 
         self._from_value_funcs.update({
             'StateId': self._from_state_id
+        })
+
+        self._standardize_funcs.update({
+            'Add': self._standardize_add,
+            'Edit_at': self._standardize_edit_at,
+            'Goal': self._standardize_goal
         })
 
     # XML Parsing and Marshalling #
@@ -399,8 +600,9 @@ class XmlInterface85(XmlInterfaceBase):
         """Create an XML string for the 'Init' command."""
         # Args:
         #   option string - A Coq file to add to the LoadPath to do ?
-        return ET.tostring(self._build_xml('call', 'Init', self.Option(None)),
-                           kwargs.get('encoding', 'utf-8'))
+        return ('Init',
+                ET.tostring(self._build_xml('call', 'Init', self.Option(None)),
+                            kwargs.get('encoding', 'utf-8')))
 
     def add(self, cmd, state, *args, **kwargs):
         """Create an XML string for the 'Add' command."""
@@ -409,34 +611,67 @@ class XmlInterface85(XmlInterfaceBase):
         #   int - The editId ?
         #   state_id - The current state_id
         #   bool - Verbose output
-        return ET.tostring(self._build_xml('call',
-                                           'Add',
-                                           ((cmd, -1), (state, True))),
-                           kwargs.get('encoding', 'utf-8'))
+        return ('Add',
+                ET.tostring(self._build_xml('call',
+                                            'Add',
+                                            ((cmd, -1), (state, True))),
+                            kwargs.get('encoding', 'utf-8')))
+
+    def _standardize_add(self, val):
+        """Standardize the info returned by 'Add'."""
+        # Ret:
+        #   res_msg : string - Message
+        #   state_id : string - The new state id
+        if val.is_ok():
+            val.res_msg = val.val[1][1]
+            val.state_id = val.val[0]
+        return val
 
     def edit_at(self, state, *args, **kwargs):
         """Create an XML string for the 'Edit_at' command."""
         # Args:
         #   state_id - The state_id to move to
-        return ET.tostring(self._build_xml('call', 'Edit_at', state),
-                           kwargs.get('encoding', 'utf-8'))
+        return ('Edit_at',
+                ET.tostring(self._build_xml('call', 'Edit_at', state),
+                            kwargs.get('encoding', 'utf-8')))
+
+    def _standardize_edit_at(self, val):
+        """Standardize the info returned by 'Edit_at'."""
+        # Ret:
+        #   extra_steps : int - How many extra steps were moved
+        if val.is_ok():
+            val.extra_steps = 0
+        return val
 
     def query(self, cmd, state, *args, **kwargs):
         """Create an XML string for the 'Query' command."""
         # Args:
         #   string - The command to query
         #   state_id - The current state_id
-        return ET.tostring(self._build_xml('call',
-                                           'Query',
-                                           (cmd, state)),
-                           kwargs.get('encoding', 'utf-8'))
+        return ('Query',
+                ET.tostring(self._build_xml('call',
+                                            'Query',
+                                            (cmd, state)),
+                            kwargs.get('encoding', 'utf-8')))
 
     def goal(self, *args, **kwargs):
         """Create an XML string for the 'Goal' command."""
         # Args:
         #   unit - Empty arg
-        return ET.tostring(self._build_xml('call', 'Goal', ()),
-                           kwargs.get('encoding', 'utf-8'))
+        return ('Goal',
+                ET.tostring(self._build_xml('call', 'Goal', ()),
+                            kwargs.get('encoding', 'utf-8')))
+
+    def _standardize_goal(self, val):
+        """Standardize the info returned by 'Goal'."""
+        # Ret:
+        #   val : list Goal - A list of the current goals
+        if val.is_ok():
+            if val.val.val is None:
+                val.val = None
+            else:
+                val.val = val.val.val.fg
+        return val
 
 
 class XmlInterface86(XmlInterface85):
@@ -504,10 +739,11 @@ class XmlInterface87(XmlInterface86):
         #   route_id - The routeId ?
         #   string - The command to query
         #   state_id - The current state_id
-        return ET.tostring(self._build_xml('call',
-                                           'Query',
-                                           (self.RouteId(0), (cmd, state))),
-                           kwargs.get('encoding', 'utf-8'))
+        return ('Query',
+                ET.tostring(self._build_xml('call',
+                                            'Query',
+                                            (self.RouteId(0), (cmd, state))),
+                            kwargs.get('encoding', 'utf-8')))
 
 
 def XmlInterface(version):
@@ -518,9 +754,11 @@ def XmlInterface(version):
     versions = tuple(int(re.match('[0-9]+', v).group(0)) for v in versions)
     versions += (0,) * (3 - len(versions))
 
-    if (8, 5, 0) <= versions < (8, 6, 0):
+    if (8, 4, 0) <= versions < (8, 5, 0):
+        return XmlInterface84()
+    elif (8, 5, 0) <= versions < (8, 6, 0):
         return XmlInterface85()
-    if (8, 6, 0) <= versions < (8, 7, 0):
+    elif (8, 6, 0) <= versions < (8, 7, 0):
         return XmlInterface86()
     elif (8, 7, 0) <= versions < (8, 8, 0):
         return XmlInterface87()

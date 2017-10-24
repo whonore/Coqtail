@@ -67,10 +67,7 @@ class Coqtop(object):
 
         timeout = kwargs.get('timeout', None)
 
-        options = ['coqtop',
-                   '-ideslave',
-                   '-main-channel', 'stdfds',
-                   '-async-proofs', 'on']
+        options = ['coqtop'] + self.xml.launch_args
         try:
             self.coqtop = subprocess.Popen(
                 options + list(args),
@@ -86,12 +83,12 @@ class Coqtop(object):
                 read_thread.start()
 
             # Initialize Coqtop
-            result = self.call(self.xml.init(), timeout=timeout)
-            if not result.is_ok():
+            response = self.call(self.xml.init(), timeout=timeout)
+            if not response.is_ok():
                 return False
 
-            self.root_state = result.val
-            self.state_id = result.val
+            self.root_state = response.val
+            self.state_id = response.val
 
             return True
         except OSError:
@@ -125,40 +122,48 @@ class Coqtop(object):
         # error messages only show up there
         # TODO: is goals actually needed or is it just that messages are only
         # showing up after the original call?
-        result = self.call(self.xml.add(cmd,
-                                        self.state_id,
-                                        encoding=encoding),
-                           timeout=timeout)
-        goals = self.goals(timeout=timeout)
+        response = self.call(self.xml.add(cmd,
+                                          self.state_id,
+                                          encoding=encoding),
+                             timeout=timeout)
+        goals = self.call(self.xml.goal(), timeout=timeout)
 
         # Add the message from 'Add'
-        if result.is_ok():
-            msgs = [result.val[1][1]]
+        if response.is_ok():
+            msgs = [response.res_msg]
         else:
             msgs = []
 
         # Add any error messages
-        msgs += [str(res) for res in (result, goals)]
-        result.msg = goals.msg = '\n\n'.join(msg for msg in msgs if msg != '')
+        msgs += [res.msg for res in (response, goals)]
+        response.msg = goals.msg = '\n\n'.join(msg for msg in msgs if msg != '')
 
-        if not result.is_ok():
-            return result
+        if not response.is_ok():
+            return False, response.msg, response.loc
 
         if not goals.is_ok():
             # Reset position so goals() will return the previous goals instead
             # of an error
-            self.call(self.xml.edit_at(self.state_id))
-            return goals
+            self.call(self.xml.edit_at(self.state_id, 1))
+            return False, goals.msg, goals.loc
 
         self.states.append(self.state_id)
-        self.state_id = result.val[0]
+        self.state_id = response.state_id
 
         # Coqtop refuses to show queries in a script so catch the error and
         # resend as a query
-        if 'Query commands should not' in str(result):
-            return self.query(cmd, encoding=encoding, timeout=timeout)
+        if 'Query commands should not' in response.msg:
+            query = self.call(self.xml.query(cmd,
+                                             self.state_id,
+                                             encoding=encoding),
+                              timeout=timeout)
 
-        return result
+            if query.is_ok():
+                return True, query.msg, None
+            else:
+                return False, query.msg, query.loc
+
+        return True, response.msg, None
 
     def rewind(self, step=1):
         """Go back 'step' states."""
@@ -169,7 +174,8 @@ class Coqtop(object):
             self.state_id = self.states[-step]
             self.states = self.states[:-step]
 
-        return self.call(self.xml.edit_at(self.state_id))
+        response = self.call(self.xml.edit_at(self.state_id, step))
+        return response.is_ok(), response.extra_steps
 
     def query(self, cmd, encoding='utf-8', timeout=None):
         """Query Coqtop with 'cmd'."""
@@ -177,28 +183,31 @@ class Coqtop(object):
         if isinstance(cmd, bytes):
             cmd = cmd.decode(encoding)
 
-        return self.call(self.xml.query(cmd,
-                                        self.state_id,
-                                        encoding=encoding),
-                         timeout=timeout)
+        response = self.call(self.xml.query(cmd,
+                                            self.state_id,
+                                            encoding=encoding),
+                             timeout=timeout)
+
+        return response.is_ok(), response.msg
 
     def goals(self, timeout=None):
         """Get the current set of hypotheses and goals."""
         response = self.call(self.xml.goal(), timeout=timeout)
 
-        if response.is_ok():
-            if response.val.val is None:
-                response.val = None
-            else:
-                response.val = response.val.val.fg
-
-        return response
+        return response.is_ok(), response.msg, response.val
 
     # Interacting with Coqtop #
-    def call(self, msg, timeout=None):
+    def call(self, cmdtype_msg, timeout=None):
         """Send 'msg' to the Coqtop process and wait for the response."""
         # Throw away any unread messages
         self.empty_out()
+
+        cmd, msg = cmdtype_msg
+
+        # 'msg' can be None if a command does not exist for a particular
+        # version and is being faked
+        if msg is None:
+            return self.xml.standardize(cmd, None)
 
         self.send_cmd(msg)
 
@@ -226,7 +235,7 @@ class Coqtop(object):
         if timed_out.is_set():
             response = TIMEOUT_ERR
 
-        return response
+        return self.xml.standardize(cmd, response)
 
     def timeout_thread(self, timeout, got_response, timed_out):
         """Wait on the 'got_response' Event for timeout seconds and set
