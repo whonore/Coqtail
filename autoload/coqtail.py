@@ -342,7 +342,7 @@ class Coqtail(object):
         locs = []
         for loc in msg.split('\n'):
             # Skip extra information included in Locate response
-            if loc.strip().startswith('('):
+            if loc.strip().startswith('(') or loc == '':
                 continue
 
             loc = loc.split()
