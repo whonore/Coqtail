@@ -390,7 +390,6 @@ class XmlInterface84(XmlInterfaceBase):
             return self._to_value(content[1])
         else:
             # TODO: maybe make use of this info?
-            print('feedback', ET.tostring(xml))
             return ''
 
     # Coqtop Commands #
