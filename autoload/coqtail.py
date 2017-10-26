@@ -20,7 +20,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 Description: Provides classes and functions for managing goals and info panels
 and coqtop interfaces.
-TODO: handle cases where Coqtop dies
 """
 
 from __future__ import absolute_import
@@ -94,14 +93,6 @@ class Coqtail(object):
 
         self.saved_sync = curr_sync
 
-    def check_coq(self):
-        """Check if coqtop is running."""
-        if not self.coqtop.running():
-            print('Coq is not running.', file=sys.stderr)
-            return False
-
-        return True
-
     # Coqtop Interface #
     def start(self, version, *args):
         """Start a new coqtop instance."""
@@ -121,12 +112,10 @@ class Coqtail(object):
         """Stop coqtop and reset variables."""
         self.coqtop.stop()
         self._reset()
+        self.coqtop = None
 
     def next(self):
         """Advance Coq by one step."""
-        if not self.check_coq():
-            return
-
         self.sync()
 
         # Get the location of the last '.'
@@ -144,13 +133,14 @@ class Coqtail(object):
 
     def rewind(self, steps=1):
         """Rewind Coq by 'steps' steps."""
-        if not self.check_coq():
-            return
-
         if steps < 1 or self.endpoints == []:
             return
 
-        success, extra_steps = self.coqtop.rewind(steps)
+        try:
+            success, extra_steps = self.coqtop.rewind(steps)
+        except CT.CoqtopError as e:
+            fail(e)
+            return
 
         if success:
             self.endpoints = self.endpoints[:-(steps + extra_steps)]
@@ -161,9 +151,6 @@ class Coqtail(object):
 
     def to_cursor(self):
         """Advance Coq to the cursor position."""
-        if not self.check_coq():
-            return
-
         self.sync()
 
         (cline, ccol) = vim.current.window.cursor
@@ -190,15 +177,16 @@ class Coqtail(object):
 
     def query(self, *args):
         """Forward Coq query to coqtop interface."""
-        if not self.check_coq():
-            return
-
         self.clear_info()
 
         encoding = vim.eval('&encoding') or 'utf-8'
         message = ' '.join(args)
 
-        _, self.info_msg = self.coqtop.query(message, encoding=encoding)
+        try:
+            _, self.info_msg = self.coqtop.query(message, encoding=encoding)
+        except CT.CoqtopError as e:
+            fail(e)
+            return
 
         self.show_info()
 
@@ -214,15 +202,16 @@ class Coqtail(object):
 
     def find_def(self, target):
         """Locate where the current word is defined and jump to it."""
-        if not self.check_coq():
-            return
-
         # 'Locate target' returns the kind of object (Constant, Inductive, etc)
         # and the logical path to where it is defined
         encoding = vim.eval('&encoding') or 'utf-8'
         message = "Locate {}.".format(target)
 
-        success, res_msg = self.coqtop.query(message, encoding=encoding)
+        try:
+            success, res_msg = self.coqtop.query(message, encoding=encoding)
+        except CT.CoqtopError as e:
+            fail(e)
+            return
 
         if success:
             if res_msg != '':
@@ -280,9 +269,13 @@ class Coqtail(object):
             to_send = self.send_queue.popleft()
             message = _between(to_send['start'], to_send['stop'])
 
-            success, msg, err_loc = self.coqtop.advance(message,
-                                                        encoding=encoding,
-                                                        timeout=get_timeout())
+            try:
+                success, msg, err_loc = self.coqtop.advance(message,
+                                                            encoding=encoding,
+                                                            timeout=get_timeout())
+            except CT.CoqtopError as e:
+                fail(e)
+                return
 
             msgs.append(msg)
             if success:
@@ -310,9 +303,6 @@ class Coqtail(object):
 
     def rewind_to(self, line, col):
         """Rewind to a specific location."""
-        if not self.check_coq():
-            return
-
         # Count the number of endpoints after the specified location
         steps_too_far = sum(pos > (line, col) for pos in self.endpoints)
         self.rewind(steps_too_far)
@@ -325,9 +315,13 @@ class Coqtail(object):
         encoding = vim.eval('&encoding') or 'utf-8'
         message = 'Print LoadPath.'
 
-        success, loadpath = self.coqtop.query(message,
-                                              encoding=encoding,
-                                              timeout=get_timeout())
+        try:
+            success, loadpath = self.coqtop.query(message,
+                                                  encoding=encoding,
+                                                  timeout=get_timeout())
+        except CT.CoqtopError as e:
+            fail(e)
+            return
 
         if success:
             paths = loadpath.split()[2:]
@@ -385,7 +379,11 @@ class Coqtail(object):
 
     def show_goal(self):
         """Display the current goals."""
-        success, msg, goals = self.coqtop.goals(timeout=get_timeout())
+        try:
+            success, msg, goals = self.coqtop.goals(timeout=get_timeout())
+        except CT.CoqtopError as e:
+            fail(e)
+            return
 
         if not success:
             unexpected(success, 'show_goal()')

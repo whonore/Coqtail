@@ -39,6 +39,11 @@ except ImportError:
 from xmlInterface import XmlInterface, TIMEOUT_ERR
 
 
+class CoqtopError(Exception):
+    """An exception for when Coqtop stops unexpectedly."""
+    pass
+
+
 class Coqtop(object):
     """Provide an interface to the background Coqtop process."""
 
@@ -62,8 +67,7 @@ class Coqtop(object):
     # Coqtop Interface #
     def start(self, *args, **kwargs):
         """Launch the Coqtop process."""
-        if self.running():
-            self.stop()
+        assert self.coqtop is None
 
         timeout = kwargs.get('timeout', None)
 
@@ -77,7 +81,7 @@ class Coqtop(object):
                 bufsize=0)
 
             # Spawn threads to monitor Coqtop's stdout and stderr
-            for f in (self.capture_out, self.capture_err):
+            for f in (self.capture_out, self.capture_err, self.capture_dead):
                 read_thread = threading.Thread(target=f)
                 read_thread.daemon = True
                 read_thread.start()
@@ -96,18 +100,19 @@ class Coqtop(object):
 
     def stop(self):
         """End the Coqtop process."""
-        if self.running():
+        if self.coqtop is not None:
             try:
                 # Try to terminate Coqtop cleanly
                 # TODO: use Quit call
                 self.coqtop.terminate()
                 self.coqtop.communicate()
-            except OSError:
+            except (OSError, ValueError):
                 try:
                     # Force Coqtop to stop
                     self.coqtop.kill()
-                except Exception:
+                except OSError:
                     pass
+
             self.coqtop = None
 
     def advance(self, cmd, encoding='utf-8', timeout=None):
@@ -199,6 +204,10 @@ class Coqtop(object):
     # Interacting with Coqtop #
     def call(self, cmdtype_msg, timeout=None):
         """Send 'msg' to the Coqtop process and wait for the response."""
+        # Check if Coqtop has stopped
+        if not self.running():
+            raise CoqtopError('Coqtop is not running.')
+
         # Throw away any unread messages
         self.empty_out()
 
@@ -294,6 +303,12 @@ class Coqtop(object):
                 # Coqtop died
                 return
 
+    def capture_dead(self):
+        """Continually check if Coqtop has died."""
+        while self.running():
+            pass
+        self.stop()
+
     def send_cmd(self, cmd):
         """Write to Coqtop's stdin."""
         self.coqtop.stdin.write(cmd)
@@ -302,4 +317,4 @@ class Coqtop(object):
     # Current State #
     def running(self):
         """Check if Coqtop has already been started."""
-        return self.coqtop is not None
+        return self.coqtop is not None and self.coqtop.poll() is None

@@ -241,19 +241,40 @@ function! coqtail#Stop()
     if b:coq_running == 1
         let b:coq_running = 0
 
+        " Stop Coqtop
         try
             Py coqtail.stop()
         catch
-        finally
-            try
-                execute 'bdelete' . b:goal_buf
-                execute 'bdelete' . b:info_buf
+        endtry
 
-                autocmd! coqtail#Autocmds * <buffer>
+        " Clean up goal and info buffers
+        try
+            execute 'bdelete' . b:goal_buf
+            execute 'bdelete' . b:info_buf
 
-                unlet b:goal_buf b:info_buf
-            catch
-            endtry
+            unlet b:goal_buf b:info_buf
+        catch
+        endtry
+
+        " Clean up autocmds
+        try
+            autocmd! coqtail#Autocmds * <buffer>
+        catch
+        endtry
+
+        " Unset Coqtail commands
+        try
+            delcommand CoqStop
+            delcommand CoqNext
+            delcommand CoqUndo
+            delcommand CoqToCursor
+            delcommand CoqToTop
+            delcommand Coq
+            delcommand JumpToEnd
+            delcommand FindDef
+
+            command! -buffer -nargs=* Coq echoerr 'Coq is not running.'
+        catch
         endtry
     endif
 endfunction
