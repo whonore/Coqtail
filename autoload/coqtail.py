@@ -160,8 +160,8 @@ class Coqtail(object):
             (line, col) = (0, 0)
 
         # Check if should rewind or advance
-        if cline < line or (cline == line and ccol < col):
-            self.rewind_to(cline - 1, ccol)
+        if cline - 1 < line or (cline - 1 == line and ccol < col):
+            self.rewind_to(cline - 1, ccol + 1)
         else:
             to_send = _get_message_range((line, col))
             while to_send is not None and to_send['stop'] <= (cline - 1, ccol):
