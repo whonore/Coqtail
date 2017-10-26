@@ -123,41 +123,34 @@ class Coqtop(object):
         if isinstance(cmd, bytes):
             cmd = cmd.decode(encoding)
 
-        # In addition to sending 'cmd', also check goals because sometimes
-        # error messages only show up there
-        # TODO: is goals actually needed or is it just that messages are only
-        # showing up after the original call?
         response = self.call(self.xml.add(cmd,
                                           self.state_id,
                                           encoding=encoding),
                              timeout=timeout)
-        goals = self.call(self.xml.goal(), timeout=timeout)
-
-        # Add the message from 'Add'
-        if response.is_ok():
-            msgs = [response.res_msg]
-        else:
-            msgs = []
-
-        # Add any error messages
-        msgs += [res.msg for res in (response, goals)]
-        response.msg = goals.msg = '\n\n'.join(msg for msg in msgs if msg != '')
 
         if not response.is_ok():
             return False, response.msg, response.loc
 
-        if not goals.is_ok():
-            # Reset position so goals() will return the previous goals instead
-            # of an error
+        # In addition to sending 'cmd', also check status in order to force it
+        # to be evaluated
+        status = self.call(self.xml.status(encoding=encoding), timeout=timeout)
+
+        # Combine messages
+        msgs = '\n\n'.join(msg
+                           for msg in (response.msg, response.res_msg, status.msg)
+                           if msg != '')
+
+        if not status.is_ok():
+            # Reset state id to before the error
             self.call(self.xml.edit_at(self.state_id, 1))
-            return False, goals.msg, goals.loc
+            return False, msgs, status.loc
 
         self.states.append(self.state_id)
         self.state_id = response.state_id
 
         # Coqtop refuses to show queries in a script so catch the error and
         # resend as a query
-        if 'Query commands should not' in response.msg:
+        if 'Query commands should not' in msgs:
             query = self.call(self.xml.query(cmd,
                                              self.state_id,
                                              encoding=encoding),
@@ -168,7 +161,7 @@ class Coqtop(object):
             else:
                 return False, query.msg, query.loc
 
-        return True, response.msg, None
+        return True, msgs, None
 
     def rewind(self, step=1):
         """Go back 'step' states."""

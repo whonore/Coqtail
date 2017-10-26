@@ -318,7 +318,8 @@ class XmlInterface84(XmlInterfaceBase):
     OptionValue = namedtuple('OptionValue', ['val'])
 
     Status = namedtuple('Status',
-                        ['path', 'proofname', 'allproofs', 'proofnum'])
+                        ['path', 'proofname', 'allproofs', 'statenum',
+                         'proofnum'])
     CoqInfo = namedtuple('CoqInfo', ['coq_version',
                                      'protocol_version',
                                      'release_data',
@@ -490,6 +491,14 @@ class XmlInterface84(XmlInterfaceBase):
             else:
                 val.val = val.val.val.fg
         return val
+
+    def status(self, *args, **kwargs):
+        """Create an XML string for the 'status' command."""
+        # Args:
+        #   unit - Empty arg
+        return ('Status',
+                ET.tostring(self._build_xml('call', 'status', ()),
+                            kwargs.get('encoding', 'utf-8')))
 
 
 # The XML interface is different enough between 8.4 and > 8.4 that the
@@ -673,6 +682,14 @@ class XmlInterface85(XmlInterfaceBase):
             else:
                 val.val = val.val.val.fg
         return val
+
+    def status(self, *args, **kwargs):
+        """Create an XML string for the 'Status' command."""
+        # Args:
+        #   bool - Force all pending evaluations
+        return ('Status',
+                ET.tostring(self._build_xml('call', 'Status', True),
+                            kwargs.get('encoding', 'utf-8')))
 
 
 class XmlInterface86(XmlInterface85):
