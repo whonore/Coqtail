@@ -383,7 +383,8 @@ class XmlInterface84(XmlInterfaceBase):
 
     def _to_feedback(self, xml):
         """<feedback object="?" route="int">feedback_content</feedback>
-        <feedback_content val="errormsg">loc string</feedback_content>"""
+        <feedback_content val="errormsg">loc string</feedback_content>
+        """
         content = xml[0]
 
         if content.get('val') == 'errormsg':
@@ -585,7 +586,8 @@ class XmlInterface85(XmlInterfaceBase):
 
     def _to_feedback(self, xml):
         """<feedback object="?" route="int">feedback_content</feedback>
-        <feedback_content val="errormsg">loc string</feedback_content>"""
+        <feedback_content val="errormsg">loc string</feedback_content>
+        """
         content = xml[0]
 
         if content.get('val') == 'errormsg':
@@ -694,7 +696,8 @@ class XmlInterface86(XmlInterface85):
     # Overrides _to_feedback() from 8.5
     def _to_feedback(self, xml):
         """<feedback object="?" route="int">state_id feedback_content</feedback>
-        <feedback_content val="message">message</feedback_content>"""
+        <feedback_content val="message">message</feedback_content>
+        """
         content = xml[1]
 
         if content.get('val') == 'message':
