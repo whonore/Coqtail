@@ -194,6 +194,16 @@ class Coqtop(object):
 
         return response.is_ok(), response.msg, response.val
 
+    def mk_cases(self, ty, encoding='utf-8', timeout=None):
+        """Return cases for each constructor of 'ty'."""
+        response = self.call(self.xml.mk_cases(ty, encoding=encoding),
+                             timeout=timeout)
+
+        if response.is_ok():
+            return True, response.val
+        else:
+            return False, response.msg
+
     # Interacting with Coqtop #
     def call(self, cmdtype_msg, timeout=None):
         """Send 'msg' to the Coqtop process and wait for the response."""

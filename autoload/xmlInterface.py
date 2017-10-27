@@ -500,6 +500,16 @@ class XmlInterface84(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'status', ()),
                             kwargs.get('encoding', 'utf-8')))
 
+    def mk_cases(self, ty, *args, **kwargs):
+        """Create an XML string for the 'MkCases' command."""
+        # Args:
+        #   str - The inductive type to make cases for
+        elt = ET.Element('call', {'val': 'mkcases'})
+        elt.text = ty
+        return ('MkCases',
+                ET.tostring(elt,
+                            kwargs.get('encoding', 'utf-8')))
+
 
 # The XML interface is different enough between 8.4 and > 8.4 that the
 # following interfaces will not inherit from XmlInterface84
@@ -689,6 +699,14 @@ class XmlInterface85(XmlInterfaceBase):
         #   bool - Force all pending evaluations
         return ('Status',
                 ET.tostring(self._build_xml('call', 'Status', True),
+                            kwargs.get('encoding', 'utf-8')))
+
+    def mk_cases(self, ty, *args, **kwargs):
+        """Create an XML string for the 'MkCases' command."""
+        # Args:
+        #   str - The inductive type to make cases for
+        return ('MkCases',
+                ET.tostring(self._build_xml('call', 'MkCases', ty),
                             kwargs.get('encoding', 'utf-8')))
 
 

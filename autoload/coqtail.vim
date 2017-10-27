@@ -231,6 +231,9 @@ function! coqtail#Mapping()
 
     map <silent> <leader>cG :JumpToEnd<CR>
 
+    map <silent> <leader>cm :MakeMatch <C-r>=input('Inductive type: ')<CR><CR>
+    imap <silent> <leader>cm <C-\><C-o>:MakeMatch <C-r>=input('Inductive type: ')<CR><CR>
+
     map <silent> <leader>ct :call coqtail#SetTimeout()<CR>
 
     call coqtail#QueryMapping()
@@ -272,6 +275,7 @@ function! coqtail#Stop()
             delcommand Coq
             delcommand JumpToEnd
             delcommand FindDef
+            delcommand MakeMatch
 
             command! -buffer -nargs=* Coq echoerr 'Coq is not running.'
         catch
@@ -371,6 +375,9 @@ function! coqtail#Start(...)
             " Move cursor
             command! -buffer JumpToEnd Py coqtail.jump_to_end()
             command! -buffer -nargs=1 FindDef Py coqtail.find_def(<f-args>)
+
+            " Insert match template
+            command! -buffer -nargs=1 MakeMatch Py coqtail.make_match(<f-args>)
 
             " Initialize goals and info panels
             call coqtail#InitPanels()

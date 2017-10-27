@@ -36,6 +36,8 @@ Coqtail provides the following commands:
 - JumpToEnd - Moves the cursor to the end of the checked region
 - FindDef - Searches the LoadPath for the definition of the word under the
   cursor and opens it in another file if possible
+- MakeMatch - Insert a 'match' template for a given Inductive type at the
+  cursor location
 
 Coqtail does not set any mappings by default but provides some in the function
 `coqtail#Mapping()`, which could be called in your .vimrc.

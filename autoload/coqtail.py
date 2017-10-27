@@ -256,6 +256,34 @@ class Coqtail(object):
         else:
             print(res_msg)
 
+    def make_match(self, ty):
+        """Create a "match" statement template for the given inductive type."""
+        encoding = vim.eval('&encoding') or 'utf-8'
+
+        try:
+            success, msg = self.coqtop.mk_cases(ty, encoding=encoding)
+        except CT.CoqtopError as e:
+            fail(e)
+            return
+
+        match = ['match _ with']
+        if success:
+            for con in msg:
+                match.append("| {} => _".format(' '.join(con)))
+            match.append('end')
+
+            # Decide whether to insert here or on new line
+            if vim.current.line.strip() == '':
+                mode = 'i'
+            else:
+                mode = 'o'
+
+            # Insert text and indent
+            vim.command("normal {}{}".format(mode, '\n'.join(match)))
+            vim.command("normal ={}k".format(len(match) - 1))
+        else:
+            print("Cannot make cases for {}".format(ty), file=sys.stderr)
+
     # Helpers #
     def send_until_fail(self):
         """Send all chunks in 'send_queue' until an error is encountered."""
@@ -812,6 +840,11 @@ def jump_to_end(*args):
 def find_def(*args):
     """Call find_def() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].find_def(*args)
+
+
+def make_match(*args):
+    """Call make_match() on current buffer's Coqtop."""
+    bufmap[vim.current.buffer].make_match(*args)
 
 
 def hide_color(*args):
