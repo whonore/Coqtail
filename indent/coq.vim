@@ -96,7 +96,7 @@ let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\
         return ind
 
         " start of proof
-      elseif previousline =~ '^\s*Proof\.$'
+      elseif previousline =~ '^\s*\(Proof\|\(Next Obligation\|Obligation \d\+\)\( of [^.]\+\)\?\)\.$'
         let s:inside_proof = 1
         return ind + &sw
 
