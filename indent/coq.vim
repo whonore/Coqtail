@@ -126,35 +126,49 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
 
         " bullet in proof
       elseif currentline =~ '^\s*[-+*]' || previousline =~ '^\s*[-+*]'
-        if currentline =~ '^\s*[-+*]'
-          let bullet = matchstr(currentline, '[-+*]\+')
-          let proof_start = search(s:proofstart, 'bWn')
+        let proof_start = search(s:proofstart, 'bWn')
 
-          if proof_start != 0
-            " In proof
-            " Find previous bullet of the same length
-            let prev_bullet = search('\M^\s\*' . bullet . bullet[0] . '\@!', 'bWnz', proof_start)
+        if proof_start != 0
+          " In proof
 
-            " If no previous ones to match, fall through and indent using another rule
-            if prev_bullet != 0
-              return indent(prev_bullet)
-            endif
-          else
-            return ind
+          if currentline =~ '^\s*[-+*]'
+            let bullet = matchstr(currentline, '[-+*]\+')
+
+            while 1
+              " Find previous bullet of the same length
+              let prev_bullet = search('\M^\s\*' . bullet . bullet[0] . '\@!', 'bWz', proof_start)
+
+              " If no previous ones to match, fall through and indent using another rule
+              if prev_bullet != 0
+                " Check for intervening unclosed '{' or '}'
+                let brack_open = search('{', 'W', v:lnum)
+
+                if brack_open == 0 || searchpair('{', '', '}', 'Wn', '', v:lnum) > 0
+                  " No '{' or it is matched
+                  call cursor(l:lnum, 1)
+                  let brack_close = search('}', 'bW', prev_bullet)
+
+                  if brack_close == 0 || searchpair('{', '', '}', 'bWn', '', prev_bullet) > 0
+                    " No '}'
+                    return indent(prev_bullet)
+                  endif
+                  " else '}', but no matching '{', look for another bullet
+                endif
+
+                " Restore position
+                call cursor(prev_bullet, 1)
+              else
+                break
+              endif
+            endwhile
           endif
-        endif
 
-        " after a bullet in proof
-        if previousline =~ '^\s*[-+*]'
-          let bullet = matchstr(previousline, '[-+*]\+')
-          let proof_start = search(s:proofstart, 'bWn')
+          " after a bullet in proof
+          if previousline =~ '^\s*[-+*]'
+            let bullet = matchstr(previousline, '[-+*]\+')
 
-          if proof_start != 0
-            " In proof
             return ind + len(bullet) + 1
           endif
-
-          return ind
         endif
 
         return ind
