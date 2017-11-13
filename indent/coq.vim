@@ -15,7 +15,7 @@ let b:did_indent = 1
 
 setlocal expandtab
 setlocal indentexpr=GetCoqIndent()
-setlocal indentkeys=o,O,0=.,0=end,0=End,0=in,0=\|,0=Qed,0=Defined,0=Abort,0=Admitted,0},0)
+setlocal indentkeys=o,O,0=.,0=end,0=End,0=in,0=\|,0=Qed,0=Defined,0=Abort,0=Admitted,0},0),0-,0+,0*
 setlocal nolisp
 setlocal nosmartindent
 setlocal shiftwidth=2
@@ -40,6 +40,7 @@ let s:inside_proof = 0
 " Some useful patterns
 let s:vernac = '\C\<\%(Abort\|About\|Add\|Admitted\|Arguments\|Axiom\|Back\|Bind\|Canonical\|Cd\|Check\|Close\|Coercion\|CoFixpoint\|CoInductive\|Combined\|Conjecture\|Context\|Corollary\|Declare\|Defined\|Definition\|Delimit\|Derive\|Drop\|End\|Eval\|Example\|Existential\|Export\|Extract\|Extraction\|Fact\|Fixpoint\|Focus\|Function\|Functional\|Goal\|Hint\|Hypothes[ie]s\|Identity\|Implicit\|Import\|Inductive\|Infix\|Inspect\|Lemma\|Let\|Load\|Locate\|Ltac\|Module\|Mutual\|Notation\|Opaque\|Open\|Parameters\=\|Print\|Program\|Proof\|Proposition\|Pwd\|Qed\|Quit\|Record\|Recursive\|Remark\|Remove\|Require\|Reserved\|Reset\|Restart\|Restore\|Resume\|Save\|Scheme\|Search\%(About\|Pattern\|Rewrite\)\=\|Section\|Set\|Show\|Structure\|SubClass\|Suspend\|Tactic\|Test\|Theorem\|Time\|Transparent\|Undo\|Unfocus\|Unset\|Variables\?\|Whelp\|Write\)\>'
 let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\|clear\%(body\)\?\|cofix\|cbv\|compare\|compute\|congruence\|constructor\|contradiction\|cut\%(rewrite\)\?\|decide\|decompose\|dependent\|destruct\|discriminate\|do\|double\|eapply\|eassumption\|econstructor\|elim\%(type\)\?\|equality\|evar\|exact\|eexact\|exists\|f_equal\|fold\|functional\|generalize\|hnf\|idtac\|induction\|info\|injection\|instantiate\|intros\?\|intuition\|inversion\%(_clear\)\?\|lapply\|left\|move\|omega\|pattern\|pose\|proof\|quote\|red\|refine\|reflexivity\|rename\|repeat\|replace\|revert\|rewrite\|right\|ring\|set\|simple\?\|simplify_eqsplit\|split\|subst\|stepl\|stepr\|symmetry\|transitivity\|trivial\|try\|unfold\|vm_compute'
+let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.]\+\)\?\)\.$'
 
     " Skipping pattern, for comments
     " (stolen from indent/ocaml.vim, thanks to the authors)
@@ -108,7 +109,7 @@ let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\
         return s:indent_of_previous_pair('{|', '', '|}', 1)
 
         " start of proof
-      elseif previousline =~ '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.]\+\)\?\)\.$'
+      elseif previousline =~ s:proofstart
         let s:inside_proof = 1
         return ind + &sw
 
@@ -120,6 +121,41 @@ let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\
       elseif currentline =~ '\<\%(Qed\|Defined\|Abort\|Admitted\)\>'
         let s:inside_proof = 0
         return s:indent_of_previous(s:vernac.'\&\%(\<\%(Qed\|Defined\|Abort\|Admitted\)\>\)\@!')
+
+        " bullet in proof
+      elseif currentline =~ '^\s*[-+*]' || previousline =~ '^\s*[-+*]'
+        if currentline =~ '^\s*[-+*]'
+          let bullet = matchstr(currentline, '[-+*]\+')
+          let proof_start = search(s:proofstart, 'bWn')
+
+          if proof_start != 0
+            " In proof
+            " Find previous bullet of the same length
+            let prev_bullet = search('\M^\s\*' . bullet . bullet[0] . '\@!', 'bWnz', proof_start)
+
+            " If no previous ones to match, fall through and indent using another rule
+            if prev_bullet != 0
+              return indent(prev_bullet)
+            endif
+          else
+            return ind
+          endif
+        endif
+
+        " after a bullet in proof
+        if previousline =~ '^\s*[-+*]'
+          let bullet = matchstr(previousline, '[-+*]\+')
+          let proof_start = search(s:proofstart, 'bWn')
+
+          if proof_start != 0
+            " In proof
+            return ind + len(bullet) + 1
+          endif
+
+          return ind
+        endif
+
+        return ind
 
         " previous line begins with 'Section':
       elseif previousline =~ '^\s*Section\>'
