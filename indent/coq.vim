@@ -98,20 +98,17 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
       elseif currentline =~ '^\s*|}\@!'
         if previousline =~ '^\s*Inductive'
           return ind + &sw
+        elseif previousline =~ '^\s*match'
+          return ind
         elseif previousline =~ '^\s*end\>'
           return s:indent_of_previous_pair('\<match\>', '', '\<end\>', 0)
         else
-          return ind
+          return s:indent_of_previous('^\s*|}\@!')
         endif
 
         " current line begins with terminating '|}'
       elseif currentline =~ '^\s*|}'
         return s:indent_of_previous_pair('{|', '', '|}', 1)
-
-        " start of proof
-      elseif previousline =~ s:proofstart
-        let s:inside_proof = 1
-        return ind + &sw
 
         " end of proof
       elseif currentline =~ '^\s*}'
