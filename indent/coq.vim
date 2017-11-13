@@ -94,7 +94,7 @@ let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\
         return s:indent_of_previous_pair('\<let\>', '','\<in\>', 1)
 
         " current line begins with '|':
-      elseif currentline =~ '^\s*|'
+      elseif currentline =~ '^\s*|}\@!'
         if previousline =~ '^\s*Inductive'
           return ind + &sw
         elseif previousline =~ '^\s*end\>'
@@ -102,6 +102,10 @@ let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\
         else
           return ind
         endif
+
+        " current line begins with terminating '|}'
+      elseif currentline =~ '^\s*|}'
+        return s:indent_of_previous_pair('{|', '', '|}', 1)
 
         " start of proof
       elseif previousline =~ '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.]\+\)\?\)\.$'
@@ -126,8 +130,12 @@ let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\
         return ind - &sw
 
         " previous line has the form '|...'
-      elseif previousline =~ '|\%(.\%(\.\|end\)\@!\)*$'
+      elseif previousline =~ '{\@1<!|\%([^}]\%(\.\|end\)\@!\)*$'
         return ind + &sw + &sw
+
+        " previous line has '{|' or '{' with no matching '|}' or '}'
+      elseif previousline =~ '{|\?[^}]*$'
+        return ind + &sw
 
         " unterminated vernacular sentences
       elseif previousline =~ s:vernac.'.*[^.]$' && previousline !~ '^\s*$'
