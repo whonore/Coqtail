@@ -160,7 +160,7 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
         return ind
 
         " previous line begins with 'Section':
-      elseif previousline =~ '^\s*Section\>'
+      elseif previousline =~ '^\s*\%(Section\|Module\)\>'
         return ind + &sw
 
         " current line begins with 'End':
