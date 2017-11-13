@@ -119,6 +119,11 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
         let s:inside_proof = 0
         return s:indent_of_previous(s:vernac.'\&\%(\<\%(Qed\|Defined\|Abort\|Admitted\)\>\)\@!')
 
+        " start of proof
+      elseif previousline =~ s:proofstart
+        let s:inside_proof = 1
+        return ind + &sw
+
         " bullet in proof
       elseif currentline =~ '^\s*[-+*]' || previousline =~ '^\s*[-+*]'
         if currentline =~ '^\s*[-+*]'
