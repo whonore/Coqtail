@@ -59,8 +59,10 @@ let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\
     endfunction
 
     " Indent pairs
-    function s:indent_of_previous_pair(pstart, pmid, pend)
-      call search(a:pend, 'bW')
+    function s:indent_of_previous_pair(pstart, pmid, pend, searchFirst)
+      if searchFirst
+        call search(a:pend, 'bW')
+      endif
       return indent(searchpair(a:pstart, a:pmid, a:pend, 'bWn', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"'))
     endfunction
 
@@ -85,15 +87,21 @@ let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\
 
         " current line begins with 'end':
       elseif currentline =~ '\C^\s*end\>'
-        return s:indent_of_previous_pair('\<match\>', '','\<end\>')
+        return s:indent_of_previous_pair('\<match\>', '','\<end\>', 1)
 
         " current line begins with 'in':
       elseif currentline =~ '^\s*\<in\>'
-        return s:indent_of_previous_pair('\<let\>', '','\<in\>')
+        return s:indent_of_previous_pair('\<let\>', '','\<in\>', 1)
 
         " current line begins with '|':
       elseif currentline =~ '^\s*|'
-        return ind
+        if previousline =~ '^\s*Inductive'
+          return ind + &sw
+        elseif previousline =~ '^\s*end\>'
+          return s:indent_of_previous_pair('\<match\>', '', '\<end\>', 0)
+        else
+          return ind
+        endif
 
         " start of proof
       elseif previousline =~ '^\s*\(Proof\|\(Next Obligation\|Obligation \d\+\)\( of [^.]\+\)\?\)\.$'
@@ -102,9 +110,9 @@ let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\
 
         " end of proof
       elseif currentline =~ '^\s*}'
-        return s:indent_of_previous_pair('{','','}')
+        return s:indent_of_previous_pair('{','','}', 1)
       elseif currentline =~ '^\s*)'
-        return s:indent_of_previous_pair('(','',')')
+        return s:indent_of_previous_pair('(','',')', 1)
       elseif currentline =~ '\<\%(Qed\|Defined\|Abort\|Admitted\)\>'
         let s:inside_proof = 0
         return s:indent_of_previous(s:vernac.'\&\%(\<\%(Qed\|Defined\|Abort\|Admitted\)\>\)\@!')
