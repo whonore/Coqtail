@@ -42,7 +42,7 @@ Coqtail provides the following commands:
 Coqtail does not set any mappings by default but provides some in the function
 `coqtail#Mapping()`, which could be called in your .vimrc.
 
-Coqtail also comes with an ftdetect script for Coq, as well as Vincent
-Aravantinos'
+Coqtail also comes with an ftdetect script for Coq, as well as modified
+versions of Vincent Aravantinos'
 [syntax](http://www.vim.org/scripts/script.php?script_id=2063) and
 [index](http://www.vim.org/scripts/script.php?script_id=2079) scripts for Coq.
