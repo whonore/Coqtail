@@ -67,7 +67,7 @@ syn region coqRequire contains=coqString matchgroup=coqVernacCmd start="\<Requir
 syn region coqRequire matchgroup=coqVernacCmd start="\<Import\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqRequire matchgroup=coqVernacCmd start="\<Export\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqCheck   contains=@coqTerm matchgroup=coqVernacCmd start="\<Check\>" matchgroup=coqVernacPunctuation end="\.\_s"
-syn region coqOpaque  matchgroup=coqVernacCmd start="\<\%(Opaque\|Transparent\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
+syn region coqOpaque  matchgroup=coqVernacCmd start="\<\%(\%(Local\|Global\)\_s\+\)\?\%(Opaque\|Transparent\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqShow       matchgroup=coqVernacCmd start="\<Show\_s\+\%(\%(Implicits\|Script\|Tree\|Proof\|Conjectures\|Intros\?\|Existentials\)\>\)\?" end="\.\_s"
 
 " Sections
@@ -91,7 +91,7 @@ syn region coqScope   contained matchgroup=coqVernacCmd start="\<Scope\>" end="\
 syn region coqLocalScope contained contains=coqScope matchgroup=coqVernacCmd start="\<Local\>" end="\.\_s"
 
 " Hints
-syn region coqHint contains=coqHintOption start="\<Hint\>" end="\.\_s" keepend
+syn region coqHint contains=coqHintOption start="\<\%(\%(Local\|Global\)\_s\+\)\?Hint\>" end="\.\_s" keepend
 syn region coqHintOption start="\<\%(Resolve\|Immediate\|Constructors\|Unfold\|Extern\)\>" end="\.\_s"
 
 " Add
@@ -164,8 +164,8 @@ syn region coqEvalTac   contained contains=@coqTerm,coqEvalIn matchgroup=coqTact
 syn region coqEvalIn    contained contains=@coqTerm matchgroup=coqVernacCmd start="in" matchgroup=coqVernacPunctuation end="\.\_s"
 
 " Notations
-syn region coqNotation     contains=coqNotationDef start="\%(\%(\%(\<Reserved\>\_s*\)\?\<Notation\>\)\|\<Infix\>\)\(\_s*\<Local\>\)\?" matchgroup=coqVernacPunctuation end="\.\_s" keepend
-syn region coqNotationDef       contained contains=coqNotationString,coqNotationTerm matchgroup=coqVernacCmd start="\%(\%(\%(\<Reserved\>\_s*\)\?\<Notation\>\)\|\<Infix\>\)\(\_s*\<Local\>\)\?" end="\.\_s"
+syn region coqNotation     contains=coqNotationDef start="\%(\%(Local\|Global\)\_s\+\)\?\%(\%(\%(\<Reserved\>\_s*\)\?\<Notation\>\)\|\<Infix\>\)\(\_s*\<Local\>\)\?" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqNotationDef       contained contains=coqNotationString,coqNotationTerm matchgroup=coqVernacCmd start="\%(\%(Local\|Global\)\_s\+\)\?\%(\%(\%(\<Reserved\>\_s*\)\?\<Notation\>\)\|\<Infix\>\)\(\_s*\<Local\>\)\?" end="\.\_s"
 syn region coqNotationTerm      contained contains=coqNotationExpr matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
 syn region coqNotationExpr      contained contains=@coqTerm,coqNotationEndExpr matchgroup=coqTermPunctuation start="(" end="\.\_s"
 syn region coqNotationEndExpr   contained contains=coqNotationFormat,coqNotationScope matchgroup=coqTermPunctuation start=")" end="\.\_s"
@@ -206,9 +206,9 @@ syn region coqGoal      contains=coqGoalTerm start="\<Goal\>" matchgroup=NONE en
 syn region coqGoalTerm  contained contains=@coqTerm,coqProofBody matchgroup=coqVernacCmd start="Goal" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\>" keepend
 
 " Ltac
-syn region coqLtacDecl     contains=coqLtacProfile start="\<Ltac\>" end="\.\_s" keepend
-syn region coqLtacProfile  contained contains=coqLtacIdent,coqVernacPunctuation,coqLtacContents start="Ltac" end="\.\_s"
-syn region coqLtacIdent    contained matchgroup=coqVernacCmd start="Ltac" matchgroup=coqIdent end="[_[:alpha:]][_'[:alnum:]]*"
+syn region coqLtacDecl     contains=coqLtacProfile start="\<\%(\%(Local\|Global\)\_s\+\)\?Ltac\>" end="\.\_s" keepend
+syn region coqLtacProfile  contained contains=coqLtacIdent,coqVernacPunctuation,coqLtacContents start="\%(\%(Local\|Global\)\_s\+\)\?Ltac" end="\.\_s"
+syn region coqLtacIdent    contained matchgroup=coqVernacCmd start="\%(\%(Local\|Global\)\_s\+\)\?Ltac" matchgroup=coqIdent end="[_[:alpha:]][_'[:alnum:]]*"
 syn region coqLtacContents contained contains=coqTactic,coqTacticKwd,coqLtac,coqProofPunctuation matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
 
 syn keyword coqLtac contained do info progress repeat try
