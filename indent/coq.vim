@@ -132,6 +132,11 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
           " In proof
 
           if currentline =~ '^\s*[-+*]'
+            " Bullet in a '{' section
+            if previousline =~ '^\s*{'
+              return ind + &sw
+            endif
+
             let bullet = matchstr(currentline, '[-+*]\+')
 
             call cursor(v:lnum, 1)
