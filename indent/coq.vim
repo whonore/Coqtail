@@ -134,9 +134,10 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
           if currentline =~ '^\s*[-+*]'
             let bullet = matchstr(currentline, '[-+*]\+')
 
+            call cursor(v:lnum, 1)
             while 1
               " Find previous bullet of the same length
-              let prev_bullet = search('\M^\s\*' . bullet . bullet[0] . '\@!', 'bWz', proof_start)
+              let prev_bullet = search('\M^\s\*' . bullet . bullet[0] . '\@!', 'bW', proof_start)
 
               " If no previous ones to match, fall through and indent using another rule
               if prev_bullet != 0
@@ -145,7 +146,7 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
 
                 if brack_open == 0 || searchpair('{', '', '}', 'Wn', '', v:lnum) > 0
                   " No '{' or it is matched
-                  call cursor(l:lnum, 1)
+                  call cursor(v:lnum, 1)
                   let brack_close = search('}', 'bW', prev_bullet)
 
                   if brack_close == 0 || searchpair('{', '', '}', 'bWn', '', prev_bullet) > 0
