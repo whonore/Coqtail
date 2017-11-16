@@ -1,0 +1,11 @@
+*coqtail.txt*  Interactive Theorem Proving in Coq
+
+Author:  Wolf Honore
+License: MIT (see LICENSE)
+
+Overview here.
+
+                                                cmd
+command                 Explanation of command
+
+ vim:tw=78:et:ft=help:norl:
