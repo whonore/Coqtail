@@ -1,5 +1,5 @@
 # Coqtail
-## A Vim Plugin for Interactive Theorem Proving in Coq
+## Interactive Coq Proofs in Vim
 
 Coqtail is a rewrite of
 [Coquille](https://github.com/the-lambda-church/coquille).
@@ -40,14 +40,19 @@ Coqtail provides the following commands (see `:help coqtail` for more detail)
   file
 - Coq \<arg> - Sends arbitrary commands to Coq (such as Check, About, Print,
   etc)
-  + \<arg>=SearchAbout (`<leader>cs`)
-  + \<arg>=Check (`<leader>ch`)
-  + \<arg>=About (`<leader>ca`)
-  + \<arg>=Print (`<leader>cp`)
-  + \<arg>=Locate (`<leader>cf`)
+  + \<arg>=SearchAbout (`<leader>cs`) - Search for theorems about the Coq term
+    under the cursor
+  + \<arg>=Check (`<leader>ch`) - Check the type of the Coq term under the
+    cursor
+  + \<arg>=About (`<leader>ca`) - Print information about the Coq term under
+    the cursor
+  + \<arg>=Print (`<leader>cp`) - Print the definition of the Coq term under
+    the cursor
+  + \<arg>=Locate (`<leader>cf`) - Find where the Coq term under the cursor was
+    defined
 - JumpToEnd (`<leader>cG`) - Moves the cursor to the end of the checked region
-- FindDef (`<leader>co`) - Searches the LoadPath for the definition of the word
-  under the cursor and opens it in another file if possible
+- FindDef (`<leader>co`) - Searches the LoadPath for the definition of the Coq
+  term under the cursor and opens it in another file if possible
 - MakeMatch (`<leader>cm`) - Insert a 'match' template for a given Inductive
   type at the cursor location
 
