@@ -104,6 +104,9 @@ Coq Queries								*coqtail-queries*
 			will use {arg}, while the second will use the term under the
 			cursor. The response will be written to the Info panel.
 
+======================
+Miscellaneous Commands							*coqtail-misc*
+
 									*<leader>co* *:FindDef* *coqtail-finddef*
 :FindDef {arg}
 <leader>co		Searches for the definition of a Coq term and jumps to it in a
@@ -113,9 +116,6 @@ Coq Queries								*coqtail-queries*
 			will be added to the |arglist| and opened for editing at the
 			location of the definition. If the definition is in the current
 			file a new one will not be opened.
-
-======================
-Miscellaneous Commands							*coqtail-misc*
 
 									*<leader>cm* *i_<leader>cm* *:MakeMatch*
 									*coqtail-make-match*
