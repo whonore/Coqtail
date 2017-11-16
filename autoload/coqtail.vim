@@ -58,7 +58,7 @@ Py import coqtail
 " current word.
 function! coqtail#GetCurWord()
     " Add '.' and ''' to definition of a keyword
-    let old_keywd = &iskeyword
+    let l:old_keywd = &iskeyword
     setlocal iskeyword+=.
     setlocal iskeyword+='
 
@@ -69,7 +69,7 @@ function! coqtail#GetCurWord()
     endif
 
     " Reset iskeyword
-    let &l:iskeyword = old_keywd
+    let &l:iskeyword = l:old_keywd
 
     return l:cword
 endfunction
