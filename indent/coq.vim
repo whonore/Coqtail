@@ -7,8 +7,8 @@
 "              2007 Nov 28 - Handle proofs that do not start with 'Proof'.
 "              2007 Nov 27 - Initial version.
 
-" Only load this indent file when no other was loaded.
-if exists("b:did_indent")
+" Only load this indent file when no other was loaded and user didn't opt out.
+if exists("b:did_indent") || (exists('g:coqtail_noindent') && g:coqtail_noindent)
   finish
 endif
 let b:did_indent = 1

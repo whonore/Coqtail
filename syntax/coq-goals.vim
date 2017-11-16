@@ -5,6 +5,11 @@
 " Last Change: 2015 Jul 07 - Initial syntax coloring, pretty stable
 " License:     public domain
 
+" Only load this syntax file when user didn't opt out
+if exists('g:coqtail_nosyntax') && g:coqtail_nosyntax
+  finish
+endif
+
 " For version 5.x: Clear all syntax items
 " For version 6.x: Quit when a syntax file was already loaded
 if version < 600
