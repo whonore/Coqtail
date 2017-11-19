@@ -139,7 +139,6 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
 
             let bullet = matchstr(currentline, '[-+*]\+')
 
-            call cursor(v:lnum, 1)
             while 1
               " Find previous bullet of the same length
               let prev_bullet = search('\M^\s\*' . bullet . bullet[0] . '\@!', 'bW', proof_start)
