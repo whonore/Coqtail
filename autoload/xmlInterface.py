@@ -68,6 +68,10 @@ class XmlInterfaceBase(object):
     """Provide methods and types common to all XML interface versions."""
 
     # Coqtop Types #
+    # Empty Type
+    Void = namedtuple('Void', [])
+
+    # Option Type
     Option = namedtuple('Option', ['val'])
 
     # Union type
@@ -97,7 +101,7 @@ class XmlInterfaceBase(object):
             'int': self._from_int,
             'str': self._from_string, 'unicode': self._from_string,
             'list': self._from_list,
-            'Option': self._from_option,
+            'Option': self._from_option, 'NoneType': self._from_option,
             'Inl': self._from_union, 'Inr': self._from_union
         }
 
@@ -168,15 +172,15 @@ class XmlInterfaceBase(object):
         val = xml.get('val')
 
         if val == 'none':
-            return self.Option(None)
+            return None
         elif val == 'some':
             return self.Option(self._to_value(xml[0]))
         else:
             unexpected(('none', 'some'), val)
 
     def _from_option(self, val):
-        """Option(val=_|None)"""
-        if val.val is not None:
+        """Option(val=_)|None"""
+        if val is not None:
             return self._build_xml('option', 'some', val.val)
         else:
             return self._build_xml('option', 'none')
@@ -215,13 +219,13 @@ class XmlInterfaceBase(object):
         except KeyError:
             unexpected(tuple(self._from_value_funcs), type(val).__name__)
 
-    def _build_xml(self, tag, val=None, children=None):
+    def _build_xml(self, tag, val=None, children=Void()):
         """Construct an xml element with a given tag, value, and children."""
         attribs = {'val': val} if val is not None else {}
 
         # If children is a list then convert each element separately, if it is
         # a tuple, treat it as a single element
-        if children is None:
+        if isinstance(children, self.Void):
             children = ()
         elif isinstance(children, list):
             children = [self._from_value(child) for child in children]
@@ -486,9 +490,7 @@ class XmlInterface84(XmlInterfaceBase):
         # Ret:
         #   val : list Goal - A list of the current goals
         if val.is_ok():
-            if val.val.val is None:
-                val.val = None
-            else:
+            if val.val is not None:
                 val.val = val.val.val.fg
         return val
 
@@ -621,7 +623,7 @@ class XmlInterface85(XmlInterfaceBase):
         # Args:
         #   option string - A Coq file to add to the LoadPath to do ?
         return ('Init',
-                ET.tostring(self._build_xml('call', 'Init', self.Option(None)),
+                ET.tostring(self._build_xml('call', 'Init', None),
                             kwargs.get('encoding', 'utf-8')))
 
     def add(self, cmd, state, *args, **kwargs):
@@ -687,9 +689,7 @@ class XmlInterface85(XmlInterfaceBase):
         # Ret:
         #   val : list Goal - A list of the current goals
         if val.is_ok():
-            if val.val.val is None:
-                val.val = None
-            else:
+            if val.val is not None:
                 val.val = val.val.val.fg
         return val
 
