@@ -78,8 +78,10 @@ class XmlInterfaceBase(object):
     Inl = namedtuple('Inl', ['val'])
     Inr = namedtuple('Inr', ['val'])
 
-    def __init__(self):
+    def __init__(self, versions):
         """Initialize maps for converting between XML and Python values."""
+        self.versions = versions
+
         self.launch_args = ['-ideslave']
 
         self._to_value_funcs = {
@@ -318,8 +320,8 @@ class XmlInterface84(XmlInterfaceBase):
     Goals = namedtuple('Goals', ['fg', 'bg'])
     Evar = namedtuple('Evar', ['info'])
 
-    OptionState = namedtuple('OptionState', ['sync', 'depr', 'name', 'value'])
     OptionValue = namedtuple('OptionValue', ['val'])
+    OptionState = namedtuple('OptionState', ['sync', 'depr', 'name', 'value'])
 
     Status = namedtuple('Status',
                         ['path', 'proofname', 'allproofs', 'statenum',
@@ -329,16 +331,16 @@ class XmlInterface84(XmlInterfaceBase):
                                      'release_data',
                                      'compile_data'])
 
-    def __init__(self):
+    def __init__(self, versions):
         """Add to conversion maps."""
-        super(XmlInterface84, self).__init__()
+        super(XmlInterface84, self).__init__(versions)
 
         self._to_value_funcs.update({
             'goal': self._to_goal,
             'goals': self._to_goals,
             'evar': self._to_evar,
-            'option_state': self._to_option_state,
             'option_value': self._to_option_value,
+            'option_state': self._to_option_state,
             'status': self._to_status,
             'coq_info': self._to_coq_info,
             'message': self._to_message,
@@ -366,16 +368,16 @@ class XmlInterface84(XmlInterfaceBase):
         """<evar>string</evar>"""
         return self.Evar(self._to_value(xml[0]))
 
-    def _to_option_state(self, xml):
-        """<option_state>bool bool string option_value</option_state>"""
-        return self.OptionState(*map(self._to_value, xml))
-
     def _to_option_value(self, xml):
         """<option_value>bool|option int|string|option string</option_value>"""
         return self.OptionValue(self._to_value(xml[0]))
 
+    def _to_option_state(self, xml):
+        """<option_state>bool bool string option_value</option_state>"""
+        return self.OptionState(*map(self._to_value, xml))
+
     def _to_status(self, xml):
-        """<status>(list string) (option string) (list string) int</string>"""
+        """<status>(list string) (option string) (list string) int int</string>"""
         return self.Status(*map(self._to_value, xml))
 
     def _to_coq_info(self, xml):
@@ -523,8 +525,8 @@ class XmlInterface85(XmlInterfaceBase):
     Goals = namedtuple('Goals', ['fg', 'bg', 'shelved', 'given_up'])
     Evar = namedtuple('Evar', ['info'])
 
-    OptionState = namedtuple('OptionState', ['sync', 'depr', 'name', 'value'])
     OptionValue = namedtuple('OptionValue', ['val'])
+    OptionState = namedtuple('OptionState', ['sync', 'depr', 'name', 'value'])
 
     StateId = namedtuple('StateId', ['id'])
     Status = namedtuple('Status',
@@ -534,9 +536,9 @@ class XmlInterface85(XmlInterfaceBase):
                                      'release_data',
                                      'compile_data'])
 
-    def __init__(self):
+    def __init__(self, versions):
         """Add to conversion maps."""
-        super(XmlInterface85, self).__init__()
+        super(XmlInterface85, self).__init__(versions)
 
         self.launch_args += ['-main-channel', 'stdfds',
                              '-async-proofs', 'on']
@@ -545,8 +547,8 @@ class XmlInterface85(XmlInterfaceBase):
             'goal': self._to_goal,
             'goals': self._to_goals,
             'evar': self._to_evar,
-            'option_state': self._to_option_state,
             'option_value': self._to_option_value,
+            'option_state': self._to_option_state,
             'state_id': self._to_state_id,
             'status': self._to_status,
             'coq_info': self._to_coq_info,
@@ -577,13 +579,13 @@ class XmlInterface85(XmlInterfaceBase):
         """<evar>string</evar>"""
         return self.Evar(self._to_value(xml[0]))
 
-    def _to_option_state(self, xml):
-        """<option_state>bool bool string option_value</option_state>"""
-        return self.OptionState(*map(self._to_value, xml))
-
     def _to_option_value(self, xml):
         """<option_value>bool|option int|string|option string</option_value>"""
         return self.OptionValue(self._to_value(xml[0]))
+
+    def _to_option_state(self, xml):
+        """<option_state>bool bool string option_value</option_state>"""
+        return self.OptionState(*map(self._to_value, xml))
 
     def _to_state_id(self, xml):
         """<state_id val="int" />"""
@@ -713,9 +715,9 @@ class XmlInterface85(XmlInterfaceBase):
 class XmlInterface86(XmlInterface85):
     """The version 8.6.* XML interface."""
 
-    def __init__(self):
+    def __init__(self, versions):
         """Add to conversion maps."""
-        super(XmlInterface86, self).__init__()
+        super(XmlInterface86, self).__init__(versions)
 
         self._to_value_funcs.update({
             'richpp': self._to_string
@@ -747,9 +749,9 @@ class XmlInterface87(XmlInterface86):
 
     RouteId = namedtuple('RouteId', ['id'])
 
-    def __init__(self):
+    def __init__(self, versions):
         """Add to conversion maps."""
-        super(XmlInterface87, self).__init__()
+        super(XmlInterface87, self).__init__(versions)
 
         self._to_value_funcs.update({
             'route_id': self._to_route_id
@@ -792,12 +794,12 @@ def XmlInterface(version):
     versions += (0,) * (3 - len(versions))
 
     if (8, 4, 0) <= versions < (8, 5, 0):
-        return XmlInterface84()
+        return XmlInterface84(versions)
     elif (8, 5, 0) <= versions < (8, 6, 0):
-        return XmlInterface85()
+        return XmlInterface85(versions)
     elif (8, 6, 0) <= versions < (8, 7, 0):
-        return XmlInterface86()
+        return XmlInterface86(versions)
     elif (8, 7, 0) <= versions < (8, 8, 0):
-        return XmlInterface87()
+        return XmlInterface87(versions)
     else:
         raise ValueError("Invalid version: {}".format(version))
