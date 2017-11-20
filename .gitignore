@@ -1,3 +1,5 @@
 *.py[cod]
 __pycache__/
 doc/tags
+.cache/
+.coverage
