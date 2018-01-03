@@ -9,7 +9,7 @@ PYTEST_OPT := -q
 .PHONY: test py py-cov indent
 
 # All tests
-test: py2 py3 indent
+test: py indent
 
 # All Python tests with Python 2 and 3
 py: py2 py3
