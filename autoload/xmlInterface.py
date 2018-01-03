@@ -117,11 +117,11 @@ class XmlInterfaceBase(object):
         self._standardize_funcs = {}
 
     # XML Parsing and Marshalling #
-    def _to_unit(self, xml):
+    def _to_unit(self, _xml):
         """XML: <unit />"""
         return ()
 
-    def _from_unit(self, val):
+    def _from_unit(self, _val):
         """()"""
         return self._build_xml('unit')
 
@@ -447,7 +447,7 @@ class XmlInterface84(XmlInterfaceBase):
         """Fake the 'Init' command."""
         return ('Init', None)
 
-    def _standardize_init(self, val):
+    def _standardize_init(self, _val):
         """Standardize the info returned by 'Init'."""
         # Ret:
         #   val : int - The current state id
