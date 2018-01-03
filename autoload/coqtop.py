@@ -117,12 +117,6 @@ class Coqtop(object):
 
     def advance(self, cmd, encoding='utf-8', timeout=None):
         """Advance Coqtop by sending 'cmd'."""
-        # Python 2 will throw an error if unicode is in 'cmd' unless we decode
-        # it, but in Python 3 'cmd' is 'str' not 'bytes' and doesn't need to be
-        # decoded
-        if isinstance(cmd, bytes):
-            cmd = cmd.decode(encoding)
-
         response = self.call(self.xml.add(cmd,
                                           self.state_id,
                                           encoding=encoding),
@@ -148,19 +142,6 @@ class Coqtop(object):
         self.states.append(self.state_id)
         self.state_id = response.state_id
 
-        # Coqtop refuses to show queries in a script so catch the error and
-        # resend as a query
-        if 'Query commands should not' in msgs:
-            query = self.call(self.xml.query(cmd,
-                                             self.state_id,
-                                             encoding=encoding),
-                              timeout=timeout)
-
-            if query.is_ok():
-                return True, query.msg, None
-            else:
-                return False, query.msg, query.loc
-
         return True, msgs, None
 
     def rewind(self, step=1):
@@ -177,16 +158,15 @@ class Coqtop(object):
 
     def query(self, cmd, encoding='utf-8', timeout=None):
         """Query Coqtop with 'cmd'."""
-        # See advance() for an explanation of this
-        if isinstance(cmd, bytes):
-            cmd = cmd.decode(encoding)
-
         response = self.call(self.xml.query(cmd,
                                             self.state_id,
                                             encoding=encoding),
                              timeout=timeout)
 
-        return response.is_ok(), response.msg
+        if response.is_ok():
+            return True, response.msg, None
+        else:
+            return False, response.msg, response.loc
 
     def goals(self, timeout=None):
         """Get the current set of hypotheses and goals."""
@@ -203,6 +183,47 @@ class Coqtop(object):
             return True, response.val
         else:
             return False, response.msg
+
+    def do_option(self, cmd, encoding='utf-8', timeout=None):
+        """Set or get an option."""
+        if cmd.startswith('Test'):
+            response = self.call(self.xml.get_options(encoding=encoding),
+                                 timeout=timeout)
+
+            if response.is_ok():
+                optval = [(val, desc) for name, desc, val in response.val
+                          if name in cmd]
+
+                if optval != []:
+                    ret = "{}: {}".format(optval[0][1], optval[0][0])
+                else:
+                    ret = 'Invalid option name'
+        else:
+            response = self.call(self.xml.set_options(cmd, encoding=encoding),
+                                 timeout=timeout)
+            ret = response.msg
+
+        if response.is_ok():
+            return True, ret, None
+        else:
+            return False, response.msg, response.loc
+
+    def dispatch(self, cmd, encoding='utf-8', timeout=None):
+        """Decide whether 'cmd' is setting/getting an option, a query, or a
+        regular command."""
+        # Python 2 will throw an error if unicode is in 'cmd' unless we decode
+        # it, but in Python 3 'cmd' is 'str' not 'bytes' and doesn't need to be
+        # decoded
+        if isinstance(cmd, bytes):
+            cmd = cmd.decode(encoding)
+        cmd = cmd.strip()
+
+        if self.xml.is_option(cmd):
+            return self.do_option(cmd, encoding, timeout=timeout)
+        elif self.xml.is_query(cmd):
+            return self.query(cmd, encoding, timeout)
+        else:
+            return self.advance(cmd, encoding, timeout)
 
     # Interacting with Coqtop #
     def call(self, cmdtype_msg, timeout=None):

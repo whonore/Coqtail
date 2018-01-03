@@ -20,6 +20,8 @@ except NameError:
     # If in python 3 make unicode an alias for str
     unicode = str
 
+str_tys = (str, unicode)
+
 
 # Coqtop Response Types #
 class Ok(object):
@@ -83,6 +85,11 @@ class XmlInterfaceBase(object):
         self.versions = versions
 
         self.launch_args = ['-ideslave']
+
+        # Valid query commands
+        self.queries = ['Search', 'SearchAbout', 'SearchPattern',
+                        'SearchRewrite', 'Check', 'Print', 'About',
+                        'Locate']
 
         self._to_value_funcs = {
             'unit': self._to_unit,
@@ -311,6 +318,21 @@ class XmlInterfaceBase(object):
 
         return cmd
 
+    def is_option(self, cmd):
+        """Check if 'cmd' is trying to set/get an option."""
+        # Starts with Set, Unset, Test
+        # N.B. 'cmd' could be split over multiple lines. We just want to know
+        # if any start with an option keyword
+        return any(re.match('(Uns|S)et|Test', line.strip()) is not None
+                   for line in cmd.split('\n'))
+
+    def is_query(self, cmd):
+        """Check if 'cmd' is a query."""
+        re_str = '|'.join(self.queries)
+        # N.B. see is_option()
+        return any(re.match(re_str, line) is not None
+                   for line in cmd.split('\n'))
+
 
 class XmlInterface84(XmlInterfaceBase):
     """The version 8.4.* XML interface."""
@@ -347,12 +369,17 @@ class XmlInterface84(XmlInterfaceBase):
             'feedback': self._to_feedback
         })
 
+        self._from_value_funcs.update({
+            'OptionValue': self._from_option_value
+        })
+
         self._standardize_funcs.update({
             'Init': self._standardize_init,
             'Add': self._standardize_add,
             'Edit_at': self._standardize_edit_at,
             'Query': self._standardize_query,
-            'Goal': self._standardize_goal
+            'Goal': self._standardize_goal,
+            'GetOptions': self._standardize_get_options
         })
 
     # XML Parsing and Marshalling #
@@ -371,6 +398,21 @@ class XmlInterface84(XmlInterfaceBase):
     def _to_option_value(self, xml):
         """<option_value>bool|option int|string|option string</option_value>"""
         return self.OptionValue(self._to_value(xml[0]))
+
+    def _from_option_value(self, val):
+        """OptionValue(val=_)"""
+        opt = val.val
+
+        if isinstance(opt, bool):
+            opt_ty = 'boolvalue'
+        elif isinstance(opt, int):
+            opt_ty = 'intvalue'
+        elif isinstance(opt, str_tys):
+            opt_ty = 'stringvalue'
+        else:
+            unexpected((bool, int) + str_tys, opt)
+
+        return self._build_xml('option_value', opt_ty, opt)
 
     def _to_option_state(self, xml):
         """<option_state>bool bool string option_value</option_state>"""
@@ -514,6 +556,43 @@ class XmlInterface84(XmlInterfaceBase):
                 ET.tostring(elt,
                             kwargs.get('encoding', 'utf-8')))
 
+    def get_options(self, *args, **kwargs):
+        """Create an XML string for the 'GetOptions' command."""
+        # Args:
+        #   unit - Empty arg
+        return ('GetOptions',
+                ET.tostring(self._build_xml('call', 'getoptions', ()),
+                            kwargs.get('encoding', 'utf-8')))
+
+    def _standardize_get_options(self, val):
+        """Standardize the info returned by 'GetOptions'."""
+        # Ret:
+        #   val : list (string * Python value) - A list of all the options, a
+        #                                        short description, and their
+        #                                        current values
+        if val.is_ok():
+            val.val = [(' '.join(name), state.name, state.value.val)
+                       for name, state in val.val]
+        return val
+
+    # TODO: allow non-boolean arguments
+    def set_options(self, cmd, *args, **kwargs):
+        """Create an XML string for the 'SetOptions' command."""
+        # Args:
+        #   list (option_name * option_value) - The options to update and the
+        #                                       values to set
+        opts = cmd.strip('.').split()
+        onoff = self.OptionValue(opts[0] == 'Set')
+        name = opts[1:]
+
+        # TODO: Coq source (toplevel/interface.mli) looks like the argument
+        # should be a list like in version 8.5 and on, but it only seems to
+        # work if it is a single element
+        return ('SetOptions',
+                ET.tostring(self._build_xml('call', 'setoptions',
+                                            (name, onoff)),
+                            kwargs.get('encoding', 'utf-8')))
+
 
 # The XML interface is different enough between 8.4 and > 8.4 that the
 # following interfaces will not inherit from XmlInterface84
@@ -543,6 +622,8 @@ class XmlInterface85(XmlInterfaceBase):
         self.launch_args += ['-main-channel', 'stdfds',
                              '-async-proofs', 'on']
 
+        self.queries += ['SearchHead']
+
         self._to_value_funcs.update({
             'goal': self._to_goal,
             'goals': self._to_goals,
@@ -557,13 +638,15 @@ class XmlInterface85(XmlInterfaceBase):
         })
 
         self._from_value_funcs.update({
+            'OptionValue': self._from_option_value,
             'StateId': self._from_state_id
         })
 
         self._standardize_funcs.update({
             'Add': self._standardize_add,
             'Edit_at': self._standardize_edit_at,
-            'Goal': self._standardize_goal
+            'Goal': self._standardize_goal,
+            'GetOptions': self._standardize_get_options
         })
 
     # XML Parsing and Marshalling #
@@ -582,6 +665,23 @@ class XmlInterface85(XmlInterfaceBase):
     def _to_option_value(self, xml):
         """<option_value>bool|option int|string|option string</option_value>"""
         return self.OptionValue(self._to_value(xml[0]))
+
+    def _from_option_value(self, val):
+        """OptionValue(val=_)"""
+        opt = val.val
+
+        if isinstance(opt, bool):
+            opt_ty = 'boolvalue'
+        elif isinstance(opt, int):
+            opt_ty = 'intvalue'
+        elif isinstance(opt, str_tys):
+            opt_ty = 'stringvalue'
+        elif isinstance(opt, self.Option) and isinstance(opt.val, str_tys):
+            opt_ty = 'stringoptvalue'
+        else:
+            unexpected((bool, int, self.Option) + str_tys, opt)
+
+        return self._build_xml('option_value', opt_ty, opt)
 
     def _to_option_state(self, xml):
         """<option_state>bool bool string option_value</option_state>"""
@@ -709,6 +809,42 @@ class XmlInterface85(XmlInterfaceBase):
         #   str - The inductive type to make cases for
         return ('MkCases',
                 ET.tostring(self._build_xml('call', 'MkCases', ty),
+                            kwargs.get('encoding', 'utf-8')))
+
+    def get_options(self, *args, **kwargs):
+        """Create an XML string for the 'GetOptions' command."""
+        # Args:
+        #   unit - Empty arg
+        return ('GetOptions',
+                ET.tostring(self._build_xml('call', 'GetOptions', ()),
+                            kwargs.get('encoding', 'utf-8')))
+
+    def _standardize_get_options(self, val):
+        """Standardize the info returned by 'GetOptions'."""
+        # Ret:
+        #   val : list (string * Python value) - A list of all the options, a
+        #                                        short description, and their
+        #                                        current values
+        if val.is_ok():
+            val.val = [(' '.join(name), state.name, state.value.val)
+                       for name, state in val.val]
+        return val
+
+    # TODO: allow non-boolean arguments
+    def set_options(self, cmd, *args, **kwargs):
+        """Create an XML string for the 'SetOptions' command."""
+        # Args:
+        #   list (option_name * option_value) - The options to update and the
+        #                                       values to set
+        opts = cmd.strip('.').split()
+        onoff = self.OptionValue(opts[0] == 'Set')
+        name = opts[1:]
+
+        # TODO: extra '[]' needed so _build_xml treats it as one list instead
+        # of several children to convert
+        return ('SetOptions',
+                ET.tostring(self._build_xml('call', 'SetOptions',
+                                            [[(name, onoff)]]),
                             kwargs.get('encoding', 'utf-8')))
 
 

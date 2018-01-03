@@ -183,7 +183,8 @@ class Coqtail(object):
         message = ' '.join(args)
 
         try:
-            _, self.info_msg = self.coqtop.query(message, encoding=encoding)
+            _, self.info_msg, _ = self.coqtop.dispatch(message,
+                                                       encoding=encoding)
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -298,9 +299,9 @@ class Coqtail(object):
             message = _between(to_send['start'], to_send['stop'])
 
             try:
-                success, msg, err_loc = self.coqtop.advance(message,
-                                                            encoding=encoding,
-                                                            timeout=get_timeout())
+                success, msg, err_loc = self.coqtop.dispatch(message,
+                                                             encoding=encoding,
+                                                             timeout=get_timeout())
             except CT.CoqtopError as e:
                 fail(e)
                 return
