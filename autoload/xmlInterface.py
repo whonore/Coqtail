@@ -60,10 +60,10 @@ TIMEOUT_ERR = Err('Coq timed out. You can change the timeout with '
 
 
 # Helpers #
-def unexpected(expected, got):
+def unexpected(expected, got, error=ValueError):
     """Raise an exception with a message showing what was expected."""
-    raise ValueError("Expected {}, but got {}".format(' or '.join(expected),
-                                                      got))
+    expect = ' or '.join(map(str, expected))
+    raise error("Expected {}, but got {}".format(expect, str(got)))
 
 
 class XmlInterfaceBase(object):
@@ -219,14 +219,15 @@ class XmlInterfaceBase(object):
         try:
             return self._to_value_funcs[xml.tag](xml)
         except KeyError:
-            unexpected(tuple(self._to_value_funcs), xml.tag)
+            unexpected(tuple(self._to_value_funcs), xml.tag, KeyError)
 
     def _from_value(self, val):
         """Construct an xml element from a corresponding Python type."""
         try:
             return self._from_value_funcs[type(val).__name__](val)
         except KeyError:
-            unexpected(tuple(self._from_value_funcs), type(val).__name__)
+            unexpected(tuple(self._from_value_funcs), type(val).__name__,
+                       KeyError)
 
     def _build_xml(self, tag, val=None, children=Void()):
         """Construct an xml element with a given tag, value, and children."""
