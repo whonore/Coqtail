@@ -389,7 +389,7 @@ class XmlInterface84(XmlInterfaceBase):
         return self.Goal(*map(self._to_value, xml))
 
     def _to_goals(self, xml):
-        """<goals>(list goal) (list goal)</goals>"""
+        """<goals>(list goal) (list (list goal * list goal))</goals>"""
         return self.Goals(*map(self._to_value, xml))
 
     def _to_evar(self, xml):
@@ -397,7 +397,7 @@ class XmlInterface84(XmlInterfaceBase):
         return self.Evar(self._to_value(xml[0]))
 
     def _to_option_value(self, xml):
-        """<option_value>bool|option int|string|option string</option_value>"""
+        """<option_value>bool|option int|string</option_value>"""
         return self.OptionValue(self._to_value(xml[0]))
 
     def _from_option_value(self, val):
@@ -406,12 +406,12 @@ class XmlInterface84(XmlInterfaceBase):
 
         if isinstance(opt, bool):
             opt_ty = 'boolvalue'
-        elif isinstance(opt, int):
+        elif isinstance(opt, self.Option) and isinstance(opt.val, int):
             opt_ty = 'intvalue'
         elif isinstance(opt, str_tys):
             opt_ty = 'stringvalue'
         else:
-            unexpected((bool, int) + str_tys, opt)
+            unexpected((bool, self.Option) + str_tys, type(opt))
 
         return self._build_xml('option_value', opt_ty, opt)
 
@@ -673,14 +673,14 @@ class XmlInterface85(XmlInterfaceBase):
 
         if isinstance(opt, bool):
             opt_ty = 'boolvalue'
-        elif isinstance(opt, int):
+        elif isinstance(opt, self.Option) and isinstance(opt.val, int):
             opt_ty = 'intvalue'
         elif isinstance(opt, str_tys):
             opt_ty = 'stringvalue'
         elif isinstance(opt, self.Option) and isinstance(opt.val, str_tys):
             opt_ty = 'stringoptvalue'
         else:
-            unexpected((bool, int, self.Option) + str_tys, opt)
+            unexpected((bool, self.Option) + str_tys, type(opt))
 
         return self._build_xml('option_value', opt_ty, opt)
 
