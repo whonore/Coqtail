@@ -1,0 +1,489 @@
+Given coq (inductive):
+  Inductive ind :=
+  | con1 :
+  ind
+  | con2 : ind
+  | con3 : ind.
+
+Do (indent-inductive):
+  vip=
+
+Expect coq (indented-inductive):
+  Inductive ind :=
+    | con1 :
+        ind
+    | con2 : ind
+    | con3 : ind.
+
+Given coq (match):
+  Definition f (b : bool) :=
+  match b with
+  | true =>
+  true
+  | false => false
+  end.
+
+Do (indent-match):
+  vip=
+
+Expect coq (indented-match):
+  Definition f (b : bool) :=
+    match b with
+    | true =>
+        true
+    | false => false
+    end.
+
+Given coq (match-nested):
+  Definition f (b : bool) (i : ind) :=
+  match b with
+  | true =>
+  match i with
+  | con1 => true
+  | con2 =>
+  false
+  | _ => false
+  end
+  | false =>
+  match i with
+  | _ =>
+  false
+  end
+  end.
+
+Do (indent-match-nested):
+  vip=
+
+Expect coq (indented-match-nested):
+  Definition f (b : bool) (i : ind) :=
+    match b with
+    | true =>
+        match i with
+        | con1 => true
+        | con2 =>
+            false
+        | _ => false
+        end
+    | false =>
+        match i with
+        | _ =>
+            false
+        end
+    end.
+
+Given coq (proof-body):
+  Lemma p : True.
+  Proof.
+  auto.
+  Qed.
+
+Do (indent-proof-body):
+  vip=
+
+Expect coq (indented-proof-body):
+  Lemma p : True.
+  Proof.
+    auto.
+  Qed.
+
+Given coq (obligation-body):
+  Program Definition p (i : ind) : {i = i} + {i <> i} := _.
+  Next Obligation.
+  idtac.
+  Abort.
+  Obligation 1.
+  idtac.
+  Abort.
+  Next Obligation of p.
+  idtac.
+  Abort.
+  Obligation 1 of p.
+  decide equality.
+  Defined.
+
+Do (indent-obligation-body):
+  vip=
+
+Expect coq (indented-obligation-body):
+  Program Definition p (i : ind) : {i = i} + {i <> i} := _.
+  Next Obligation.
+    idtac.
+  Abort.
+  Obligation 1.
+    idtac.
+  Abort.
+  Next Obligation of p.
+    idtac.
+  Abort.
+  Obligation 1 of p.
+    decide equality.
+  Defined.
+
+Given coq (proof-body-empty):
+  Lemma p : True.
+  Proof.
+  Admitted.
+
+Do (indent-proof-body-empty):
+  vip=
+
+Expect coq (indented-proof-body-empty):
+  Lemma p : True.
+  Proof.
+  Admitted.
+
+Given coq (obligation-body-empty):
+  Program Definition p (i : ind) : {i = i} + {i <> i} := _.
+  Next Obligation.
+  Abort.
+  Obligation 1.
+  Abort.
+  Next Obligation of p.
+  Abort.
+  Obligation 1 of p.
+  Admitted.
+
+Do (indent-obligation-body-empty):
+  vip=
+
+Expect coq (indented-obligation-body-empty):
+  Program Definition p (i : ind) : {i = i} + {i <> i} := _.
+  Next Obligation.
+  Abort.
+  Obligation 1.
+  Abort.
+  Next Obligation of p.
+  Abort.
+  Obligation 1 of p.
+  Admitted.
+
+Given coq (sections):
+  Section S1.
+  Definition x := 1.
+
+  Section S2.
+  Definition y := 2.
+  End S2.
+  Section S3.
+  Definition z := 3.
+  End S3.
+  End S1.
+
+Do (indent-sections):
+  gg
+  vG=
+
+Expect coq (indented-sections):
+  Section S1.
+    Definition x := 1.
+
+    Section S2.
+      Definition y := 2.
+    End S2.
+    Section S3.
+      Definition z := 3.
+    End S3.
+  End S1.
+
+Given coq (modules):
+  Module M1.
+  Definition x := 1.
+
+  Module M2.
+  Definition y := 2.
+  End M2.
+  Module M3.
+  Definition z := 3.
+  End M3.
+  End M1.
+
+Do (indent-modules):
+  gg
+  vG=
+
+Expect coq (indented-modules):
+  Module M1.
+    Definition x := 1.
+
+    Module M2.
+      Definition y := 2.
+    End M2.
+    Module M3.
+      Definition z := 3.
+    End M3.
+  End M1.
+
+Given coq (record-same-line):
+  Record r := {
+  f1 : ind;
+  f2 : ind
+  }.
+
+Do (indent-record-same-line):
+  vip=
+
+Expect coq (indented-record-same-line):
+  Record r := {
+    f1 : ind;
+    f2 : ind
+  }.
+
+Given coq (record-new-line):
+  Record r :=
+  {
+  f1 : ind;
+  f2 : ind
+  }.
+
+Do (indent-record-new-line):
+  vip=
+
+Expect coq (indented-record-new-line):
+  Record r :=
+    {
+      f1 : ind;
+      f2 : ind
+    }.
+
+Given coq (record-constructor-same-line):
+  Definition d : r := {|
+  f1 := con1;
+  f2 := con2;
+  |}.
+
+Do (indent-record-constructor-same-line):
+  vip=
+
+Expect coq (indented-record-constructor-same-line):
+  Definition d : r := {|
+    f1 := con1;
+    f2 := con2;
+  |}.
+
+Given coq (record-constructor-new-line):
+  Definition d : r :=
+  {|
+  f1 := con1;
+  f2 := con2;
+  |}.
+
+Do (indent-record-constructor-new-line):
+  vip=
+
+Expect coq (indented-record-constructor-new-line):
+  Definition d : r :=
+    {|
+      f1 := con1;
+      f2 := con2;
+    |}.
+
+Given coq (record-constructor-nested):
+  Definition d : r :=
+  {|
+  f1 := {| f1 := con1; f2 := con2 |};
+  f2 := con3
+  |}.
+
+Do (indent-record-constructor-nested):
+  vip=
+
+Expect coq (indented-record-constructor-nested):
+  Definition d : r :=
+    {|
+      f1 := {| f1 := con1; f2 := con2 |};
+      f2 := con3
+    |}.
+
+Given coq (comments):
+  Definition x := 1.
+  (* Line comment *)
+  Definition y := 2.
+  (* Block
+  comment *)
+  Definition z := 3.
+
+Do (indent-comments):
+  vip=
+
+Expect coq (indented-comments):
+  Definition x := 1.
+  (* Line comment *)
+  Definition y := 2.
+  (* Block
+     comment *)
+  Definition z := 3.
+
+Given coq (single-bullets):
+  Lemma p (b1 b2 b3 : bool) : True.
+  Proof.
+  destruct b1.
+  - destruct b2.
+  + destruct b3.
+  idtac.
+  *
+  auto.
+  * auto.
+  + auto.
+  - auto.
+  Qed.
+
+Do (indent-single-bullets):
+  vip=
+
+Expect coq (indented-single-bullets):
+  Lemma p (b1 b2 b3 : bool) : True.
+  Proof.
+    destruct b1.
+    - destruct b2.
+      + destruct b3.
+        idtac.
+        *
+          auto.
+        * auto.
+      + auto.
+    - auto.
+  Qed.
+
+Given coq (double-bullets):
+  Lemma p (b1 b2 b3 : bool) : True.
+  Proof.
+  (* Omitted *)
+  destruct b1.
+  -- destruct b2.
+  ++ destruct b3.
+  idtac.
+  **
+  auto.
+  ** auto.
+  ++ auto.
+  -- auto.
+
+Do (indent-double-bullets):
+  vip=
+
+Expect coq (indented-double-bullets):
+  Lemma p (b1 b2 b3 : bool) : True.
+  Proof.
+    (* Omitted *)
+    destruct b1.
+    -- destruct b2.
+       ++ destruct b3.
+          idtac.
+          **
+             auto.
+          ** auto.
+       ++ auto.
+    -- auto.
+
+Given coq (bullets-brackets):
+  Lemma p (b1 b2 b3 b4 b5 : bool) : True.
+  Proof.
+  destruct b1.
+  - destruct b2.
+  + destruct b3.
+  * assert (true = true).
+  {
+  destruct b4.
+  - auto.
+  - destruct b5.
+  + auto.
+  + auto.
+  }
+  * auto.
+  + auto.
+  - auto.
+  Qed.
+
+Do (indent-bullets-brackets):
+  vip=
+
+Expect coq (indented-bullets-brackets):
+  Lemma p (b1 b2 b3 b4 b5 : bool) : True.
+  Proof.
+    destruct b1.
+    - destruct b2.
+      + destruct b3.
+        * assert (true = true).
+          {
+            destruct b4.
+            - auto.
+            - destruct b5.
+              + auto.
+              + auto.
+          }
+        * auto.
+      + auto.
+    - auto.
+  Qed.
+
+Given coq (bullets-brackets-nested):
+  Lemma p (b1 b2 b3 b4 b5 : bool) : True.
+  Proof.
+  destruct b1.
+  - destruct b2.
+  + destruct b3.
+  * assert (true = true).
+  {
+  destruct b4.
+  - assert (false = false).
+  {
+    destruct b5.
+    - auto.
+    - auto.
+  }
+  - auto.
+  }
+  * auto.
+  + auto.
+  - auto.
+  Qed.
+
+Do (indent-bullets-brackets-nested):
+  vip=
+
+Expect coq (indented-bullets-brackets-nested):
+  Lemma p (b1 b2 b3 b4 b5 : bool) : True.
+  Proof.
+    destruct b1.
+    - destruct b2.
+      + destruct b3.
+        * assert (true = true).
+          {
+            destruct b4.
+            - assert (false = false).
+              {
+                destruct b5.
+                - auto.
+                - auto.
+              }
+            - auto.
+          }
+        * auto.
+      + auto.
+    - auto.
+  Qed.
+
+Given coq (bullet-different-order):
+  Lemma p (b1 b2 b3 : bool) : True.
+  Proof.
+  destruct b1.
+  + destruct b2; [auto |].
+  - destruct b3.
+  * auto.
+  * auto.
+  + auto.
+  Qed.
+
+Do (indent-bullet-different-order):
+  vip=
+
+Expect coq (indented-bullet-different-order):
+  Lemma p (b1 b2 b3 : bool) : True.
+  Proof.
+    destruct b1.
+    + destruct b2; [auto |].
+      - destruct b3.
+        * auto.
+        * auto.
+    + auto.
+  Qed.

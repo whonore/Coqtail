@@ -36,4 +36,4 @@ indent:
 	@echo "*******************"
 	@echo "TESTING indentation"
 	@echo "*******************"
-	@./test_indent.sh
+	@vim -Nu vimrc -c 'Vader! indent.vader'
