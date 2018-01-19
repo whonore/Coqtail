@@ -131,7 +131,9 @@ class Coqtop(object):
 
         # Combine messages
         msgs = '\n\n'.join(msg
-                           for msg in (response.msg, response.res_msg, status.msg)
+                           for msg in (response.msg,
+                                       response.res_msg,
+                                       status.msg)
                            if msg != '')
 
         if not status.is_ok():

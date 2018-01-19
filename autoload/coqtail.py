@@ -49,7 +49,8 @@ def fail(err):
 
 def unexpected(response, where):
     """Print a debugging error about an unexpected response."""
-    print("Coqtail receieved unexpected response {} in {}".format(response, where),
+    print("Coqtail receieved unexpected response {} in {}"
+          .format(response, where),
           file=sys.stderr)
 
 
@@ -179,12 +180,11 @@ class Coqtail(object):
         """Forward Coq query to coqtop interface."""
         self.clear_info()
 
-        encoding = vim.eval('&encoding') or 'utf-8'
         message = ' '.join(args)
 
         try:
             _, self.info_msg, _ = self.coqtop.dispatch(message,
-                                                       encoding=encoding)
+                                                       encoding=get_encoding())
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -205,11 +205,11 @@ class Coqtail(object):
         """Locate where the current word is defined and jump to it."""
         # 'Locate target' returns the kind of object (Constant, Inductive, etc)
         # and the logical path to where it is defined
-        encoding = vim.eval('&encoding') or 'utf-8'
         message = "Locate {}.".format(target)
 
         try:
-            success, res_msg = self.coqtop.query(message, encoding=encoding)
+            success, res_msg = self.coqtop.query(message,
+                                                 encoding=get_encoding())
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -222,9 +222,9 @@ class Coqtail(object):
                 if len(locs) == 1:
                     ltype, lfile, lname = locs[0]
                 else:
-                    choices = ["{}: {} in {}".format(n + 1,
-                                                     ltype,
-                                                     lfile if lfile != 'Coq' else 'Coq StdLib')
+                    choices = ["{}: {} in {}"
+                               .format(n + 1, ltype,
+                                       lfile if lfile != 'Coq' else 'Coq StdLib')
                                for n, (ltype, lfile, _) in enumerate(locs)
                                if ltype is not None]
                     choices.insert(0, 'Choose one of these definitions:')
@@ -259,10 +259,8 @@ class Coqtail(object):
 
     def make_match(self, ty):
         """Create a "match" statement template for the given inductive type."""
-        encoding = vim.eval('&encoding') or 'utf-8'
-
         try:
-            success, msg = self.coqtop.mk_cases(ty, encoding=encoding)
+            success, msg = self.coqtop.mk_cases(ty, encoding=get_encoding())
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -289,7 +287,6 @@ class Coqtail(object):
     def send_until_fail(self):
         """Send all chunks in 'send_queue' until an error is encountered."""
         msgs = []
-        encoding = vim.eval('&fileencoding') or 'utf-8'
 
         while self.send_queue:
             self.reset_color()
@@ -300,7 +297,7 @@ class Coqtail(object):
 
             try:
                 success, msg, err_loc = self.coqtop.dispatch(message,
-                                                             encoding=encoding,
+                                                             encoding=get_encoding(),
                                                              timeout=get_timeout())
             except CT.CoqtopError as e:
                 fail(e)
@@ -341,12 +338,11 @@ class Coqtail(object):
         to the file where it is defined, plus the type of object and name.
         """
         # Build a map from logical to physical paths using LoadPath
-        encoding = vim.eval('&encoding') or 'utf-8'
         message = 'Print LoadPath.'
 
         try:
             success, loadpath = self.coqtop.query(message,
-                                                  encoding=encoding,
+                                                  encoding=get_encoding(),
                                                   timeout=get_timeout())
         except CT.CoqtopError as e:
             fail(e)
@@ -431,10 +427,9 @@ class Coqtail(object):
             for idx, goal in enumerate(goals):
                 if idx == 0:
                     # Print the environment only for the current goal
-                    for hyp in goal.hyp:
-                        msg.append(hyp)
+                    msg += goal.hyp
 
-                msg.append('\n' + '=' * 25 + " ({} / {})\n".format(idx + 1, ngoals))
+                msg.append("\n{:=>25} ({} / {})\n".format('', idx + 1, ngoals))
                 msg.append(goal.ccl)
 
             self.goal_msg = '\n'.join(msg)
@@ -548,6 +543,11 @@ class Coqtail(object):
 def get_timeout():
     """Get the current timeout value."""
     return int(vim.eval('b:coq_timeout'))
+
+
+def get_encoding():
+    """Get the encoding or default to utf8."""
+    return vim.eval('&encoding') or 'utf-8'
 
 
 # Searching for Coq Definitions #

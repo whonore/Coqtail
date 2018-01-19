@@ -444,7 +444,7 @@ class XmlInterface84(XmlInterfaceBase):
             return ''
 
     # Coqtop Commands #
-    def init(self, *args, **kwargs):
+    def init(self, *_args, **_kwargs):
         """Fake the 'Init' command."""
         return ('Init', None)
 
@@ -454,7 +454,7 @@ class XmlInterface84(XmlInterfaceBase):
         #   val : int - The current state id
         return Ok(0)
 
-    def add(self, cmd, state, *args, **kwargs):
+    def add(self, cmd, state, *_args, **kwargs):
         """Create an XML string for the 'interp' command."""
         # Attrs:
         #   bool - Verbose output
@@ -479,7 +479,7 @@ class XmlInterface84(XmlInterfaceBase):
             val.state_id = 0
         return val
 
-    def edit_at(self, _, steps, *args, **kwargs):
+    def edit_at(self, _, steps, *_args, **kwargs):
         """Create an XML string for the 'rewind' command."""
         # Attrs:
         #   int - The number of steps to rewind
@@ -497,7 +497,7 @@ class XmlInterface84(XmlInterfaceBase):
             val.extra_steps = val.val
         return val
 
-    def query(self, cmd, state, *args, **kwargs):
+    def query(self, cmd, state, *_args, **kwargs):
         """Create an XML string for the 'interp' command."""
         # Attrs:
         #   raw - ?
@@ -522,7 +522,7 @@ class XmlInterface84(XmlInterfaceBase):
             val.msg = val.val
         return val
 
-    def goal(self, *args, **kwargs):
+    def goal(self, *_args, **kwargs):
         """Create an XML string for the 'goal' command."""
         # Args:
         #   unit - Empty arg
@@ -539,7 +539,7 @@ class XmlInterface84(XmlInterfaceBase):
                 val.val = val.val.val.fg
         return val
 
-    def status(self, *args, **kwargs):
+    def status(self, *_args, **kwargs):
         """Create an XML string for the 'status' command."""
         # Args:
         #   unit - Empty arg
@@ -547,7 +547,7 @@ class XmlInterface84(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'status', ()),
                             kwargs.get('encoding', 'utf-8')))
 
-    def mk_cases(self, ty, *args, **kwargs):
+    def mk_cases(self, ty, *_args, **kwargs):
         """Create an XML string for the 'MkCases' command."""
         # Args:
         #   str - The inductive type to make cases for
@@ -557,7 +557,7 @@ class XmlInterface84(XmlInterfaceBase):
                 ET.tostring(elt,
                             kwargs.get('encoding', 'utf-8')))
 
-    def get_options(self, *args, **kwargs):
+    def get_options(self, *_args, **kwargs):
         """Create an XML string for the 'GetOptions' command."""
         # Args:
         #   unit - Empty arg
@@ -577,7 +577,7 @@ class XmlInterface84(XmlInterfaceBase):
         return val
 
     # TODO: allow non-boolean arguments
-    def set_options(self, cmd, *args, **kwargs):
+    def set_options(self, cmd, *_args, **kwargs):
         """Create an XML string for the 'SetOptions' command."""
         # Args:
         #   list (option_name * option_value) - The options to update and the
@@ -721,7 +721,7 @@ class XmlInterface85(XmlInterfaceBase):
             return ''
 
     # Coqtop Commands #
-    def init(self, *args, **kwargs):
+    def init(self, *_args, **kwargs):
         """Create an XML string for the 'Init' command."""
         # Args:
         #   option string - A Coq file to add to the LoadPath to do ?
@@ -729,7 +729,7 @@ class XmlInterface85(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'Init', None),
                             kwargs.get('encoding', 'utf-8')))
 
-    def add(self, cmd, state, *args, **kwargs):
+    def add(self, cmd, state, *_args, **kwargs):
         """Create an XML string for the 'Add' command."""
         # Args:
         #   string - The command to evaluate
@@ -752,7 +752,7 @@ class XmlInterface85(XmlInterfaceBase):
             val.state_id = val.val[0]
         return val
 
-    def edit_at(self, state, *args, **kwargs):
+    def edit_at(self, state, *_args, **kwargs):
         """Create an XML string for the 'Edit_at' command."""
         # Args:
         #   state_id - The state_id to move to
@@ -768,7 +768,7 @@ class XmlInterface85(XmlInterfaceBase):
             val.extra_steps = 0
         return val
 
-    def query(self, cmd, state, *args, **kwargs):
+    def query(self, cmd, state, *_args, **kwargs):
         """Create an XML string for the 'Query' command."""
         # Args:
         #   string - The command to query
@@ -779,7 +779,7 @@ class XmlInterface85(XmlInterfaceBase):
                                             (cmd, state)),
                             kwargs.get('encoding', 'utf-8')))
 
-    def goal(self, *args, **kwargs):
+    def goal(self, *_args, **kwargs):
         """Create an XML string for the 'Goal' command."""
         # Args:
         #   unit - Empty arg
@@ -796,7 +796,7 @@ class XmlInterface85(XmlInterfaceBase):
                 val.val = val.val.val.fg
         return val
 
-    def status(self, *args, **kwargs):
+    def status(self, *_args, **kwargs):
         """Create an XML string for the 'Status' command."""
         # Args:
         #   bool - Force all pending evaluations
@@ -804,7 +804,7 @@ class XmlInterface85(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'Status', True),
                             kwargs.get('encoding', 'utf-8')))
 
-    def mk_cases(self, ty, *args, **kwargs):
+    def mk_cases(self, ty, *_args, **kwargs):
         """Create an XML string for the 'MkCases' command."""
         # Args:
         #   str - The inductive type to make cases for
@@ -812,7 +812,7 @@ class XmlInterface85(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'MkCases', ty),
                             kwargs.get('encoding', 'utf-8')))
 
-    def get_options(self, *args, **kwargs):
+    def get_options(self, *_args, **kwargs):
         """Create an XML string for the 'GetOptions' command."""
         # Args:
         #   unit - Empty arg
@@ -832,7 +832,7 @@ class XmlInterface85(XmlInterfaceBase):
         return val
 
     # TODO: allow non-boolean arguments
-    def set_options(self, cmd, *args, **kwargs):
+    def set_options(self, cmd, *_args, **kwargs):
         """Create an XML string for the 'SetOptions' command."""
         # Args:
         #   list (option_name * option_value) - The options to update and the
@@ -909,7 +909,7 @@ class XmlInterface87(XmlInterface86):
 
     # Coqtop Commands #
     # Overrides query() from 8.6
-    def query(self, cmd, state, *args, **kwargs):
+    def query(self, cmd, state, *_args, **kwargs):
         """Create an XML string for the 'Query' command."""
         # Args:
         #   route_id - The routeId ?
