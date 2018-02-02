@@ -137,7 +137,7 @@ function! coqtail#InitPanels()
     let g:counter += 1
 endfunction
 
-" Reopen goals and info panels and rehighlights.
+" Reopen goals and info panels and rehighlight.
 " TODO: loses highlighting when switching back from another window
 function! coqtail#OpenPanels()
     let l:coq_win = winnr()
@@ -157,7 +157,7 @@ function! coqtail#OpenPanels()
     Py coqtail.show_info()
 endfunction
 
-" Close goal and info panels and clears highlighting.
+" Close goal and info panels and clear highlighting.
 function! coqtail#HidePanels()
     " If changing files from goal or info buf
     " N.B. Switching files from anywhere other than the 3 main windows may
@@ -283,7 +283,7 @@ function! coqtail#Stop()
     endif
 endfunction
 
-" Read a CoqProject file and parses it into options that can be passed to
+" Read a CoqProject file and parse it into options that can be passed to
 " coqtop. dir_dif tracks the relative location of the CoqProject file to the
 " current file.
 function! coqtail#ParseCoqProj(file, dir_dif)
@@ -307,7 +307,7 @@ function! coqtail#ParseCoqProj(file, dir_dif)
 endfunction
 
 " Search for a CoqProject file using 'g:coq_proj_file' starting in the
-" current directory and recursively trying parent directories until '/' is
+" current directory and recursively try parent directories until '/' is
 " reached. Return a list of arguments to pass to coqtop.
 function! coqtail#FindCoqProj()
     let l:cwd = ':p:h'
@@ -336,8 +336,8 @@ function! coqtail#FindCoqProj()
     return l:proj_args
 endfunction
 
-" Initialize Python interface, commands, autocommands, and initialize goals
-" and info panels.
+" Initialize Python interface, commands, autocommands, and goals and info
+" panels.
 function! coqtail#Start(...)
     " Highlighting for checked parts
     hi default CheckedByCoq ctermbg=17 guibg=LightGreen
