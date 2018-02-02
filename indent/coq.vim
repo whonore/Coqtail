@@ -56,7 +56,7 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
 
     " Indent of a previous match
     function s:indent_of_previous(patt)
-      return indent(search(a:patt, 'bW'))
+      return indent(search(a:patt, 'bWnz'))
     endfunction
 
     " Indent pairs

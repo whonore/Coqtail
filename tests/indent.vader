@@ -15,6 +15,20 @@ Expect coq (indented-inductive):
     | con2 : ind
     | con3 : ind.
 
+Given coq (inductive-addline):
+  Inductive ind :=
+    | con1 :
+        ind
+
+Do (indent-inductive-addline):
+  Go| con2 : ind.
+
+Expect coq (indented-inductive-addline):
+  Inductive ind :=
+    | con1 :
+        ind
+    | con2 : ind.
+
 Given coq (match):
   Definition f (b : bool) :=
   match b with
