@@ -18,7 +18,7 @@ from coqtop import Coqtop
 # Test Values #
 # Check current version
 # TODO: something less ugly
-VERSIONS = (check_output(('coqtop', '--version')).split()[5].decode(),)
+VERSION = check_output(('coqtop', '--version')).split()[5].decode()
 TIMEOUT = 3
 
 
@@ -29,10 +29,10 @@ def get_state(coq):
 
 
 # Test Fixtures #
-@pytest.fixture(scope='function', params=VERSIONS)
-def coq(request):
+@pytest.fixture(scope='function')
+def coq():
     """Return a Coqtop for each version."""
-    ct = Coqtop(request.param)
+    ct = Coqtop(VERSION)
     if ct.start(timeout=TIMEOUT):
         yield ct
         ct.stop()
