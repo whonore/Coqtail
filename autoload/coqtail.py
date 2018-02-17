@@ -349,7 +349,7 @@ class Coqtail(object):
                                                         timeout=get_timeout())
         except CT.CoqtopError as e:
             fail(e)
-            return
+            return [('Err', e, None)]
 
         if success:
             paths = loadpath.split()[2:]
@@ -687,14 +687,14 @@ def _find_dot_after(sline, scol):
             # We see a comment opening before the next '.'
             com_end = _skip_comment(sline, scol + com_pos + 2)
             if not com_end:
-                return
+                return None
 
             return _find_dot_after(*com_end)
         else:
             # We see a string starting before the next '.'
             str_end = _skip_str(sline, scol + str_pos + 1)
             if not str_end:
-                return
+                return None
 
             return _find_dot_after(*str_end)
     elif line[dot_pos:dot_pos + 2] in ('.', '. '):

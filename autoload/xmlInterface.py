@@ -61,9 +61,9 @@ TIMEOUT_ERR = Err('Coq timed out. You can change the timeout with '
 
 # Helpers #
 def unexpected(expected, got, error=ValueError):
-    """Raise an exception with a message showing what was expected."""
+    """Return an exception with a message showing what was expected."""
     expect = ' or '.join(map(str, expected))
-    raise error("Expected {}, but got {}".format(expect, str(got)))
+    return error("Expected {}, but got {}".format(expect, str(got)))
 
 
 class XmlInterfaceBase(object):
@@ -134,7 +134,7 @@ class XmlInterfaceBase(object):
         elif val == 'false':
             return False
         else:
-            unexpected(('true', 'false'), val)
+            raise unexpected(('true', 'false'), val)
 
     def _from_bool(self, val):
         """True|False"""
@@ -185,7 +185,7 @@ class XmlInterfaceBase(object):
         elif val == 'some':
             return self.Option(self._to_value(xml[0]))
         else:
-            unexpected(('none', 'some'), val)
+            raise unexpected(('none', 'some'), val)
 
     def _from_option(self, val):
         """Option(val=_)|None"""
@@ -203,7 +203,7 @@ class XmlInterfaceBase(object):
         elif val == 'in_r':
             return self.Inr(self._to_value(xml[0]))
         else:
-            unexpected(('in_l', 'in_r'), val)
+            raise unexpected(('in_l', 'in_r'), val)
 
     def _from_union(self, val):
         """Inl(val=_)|Inr(val=_)"""
@@ -212,22 +212,22 @@ class XmlInterfaceBase(object):
         elif isinstance(val, self.Inr):
             return self._build_xml('union', 'in_r', val.val)
         else:
-            unexpected((self.Inl, self.Inr), val)
+            raise unexpected((self.Inl, self.Inr), val)
 
     def _to_value(self, xml):
         """Parse an xml value into a corresponding Python type."""
         try:
             return self._to_value_funcs[xml.tag](xml)
         except KeyError:
-            unexpected(tuple(self._to_value_funcs), xml.tag, KeyError)
+            raise unexpected(tuple(self._to_value_funcs), xml.tag, KeyError)
 
     def _from_value(self, val):
         """Construct an xml element from a corresponding Python type."""
         try:
             return self._from_value_funcs[type(val).__name__](val)
         except KeyError:
-            unexpected(tuple(self._from_value_funcs), type(val).__name__,
-                       KeyError)
+            raise unexpected(tuple(self._from_value_funcs), type(val).__name__,
+                             KeyError)
 
     def _build_xml(self, tag, val=None, children=Void()):
         """Construct an xml element with a given tag, value, and children."""
@@ -262,7 +262,7 @@ class XmlInterfaceBase(object):
 
             return Err(msg, (loc_s, loc_e))
         else:
-            unexpected(('good', 'fail'), val)
+            raise unexpected(('good', 'fail'), val)
 
     def raw_response(self, data):
         """Try to parse an XML response from Coqtop into an Ok or Err."""
@@ -284,7 +284,7 @@ class XmlInterfaceBase(object):
             elif xml.tag in ('message', 'feedback'):
                 msgs.append(self._to_value(xml))
             else:
-                unexpected(('value', 'message', 'feedback'), xml.tag)
+                raise unexpected(('value', 'message', 'feedback'), xml.tag)
 
         if val is not None:
             # Use set() because error messages might have been duplicated by
@@ -411,7 +411,7 @@ class XmlInterface84(XmlInterfaceBase):
         elif isinstance(opt, str_tys):
             opt_ty = 'stringvalue'
         else:
-            unexpected((bool, self.Option) + str_tys, type(opt))
+            raise unexpected((bool, self.Option) + str_tys, type(opt))
 
         return self._build_xml('option_value', opt_ty, opt)
 
@@ -680,7 +680,7 @@ class XmlInterface85(XmlInterfaceBase):
         elif isinstance(opt, self.Option) and isinstance(opt.val, str_tys):
             opt_ty = 'stringoptvalue'
         else:
-            unexpected((bool, self.Option) + str_tys, type(opt))
+            raise unexpected((bool, self.Option) + str_tys, type(opt))
 
         return self._build_xml('option_value', opt_ty, opt)
 

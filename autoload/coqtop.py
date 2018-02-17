@@ -151,6 +151,7 @@ class Coqtop(object):
         if step > len(self.states):
             self.state_id = self.root_state
             self.states = []
+            step = len(self.states)
         else:
             self.state_id = self.states[-step]
             self.states = self.states[:-step]
@@ -167,8 +168,9 @@ class Coqtop(object):
 
         if response.is_ok():
             # If the query was called from within the script we need to record
-            # the state id so rewinding will work properly
-            if in_script:
+            # the state id so rewinding will work properly. Since 8.4 uses
+            # number of steps rather than state ids, don't record the state id
+            if in_script and self.xml.versions >= (8, 5, 0):
                 self.states.append(self.state_id)
             return True, response.msg, None
         else:
@@ -210,9 +212,8 @@ class Coqtop(object):
             ret = response.msg
 
         if response.is_ok():
-            # If the query was called from within the script we need to record
-            # the state id so rewinding will work properly
-            if in_script:
+            # See comment in query()
+            if in_script and self.xml.versions >= (8, 5, 0):
                 self.states.append(self.state_id)
             return True, ret, None
         else:
