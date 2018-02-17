@@ -30,7 +30,7 @@ py-cov: $(addsuffix -cov, $(PYS))
 coq-py: $(COQ_PYS)
 
 # All versions of Coq with a particular Python
-$(addprefix coq-, $(PYS))):
+$(addprefix coq-, $(PYS)):
 	@$(eval PY := $(lastword $(subst -, , $@)))
 	@$(MAKE) $(addsuffix -$(PY), $(COQS))
 
