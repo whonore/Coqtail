@@ -158,7 +158,7 @@ class Coqtop(object):
         response = self.call(self.xml.edit_at(self.state_id, step))
         return response.is_ok(), response.extra_steps
 
-    def query(self, cmd, encoding='utf-8', timeout=None):
+    def query(self, cmd, in_script, encoding='utf-8', timeout=None):
         """Query Coqtop with 'cmd'."""
         response = self.call(self.xml.query(cmd,
                                             self.state_id,
@@ -166,6 +166,10 @@ class Coqtop(object):
                              timeout=timeout)
 
         if response.is_ok():
+            # If the query was called from within the script we need to record
+            # the state id so rewinding will work properly
+            if in_script:
+                self.states.append(self.state_id)
             return True, response.msg, None
         else:
             return False, response.msg, response.loc
@@ -186,7 +190,7 @@ class Coqtop(object):
         else:
             return False, response.msg
 
-    def do_option(self, cmd, encoding='utf-8', timeout=None):
+    def do_option(self, cmd, in_script, encoding='utf-8', timeout=None):
         """Set or get an option."""
         if cmd.startswith('Test'):
             response = self.call(self.xml.get_options(encoding=encoding),
@@ -206,11 +210,15 @@ class Coqtop(object):
             ret = response.msg
 
         if response.is_ok():
+            # If the query was called from within the script we need to record
+            # the state id so rewinding will work properly
+            if in_script:
+                self.states.append(self.state_id)
             return True, ret, None
         else:
             return False, response.msg, response.loc
 
-    def dispatch(self, cmd, encoding='utf-8', timeout=None):
+    def dispatch(self, cmd, in_script=True, encoding='utf-8', timeout=None):
         """Decide whether 'cmd' is setting/getting an option, a query, or a
         regular command."""
         # Python 2 will throw an error if unicode is in 'cmd' unless we decode
@@ -221,9 +229,9 @@ class Coqtop(object):
         cmd = cmd.strip()
 
         if self.xml.is_option(cmd):
-            return self.do_option(cmd, encoding, timeout=timeout)
+            return self.do_option(cmd, in_script, encoding, timeout)
         elif self.xml.is_query(cmd):
-            return self.query(cmd, encoding, timeout)
+            return self.query(cmd, in_script, encoding, timeout)
         else:
             return self.advance(cmd, encoding, timeout)
 

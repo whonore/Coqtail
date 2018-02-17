@@ -184,6 +184,7 @@ class Coqtail(object):
 
         try:
             _, self.info_msg, _ = self.coqtop.dispatch(message,
+                                                       in_script=False,
                                                        encoding=get_encoding())
         except CT.CoqtopError as e:
             fail(e)
@@ -208,8 +209,9 @@ class Coqtail(object):
         message = "Locate {}.".format(target)
 
         try:
-            success, res_msg, _ = self.coqtop.query(message,
-                                                    encoding=get_encoding())
+            success, res_msg, _ = self.coqtop.dispatch(message,
+                                                       in_script=False,
+                                                       encoding=get_encoding())
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -341,9 +343,10 @@ class Coqtail(object):
         message = 'Print LoadPath.'
 
         try:
-            success, loadpath, _ = self.coqtop.query(message,
-                                                     encoding=get_encoding(),
-                                                     timeout=get_timeout())
+            success, loadpath, _ = self.coqtop.dispatch(message,
+                                                        in_script=False,
+                                                        encoding=get_encoding(),
+                                                        timeout=get_timeout())
         except CT.CoqtopError as e:
             fail(e)
             return
