@@ -3,3 +3,4 @@ __pycache__/
 doc/tags
 .cache/
 .coverage
+htmlcov
