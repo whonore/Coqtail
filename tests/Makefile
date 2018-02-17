@@ -4,7 +4,7 @@
 
 CODE_DIR := ../autoload
 PYTEST = PYTHONPATH=$(CODE_DIR) python$* -m pytest $(PYTEST_OPT)
-PYTEST_OPT := -q
+PYTEST_OPT += -q
 
 .PHONY: test py py-cov indent
 
