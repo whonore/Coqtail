@@ -391,6 +391,7 @@ function! coqtail#Start(...)
                 autocmd InsertEnter <buffer> Py coqtail.sync()
                 autocmd BufWinLeave <buffer> call coqtail#HidePanels()
                 autocmd BufWinEnter <buffer> call coqtail#OpenPanels()
+                autocmd QuitPre <buffer> call coqtail#Stop()
             augroup end
         catch /Failed to launch Coq/
             echoerr v:exception
