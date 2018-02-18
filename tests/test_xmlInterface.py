@@ -12,13 +12,15 @@ from __future__ import print_function
 
 from collections import namedtuple
 from inspect import getmembers, ismethod, isfunction
+from subprocess import check_output
 from xml.etree.ElementTree import tostring, Element
 import pytest
 
 from xmlInterface import XmlInterface
 
 # Test Values #
-VERSIONS = ('8.4.0', '8.5.0', '8.6.0', '8.7.0')
+# Check current version
+VERSION = check_output(('coqtop', '--version')).split()[5].decode()
 
 
 # Pairs of Python values and the corresponding XML representation. Parametrized
@@ -242,10 +244,10 @@ class ToFromTests(object):
 
 
 # Test Fixtures #
-@pytest.fixture(scope='module', params=VERSIONS)
-def xmlInt(request):
+@pytest.fixture(scope='module')
+def xmlInt():
     """Return an XmlInterface for each version."""
-    return XmlInterface(request.param)
+    return XmlInterface(VERSION)
 
 
 @pytest.fixture(scope='module', params=ToFromTests.all_tests())
