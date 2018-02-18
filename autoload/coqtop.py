@@ -63,6 +63,7 @@ class Coqtop(object):
         self.root_state = None
         self.out_q = queue.Queue()
         self.xml = XmlInterface(version)
+        self.stopping = False
 
     # Coqtop Interface #
     def start(self, *args, **kwargs):
@@ -101,16 +102,18 @@ class Coqtop(object):
     def stop(self):
         """End the Coqtop process."""
         if self.coqtop is not None:
+            self.stopping = True
+
             try:
                 # Try to terminate Coqtop cleanly
                 # TODO: use Quit call
                 self.coqtop.terminate()
                 self.coqtop.communicate()
-            except (OSError, ValueError):
+            except (OSError, ValueError, AttributeError):
                 try:
                     # Force Coqtop to stop
                     self.coqtop.kill()
-                except OSError:
+                except (OSError, AttributeError):
                     pass
 
             self.coqtop = None
@@ -316,7 +319,7 @@ class Coqtop(object):
         """Continually read data from Coqtop's stdout into 'out_q'."""
         fd = self.coqtop.stdout.fileno()
 
-        while True:
+        while not self.stopping:
             try:
                 self.out_q.put(os.read(fd, 0x10000))
                 # self.out_q.put(self.coqtop.stdout.read(0x10000))
@@ -330,7 +333,7 @@ class Coqtop(object):
         """Continually read data from Coqtop's stderr and print it."""
         fd = self.coqtop.stderr.fileno()
 
-        while True:
+        while not self.stopping:
             try:
                 print(os.read(fd, 0x10000).decode())
                 # print(os.read(fd, 0x10000).decode(), file=sys.stderr)
