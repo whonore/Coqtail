@@ -314,7 +314,6 @@ class Coqtop(object):
             except queue.Empty:
                 break
 
-    # TODO: figure out why python 2 needs os.read vs stdout.read but 3 doesn't
     def capture_out(self):
         """Continually read data from Coqtop's stdout into 'out_q'."""
         fd = self.coqtop.stdout.fileno()
@@ -322,13 +321,10 @@ class Coqtop(object):
         while not self.stopping:
             try:
                 self.out_q.put(os.read(fd, 0x10000))
-                # self.out_q.put(self.coqtop.stdout.read(0x10000))
             except (AttributeError, OSError, ValueError):
                 # Coqtop died
                 return
 
-    # TODO: figure out why printing to stderr causes hide_colors() to fail on
-    # quit
     def capture_err(self):
         """Continually read data from Coqtop's stderr and print it."""
         fd = self.coqtop.stderr.fileno()
@@ -336,7 +332,6 @@ class Coqtop(object):
         while not self.stopping:
             try:
                 print(os.read(fd, 0x10000).decode())
-                # print(os.read(fd, 0x10000).decode(), file=sys.stderr)
             except (AttributeError, OSError, ValueError):
                 # Coqtop died
                 return

@@ -138,7 +138,6 @@ function! coqtail#InitPanels()
 endfunction
 
 " Reopen goals and info panels and rehighlight.
-" TODO: loses highlighting when switching back from another window
 function! coqtail#OpenPanels()
     let l:coq_win = winnr()
 
