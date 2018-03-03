@@ -1075,7 +1075,13 @@ def XmlInterface(version):
     str_versions = version.replace('pl', '.').split('.')
 
     # Strip any trailing text (e.g. '+beta1')
-    versions = tuple(int(re.match('[0-9]+', v).group(0)) for v in str_versions)
+    versions = ()  # type: Tuple[int, ...]
+    for ver in (re.match('[0-9]+', v) for v in str_versions):
+        if ver is None:
+            raise ValueError("Invalid version: {}".format(version))
+        versions += (int(ver.group(0)),)
+
+    # Pad to at least 3 digits
     versions += (0,) * (3 - len(versions))
 
     if (8, 4, 0) <= versions < (8, 5, 0):
@@ -1087,4 +1093,4 @@ def XmlInterface(version):
     elif (8, 7, 0) <= versions < (8, 8, 0):
         return XmlInterface87(versions)
     else:
-        raise ValueError("Invalid version: {}".format(version))
+        raise ValueError("Unsupported version: {}".format(version))
