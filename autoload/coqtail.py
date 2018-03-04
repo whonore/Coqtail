@@ -204,60 +204,32 @@ class Coqtail(object):
 
     def find_def(self, target):
         """Locate where the current word is defined and jump to it."""
-        # 'Locate target' returns the kind of object (Constant, Inductive, etc)
-        # and the logical path to where it is defined
-        message = "Locate {}.".format(target)
+        # Get the fully qualified version of 'target'
+        qual_info = self.qual_name(target)
 
-        try:
-            success, res_msg, _ = self.coqtop.dispatch(message,
-                                                       in_script=False,
-                                                       encoding=get_encoding())
-        except CT.CoqtopError as e:
-            fail(e)
-            return
+        if qual_info is not None:
+            qual_tgt, tgt_type = qual_info
+            tgt_file, tgt_name = self.log_to_phy(qual_tgt, tgt_type)
 
-        if success:
-            if res_msg != '':
-                locs = self.parse_locate(res_msg)
+            if tgt_file is None:
+                print("Failed to locate {}: {}".format(target, tgt_name),
+                      file=sys.stderr)
+                return
 
-                # Ask user to choose which definition to find
-                if len(locs) == 1:
-                    ltype, lfile, lname = locs[0]
-                else:
-                    choices = ["{}: {} in {}"
-                               .format(n + 1, ltype,
-                                       lfile if lfile != 'Coq' else 'Coq StdLib')
-                               for n, (ltype, lfile, _) in enumerate(locs)
-                               if ltype is not None]
-                    choices.insert(0, 'Choose one of these definitions:')
+            if tgt_file == 'Coq':
+                print("{} is part of the Coq StdLib".format(tgt_name))
+            else:
+                # Open 'tgt_file' if it is not the current file
+                if tgt_file != vim.eval('expand("%:p")'):
+                    vim.command('hide argedit ' + tgt_file)
 
-                    idx = int(vim.eval('inputlist(' + str(choices) + ')'))
-                    if 1 <= idx <= len(locs):
-                        ltype, lfile, lname = locs[idx - 1]
-                    else:
-                        print('Invalid choice.', file=sys.stderr)
-                        return
-
-                if lfile == 'Coq':
-                    print("{} is part of the Coq StdLib".format(target))
-                elif ltype == 'Err':
-                    print("Failed to locate {}:\n{}".format(target, lfile),
-                          file=sys.stderr)
-                else:
-                    if lfile != 'Top':
-                        vim.command('hide argedit ' + lfile)
-
-                    if lname is not None:
-                        searches = get_searches(ltype, lname)
-
-                        for search in searches:
-                            try:
-                                vim.command(r"0/\v{}".format(search))
-                                break
-                            except vim.error:
-                                pass
-        else:
-            print(res_msg)
+                # Try progressively broader searches
+                for search in get_searches(tgt_type, tgt_name):
+                    try:
+                        vim.command(r"0/\v{}".format(search))
+                        break
+                    except vim.error:
+                        pass
 
     def make_match(self, ty):
         """Create a "match" statement template for the given inductive type."""
@@ -335,11 +307,48 @@ class Coqtail(object):
         steps_too_far = sum(pos > (line, col) for pos in self.endpoints)
         self.rewind(steps_too_far)
 
-    def parse_locate(self, msg):
-        """Parse the response from 'Locate target' and return the physical path
-        to the file where it is defined, plus the type of object and name.
-        """
-        # Build a map from logical to physical paths using LoadPath
+    def qual_name(self, target):
+        """Find the fully qualified name of 'target' using 'Locate'."""
+        message = "Locate {}.".format(target)
+
+        try:
+            success, res_msg, _ = self.coqtop.dispatch(message,
+                                                       in_script=False,
+                                                       encoding=get_encoding())
+        except CT.CoqtopError as e:
+            fail(e)
+            return None
+
+        if not success:
+            print(res_msg)
+            return None
+
+        # Choose first match from 'Locate' since that is the default in the
+        # current context
+        qual_tgt = None
+        lines = res_msg.split('\n')
+        if 'No object of basename' in lines[0]:
+            return None
+        else:
+            info = lines[0].split()
+            # Special case for Module Type
+            if info[0] == 'Module' and info[1] == 'Type':
+                tgt_type = 'Module Type'
+                qual_tgt = info[2]
+            else:
+                tgt_type = info[0]
+                qual_tgt = info[1]
+
+            # Look for alias in the 1st or 2nd line
+            alias = re.search(r'\(alias of (.*)\)', '\n'.join(lines[:2]))
+            if alias is not None:
+                # Found an alias, search again using that
+                return self.qual_name(alias.group(1))
+
+        return qual_tgt, tgt_type
+
+    def log_to_phy(self, qual_tgt, tgt_type):
+        """Find the Coq file corresponding to the logical path 'qual_tgt'."""
         message = 'Print LoadPath.'
 
         try:
@@ -349,54 +358,62 @@ class Coqtail(object):
                                                         timeout=get_timeout())
         except CT.CoqtopError as e:
             fail(e)
-            return [('Err', e, None)]
+            return None, str(e)
 
+        # Build a map from logical to physical paths using LoadPath
         if success:
-            paths = loadpath.split()[2:]
+            path_map = ddict(list)
+            paths = loadpath.split()[4:]
             logic = paths[::2]
             physic = paths[1::2]
 
-            path_map = {log: phy for log, phy in zip(logic, physic)}
+            for log, phy in zip(logic, physic):
+                path_map[log].append(phy)
         else:
-            return [('Err', 'Failed to query LoadPath.', None)]
+            return None, 'Failed to query LoadPath.'
 
-        # Return the location and type of the target
-        locs = []
-        for loc in msg.split('\n'):
-            # Skip extra information included in Locate response
-            if loc.strip().startswith('(') or loc == '':
-                continue
+        # Return the location of the target
+        loc = qual_tgt.split('.')
+        tgt_name = loc[-1]
+        if loc[0] == 'Top' or tgt_type == 'Variable':
+            # If 'tgt_type' is Variable then 'target' is defined using
+            # Variable or Context inside a section
+            tgt_file = vim.eval('expand("%:p")')
+        elif loc[0] == 'Coq':
+            tgt_file = 'Coq'
+        else:
+            # Find the longest prefix of 'loc' that matches a logical path in
+            # 'path_map'
+            for end in range(-1, -len(loc), -1):
+                logpath = '.'.join(loc[:end])
 
-            loc = loc.split()
-            ltype = loc[0]
-
-            # Target not found
-            if ltype == 'No':
-                break
-
-            where = loc[1].split('.')
-            if where[0] == 'Coq':
-                locs.append((ltype, 'Coq', None))
-            elif where[0] == 'Top' or ltype == 'Variable':
-                lfile = vim.eval('expand("%:p")')
-                locs.append((ltype, 'Top', where[-1]))
+                if logpath in path_map:
+                    libpaths = path_map[logpath]
+                    coqfile = loc[end] + '.v'
+                    tgt_files = [os.path.join(libpath, coqfile)
+                                 for libpath in libpaths]
+                    # TODO: maybe should return tgt_name = '.'.join(loc[end:])?
+                    break
             else:
-                for end in range(-1, -len(where), -1):
-                    logpath = '.'.join(where[:end])
-                    if logpath in path_map:
-                        libpath = path_map[logpath]
-                        lfile = os.path.abspath(os.path.join(libpath, where[end])) + '.v'
-                        lname = where[-1]
-                        locs.append((ltype, lfile, lname))
-                        break
-                else:
-                    # Could be a module name inside a module definition
-                    lfile = vim.eval('expand("%:p")')
-                    locs.append((ltype, 'Top', where[-1]))
+                # Check the empty (<>) logical path
+                coqfile = loc[0] + '.v'
+                tgt_files = [os.path.join(libpath, coqfile)
+                             for libpath in path_map['<>']]
 
-        if locs == []:
-            return [('Err', msg, None)]
-        return locs
+            # Convert to absolute path and filter out nonexistent files
+            tgt_files = [f for f in map(os.path.abspath, tgt_files)
+                         if os.path.isfile(f)]
+
+            if tgt_files == []:
+                return None, "Could not find {}".format(qual_tgt)
+
+            # TODO: Currently assume only file is left. Maybe this is false
+            if len(tgt_files) > 1:
+                print("Warning: More than one file matches: {}"
+                      .format(tgt_files))
+            tgt_file = tgt_files[0]
+
+        return tgt_file, tgt_name
 
     # Goals and Infos #
     def refresh(self):
@@ -557,7 +574,7 @@ def get_encoding():
 # TODO: could search more intelligently by searching only within relevant
 # section/module, or sometimes by looking at the type (for constructors for
 # example, or record projections)
-def get_searches(ltype, lname):
+def get_searches(tgt_type, tgt_name):
     """Construct a search expression given an object type and name."""
     auto_names = [('Constructor', 'Inductive', 'Build_(.*)', 1),
                   ('Constant', 'Inductive', '(.*)_(ind|rect?)', 1)]
@@ -566,19 +583,20 @@ def get_searches(ltype, lname):
         'Inductive': ['Inductive', 'Class', 'Record'],
         'Constant': ['Definition', 'Fixpoint', 'Function', 'Instance', 'Fact',
                      'Remark', 'Lemma', 'Corollary', 'Theorem', 'Axiom',
-                     'Conjecture'],
+                     'Conjecture', 'Let'],
         'Notation': ['Notation'],
         'Variable': ['Variables?', 'Context'],
         'Ltac': ['Ltac'],
-        'Module': ['Module']
+        'Module': ['Module'],
+        'Module Type': ['Module Type']
     }
 
     # Look for some implicitly generated names
-    search_name = [lname]
-    search_type = [ltype]
+    search_name = [tgt_name]
+    search_type = [tgt_type]
     for from_type, to_type, pat, grp in auto_names:
-        if ltype == from_type and re.match(pat, lname) is not None:
-            search_name.append(re.match(pat, lname).groups(grp)[0])
+        if tgt_type == from_type and re.match(pat, tgt_name) is not None:
+            search_name.append(re.match(pat, tgt_name).groups(grp)[0])
             search_type.append(to_type)
     search_name = '|'.join(search_name)
 
