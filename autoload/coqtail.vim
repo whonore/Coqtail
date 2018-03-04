@@ -283,12 +283,15 @@ function! coqtail#Stop()
 endfunction
 
 " Read a CoqProject file and parse it into options that can be passed to
-" coqtop. dir_dif tracks the relative location of the CoqProject file to the
-" current file.
-function! coqtail#ParseCoqProj(file, dir_dif)
+" coqtop.
+function! coqtail#ParseCoqProj(file)
     let l:proj_args = []
+    let l:file_dir = fnamemodify(a:file, ':p:h')
 
-    for line in readfile(a:file)
+    for l:line in readfile(a:file)
+        " Remove any excess whitespace
+        let l:line = join(split(l:line, ' '), ' ')
+
         if line == ''
             continue
         endif
@@ -297,8 +300,13 @@ function! coqtail#ParseCoqProj(file, dir_dif)
 
         " TODO: recognize more options
         if l:parts[0] == '-R'
-            let l:parts[1] = join([a:dir_dif, l:parts[1]], '/')
-            let l:proj_args = add(l:proj_args, join(l:parts, ' '))
+            " Convert the directory to an absolute path
+            let l:absdir = finddir(l:parts[1], l:file_dir)
+            if l:absdir != ''
+                " Ignore directories that don't exist
+                let l:parts[1] = fnamemodify(l:absdir, ':p')
+                let l:proj_args = add(l:proj_args, join(l:parts, ' '))
+            endif
         endif
     endfor
 
@@ -309,28 +317,10 @@ endfunction
 " current directory and recursively try parent directories until '/' is
 " reached. Return a list of arguments to pass to coqtop.
 function! coqtail#FindCoqProj()
-    let l:cwd = ':p:h'
-    let l:dir_dif = ['.']
-    let l:proj_args = []
-
-    while 1
-        let l:proj_dir = fnamemodify(getcwd(), l:cwd)
-        let l:proj_file = join([l:proj_dir, g:coq_proj_file], '/')
-
-        " Check if 'proj_dir/coq_proj_file' exists and is readable
-        if filereadable(l:proj_file)
-            let l:proj_args = coqtail#ParseCoqProj(l:proj_file, join(l:dir_dif, '/'))
-            break
-        endif
-
-        " If 'proj_dir' is not '/' go up a level
-        if l:proj_dir != '/'
-            let l:cwd = l:cwd . ':h'
-            let l:dir_dif = add(l:dir_dif, '..')
-        else
-            break
-        endif
-    endwhile
+    let l:proj_file = findfile(g:coq_proj_file, '.;')
+    if l:proj_file != ''
+        let l:proj_args = coqtail#ParseCoqProj(l:proj_file)
+    endif
 
     return l:proj_args
 endfunction
