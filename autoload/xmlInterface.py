@@ -44,12 +44,6 @@ class Ok(object):
         self.val = val
         self.msg = msg
 
-    @staticmethod
-    def is_ok():
-        # type: () -> bool
-        """Check if this is a success response."""
-        return True
-
 
 class Err(object):
     """A response representing failure."""
@@ -60,12 +54,6 @@ class Err(object):
         self.msg = msg
         self.loc = loc
         self.timed_out = timed_out
-
-    @staticmethod
-    def is_ok():
-        # type: () -> bool
-        """Check if this is a success response."""
-        return False
 
 
 # The error in case of a timeout
@@ -132,7 +120,7 @@ class XmlInterfaceBase(object):
             'Inl': self._from_union, 'Inr': self._from_union
         }  # type: Dict[Text, Callable[[Any], ET.Element]]
 
-        self._standardize_funcs = {}  # type: Dict[Text, Callable[[Any], Union[Ok, Err]]]
+        self._standardize_funcs = {}  # type: Dict[Text, Callable[[Union[Ok, Err]], Union[Ok, Err]]]
 
     # XML Parsing and Marshalling #
     def _to_unit(self, _xml):
@@ -311,8 +299,8 @@ class XmlInterfaceBase(object):
     def raw_response(self, data):
         # type: (bytes) -> Optional[Union[Ok, Err]]
         """Try to parse an XML response from Coqtop into an Ok or Err."""
-        val = None
-        msgs = []
+        res = None
+        msgs = []  # type: List[Text]
 
         try:
             xmls = ET.fromstring(b'<coqtoproot>' +
@@ -325,29 +313,29 @@ class XmlInterfaceBase(object):
         # Wait for a 'value' node and store any 'message' nodes
         for xml in xmls:
             if xml.tag == 'value':
-                val = self._to_response(xml)
+                res = self._to_response(xml)
             elif xml.tag in ('message', 'feedback'):
-                msgs.append(self._to_value(xml))
+                msgs.append(self._to_value(xml))  # type: ignore
             else:
                 raise unexpected(('value', 'message', 'feedback'), xml.tag)
 
-        if val is not None:
+        if res is not None:
             # Use set() because error messages might have been duplicated by
             # 'feedback' and 'value' tags
-            msgs.insert(0, val.msg)
-            val.msg = '\n\n'.join(set(msg.strip()  # type: ignore
+            msgs.insert(0, res.msg)
+            res.msg = '\n\n'.join(set(msg.strip()
                                       for msg in msgs if msg != ''))
 
-        return val
+        return res
 
-    def standardize(self, cmd, val):
+    def standardize(self, cmd, res):
         # type: (Text, Union[Ok, Err]) -> Union[Ok, Err]
-        """Put the information in 'val' into a version-independent form."""
+        """Put the information in 'res' into a version-independent form."""
         # By default return unchanged
         try:
-            return self._standardize_funcs[cmd](val)
+            return self._standardize_funcs[cmd](res)
         except KeyError:
-            return val
+            return res
 
     # Coqtop Commands #
     @abstractmethod
@@ -442,6 +430,7 @@ class XmlInterfaceBase(object):
 class XmlInterface84(XmlInterfaceBase):
     """The version 8.4.* XML interface."""
 
+    # TODO: give types to namedtuple fields
     # Coqtop Types #
     Goal = namedtuple('Goal', ['id', 'hyp', 'ccl'])
     Goals = namedtuple('Goals', ['fg', 'bg'])
@@ -482,7 +471,6 @@ class XmlInterface84(XmlInterfaceBase):
         self._standardize_funcs.update({
             'Init': self._standardize_init,
             'Add': self._standardize_add,
-            'Edit_at': self._standardize_edit_at,
             'Query': self._standardize_query,
             'Goal': self._standardize_goal,
             'GetOptions': self._standardize_get_options
@@ -558,17 +546,17 @@ class XmlInterface84(XmlInterfaceBase):
             # TODO: maybe make use of this info?
             return ''
 
+    # TODO: specify arg and ret types for all commands
     # Coqtop Commands #
     def init(self, _encoding='utf-8'):
         # type: (str) -> Tuple[Text, Optional[Text]]
         """Fake the 'Init' command."""
         return ('Init', None)
 
-    def _standardize_init(self, _val):
-        # type: (int) -> Ok
+    def _standardize_init(self, _res):
+        # type: (Union[Ok, Err]) -> Ok
         """Standardize the info returned by 'Init'."""
-        # Ret:
-        #   val : int - The current state id
+        # state_id (0): The current state id
         return Ok(0)
 
     def add(self, cmd, state, encoding='utf-8'):
@@ -585,17 +573,15 @@ class XmlInterface84(XmlInterfaceBase):
         elt.text = cmd
         return ('Add', ET.tostring(elt, encoding))
 
-    def _standardize_add(self, val):
+    def _standardize_add(self, res):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]
         """Standardize the info returned by 'Add'."""
-        # Ret:
-        #   res_msg : string - Message
-        #   state_id : string - The new state id
-        if val.is_ok():
-            # TODO: Mypy doesn't like defining attributes outside the class
-            val.res_msg = val.val  # type: ignore
-            val.state_id = 0  # type: ignore
-        return val
+        # res_msg: Messages produced by 'Add'
+        # state_id (0): The new state id
+        if isinstance(res, Ok):
+            res_msg = res.val  # type: Text
+            res.val = {'res_msg': res_msg, 'state_id': 0}
+        return res
 
     def edit_at(self, _state, steps, encoding='utf-8'):
         # type: (int, int, str) -> Tuple[Text, Optional[Text]]
@@ -605,15 +591,6 @@ class XmlInterface84(XmlInterfaceBase):
         elt = ET.Element('call', {'val': 'rewind',
                                   'steps': str(steps)})
         return ('Edit_at', ET.tostring(elt, encoding))
-
-    def _standardize_edit_at(self, val):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
-        """Standardize the info returned by 'Edit_at'."""
-        # Ret:
-        #   extra_steps : int - How many extra steps were moved
-        if val.is_ok():
-            val.extra_steps = val.val  # type: ignore
-        return val
 
     def query(self, cmd, state, encoding='utf-8'):
         # type: (Text, int, str) -> Tuple[Text, Optional[Text]]
@@ -631,14 +608,14 @@ class XmlInterface84(XmlInterfaceBase):
         elt.text = cmd
         return ('Query', ET.tostring(elt, encoding))
 
-    def _standardize_query(self, val):
+    def _standardize_query(self, res):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]
         """Standardize the info returned by 'Query'."""
-        # Ret:
-        #   msg : string - Message
-        if val.is_ok():
-            val.msg = val.val  # type: ignore
-        return val
+        # msg: Messages produced by 'Add'
+        if isinstance(res, Ok):
+            msg = res.val  # type: Text
+            res.msg = msg
+        return res
 
     def goal(self, encoding='utf-8'):
         # type: (str) -> Tuple[Text, Optional[Text]]
@@ -648,15 +625,17 @@ class XmlInterface84(XmlInterfaceBase):
         return ('Goal',
                 ET.tostring(self._build_xml('call', 'goal', ()), encoding))
 
-    def _standardize_goal(self, val):
+    def _standardize_goal(self, res):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]
         """Standardize the info returned by 'Goal'."""
-        # Ret:
-        #   val : list Goal - A list of the current goals
-        if val.is_ok():
-            if val.val is not None:  # type: ignore
-                val.val = val.val.val.fg  # type: ignore
-        return val
+        # fg: A list of the current goals
+        if isinstance(res, Ok):
+            opt_goals = res.val  # type: Union[None, XmlInterfaceBase.Option]
+            if opt_goals is not None:
+                goals = opt_goals.val  # type: XmlInterface84.Goals
+                fg = goals.fg  # type: List[XmlInterface84.Goal]
+                res.val = fg
+        return res
 
     def status(self, encoding='utf-8'):
         # type: (str) -> Tuple[Text, Optional[Text]]
@@ -684,17 +663,17 @@ class XmlInterface84(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'getoptions', ()),
                             encoding))
 
-    def _standardize_get_options(self, val):
+    def _standardize_get_options(self, res):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]
         """Standardize the info returned by 'GetOptions'."""
-        # Ret:
-        #   val : list (string * Python value) - A list of all the options, a
-        #                                        short description, and their
-        #                                        current values
-        if val.is_ok():
-            val.val = [(' '.join(name), state.name, state.value.val)  # type: ignore
-                       for name, state in val.val]  # type: ignore
-        return val
+        # opts: A list of all the options, a short description, and the current
+        #       value
+        if isinstance(res, Ok):
+            raw_opts = res.val  # type: List[Tuple[Text, XmlInterface84.OptionState]]
+            opts = [(' '.join(name), state.name, state.value.val)
+                    for name, state in raw_opts]  # type: List[Tuple[Text, Text, Any]]
+            res.val = opts
+        return res
 
     # TODO: allow non-boolean arguments
     def set_options(self, cmd, encoding='utf-8'):
@@ -766,6 +745,7 @@ class XmlInterface85(XmlInterfaceBase):
         })
 
         self._standardize_funcs.update({
+            'Init': self._standardize_init,
             'Add': self._standardize_add,
             'Edit_at': self._standardize_edit_at,
             'Goal': self._standardize_goal,
@@ -863,6 +843,15 @@ class XmlInterface85(XmlInterfaceBase):
         return ('Init',
                 ET.tostring(self._build_xml('call', 'Init', None), encoding))
 
+    def _standardize_init(self, res):
+        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+        """Standardize the info returned by 'Init'."""
+        # state_id: The current state id
+        if isinstance(res, Ok):
+            val = res.val  # type: XmlInterface85.StateId
+            res.val = val.id
+        return res
+
     def add(self, cmd, state, encoding='utf-8'):
         # type: (Text, int, str) -> Tuple[Text, Optional[Text]]
         """Create an XML string for the 'Add' command."""
@@ -873,19 +862,19 @@ class XmlInterface85(XmlInterfaceBase):
         #   bool - Verbose output
         return ('Add',
                 ET.tostring(self._build_xml('call', 'Add',
-                                            ((cmd, -1), (state, True))),
+                                            ((cmd, -1),
+                                             (self.StateId(state), True))),
                             encoding))
 
-    def _standardize_add(self, val):
+    def _standardize_add(self, res):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]
         """Standardize the info returned by 'Add'."""
-        # Ret:
-        #   res_msg : string - Message
-        #   state_id : string - The new state id
-        if val.is_ok():
-            val.res_msg = val.val[1][1]  # type: ignore
-            val.state_id = val.val[0]  # type: ignore
-        return val
+        # res_msg: Messages produced by 'Add'
+        # state_id: The new state id
+        if isinstance(res, Ok):
+            val = res.val  # type: Tuple[XmlInterface85.StateId, Tuple[Any, Text]]
+            res.val = {'res_msg': val[1][1], 'state_id': val[0].id}
+        return res
 
     def edit_at(self, state, _steps, encoding='utf-8'):
         # type: (int, int, str) -> Tuple[Text, Optional[Text]]
@@ -893,17 +882,17 @@ class XmlInterface85(XmlInterfaceBase):
         # Args:
         #   state_id - The state_id to move to
         return ('Edit_at',
-                ET.tostring(self._build_xml('call', 'Edit_at', state),
+                ET.tostring(self._build_xml('call', 'Edit_at',
+                                            self.StateId(state)),
                             encoding))
 
-    def _standardize_edit_at(self, val):
+    def _standardize_edit_at(self, res):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]
         """Standardize the info returned by 'Edit_at'."""
-        # Ret:
-        #   extra_steps : int - How many extra steps were moved
-        if val.is_ok():
-            val.extra_steps = 0  # type: ignore
-        return val
+        # extra_steps (0): The additional steps rewound
+        if isinstance(res, Ok):
+            res.val = 0
+        return res
 
     def query(self, cmd, state, encoding='utf-8'):
         # type: (Text, int, str) -> Tuple[Text, Optional[Text]]
@@ -912,7 +901,8 @@ class XmlInterface85(XmlInterfaceBase):
         #   string - The command to query
         #   state_id - The current state_id
         return ('Query',
-                ET.tostring(self._build_xml('call', 'Query', (cmd, state)),
+                ET.tostring(self._build_xml('call', 'Query',
+                                            (cmd, self.StateId(state))),
                             encoding))
 
     def goal(self, encoding='utf-8'):
@@ -924,15 +914,17 @@ class XmlInterface85(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'Goal', ()),
                             encoding))
 
-    def _standardize_goal(self, val):
+    def _standardize_goal(self, res):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]
         """Standardize the info returned by 'Goal'."""
-        # Ret:
-        #   val : list Goal - A list of the current goals
-        if val.is_ok():
-            if val.val is not None:  # type: ignore
-                val.val = val.val.val.fg  # type: ignore
-        return val
+        # fg: A list of the current goals
+        if isinstance(res, Ok):
+            opt_goals = res.val  # type: Union[None, XmlInterfaceBase.Option]
+            if opt_goals is not None:
+                goals = opt_goals.val  # type: XmlInterface85.Goals
+                fg = goals.fg  # type: List[XmlInterface85.Goal]
+                res.val = fg
+        return res
 
     def status(self, encoding='utf-8'):
         # type: (str) -> Tuple[Text, Optional[Text]]
@@ -959,17 +951,17 @@ class XmlInterface85(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'GetOptions', ()),
                             encoding))
 
-    def _standardize_get_options(self, val):
+    def _standardize_get_options(self, res):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]
         """Standardize the info returned by 'GetOptions'."""
-        # Ret:
-        #   val : list (string * Python value) - A list of all the options, a
-        #                                        short description, and their
-        #                                        current values
-        if val.is_ok():
-            val.val = [(' '.join(name), state.name, state.value.val)  # type: ignore
-                       for name, state in val.val]  # type: ignore
-        return val
+        # opts: A list of all the options, a short description, and the current
+        #       value
+        if isinstance(res, Ok):
+            raw_opts = res.val  # type: List[Tuple[Text, XmlInterface85.OptionState]]
+            opts = [(' '.join(name), state.name, state.value.val)
+                    for name, state in raw_opts]  # type: List[Tuple[Text, Text, Any]]
+            res.val = opts
+        return res
 
     # TODO: allow non-boolean arguments
     def set_options(self, cmd, encoding='utf-8'):
@@ -1065,7 +1057,8 @@ class XmlInterface87(XmlInterface86):
         #   state_id - The current state_id
         return ('Query',
                 ET.tostring(self._build_xml('call', 'Query',
-                                            (self.RouteId(0), (cmd, state))),
+                                            (self.RouteId(0),
+                                             (cmd, self.StateId(state)))),
                             encoding))
 
 

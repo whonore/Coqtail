@@ -99,11 +99,11 @@ class Coqtop(object):
 
             # Initialize Coqtop
             response = self.call(self.xml.init(), timeout=timeout)
-            if not response.is_ok():
+            if isinstance(response, Err):
                 return False
 
-            self.root_state = response.val  # type: ignore
-            self.state_id = response.val  # type: ignore
+            self.root_state = response.val
+            self.state_id = response.val
 
             return True
         except OSError:
@@ -137,8 +137,8 @@ class Coqtop(object):
                                           encoding=encoding),
                              timeout=timeout)
 
-        if not response.is_ok():
-            return False, response.msg, response.loc  # type: ignore
+        if isinstance(response, Err):
+            return False, response.msg, response.loc
 
         # In addition to sending 'cmd', also check status in order to force it
         # to be evaluated
@@ -147,17 +147,17 @@ class Coqtop(object):
         # Combine messages
         msgs = '\n\n'.join(msg
                            for msg in (response.msg,
-                                       response.res_msg,  # type: ignore
+                                       response.val['res_msg'],
                                        status.msg)
                            if msg != '')
 
-        if not status.is_ok():
+        if isinstance(status, Err):
             # Reset state id to before the error
             self.call(self.xml.edit_at(self.state_id, 1))
-            return False, msgs, status.loc  # type: ignore
+            return False, msgs, status.loc
 
         self.states.append(self.state_id)
-        self.state_id = response.state_id  # type: ignore
+        self.state_id = response.val['state_id']
 
         return True, msgs, None
 
@@ -173,7 +173,10 @@ class Coqtop(object):
             self.states = self.states[:-step]
 
         response = self.call(self.xml.edit_at(self.state_id, step))
-        return response.is_ok(), response.extra_steps  # type: ignore
+        if isinstance(response, Ok):
+            return True, response.val
+        else:
+            return False, 0
 
     def query(self, cmd, in_script, encoding='utf-8', timeout=None):
         # type: (Text, bool, str, Optional[int]) -> Tuple[bool, Text, Optional[Tuple[int, int]]]
@@ -183,7 +186,7 @@ class Coqtop(object):
                                             encoding=encoding),
                              timeout=timeout)
 
-        if response.is_ok():
+        if isinstance(response, Ok):
             # If the query was called from within the script we need to record
             # the state id so rewinding will work properly. Since 8.4 uses
             # number of steps rather than state ids, don't record the state id
@@ -191,14 +194,17 @@ class Coqtop(object):
                 self.states.append(self.state_id)
             return True, response.msg, None
         else:
-            return False, response.msg, response.loc  # type: ignore
+            return False, response.msg, response.loc
 
     def goals(self, timeout=None):
-        # type: (Optional[int]) -> Tuple[bool, str, Any]
+        # type: (Optional[int]) -> Tuple[bool, Text, Any]
         """Get the current set of hypotheses and goals."""
         response = self.call(self.xml.goal(), timeout=timeout)
 
-        return response.is_ok(), response.msg, response.val  # type: ignore
+        if isinstance(response, Ok):
+            return True, response.msg, response.val
+        else:
+            return False, '', []
 
     def mk_cases(self, ty, encoding='utf-8', timeout=None):
         # type: (Text, str, Optional[int]) -> Tuple[bool, Text]
@@ -206,8 +212,8 @@ class Coqtop(object):
         response = self.call(self.xml.mk_cases(ty, encoding=encoding),
                              timeout=timeout)
 
-        if response.is_ok():
-            return True, response.val  # type: ignore
+        if isinstance(response, Ok):
+            return True, response.val
         else:
             return False, response.msg
 
@@ -218,8 +224,8 @@ class Coqtop(object):
             response = self.call(self.xml.get_options(encoding=encoding),
                                  timeout=timeout)
 
-            if response.is_ok():
-                optval = [(val, desc) for name, desc, val in response.val  # type: ignore
+            if isinstance(response, Ok):
+                optval = [(val, desc) for name, desc, val in response.val
                           if name in cmd]
 
                 if optval != []:
@@ -231,13 +237,13 @@ class Coqtop(object):
                                  timeout=timeout)
             ret = response.msg
 
-        if response.is_ok():
+        if isinstance(response, Ok):
             # See comment in query()
             if in_script and self.xml.versions >= (8, 5, 0):
                 self.states.append(self.state_id)
             return True, ret, None
         else:
-            return False, response.msg, response.loc  # type: ignore
+            return False, response.msg, response.loc
 
     def dispatch(self, cmd, in_script=True, encoding='utf-8', timeout=None):
         # type: (Text, bool, str, Optional[int]) -> Tuple[bool, Text, Optional[Tuple[int, int]]]
@@ -312,7 +318,7 @@ class Coqtop(object):
         time.
         """
         if self.coqtop is None:
-            raise ValueError('coqtop must not be None in timeout_thread()')
+            raise CoqtopError('coqtop must not be None in timeout_thread()')
 
         if not got_response.wait(timeout):
             self.coqtop.send_signal(signal.SIGINT)
@@ -345,9 +351,9 @@ class Coqtop(object):
         # type: () -> None
         """Continually read data from Coqtop's stdout into 'out_q'."""
         if self.coqtop is None:
-            raise ValueError('coqtop must not be None in capture_out()')
+            raise CoqtopError('coqtop must not be None in capture_out()')
         if self.coqtop.stdout is None:
-            raise ValueError('coqtop stdout must not be None in capture_out()')
+            raise CoqtopError('coqtop stdout must not be None in capture_out()')
 
         fd = self.coqtop.stdout.fileno()
 
@@ -362,9 +368,9 @@ class Coqtop(object):
         # type: () -> None
         """Continually read data from Coqtop's stderr and print it."""
         if self.coqtop is None:
-            raise ValueError('coqtop must not be None in capture_err()')
+            raise CoqtopError('coqtop must not be None in capture_err()')
         if self.coqtop.stderr is None:
-            raise ValueError('coqtop stdout must not be None in capture_err()')
+            raise CoqtopError('coqtop stdout must not be None in capture_err()')
         fd = self.coqtop.stderr.fileno()
 
         while not self.stopping:
@@ -385,9 +391,9 @@ class Coqtop(object):
         # type: (Text) -> None
         """Write to Coqtop's stdin."""
         if self.coqtop is None:
-            raise ValueError('coqtop must not be None in send_cmd()')
+            raise CoqtopError('coqtop must not be None in send_cmd()')
         if self.coqtop.stdin is None:
-            raise ValueError('coqtop stdin must not be None in send_cmd()')
+            raise CoqtopError('coqtop stdin must not be None in send_cmd()')
 
         self.coqtop.stdin.write(cmd)
         self.coqtop.stdin.flush()
