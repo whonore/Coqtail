@@ -65,7 +65,7 @@ function! coqtail#GetCurWord()
     " Check if current word ends in '.' and remove it if so
     let l:cword = expand('<cword>')
     if l:cword =~ '.*[.]$'
-       let l:cword = l:cword[:-2]
+        let l:cword = l:cword[:-2]
     endif
 
     " Reset iskeyword
@@ -317,6 +317,7 @@ endfunction
 " current directory and recursively try parent directories until '/' is
 " reached. Return a list of arguments to pass to coqtop.
 function! coqtail#FindCoqProj()
+    let l:proj_args = []
     let l:proj_file = findfile(g:coq_proj_file, '.;')
     if l:proj_file != ''
         let l:proj_args = coqtail#ParseCoqProj(l:proj_file)
