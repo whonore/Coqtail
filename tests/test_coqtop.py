@@ -60,7 +60,9 @@ def test_rewind_start(coq):
 
 def test_dispatch_rewind(coq):
     """Rewinding should cancel out in_script dispatches."""
+    succ, _, _ = coq.dispatch('Let a := 0.', timeout=TIMEOUT)
     old_state = get_state(coq)
+
     succ, _, _ = coq.dispatch('Let x := 1.', timeout=TIMEOUT)
     assert succ
     coq.rewind(1)

@@ -161,18 +161,26 @@ class Coqtop(object):
 
         return True, msgs, None
 
-    def rewind(self, step=1):
+    def rewind(self, steps=1):
         # type: (int) -> Tuple[bool, int]
-        """Go back 'step' states."""
-        if step > len(self.states):
+        """Go back 'steps' states."""
+        if steps > len(self.states):
             self.state_id = self.root_state
             self.states = []
-            step = len(self.states)
+            steps = len(self.states)
         else:
-            self.state_id = self.states[-step]
-            self.states = self.states[:-step]
+            # In 8.4 query and option commands will be recorded with
+            # state_id = -1. Need to count them and reduce number of steps to
+            # rewind so Coqtop doesn't go too far back
+            fake_steps = sum(s == -1 for s in self.states[-steps:])
+            if self.states[-steps] != -1:
+                self.state_id = self.states[-steps]
+            else:
+                self.state_id = 0
+            self.states = self.states[:-steps]
+            steps -= fake_steps
 
-        response = self.call(self.xml.edit_at(self.state_id, step))
+        response = self.call(self.xml.edit_at(self.state_id, steps))
         if isinstance(response, Ok):
             return True, response.val
         else:
@@ -189,9 +197,13 @@ class Coqtop(object):
         if isinstance(response, Ok):
             # If the query was called from within the script we need to record
             # the state id so rewinding will work properly. Since 8.4 uses
-            # number of steps rather than state ids, don't record the state id
-            if in_script and self.xml.versions >= (8, 5, 0):
-                self.states.append(self.state_id)
+            # number of steps rather than state ids, record '-1' to indicate
+            # that no rewind should actually be done
+            if in_script:
+                if self.xml.versions >= (8, 5, 0):
+                    self.states.append(self.state_id)
+                else:
+                    self.states.append(-1)
             return True, response.msg, None
         else:
             return False, response.msg, response.loc
@@ -239,8 +251,11 @@ class Coqtop(object):
 
         if isinstance(response, Ok):
             # See comment in query()
-            if in_script and self.xml.versions >= (8, 5, 0):
-                self.states.append(self.state_id)
+            if in_script:
+                if self.xml.versions >= (8, 5, 0):
+                    self.states.append(self.state_id)
+                else:
+                    self.states.append(-1)
             return True, ret, None
         else:
             return False, response.msg, response.loc
