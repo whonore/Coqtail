@@ -323,14 +323,17 @@ class Coqtail(object):
             print(res_msg)
             return None
 
+        # Join lines that start with whitespace to the previous line
+        res_msg = re.sub(r'\n +', ' ', res_msg)
+
         # Choose first match from 'Locate' since that is the default in the
         # current context
         qual_tgt = None
-        lines = res_msg.split('\n')
-        if 'No object of basename' in lines[0]:
+        match = res_msg.split('\n')[0]
+        if 'No object of basename' in match:
             return None
         else:
-            info = lines[0].split()
+            info = match.split()
             # Special case for Module Type
             if info[0] == 'Module' and info[1] == 'Type':
                 tgt_type = 'Module Type'
@@ -339,8 +342,8 @@ class Coqtail(object):
                 tgt_type = info[0]
                 qual_tgt = info[1]
 
-            # Look for alias in the 1st or 2nd line
-            alias = re.search(r'\(alias of (.*)\)', '\n'.join(lines[:2]))
+            # Look for alias
+            alias = re.search(r'\(alias of (.*)\)', match)
             if alias is not None:
                 # Found an alias, search again using that
                 return self.qual_name(alias.group(1))
