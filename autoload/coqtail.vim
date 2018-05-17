@@ -215,6 +215,18 @@ function! coqtail#HidePanels()
     call coqtail#ClearHighlight()
 endfunction
 
+" Scroll a panel up so text doesn't go off the top of the screen.
+function! coqtail#ScrollPanel(bufnum)
+    " Check if scrolling is necessary
+    let l:winh = winheight(0)
+    let l:disph = line('w$') - line('w0') + 1
+
+    " Scroll
+    if line('w0') != 1 && l:disph < l:winh
+        normal Gz-
+    endif
+endfunction
+
 " Interface to Python query function.
 function! coqtail#Query(...)
     Py coqtail.query(*vim.eval('a:000'))

@@ -461,11 +461,35 @@ class Coqtail(object):
 
     def restore_goal(self):
         """Restore the last-displayed goals."""
-        self.goal_buf[:] = self.goal_msg.split('\n')
+        # Switch to goal window and save the view
+        cur_win = vim.current.window
+        vim.current.window = self.bufwin(self.goal_buf)
+        view = vim.eval('winsaveview()')
+
+        # Update goal buffer text
+        vim.current.buffer[:] = self.goal_msg.split('\n')
+
+        # Restore the view and switch to original window
+        vim.command("call winrestview({})".format(view))
+        vim.command("call coqtail#ScrollPanel({})"
+                    .format(vim.current.buffer.number))
+        vim.current.window = cur_win
 
     def show_info(self):
         """Display the info_msg buffer in the info panel."""
-        self.info_buf[:] = self.info_msg.split('\n')
+        # Switch to info window and save the view
+        cur_win = vim.current.window
+        vim.current.window = self.bufwin(self.info_buf)
+        view = vim.eval('winsaveview()')
+
+        # Update info buffer text
+        vim.current.buffer[:] = self.info_msg.split('\n')
+
+        # Restore the view and switch to original window
+        vim.command("call winrestview({})".format(view))
+        vim.command("call coqtail#ScrollPanel({})"
+                    .format(vim.current.buffer.number))
+        vim.current.window = cur_win
 
     def clear_info(self):
         """Clear the info panel."""
@@ -560,6 +584,11 @@ class Coqtail(object):
     def info_buf(self):
         """Get this buffer's info buffer."""
         return vim.buffers[vim.current.buffer.vars['info_buf']]
+
+    @staticmethod
+    def bufwin(buf):
+        """Get the window that contains buf."""
+        return vim.windows[int(vim.eval("bufwinnr({})".format(buf.number))) - 1]
 
 
 # Searching for Coq Definitions #
