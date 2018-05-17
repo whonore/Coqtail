@@ -156,6 +156,24 @@ function! coqtail#OpenPanels()
     Py coqtail.show_info()
 endfunction
 
+" Clear Coqtop highlighting.
+function! coqtail#ClearHighlight()
+    if b:checked != -1
+        call matchdelete(b:checked)
+        let b:checked = -1
+    endif
+
+    if b:sent != -1
+        call matchdelete(b:sent)
+        let b:sent = -1
+    endif
+
+    if b:errors != -1
+        call matchdelete(b:errors)
+        let b:errors = -1
+    endif
+endfunction
+
 " Close goal and info panels and clear highlighting.
 function! coqtail#HidePanels()
     " If changing files from goal or info buf
@@ -194,7 +212,7 @@ function! coqtail#HidePanels()
     let l:coq_win = bufwinnr(l:coq_buf)
     execute l:coq_win . 'wincmd w'
 
-    Py coqtail.hide_color()
+    call coqtail#ClearHighlight()
 endfunction
 
 " Interface to Python query function.

@@ -102,7 +102,7 @@ class Coqtail(object):
 
         try:
             self.coqtop = CT.Coqtop(version)
-            success = self.coqtop.start(*args, timeout=get_timeout())
+            success = self.coqtop.start(*args, timeout=self.timeout)
         except ValueError as e:
             errmsg.append(str(e))
 
@@ -185,7 +185,7 @@ class Coqtail(object):
         try:
             _, self.info_msg, _ = self.coqtop.dispatch(message,
                                                        in_script=False,
-                                                       encoding=get_encoding())
+                                                       encoding=self.encoding)
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -234,7 +234,7 @@ class Coqtail(object):
     def make_match(self, ty):
         """Create a "match" statement template for the given inductive type."""
         try:
-            success, msg = self.coqtop.mk_cases(ty, encoding=get_encoding())
+            success, msg = self.coqtop.mk_cases(ty, encoding=self.encoding)
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -271,8 +271,8 @@ class Coqtail(object):
 
             try:
                 success, msg, err_loc = self.coqtop.dispatch(message,
-                                                             encoding=get_encoding(),
-                                                             timeout=get_timeout())
+                                                             encoding=self.encoding,
+                                                             timeout=self.timeout)
             except CT.CoqtopError as e:
                 fail(e)
                 return
@@ -314,7 +314,7 @@ class Coqtail(object):
         try:
             success, res_msg, _ = self.coqtop.dispatch(message,
                                                        in_script=False,
-                                                       encoding=get_encoding())
+                                                       encoding=self.encoding)
         except CT.CoqtopError as e:
             fail(e)
             return None
@@ -357,8 +357,8 @@ class Coqtail(object):
         try:
             success, loadpath, _ = self.coqtop.dispatch(message,
                                                         in_script=False,
-                                                        encoding=get_encoding(),
-                                                        timeout=get_timeout())
+                                                        encoding=self.encoding,
+                                                        timeout=self.timeout)
         except CT.CoqtopError as e:
             fail(e)
             return None, str(e)
@@ -428,7 +428,7 @@ class Coqtail(object):
     def show_goal(self):
         """Display the current goals."""
         try:
-            success, msg, goals = self.coqtop.goals(timeout=get_timeout())
+            success, msg, goals = self.coqtop.goals(timeout=self.timeout)
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -461,41 +461,20 @@ class Coqtail(object):
 
     def restore_goal(self):
         """Restore the last-displayed goals."""
-        bufn = int(vim.eval('b:goal_buf'))
-        goal_buf = vim.buffers[bufn]
-
-        goal_buf[:] = self.goal_msg.split('\n')
+        self.goal_buf[:] = self.goal_msg.split('\n')
 
     def show_info(self):
         """Display the info_msg buffer in the info panel."""
-        bufn = int(vim.eval('b:info_buf'))
-        info_buf = vim.buffers[bufn]
-
-        info_buf[:] = self.info_msg.split('\n')
+        self.info_buf[:] = self.info_msg.split('\n')
 
     def clear_info(self):
         """Clear the info panel."""
         self.info_msg = ''
         self.show_info()
 
-    def hide_color(self):
-        """Clear highlighting."""
-        # Clear checked highlighting
-        if int(vim.eval('b:checked')) != -1:
-            vim.command('call matchdelete(b:checked)')
-            vim.command('let b:checked = -1')
-
-        if int(vim.eval('b:sent')) != -1:
-            vim.command('call matchdelete(b:sent)')
-            vim.command('let b:sent = -1')
-
-        if int(vim.eval('b:errors')) != -1:
-            vim.command('call matchdelete(b:errors)')
-            vim.command('let b:errors = -1')
-
     def reset_color(self):
         """Recolor sections."""
-        self.hide_color()
+        vim.command('call coqtail#ClearHighlight()')
 
         # Recolor
         if self.endpoints != []:
@@ -561,16 +540,26 @@ class Coqtail(object):
 
         self.info_msg = '\n'.join(top_pad + msg)
 
+    # Vim Helpers #
+    @property
+    def encoding(self):
+        """Get the encoding or default to utf-8."""
+        return vim.options['encoding'].decode('utf-8') or 'utf-8'
 
-# Vim Helpers #
-def get_timeout():
-    """Get the current timeout value."""
-    return int(vim.eval('b:coq_timeout'))
+    @property
+    def timeout(self):
+        """Get the value of coq_timeout for this buffer."""
+        return vim.current.buffer.vars['coq_timeout']
 
+    @property
+    def goal_buf(self):
+        """Get this buffer's goal buffer."""
+        return vim.buffers[vim.current.buffer.vars['goal_buf']]
 
-def get_encoding():
-    """Get the encoding or default to utf8."""
-    return vim.eval('&encoding') or 'utf-8'
+    @property
+    def info_buf(self):
+        """Get this buffer's info buffer."""
+        return vim.buffers[vim.current.buffer.vars['info_buf']]
 
 
 # Searching for Coq Definitions #
@@ -870,11 +859,6 @@ def find_def(*args):
 def make_match(*args):
     """Call make_match() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].make_match(*args)
-
-
-def hide_color(*args):
-    """Call hide_color() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].hide_color(*args)
 
 
 def reset_color(*args):
