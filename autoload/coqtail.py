@@ -31,11 +31,17 @@ import vim
 import os
 import re
 import sys
-from collections import deque
-from collections import defaultdict as ddict
+from collections import deque, defaultdict as ddict
 
 import coqtop as CT
 import vimbufsync
+
+# For Mypy
+try:
+    from typing import (Any, Callable, Dict, Iterable, List, Optional, Text,
+                        Tuple, Type, Union)
+except ImportError:
+    pass
 
 vimbufsync.check_version('0.1.0', who='coqtail')
 
@@ -125,7 +131,7 @@ class Coqtail(object):
         else:
             (line, col) = (0, 0)
 
-        to_send = _get_message_range((line, col))
+        to_send = _get_message_range(vim.current.buffer, (line, col))
         if to_send is None:
             return
 
@@ -164,11 +170,11 @@ class Coqtail(object):
         if cline - 1 < line or (cline - 1 == line and ccol < col):
             self.rewind_to(cline - 1, ccol + 1)
         else:
-            to_send = _get_message_range((line, col))
+            to_send = _get_message_range(vim.current.buffer, (line, col))
             while to_send is not None and to_send['stop'] <= (cline - 1, ccol):
                 (eline, ecol) = to_send['stop']
                 self.send_queue.append(to_send)
-                to_send = _get_message_range((eline, ecol + 1))
+                to_send = _get_message_range(vim.current.buffer, (eline, ecol + 1))
 
             self.send_until_fail()
 
@@ -661,28 +667,28 @@ def _between(start, end):
     return '\n'.join(lines)
 
 
-def _get_message_range(after):
+def _get_message_range(lines, after):
+    # type: (List[str], Tuple[int, int]) -> Optional[Dict[str, Tuple[int, int]]]
     """Return the next chunk to send after a given point."""
-    end_pos = _find_next_chunk(*after)
+    end_pos = _find_next_chunk(lines, *after)
 
     if end_pos is not None:
         return {'start': after, 'stop': end_pos}
     return None
 
 
-def _find_next_chunk(sline, scol):
+def _find_next_chunk(lines, sline, scol):
+    # type: (List[str], int, int) -> Optional[Tuple[int, int]]
     """Find the next chunk to send to Coq."""
-    buf = vim.current.buffer
-    blen = len(buf)
     bullets = ['{', '}', '-', '+', '*']
 
     (line, col) = (sline, scol)
     while True:
         # Skip leading whitespace
-        for line in range(sline, blen):
-            first_line = buf[line][col:].lstrip()
+        for line in range(sline, len(lines)):
+            first_line = lines[line][col:].lstrip()
             if first_line.rstrip() != '':
-                col += len(buf[line][col:]) - len(first_line)
+                col += len(lines[line][col:]) - len(first_line)
                 break
 
             col = 0
@@ -691,8 +697,8 @@ def _find_next_chunk(sline, scol):
 
         # Skip leading comments
         if first_line.startswith('(*'):
-            com_end = _skip_comment(line, col + 2)
-            if not com_end:
+            com_end = _skip_comment(lines, line, col + 2)
+            if com_end is None:
                 return None
 
             (sline, col) = com_end
@@ -701,41 +707,41 @@ def _find_next_chunk(sline, scol):
 
     # Check if the first character of the chunk is a bullet
     if first_line[0] in bullets:
-        return (line, col + 1)
+        return (line, col)
 
     # Otherwise, find an ending '.'
-    return _find_dot_after(line, col)
+    return _find_dot_after(lines, line, col)
 
 
-def _find_dot_after(sline, scol):
+def _find_dot_after(lines, sline, scol):
+    # type: (List[str], int, int) -> Optional[Tuple[int, int]]
     """Find the next '.' after a given point."""
-    buf = vim.current.buffer
-    if sline >= len(buf):
+    if sline >= len(lines):
         return None
 
-    line = buf[sline][scol:]
+    line = lines[sline][scol:]
     dot_pos = line.find('.')
     com_pos = line.find('(*')
     str_pos = line.find('"')
 
     if com_pos == -1 and dot_pos == -1 and str_pos == -1:
         # Nothing on this line
-        return _find_dot_after(sline + 1, 0)
+        return _find_dot_after(lines, sline + 1, 0)
     elif dot_pos == -1 or (0 <= com_pos < dot_pos) or (0 <= str_pos < dot_pos):
         if str_pos == -1 or (0 <= com_pos < str_pos):
             # We see a comment opening before the next '.'
-            com_end = _skip_comment(sline, scol + com_pos + 2)
-            if not com_end:
+            com_end = _skip_comment(lines, sline, scol + com_pos + 2)
+            if com_end is None:
                 return None
 
-            return _find_dot_after(*com_end)
+            return _find_dot_after(lines, *com_end)
         else:
             # We see a string starting before the next '.'
-            str_end = _skip_str(sline, scol + str_pos + 1)
-            if not str_end:
+            str_end = _skip_str(lines, sline, scol + str_pos + 1)
+            if str_end is None:
                 return None
 
-            return _find_dot_after(*str_end)
+            return _find_dot_after(lines, *str_end)
     elif line[dot_pos:dot_pos + 2] in ('.', '. '):
         # Don't stop for '.' used in qualified name or for '..'
         return (sline, scol + dot_pos)
@@ -743,29 +749,31 @@ def _find_dot_after(sline, scol):
         # But do allow '...'
         return (sline, scol + dot_pos + 2)
     else:
-        return _find_dot_after(sline, scol + dot_pos + 1)
+        return _find_dot_after(lines, sline, scol + dot_pos + 1)
 
 
-def _skip_str(sline, scol):
+def _skip_str(lines, sline, scol):
+    # type: (List[str], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in " "."""
-    return _skip_block(sline, scol, '"')
+    return _skip_block(lines, sline, scol, '"')
 
 
-def _skip_comment(sline, scol):
+def _skip_comment(lines, sline, scol):
+    # type: (List[str], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in (* *)."""
-    return _skip_block(sline, scol, '*)', '(*', 1)
+    return _skip_block(lines, sline, scol, '*)', '(*')
 
 
-def _skip_block(sline, scol, estr, sstr=None, nesting=1):
+def _skip_block(lines, sline, scol, estr, sstr=None, nesting=1):
+    # type: (List[str], int, int, str, Optional[str], int) -> Optional[Tuple[int, int]]
     """A generic function to skip the next block contained in sstr estr."""
     if nesting == 0:
         return (sline, scol)
 
-    buf = vim.current.buffer
-    if sline >= len(buf):
+    if sline >= len(lines):
         return None
 
-    line = buf[sline][scol:]
+    line = lines[sline][scol:]
     blk_end = line.find(estr)
     if sstr is not None:
         blk_start = line.find(sstr)
@@ -774,15 +782,15 @@ def _skip_block(sline, scol, estr, sstr=None, nesting=1):
 
     if blk_end != -1 and (blk_end < blk_start or blk_start == -1):
         # Found an end and no new start
-        return _skip_block(sline, scol + blk_end + len(estr),
+        return _skip_block(lines, sline, scol + blk_end + len(estr),
                            estr, sstr, nesting - 1)
     elif blk_start != -1:
         # Found a new start
-        return _skip_block(sline, scol + blk_start + len(sstr),
+        return _skip_block(lines, sline, scol + blk_start + len(sstr),
                            estr, sstr, nesting + 1)
     else:
         # Nothing on this line
-        return _skip_block(sline + 1, 0, estr, sstr, nesting)
+        return _skip_block(lines, sline + 1, 0, estr, sstr, nesting)
 
 
 # Region Highlighting #
