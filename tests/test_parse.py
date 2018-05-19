@@ -54,8 +54,11 @@ tests = (
 
     # Invalid tests,
     ('no dot', ['A'], None),
+    ('unclosed comment pre', ['(* .'], None),
     ('unclosed comment', ['A (* .'], None),
-    ('unclosed string', ['A " .'], None)
+    ('unclosed string', ['A " .'], None),
+    ('only white', [' '], None),
+    ('empty', [''], None)
 )
 
 # Default 'start' to (0, 0)
