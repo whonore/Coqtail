@@ -113,10 +113,8 @@ class Coqtail(object):
 
         try:
             self.coqtop = CT.Coqtop(version, set_done)
-            start = self.coqtop.start(*args, timeout=self.timeout)
-            next(start)
-            stopped = self.wait_coqtop()
-            success = start.send(stopped)
+            success = self.call_and_wait(self.coqtop.start, *args,
+                                         timeout=self.timeout)
         except ValueError as e:
             errmsg.append(str(e))
 
@@ -152,10 +150,7 @@ class Coqtail(object):
             return
 
         try:
-            rewind = self.coqtop.rewind(steps)
-            next(rewind)
-            stopped = self.wait_coqtop()
-            success, extra_steps = rewind.send(stopped)
+            success, extra_steps = self.call_and_wait(self.coqtop.rewind, steps)
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -200,16 +195,10 @@ class Coqtail(object):
         message = ' '.join(args)
 
         try:
-            dispatch = self.coqtop.dispatch(message,
-                                            in_script=False,
-                                            encoding=self.encoding)
-            next(dispatch)
-            while True:
-                stopped = self.wait_coqtop()
-                ret = dispatch.send(stopped)
-                if ret is not None:
-                    _, self.info_msg, _ = ret
-                    break
+            _, self.info_msg, _ = self.call_and_wait(self.coqtop.dispatch,
+                                                     message,
+                                                     in_script=False,
+                                                     encoding=self.encoding)
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -258,10 +247,8 @@ class Coqtail(object):
     def make_match(self, ty):
         """Create a "match" statement template for the given inductive type."""
         try:
-            mk_cases = self.coqtop.mk_cases(ty, encoding=self.encoding)
-            next(mk_cases)
-            stopped = self.wait_coqtop()
-            success, msg = mk_cases.send(stopped)
+            success, msg = self.call_and_wait(self.coqtop.mk_cases, ty,
+                                              encoding=self.encoding)
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -297,16 +284,10 @@ class Coqtail(object):
             message = _between(to_send['start'], to_send['stop'])
 
             try:
-                dispatch = self.coqtop.dispatch(message,
-                                                encoding=self.encoding,
-                                                timeout=self.timeout)
-                next(dispatch)
-                while True:
-                    stopped = self.wait_coqtop()
-                    ret = dispatch.send(stopped)
-                    if ret is not None:
-                        success, msg, err_loc = ret
-                        break
+                success, msg, err_loc = self.call_and_wait(self.coqtop.dispatch,
+                                                           message,
+                                                           encoding=self.encoding,
+                                                           timeout=self.timeout)
             except CT.CoqtopError as e:
                 fail(e)
                 return
@@ -346,16 +327,10 @@ class Coqtail(object):
         message = "Locate {}.".format(target)
 
         try:
-            dispatch = self.coqtop.dispatch(message,
-                                            in_script=False,
-                                            encoding=self.encoding)
-            next(dispatch)
-            while True:
-                stopped = self.wait_coqtop()
-                ret = dispatch.send(stopped)
-                if ret is not None:
-                    success, res_msg, _ = ret
-                    break
+            success, res_msg = self.call_and_wait(self.coqtop.dispatch,
+                                                  message,
+                                                  in_script=False,
+                                                  encoding=self.encoding)
         except CT.CoqtopError as e:
             fail(e)
             return None
@@ -396,17 +371,11 @@ class Coqtail(object):
         message = 'Print LoadPath.'
 
         try:
-            dispatch = self.coqtop.dispatch(message,
-                                            in_script=False,
-                                            encoding=self.encoding,
-                                            timeout=self.timeout)
-            next(dispatch)
-            while True:
-                stopped = self.wait_coqtop()
-                ret = dispatch.send(stopped)
-                if ret is not None:
-                    success, loadpath, _ = ret
-                    break
+            success, loadpath = self.call_and_wait(self.coqtop.dispatch,
+                                                   message,
+                                                   in_script=False,
+                                                   encoding=self.encoding,
+                                                   timeout=self.timeout)
         except CT.CoqtopError as e:
             fail(e)
             return None, str(e)
@@ -466,6 +435,22 @@ class Coqtail(object):
 
         return tgt_file, tgt_name
 
+    def call_and_wait(self, func, *args, **kwargs):
+        """Call a Coqtop function and wait for it to finish."""
+        func_iter = func(*args, **kwargs)
+
+        # Start function
+        next(func_iter)
+        while True:
+            # Wait for coqtop
+            stopped = self.wait_coqtop()
+            # Respond with whether user interrupted
+            ret = func_iter.send(stopped)
+            # If 'ret' is None then coqtop is being called again, otherwise it
+            # is the final result
+            if ret is not None:
+                return ret
+
     # Goals and Infos #
     def refresh(self):
         """Refresh the goals and info panels."""
@@ -476,10 +461,8 @@ class Coqtail(object):
     def show_goal(self):
         """Display the current goals."""
         try:
-            goals = self.coqtop.goals(timeout=self.timeout)
-            next(goals)
-            stopped = self.wait_coqtop()
-            success, msg, goals = goals.send(stopped)
+            success, msg, goals = self.call_and_wait(self.coqtop.goals,
+                                                     timeout=self.timeout)
         except CT.CoqtopError as e:
             fail(e)
             return
