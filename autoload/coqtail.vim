@@ -75,8 +75,7 @@ function! coqtail#GetCurWord()
 endfunction
 
 " Set the maximum time Coqtail will wait after sending a command before
-" interrupting coqtop. Ideally the user could just use <Ctrl-C>, but Vim seems
-" to hang if a plugin goes into an infinite loop.
+" interrupting coqtop.
 function! coqtail#SetTimeout()
     let l:old_timeout = b:coq_timeout
 

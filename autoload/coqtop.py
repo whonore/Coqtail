@@ -85,7 +85,7 @@ class Coqtop(object):
     # Coqtop Interface #
     # These are expressed as generators that spawn a thread to interact with
     # Coqtop, yield and wait to be told whether the user interrupted with
-    # Ctrl-C, then yield the final result. This is done because Vim cannot
+    # CTRL-C, then yield the final result. This is done because Vim cannot
     # capture signals while running Python plugins, so we have to busy wait in
     # Vim instead.
 
