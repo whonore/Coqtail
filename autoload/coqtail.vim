@@ -428,7 +428,7 @@ function! coqtail#Register(version, supported)
         let b:checked = -1
         let b:sent    = -1
         let b:errors  = -1
-        let b:coq_timeout = 3
+        let b:coq_timeout = 0
         let b:coqtop_done = 0
         let b:version = a:version
 
