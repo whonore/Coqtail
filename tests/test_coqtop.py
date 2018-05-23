@@ -161,6 +161,16 @@ def test_advance_stop(coq):
     assert succ
 
 
+def test_advance_same_stop(coq):
+    """If advance is interrupted then Coqtop will rollback."""
+    old_state = get_state(coq)
+    fail, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT, _stop=True)
+    assert not fail
+    assert old_state == get_state(coq)
+    succ, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT)
+    assert succ
+
+
 def test_query_stop(coq):
     """If query is interrupted then the state will not change."""
     old_state = get_state(coq)
