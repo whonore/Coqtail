@@ -158,6 +158,11 @@ class Coqtop(object):
         response = call.send(stopped)
 
         if isinstance(response, Err):
+            # Reset state id to before the error
+            call = self.call(self.xml.edit_at(self.state_id, 1))
+            next(call)
+            _ = yield
+            call.send(False)
             yield False, response.msg, response.loc
             return
 
@@ -372,7 +377,7 @@ class Coqtop(object):
         # Start a thread to get Coqtop's response
         res_ref = Ref()
         answer_thread = threading.Thread(target=self.get_answer,
-                                         args=(res_ref, got_response))
+                                         args=(res_ref,))
         answer_thread.daemon = True
 
         # Start threads and yield back to caller to wait for Coqtop to finish
@@ -380,10 +385,14 @@ class Coqtop(object):
         answer_thread.start()
         stopped = yield
 
+        # Notify timeout_thread that a response is received and wait for
+        # threads to finish
         got_response.set()
+        timeout_thread.join()
+        answer_thread.join()
+
+        # Check for user interrupt or timeout
         if stopped:
-            # Forward signal to Coqtop
-            self.coqtop.send_signal(signal.SIGINT)
             response = STOPPED_ERR
         elif timed_out.is_set():
             response = TIMEOUT_ERR
@@ -402,15 +411,15 @@ class Coqtop(object):
             raise CoqtopError('coqtop must not be None in timeout_thread()')
 
         if not got_response.wait(timeout):
-            self.coqtop.send_signal(signal.SIGINT)
+            self.interrupt()
             timed_out.set()
 
-    def get_answer(self, res_ref, got_response):
-        # type: (Ref, threading.Event) -> None
+    def get_answer(self, res_ref):
+        # type: (Ref) -> None
         """Read from 'out_q' and wait until a full response is received."""
         data = []
 
-        while not got_response.is_set():
+        while True:
             data.append(self.out_q.get())
             response = self.xml.raw_response(b''.join(data))
 
@@ -481,6 +490,11 @@ class Coqtop(object):
 
         self.coqtop.stdin.write(cmd)
         self.coqtop.stdin.flush()
+
+    def interrupt(self):
+        # type: () -> None
+        """Send a SIGINT signal to coqtop."""
+        self.coqtop.send_signal(signal.SIGINT)
 
     # Current State #
     def running(self):

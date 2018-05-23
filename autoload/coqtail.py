@@ -444,6 +444,8 @@ class Coqtail(object):
         while True:
             # Wait for coqtop
             stopped = self.wait_coqtop()
+            # Reset b:coqtop_done
+            vim.current.buffer.vars['coqtop_done'] = 0
             # Respond with whether user interrupted
             ret = func_iter.send(stopped)
             # If 'ret' is None then coqtop is being called again, otherwise it
@@ -624,18 +626,21 @@ class Coqtail(object):
         """Get the window that contains buf."""
         return vim.windows[int(vim.eval("bufwinnr({})".format(buf.number))) - 1]
 
-    @staticmethod
-    def wait_coqtop():
+    def wait_coqtop(self):
         # type: () -> bool
         """Wait for b:coqtop_done to be set and report whether it was
         interrupted."""
-        try:
-            vim.command('while !b:coqtop_done | endwhile')
-            stopped = False
-        except KeyboardInterrupt:
-            stopped = True
+        stopped = False
 
-        vim.current.buffer.vars['coqtop_done'] = 0
+        while True:
+            try:
+                vim.command('while !b:coqtop_done | endwhile')
+                break
+            except KeyboardInterrupt:
+                # Forwrd interrupt to Coqtop
+                self.coqtop.interrupt()
+                stopped = True
+
         return stopped
 
 

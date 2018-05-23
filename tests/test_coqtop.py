@@ -35,17 +35,18 @@ def set_done():
     DONE = True
 
 
-def wait_done():
+def wait_done(stop):
     """Wait for Coqtop to finish."""
     global DONE
-    while not DONE:
+    while not DONE and not stop:
         pass
-    DONE = False
 
 
-# TODO: add tests that simulate interrupt
 def call_and_wait(func, *args, **kwargs):
     """Call a Coqtop function and wait for it to finish."""
+    global DONE
+    DONE = False
+
     if '_stop' in kwargs:
         stop = kwargs['_stop']
         del kwargs['_stop']
@@ -56,7 +57,7 @@ def call_and_wait(func, *args, **kwargs):
 
     next(func_iter)
     while True:
-        wait_done()
+        wait_done(stop)
         ret = func_iter.send(stop)
         if ret is not None:
             return ret
@@ -67,7 +68,7 @@ def call_and_wait(func, *args, **kwargs):
 def coq():
     """Return a Coqtop for each version."""
     ct = Coqtop(VERSION, set_done)
-    if call_and_wait(ct.start, timeout=TIMEOUT):
+    if call_and_wait(ct.start):
         yield ct
         ct.stop()
     else:
@@ -137,12 +138,34 @@ def test_mk_cases_no_change(coq):
 def test_advance_fail(coq):
     """If advance fails then the state will not change."""
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq.advance, 'SyntaxError', timeout=TIMEOUT)
+    fail, _, _ = call_and_wait(coq.dispatch, 'SyntaxError', timeout=TIMEOUT)
     assert not fail
     assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq.advance, 'Lemma x : False.', timeout=TIMEOUT)
+    succ, _, _ = call_and_wait(coq.dispatch, 'Lemma x : False.', timeout=TIMEOUT)
     assert succ
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq.advance, 'reflexivity.', timeout=TIMEOUT)
+    fail, _, _ = call_and_wait(coq.dispatch, 'reflexivity.', timeout=TIMEOUT)
     assert not fail
     assert old_state == get_state(coq)
+
+
+def test_advance_stop(coq):
+    """If advance is interrupted then the state will not change."""
+    succ, _, _ = call_and_wait(coq.dispatch, 'Ltac inf := inf.', timeout=TIMEOUT)
+    assert succ
+    old_state = get_state(coq)
+    fail, _, _ = call_and_wait(coq.dispatch, 'Let x := ltac:(inf).', timeout=TIMEOUT, _stop=True)
+    assert not fail
+    assert old_state == get_state(coq)
+    succ, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT)
+    assert succ
+
+
+def test_query_stop(coq):
+    """If query is interrupted then the state will not change."""
+    old_state = get_state(coq)
+    fail, _, _ = call_and_wait(coq.dispatch, 'Print nat.', timeout=TIMEOUT, _stop=True)
+    assert not fail
+    assert old_state == get_state(coq)
+    succ, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT)
+    assert succ
