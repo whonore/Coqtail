@@ -384,7 +384,7 @@ function! coqtail#Start(...)
             command! -buffer CoqStop call coqtail#Stop()
 
             " Move Coq position
-            command! -buffer CoqNext Py coqtail.next()
+            command! -buffer CoqNext Py coqtail.step()
             command! -buffer CoqUndo Py coqtail.rewind()
             command! -buffer CoqToCursor Py coqtail.to_cursor()
             command! -buffer CoqToTop Py coqtail.to_top()
@@ -429,6 +429,7 @@ function! coqtail#Register(version, supported)
         let b:sent    = -1
         let b:errors  = -1
         let b:coq_timeout = 3
+        let b:coqtop_done = 0
         let b:version = a:version
 
         " TODO: find a less hacky solution

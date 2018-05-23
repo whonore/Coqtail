@@ -37,7 +37,7 @@ if sys.version_info[0] >= 3:
 else:
     import Queue as queue
 
-from xmlInterface import XmlInterface, Ok, Err, TIMEOUT_ERR
+from xmlInterface import XmlInterface, Ok, Err, STOPPED_ERR, TIMEOUT_ERR
 
 # For Mypy
 try:
@@ -45,6 +45,12 @@ try:
                         Tuple, Type, Union)
 except ImportError:
     pass
+
+
+class Ref(object):
+    """A mutable value to be passed between threads."""
+    def __init__(self, val=None):
+        self.val = val
 
 
 class CoqtopError(Exception):
@@ -55,11 +61,12 @@ class CoqtopError(Exception):
 class Coqtop(object):
     """Provide an interface to the background Coqtop process."""
 
-    def __init__(self, version):
-        # type: (Text) -> None
+    def __init__(self, version, done_callback):
+        # type: (Text, Callable[[], None]) -> None
         """Initialize Coqtop state.
 
         coqtop - The Coqtop process
+        done_callback - A function to call when finished waiting for Coqtop
         states - A stack of previous state_ids (grows to the right)
         state_id - The current state_id
         root_state - The starting state_id
@@ -67,6 +74,7 @@ class Coqtop(object):
         xml - The XML interface for the given version
         """
         self.coqtop = None  # type: Optional[subprocess.Popen]
+        self.done_callback = done_callback
         self.states = []  # type: List[int]
         self.state_id = -1
         self.root_state = -1
@@ -75,6 +83,12 @@ class Coqtop(object):
         self.stopping = False
 
     # Coqtop Interface #
+    # These are expressed as generators that spawn a thread to interact with
+    # Coqtop, yield and wait to be told whether the user interrupted with
+    # Ctrl-C, then yield the final result. This is done because Vim cannot
+    # capture signals while running Python plugins, so we have to busy wait in
+    # Vim instead.
+
     def start(self, *args, **kwargs):
         # type: (*str, **int) -> bool
         """Launch the Coqtop process."""
@@ -98,16 +112,21 @@ class Coqtop(object):
                 read_thread.start()
 
             # Initialize Coqtop
-            response = self.call(self.xml.init(), timeout=timeout)
+            call = self.call(self.xml.init(), timeout=timeout)
+            next(call)
+            stopped = yield
+            response = call.send(stopped)
+
             if isinstance(response, Err):
-                return False
+                yield False
+                return
 
             self.root_state = response.val
             self.state_id = response.val
 
-            return True
+            yield True
         except OSError:
-            return False
+            yield False
 
     def stop(self):
         # type: () -> None
@@ -132,17 +151,22 @@ class Coqtop(object):
     def advance(self, cmd, encoding='utf-8', timeout=None):
         # type: (Text, str, Optional[int]) -> Tuple[bool, Text, Optional[Tuple[int, int]]]
         """Advance Coqtop by sending 'cmd'."""
-        response = self.call(self.xml.add(cmd,
-                                          self.state_id,
-                                          encoding=encoding),
-                             timeout=timeout)
+        call = self.call(self.xml.add(cmd, self.state_id, encoding=encoding),
+                         timeout=timeout)
+        next(call)
+        stopped = yield
+        response = call.send(stopped)
 
         if isinstance(response, Err):
-            return False, response.msg, response.loc
+            yield False, response.msg, response.loc
+            return
 
         # In addition to sending 'cmd', also check status in order to force it
         # to be evaluated
-        status = self.call(self.xml.status(encoding=encoding), timeout=timeout)
+        call = self.call(self.xml.status(encoding=encoding), timeout=timeout)
+        next(call)
+        stopped = yield
+        status = call.send(stopped)
 
         # Combine messages
         msgs = '\n\n'.join(msg
@@ -153,13 +177,17 @@ class Coqtop(object):
 
         if isinstance(status, Err):
             # Reset state id to before the error
-            self.call(self.xml.edit_at(self.state_id, 1))
-            return False, msgs, status.loc
+            call = self.call(self.xml.edit_at(self.state_id, 1))
+            next(call)
+            _ = yield
+            call.send(False)
+            yield False, msgs, status.loc
+            return
 
         self.states.append(self.state_id)
         self.state_id = response.val['state_id']
 
-        return True, msgs, None
+        yield True, msgs, None
 
     def rewind(self, steps=1):
         # type: (int) -> Tuple[bool, int]
@@ -180,19 +208,24 @@ class Coqtop(object):
             self.states = self.states[:-steps]
             steps -= fake_steps
 
-        response = self.call(self.xml.edit_at(self.state_id, steps))
+        call = self.call(self.xml.edit_at(self.state_id, steps))
+        next(call)
+        stopped = yield
+        response = call.send(stopped)
+
         if isinstance(response, Ok):
-            return True, response.val
+            yield True, response.val
         else:
-            return False, 0
+            yield False, 0
 
     def query(self, cmd, in_script, encoding='utf-8', timeout=None):
         # type: (Text, bool, str, Optional[int]) -> Tuple[bool, Text, Optional[Tuple[int, int]]]
         """Query Coqtop with 'cmd'."""
-        response = self.call(self.xml.query(cmd,
-                                            self.state_id,
-                                            encoding=encoding),
-                             timeout=timeout)
+        call = self.call(self.xml.query(cmd, self.state_id, encoding=encoding),
+                         timeout=timeout)
+        next(call)
+        stopped = yield
+        response = call.send(stopped)
 
         if isinstance(response, Ok):
             # If the query was called from within the script we need to record
@@ -204,37 +237,46 @@ class Coqtop(object):
                     self.states.append(self.state_id)
                 else:
                     self.states.append(-1)
-            return True, response.msg, None
+            yield True, response.msg, None
         else:
-            return False, response.msg, response.loc
+            yield False, response.msg, response.loc
 
     def goals(self, timeout=None):
         # type: (Optional[int]) -> Tuple[bool, Text, Any]
         """Get the current set of hypotheses and goals."""
-        response = self.call(self.xml.goal(), timeout=timeout)
+        call = self.call(self.xml.goal(), timeout=timeout)
+        next(call)
+        stopped = yield
+        response = call.send(stopped)
 
         if isinstance(response, Ok):
-            return True, response.msg, response.val
+            yield True, response.msg, response.val
         else:
-            return False, '', []
+            yield False, '', []
 
     def mk_cases(self, ty, encoding='utf-8', timeout=None):
         # type: (Text, str, Optional[int]) -> Tuple[bool, Text]
         """Return cases for each constructor of 'ty'."""
-        response = self.call(self.xml.mk_cases(ty, encoding=encoding),
-                             timeout=timeout)
+        call = self.call(self.xml.mk_cases(ty, encoding=encoding),
+                         timeout=timeout)
+        next(call)
+        stopped = yield
+        response = call.send(stopped)
 
         if isinstance(response, Ok):
-            return True, response.val
+            yield True, response.val
         else:
-            return False, response.msg
+            yield False, response.msg
 
     def do_option(self, cmd, in_script, encoding='utf-8', timeout=None):
         # type: (Text, bool, str, Optional[int]) -> Tuple[bool, Text, Optional[Tuple[int, int]]]
         """Set or get an option."""
         if cmd.startswith('Test'):
-            response = self.call(self.xml.get_options(encoding=encoding),
-                                 timeout=timeout)
+            call = self.call(self.xml.get_options(encoding=encoding),
+                             timeout=timeout)
+            next(call)
+            stopped = yield
+            response = call.send(stopped)
 
             if isinstance(response, Ok):
                 optval = [(val, desc) for name, desc, val in response.val
@@ -245,8 +287,11 @@ class Coqtop(object):
                 else:
                     ret = 'Invalid option name'
         else:
-            response = self.call(self.xml.set_options(cmd, encoding=encoding),
-                                 timeout=timeout)
+            call = self.call(self.xml.set_options(cmd, encoding=encoding),
+                             timeout=timeout)
+            next(call)
+            stopped = yield
+            response = call.send(stopped)
             ret = response.msg
 
         if isinstance(response, Ok):
@@ -256,9 +301,9 @@ class Coqtop(object):
                     self.states.append(self.state_id)
                 else:
                     self.states.append(-1)
-            return True, ret, None
+            yield True, ret, None
         else:
-            return False, response.msg, response.loc
+            yield False, response.msg, response.loc
 
     def dispatch(self, cmd, in_script=True, encoding='utf-8', timeout=None):
         # type: (Text, bool, str, Optional[int]) -> Tuple[bool, Text, Optional[Tuple[int, int]]]
@@ -272,11 +317,19 @@ class Coqtop(object):
         cmd = cmd.strip()
 
         if self.xml.is_option(cmd):
-            return self.do_option(cmd, in_script, encoding, timeout)
+            call = self.do_option(cmd, in_script, encoding, timeout)
         elif self.xml.is_query(cmd):
-            return self.query(cmd, in_script, encoding, timeout)
+            call = self.query(cmd, in_script, encoding, timeout)
         else:
-            return self.advance(cmd, encoding, timeout)
+            call = self.advance(cmd, encoding, timeout)
+
+        next(call)
+        while True:
+            stopped = yield
+            ret = call.send(stopped)
+            if ret is not None:
+                yield ret
+                break
 
     # Interacting with Coqtop #
     def call(self, cmdtype_msg, timeout=None):
@@ -296,7 +349,9 @@ class Coqtop(object):
         # N.B. It is important that the '_standardize' function being called
         # does not depend on the value it is passed since it is None
         if msg is None:
-            return self.xml.standardize(cmd, Ok(None))
+            self.done_callback()
+            _ = yield
+            yield self.xml.standardize(cmd, Ok(None))
 
         self.send_cmd(msg)
 
@@ -314,17 +369,28 @@ class Coqtop(object):
                                                 timed_out))
         timeout_thread.daemon = True
 
-        # Start timeout timer
-        timeout_thread.start()
+        # Start a thread to get Coqtop's response
+        res_ref = Ref()
+        answer_thread = threading.Thread(target=self.get_answer,
+                                         args=(res_ref, got_response))
+        answer_thread.daemon = True
 
-        # Wait for a response
-        response = self.get_answer()
+        # Start threads and yield back to caller to wait for Coqtop to finish
+        timeout_thread.start()
+        answer_thread.start()
+        stopped = yield
 
         got_response.set()
-        if timed_out.is_set():
+        if stopped:
+            # Forward signal to Coqtop
+            self.coqtop.send_signal(signal.SIGINT)
+            response = STOPPED_ERR
+        elif timed_out.is_set():
             response = TIMEOUT_ERR
+        elif not stopped:
+            response = res_ref.val
 
-        return self.xml.standardize(cmd, response)
+        yield self.xml.standardize(cmd, response)
 
     def timeout_thread(self, timeout, got_response, timed_out):
         # type: (int, threading.Event, threading.Event) -> None
@@ -339,19 +405,22 @@ class Coqtop(object):
             self.coqtop.send_signal(signal.SIGINT)
             timed_out.set()
 
-    def get_answer(self):
-        # type: () -> Union[Ok, Err]
+    def get_answer(self, res_ref, got_response):
+        # type: (Ref, threading.Event) -> None
         """Read from 'out_q' and wait until a full response is received."""
         data = []
 
-        while True:
+        while not got_response.is_set():
             data.append(self.out_q.get())
             response = self.xml.raw_response(b''.join(data))
 
             if response is None:
                 continue
 
-            return response
+            res_ref.val = response
+            # Notify the caller that Coqtop is done
+            self.done_callback()
+            break
 
     def empty_out(self):
         # type: () -> None

@@ -106,9 +106,17 @@ class Coqtail(object):
         success = False
         errmsg = ['Failed to launch Coq']
 
+        # Callback to be called when Coqtop is done executing
+        def set_done():
+            # type: () -> None
+            vim.current.buffer.vars['coqtop_done'] = 1
+
         try:
-            self.coqtop = CT.Coqtop(version)
-            success = self.coqtop.start(*args, timeout=self.timeout)
+            self.coqtop = CT.Coqtop(version, set_done)
+            start = self.coqtop.start(*args, timeout=self.timeout)
+            next(start)
+            stopped = self.wait_coqtop()
+            success = start.send(stopped)
         except ValueError as e:
             errmsg.append(str(e))
 
@@ -121,7 +129,7 @@ class Coqtail(object):
         self._reset()
         self.coqtop = None
 
-    def next(self):
+    def step(self):
         """Advance Coq by one step."""
         self.sync()
 
@@ -144,7 +152,10 @@ class Coqtail(object):
             return
 
         try:
-            success, extra_steps = self.coqtop.rewind(steps)
+            rewind = self.coqtop.rewind(steps)
+            next(rewind)
+            stopped = self.wait_coqtop()
+            success, extra_steps = rewind.send(stopped)
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -189,9 +200,16 @@ class Coqtail(object):
         message = ' '.join(args)
 
         try:
-            _, self.info_msg, _ = self.coqtop.dispatch(message,
-                                                       in_script=False,
-                                                       encoding=self.encoding)
+            dispatch = self.coqtop.dispatch(message,
+                                            in_script=False,
+                                            encoding=self.encoding)
+            next(dispatch)
+            while True:
+                stopped = self.wait_coqtop()
+                ret = dispatch.send(stopped)
+                if ret is not None:
+                    _, self.info_msg, _ = ret
+                    break
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -240,7 +258,10 @@ class Coqtail(object):
     def make_match(self, ty):
         """Create a "match" statement template for the given inductive type."""
         try:
-            success, msg = self.coqtop.mk_cases(ty, encoding=self.encoding)
+            mk_cases = self.coqtop.mk_cases(ty, encoding=self.encoding)
+            next(mk_cases)
+            stopped = self.wait_coqtop()
+            success, msg = mk_cases.send(stopped)
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -276,9 +297,16 @@ class Coqtail(object):
             message = _between(to_send['start'], to_send['stop'])
 
             try:
-                success, msg, err_loc = self.coqtop.dispatch(message,
-                                                             encoding=self.encoding,
-                                                             timeout=self.timeout)
+                dispatch = self.coqtop.dispatch(message,
+                                                encoding=self.encoding,
+                                                timeout=self.timeout)
+                next(dispatch)
+                while True:
+                    stopped = self.wait_coqtop()
+                    ret = dispatch.send(stopped)
+                    if ret is not None:
+                        success, msg, err_loc = ret
+                        break
             except CT.CoqtopError as e:
                 fail(e)
                 return
@@ -318,9 +346,16 @@ class Coqtail(object):
         message = "Locate {}.".format(target)
 
         try:
-            success, res_msg, _ = self.coqtop.dispatch(message,
-                                                       in_script=False,
-                                                       encoding=self.encoding)
+            dispatch = self.coqtop.dispatch(message,
+                                            in_script=False,
+                                            encoding=self.encoding)
+            next(dispatch)
+            while True:
+                stopped = self.wait_coqtop()
+                ret = dispatch.send(stopped)
+                if ret is not None:
+                    success, res_msg, _ = ret
+                    break
         except CT.CoqtopError as e:
             fail(e)
             return None
@@ -361,10 +396,17 @@ class Coqtail(object):
         message = 'Print LoadPath.'
 
         try:
-            success, loadpath, _ = self.coqtop.dispatch(message,
-                                                        in_script=False,
-                                                        encoding=self.encoding,
-                                                        timeout=self.timeout)
+            dispatch = self.coqtop.dispatch(message,
+                                            in_script=False,
+                                            encoding=self.encoding,
+                                            timeout=self.timeout)
+            next(dispatch)
+            while True:
+                stopped = self.wait_coqtop()
+                ret = dispatch.send(stopped)
+                if ret is not None:
+                    success, loadpath, _ = ret
+                    break
         except CT.CoqtopError as e:
             fail(e)
             return None, str(e)
@@ -434,7 +476,10 @@ class Coqtail(object):
     def show_goal(self):
         """Display the current goals."""
         try:
-            success, msg, goals = self.coqtop.goals(timeout=self.timeout)
+            goals = self.coqtop.goals(timeout=self.timeout)
+            next(goals)
+            stopped = self.wait_coqtop()
+            success, msg, goals = goals.send(stopped)
         except CT.CoqtopError as e:
             fail(e)
             return
@@ -595,6 +640,20 @@ class Coqtail(object):
     def bufwin(buf):
         """Get the window that contains buf."""
         return vim.windows[int(vim.eval("bufwinnr({})".format(buf.number))) - 1]
+
+    @staticmethod
+    def wait_coqtop():
+        # type: () -> bool
+        """Wait for b:coqtop_done to be set and report whether it was
+        interrupted."""
+        try:
+            vim.command('while !b:coqtop_done | endwhile')
+            stopped = False
+        except KeyboardInterrupt:
+            stopped = True
+
+        vim.current.buffer.vars['coqtop_done'] = 0
+        return stopped
 
 
 # Searching for Coq Definitions #
@@ -858,9 +917,9 @@ def stop(*args):
     bufmap[vim.current.buffer].stop(*args)
 
 
-def next(*args):
-    """Call next() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].next(*args)
+def step(*args):
+    """Call step() on current buffer's Coqtop."""
+    bufmap[vim.current.buffer].step(*args)
 
 
 def rewind(*args):

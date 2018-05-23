@@ -56,6 +56,10 @@ class Err(object):
         self.timed_out = timed_out
 
 
+# The error in case of a user interrupt
+STOPPED_ERR = Err('Coq interrupted.')
+
+
 # The error in case of a timeout
 TIMEOUT_ERR = Err('Coq timed out. You can change the timeout with '
                   '<leader>ct and try again.',
