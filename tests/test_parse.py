@@ -66,9 +66,10 @@ tests = ((t[0], t[1],
           t[2] if len(t) == 4 else (0, 0), t[3] if len(t) == 4 else t[2])
          for t in tests)
 
+
 # Test Cases #
-@pytest.mark.parametrize('name, lines, start, stop', tests)
-def test_parse(name, lines, start, stop):
+@pytest.mark.parametrize('_name, lines, start, stop', tests)
+def test_parse(_name, lines, start, stop):
     """'_get_message_range(lines)' should range from 'start' to 'stop'."""
     if stop is not None:
         mrange = {'start': start, 'stop': stop}

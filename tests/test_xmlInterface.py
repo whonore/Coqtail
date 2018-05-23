@@ -269,7 +269,7 @@ def test_tofrom_value(xmlInt, py_xml):
         # TODO: parse message and feedback back correctly
         if xml.tag in ('message', 'feedback'):
             return
-        assert (tostring(xmlInt._from_value(py))
-                == tostring(xml).replace(b'richpp', b'string'))
+        assert (tostring(xmlInt._from_value(py)) ==
+                tostring(xml).replace(b'richpp', b'string'))
     except KeyError:
         pass

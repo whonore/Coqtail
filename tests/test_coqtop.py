@@ -117,7 +117,8 @@ def test_dispatch_not_in_script(coq):
     old_state = get_state(coq)
     call_and_wait(coq.dispatch, 'Print nat.', in_script=False, timeout=TIMEOUT)
     assert old_state == get_state(coq)
-    call_and_wait(coq.dispatch, 'Test Silent.', in_script=False, timeout=TIMEOUT)
+    call_and_wait(coq.dispatch, 'Test Silent.', in_script=False,
+                  timeout=TIMEOUT)
     assert old_state == get_state(coq)
 
 
@@ -141,7 +142,8 @@ def test_advance_fail(coq):
     fail, _, _ = call_and_wait(coq.dispatch, 'SyntaxError', timeout=TIMEOUT)
     assert not fail
     assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq.dispatch, 'Lemma x : False.', timeout=TIMEOUT)
+    succ, _, _ = call_and_wait(coq.dispatch, 'Lemma x : False.',
+                               timeout=TIMEOUT)
     assert succ
     old_state = get_state(coq)
     fail, _, _ = call_and_wait(coq.dispatch, 'reflexivity.', timeout=TIMEOUT)
@@ -151,10 +153,12 @@ def test_advance_fail(coq):
 
 def test_advance_stop(coq):
     """If advance is interrupted then the state will not change."""
-    succ, _, _ = call_and_wait(coq.dispatch, 'Ltac inf := inf.', timeout=TIMEOUT)
+    succ, _, _ = call_and_wait(coq.dispatch, 'Ltac inf := inf.',
+                               timeout=TIMEOUT)
     assert succ
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq.dispatch, 'Let x := ltac:(inf).', timeout=TIMEOUT, _stop=True)
+    fail, _, _ = call_and_wait(coq.dispatch, 'Let x := ltac:(inf).',
+                               timeout=TIMEOUT, _stop=True)
     assert not fail
     assert old_state == get_state(coq)
     succ, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT)
@@ -164,7 +168,8 @@ def test_advance_stop(coq):
 def test_advance_same_stop(coq):
     """If advance is interrupted then Coqtop will rollback."""
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT, _stop=True)
+    fail, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT,
+                               _stop=True)
     assert not fail
     assert old_state == get_state(coq)
     succ, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT)
@@ -174,7 +179,8 @@ def test_advance_same_stop(coq):
 def test_query_stop(coq):
     """If query is interrupted then the state will not change."""
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq.dispatch, 'Print nat.', timeout=TIMEOUT, _stop=True)
+    fail, _, _ = call_and_wait(coq.dispatch, 'Print nat.', timeout=TIMEOUT,
+                               _stop=True)
     assert not fail
     assert old_state == get_state(coq)
     succ, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT)

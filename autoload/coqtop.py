@@ -493,7 +493,7 @@ class Coqtop(object):
 
     def interrupt(self):
         # type: () -> None
-        """Send a SIGINT signal to coqtop."""
+        """Send a SIGINT signal to Coqtop."""
         self.coqtop.send_signal(signal.SIGINT)
 
     # Current State #

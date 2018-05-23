@@ -75,7 +75,7 @@ function! coqtail#GetCurWord()
 endfunction
 
 " Set the maximum time Coqtail will wait after sending a command before
-" interrupting coqtop.
+" interrupting Coqtop.
 function! coqtail#SetTimeout()
     let l:old_timeout = b:coq_timeout
 
@@ -136,7 +136,7 @@ function! coqtail#InitPanels()
     let g:counter += 1
 endfunction
 
-" Reopen goals and info panels and rehighlight.
+" Reopen goals and info panels and re-highlight.
 function! coqtail#OpenPanels()
     let l:coq_win = winnr()
 
@@ -175,7 +175,7 @@ endfunction
 
 " Close goal and info panels and clear highlighting.
 function! coqtail#HidePanels()
-    " If changing files from goal or info buf
+    " If changing files from goal or info buffer
     " N.B. Switching files from anywhere other than the 3 main windows may
     " cause unexpected behaviors
     if exists('b:coq_buf')
@@ -267,7 +267,7 @@ function! coqtail#Mapping()
     call coqtail#QueryMapping()
 endfunction
 
-" Stop the coqtop interface and clean up goal and info buffers.
+" Stop the Coqtop interface and clean up goal and info buffers.
 function! coqtail#Stop()
     if b:coq_running == 1
         let b:coq_running = 0
@@ -312,7 +312,7 @@ function! coqtail#Stop()
 endfunction
 
 " Read a CoqProject file and parse it into options that can be passed to
-" coqtop.
+" Coqtop.
 function! coqtail#ParseCoqProj(file)
     let l:proj_args = []
     let l:file_dir = fnamemodify(a:file, ':p:h')
@@ -344,7 +344,7 @@ endfunction
 
 " Search for a CoqProject file using 'g:coq_proj_file' starting in the
 " current directory and recursively try parent directories until '/' is
-" reached. Return a list of arguments to pass to coqtop.
+" reached. Return a list of arguments to pass to Coqtop.
 function! coqtail#FindCoqProj()
     let l:proj_args = []
     let l:proj_file = findfile(g:coq_proj_file, '.;')
@@ -355,8 +355,7 @@ function! coqtail#FindCoqProj()
     return l:proj_args
 endfunction
 
-" Initialize Python interface, commands, autocommands, and goals and info
-" panels.
+" Initialize Python interface, commands, autocmds, and goals and info panels.
 function! coqtail#Start(...)
     " Highlighting for checked parts
     hi default CheckedByCoq ctermbg=17 guibg=LightGreen
@@ -371,7 +370,7 @@ function! coqtail#Start(...)
         " Check for a Coq project file
         let l:proj_args = coqtail#FindCoqProj()
 
-        " Launch coqtop
+        " Launch Coqtop
         try
             Py coqtail.start(vim.eval('b:version'),
             \                *vim.eval('map(copy(l:proj_args+a:000),'
@@ -433,7 +432,7 @@ function! coqtail#Register(version, supported)
 
         " TODO: find a less hacky solution
         " Define a dummy command for 'Coq' so it does not autocomplete to
-        " 'CoqStart' and cause coqtop to hang
+        " 'CoqStart' and cause Coqtop to hang
         command! -buffer -nargs=* Coq echoerr 'Coq is not running.'
 
         if a:supported

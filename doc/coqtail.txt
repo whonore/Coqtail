@@ -3,8 +3,8 @@
 Author:  Wolf Honore
 License: MIT (see LICENSE)
 
-Coqtail provides an interface to the coqtop program to allow interactive
-theorem proving. Coqtail uses a separate instance of coqtop for each buffer, so
+Coqtail provides an interface to the Coqtop program to allow interactive
+theorem proving. Coqtail uses a separate instance of Coqtop for each buffer, so
 you can have multiple Coq files open and switch between them seamlessly using
 the |arglist| or |buffer-list|.
 
@@ -15,145 +15,154 @@ the |arglist| or |buffer-list|.
 5. Configuration			|coqtail-configuration|
 
 =============================
-Starting and Stopping Coqtail						*coqtail-start-stop*
+Starting and Stopping Coqtail				    *coqtail-start-stop*
 
-									*<leader>cc* *:CoqStart* *coqtail-start*
+					    *<leader>cc* *:CoqStart* *coqtail-start*
 :CoqStart	or
-<leader>cc		Start the plugin. Spawns coqtop in the background and opens
-			two windows on the right of the screen for the Goal and
+<leader>cc		Start the plugin. Spawns Coqtop in the background and
+			opens two windows on the right of the screen for the
+			Goal and Info panels.
+
+					      *<leader>cq* *:CoqStop* *coqtail-stop*
+:CoqStop	or
+<leader>cq		Stop the plugin. Stops Coqtop and closes the Goal and
 			Info panels.
 
-									*<leader>cq* *:CoqStop* *coqtail-stop*
-:CoqStop	or
-<leader>cq		Stop the plugin. Stops coqtop and closes the Goal and Info
-			panels.
-
 =================
-Movement Commands							*coqtail-movement*
+Movement Commands					      *coqtail-movement*
 
-									*<leader>cj* *i_<leader>cj* *:CoqNext*
-									*coqtail-next*
+					      *<leader>cj* *i_<leader>cj* *:CoqNext*
+								  *coqtail-next*
 :CoqNext	or
 <leader>cj		Submit the next block of text up to the next '.' to
-			coqtop for checking. If successful, the text will be
-			highlighted and the Goal and Info panels will be updated
-			accordingly. Otherwise, the part that caused an error will
-			be highlighted and the Info panel will display the error
-			message.
+			Coqtop for checking. If successful, the text will be
+			highlighted and the Goal and Info panels will be
+			updated accordingly. Otherwise, the part that caused an
+			error will be highlighted and the Info panel will
+			display the error message.
 
-									*<leader>ck* *i_<leader>ck* *:CoqUndo*
-									*coqtail-undo*
+					      *<leader>ck* *i_<leader>ck* *:CoqUndo*
+								  *coqtail-undo*
 :CoqUndo	or
 <leader>ck		Rewind by one step. The previous block will be
-			unhighlighted and the Goal and Info panels will be
+			un-highlighted and the Goal and Info panels will be
 			updated.
 
-									*<leader>cl* *i_<leader>cl* *:CoqToCursor*
-									*coqtail-to-cursor*
+				          *<leader>cl* *i_<leader>cl* *:CoqToCursor*
+							     *coqtail-to-cursor*
 :CoqToCursor	or
-<leader>cl		Move the checked region to the cursor position. If this is
-			before the current checked region then coqtop will be
-			rewound to the last '.' before the cursor. Otherwise it
-			will advance to the last '.' before (or under) the cursor.
+<leader>cl		Move the checked region to the cursor position. If this
+			is before the current checked region then Coqtop will
+			be rewound to the last '.' before the cursor. Otherwise
+			it will advance to the last '.' before (or under) the
+			cursor.
 
-									*<leader>cT* *i_<leader>cT* *:CoqToTop*
-									*coqtail-to-top*
+					     *<leader>cT* *i_<leader>cT* *:CoqToTop*
+								*coqtail-to-top*
 :CoqToTop	or
 <leader>cT		Rewind to the top of the file.
 
-									*<leader>cG* *:JumpToEnd*
-									*coqtail-jump-to-end*
+						         *<leader>cG* *:JumpToEnd*
+							   *coqtail-jump-to-end*
 :JumpToEnd	or
-<leader>cG		Move the cursor to the end of the checked region. Does not
-			move the checked region.
+<leader>cG		Move the cursor to the end of the checked region. Does
+			not move the checked region.
 
 ===========
-Coq Queries								*coqtail-queries*
+Coq Queries						       *coqtail-queries*
 
-									*:Coq* *coqtail-query*
-:Coq {args}		Send an arbitrary command to coqtop. Some of the common
+							    *:Coq* *coqtail-query*
+:Coq {args}		Send an arbitrary command to Coqtop. Some of the common
 			commands are listed below.
 
-									*<leader>cs* *coqtail-search-about*
+					       *<leader>cs* *coqtail-search-about*
 :Coq SearchAbout {arg}
-<leader>cs		Send the SearchAbout command to coqtop. The first version
-			will use {arg}, while the second will use the term under the
-			cursor. The response will be written to the Info panel.
+<leader>cs		Send the SearchAbout command to Coqtop. The first
+			version will use {arg}, while the second will use the
+			term under the cursor. The response will be written to
+			the Info panel.
 
-									*<leader>ch* *coqtail-check*
+						      *<leader>ch* *coqtail-check*
 :Coq Check {arg}
-<leader>ch		Send the Check command to coqtop. The first version
-			will use {arg}, while the second will use the term under the
-			cursor. The response will be written to the Info panel.
+<leader>ch		Send the Check command to Coqtop. The first version
+			will use {arg}, while the second will use the term
+			under the cursor. The response will be written to the
+			Info panel.
 
-									*<leader>ca* *coqtail-about*
+						      *<leader>ca* *coqtail-about*
 :Coq About {arg}
-<leader>ca		Send the About command to coqtop. The first version
-			will use {arg}, while the second will use the term under the
-			cursor. The response will be written to the Info panel.
+<leader>ca		Send the About command to Coqtop. The first version
+			will use {arg}, while the second will use the term
+			under the cursor. The response will be written to the
+			Info panel.
 
-									*<leader>cp* *coqtail-print*
+						      *<leader>cp* *coqtail-print*
 :Coq Print {arg}
-<leader>cp		Send the Print command to coqtop. The first version
-			will use {arg}, while the second will use the term under the
-			cursor. The response will be written to the Info panel.
+<leader>cp		Send the Print command to Coqtop. The first version
+			will use {arg}, while the second will use the term
+			under the cursor. The response will be written to the
+			Info panel.
 
-									*<leader>cf* *coqtail-locate*
+						     *<leader>cf* *coqtail-locate*
 :Coq Locate {arg}
-<leader>cf		Send the Locate command to coqtop. The first version
-			will use {arg}, while the second will use the term under the
-			cursor. The response will be written to the Info panel.
+<leader>cf		Send the Locate command to Coqtop. The first version
+			will use {arg}, while the second will use the term
+			under the cursor. The response will be written to the
+			Info panel.
 
 ======================
-Miscellaneous Commands							*coqtail-misc*
+Miscellaneous Commands						  *coqtail-misc*
 
-									*<leader>co* *:FindDef* *coqtail-finddef*
+				           *<leader>co* *:FindDef* *coqtail-finddef*
 :FindDef {arg}
-<leader>co		Searches for the definition of a Coq term and jumps to it in a
-			new file if possible. The first version will use {arg}, while the
-			second will use the term under the cursor. If multiple definitions
-			are found you will be prompted to select one. If found, the file
-			will be added to the |arglist| and opened for editing at the
-			location of the definition. If the definition is in the current
-			file a new one will not be opened.
+<leader>co		Searches for the definition of a Coq term and jumps to
+			it in a new file if possible. The first version will
+			use {arg}, while the second will use the term under the
+			cursor. If multiple definitions are found you will be
+			prompted to select one. If found, the file will be
+			added to the |arglist| and opened for editing at the
+			location of the definition. If the definition is in the
+			current file a new one will not be opened.
 
-									*<leader>cm* *i_<leader>cm* *:MakeMatch*
-									*coqtail-make-match*
+					    *<leader>cm* *i_<leader>cm* *:MakeMatch*
+							    *coqtail-make-match*
 :MakeMatch {arg}
-<leader>cm		Inserts a "match" template for a given Inductive type. The
-			first version will use {arg}, while the second will prompt for an
-			Inductive type.
+<leader>cm		Inserts a "match" template for a given Inductive type.
+			The first version will use {arg}, while the second will
+			prompt for an Inductive type.
 
 =============
-Configuration								*coqtail-configuration*
+Configuration						 *coqtail-configuration*
 
-									*b:coq_timeout* *coqtail-timeout*
-b:coq_timeout		The time in seconds before a command sent to coqtop will be
-			interrupted. Prevents vim from getting stuck if coqtop goes into
-			an infinite loop. Can be adjusted or disabled with |<leader>ct|.
-			A value of 0 will disable the timeout. Defaults to 0.
-			Coq can also be interrupted with CTRL-C.
+					         *b:coq_timeout* *coqtail-timeout*
+b:coq_timeout		The time in seconds before a command sent to Coqtop
+			will be interrupted. Prevents vim from getting stuck if
+			Coqtop goes into an infinite loop. Can be adjusted or
+			disabled with |<leader>ct|. A value of 0 will disable
+			the timeout. Defaults to 0. Coq can also be interrupted
+			with CTRL-C.
 
-									*<leader>ct* *coqtail-set-timeout*
+					        *<leader>ct* *coqtail-set-timeout*
 <leader>ct		Prompts for a value to set |b:coq_timeout| to.
 
-									*g:coq_proj_file* *coq-project-file*
-g:coq_proj_file		The name of the Coq Project file. Set to "_CoqProject" by
-			default. When it is started, Coqtail will search for a file with
-			this name starting from the current directory up to the root
-			directory. If one is found it is parsed and the options are passed
-			to coqtop. Otherwise nothing happens.
+					      *g:coq_proj_file* *coq-project-file*
+g:coq_proj_file		The name of the Coq Project file. Set to "_CoqProject"
+			by default. When it is started, Coqtail will search for
+			a file with this name starting from the current
+			directory up to the root directory. If one is found it
+			is parsed and the options are passed to Coqtop.
+			Otherwise nothing happens.
 
-									*g:coqtail_nomap* *coq-no-mapping*
-g:coqtail_nomap		If this variable is set to 1 then the default mappings in
-			|coqtail-movement|, |coqtail-queries|, and |coqtail-misc| will not
-			be used.
+					        *g:coqtail_nomap* *coq-no-mapping*
+g:coqtail_nomap		If this variable is set to 1 then the default mappings
+			in |coqtail-movement|, |coqtail-queries|, and
+			|coqtail-misc| will not be used.
 
-									*g:coqtail_nosyntax* *coq-no-syntax*
+					      *g:coqtail_nosyntax* *coq-no-syntax*
 g:coqtail_nosyntax	If this variable is set to 1 then the syntax script
 			provided with Coqtail will not be used.
 
-									*g:coqtail_noindent* *coq-no-indent*
+					      *g:coqtail_noindent* *coq-no-indent*
 g:coqtail_noindent	If this variable is set to 1 then the indent script
 			provided with Coqtail will not be used.
 

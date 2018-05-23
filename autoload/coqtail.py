@@ -19,7 +19,7 @@ OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 
 Description: Provides classes and functions for managing goals and info panels
-and coqtop interfaces.
+and Coqtop interfaces.
 """
 
 from __future__ import absolute_import
@@ -55,13 +55,13 @@ def fail(err):
 
 def unexpected(response, where):
     """Print a debugging error about an unexpected response."""
-    print("Coqtail receieved unexpected response {} in {}"
+    print("Coqtail received unexpected response {} in {}"
           .format(response, where),
           file=sys.stderr)
 
 
 class Coqtail(object):
-    """Manage coqtop interfaces and goal and info buffers for each Coq file."""
+    """Manage Coqtop interfaces and goal and info buffers for each Coq file."""
 
     def __init__(self):
         """Initialize variables."""
@@ -89,7 +89,7 @@ class Coqtail(object):
         self.reset_color()
 
     def sync(self):
-        """Check if buffer has been updated and rewind coqtop if so."""
+        """Check if buffer has been updated and rewind Coqtop if so."""
         curr_sync = vimbufsync.sync()
 
         if self.saved_sync is None or curr_sync.buf() != self.saved_sync.buf():
@@ -102,12 +102,12 @@ class Coqtail(object):
 
     # Coqtop Interface #
     def start(self, version, *args):
-        """Start a new coqtop instance."""
+        """Start a new Coqtop instance."""
         success = False
         errmsg = ['Failed to launch Coq']
 
-        # Callback to be called when Coqtop is done executing
         def set_done():
+            """Callback to be triggered when Coqtop is done executing."""
             # type: () -> None
             vim.current.buffer.vars['coqtop_done'] = 1
 
@@ -122,7 +122,7 @@ class Coqtail(object):
             print('. '.join(errmsg), file=sys.stderr)
 
     def stop(self):
-        """Stop coqtop and reset variables."""
+        """Stop Coqtop and reset variables."""
         self.coqtop.stop()
         self._reset()
         self.coqtop = None
@@ -180,7 +180,8 @@ class Coqtail(object):
             while to_send is not None and to_send['stop'] <= (cline - 1, ccol):
                 (eline, ecol) = to_send['stop']
                 self.send_queue.append(to_send)
-                to_send = _get_message_range(vim.current.buffer, (eline, ecol + 1))
+                to_send = _get_message_range(vim.current.buffer,
+                                             (eline, ecol + 1))
 
             self.send_until_fail()
 
@@ -189,7 +190,7 @@ class Coqtail(object):
         self.rewind_to(0, 1)
 
     def query(self, *args):
-        """Forward Coq query to coqtop interface."""
+        """Forward Coq query to Coqtop interface."""
         self.clear_info()
 
         message = ' '.join(args)
@@ -309,7 +310,8 @@ class Coqtail(object):
                     (line, col) = to_send['start']
                     (sline, scol) = _pos_from_offset(col, message, loc_s)
                     (eline, ecol) = _pos_from_offset(col, message, loc_e)
-                    self.error_at = ((line + sline, scol), (line + eline, ecol))
+                    self.error_at = ((line + sline, scol),
+                                     (line + eline, ecol))
 
         self.clear_info()
         self.info_msg = '\n\n'.join(msg for msg in msgs if msg != '')
@@ -442,13 +444,13 @@ class Coqtail(object):
         # Start function
         next(func_iter)
         while True:
-            # Wait for coqtop
+            # Wait for Coqtop
             stopped = self.wait_coqtop()
             # Reset b:coqtop_done
             vim.current.buffer.vars['coqtop_done'] = 0
             # Respond with whether user interrupted
             ret = func_iter.send(stopped)
-            # If 'ret' is None then coqtop is being called again, otherwise it
+            # If 'ret' is None then Coqtop is being called again, otherwise it
             # is the final result
             if ret is not None:
                 return ret
@@ -543,7 +545,8 @@ class Coqtail(object):
             start = {'line': 0, 'col': 0}
             stop = {'line': line + 1, 'col': col}
             zone = _make_matcher(start, stop)
-            vim.command("let b:checked = matchadd('CheckedByCoq', '{}')".format(zone))
+            vim.command("let b:checked = matchadd('CheckedByCoq', '{}')"
+                        .format(zone))
 
         if self.send_queue:
             if self.endpoints != []:
@@ -557,7 +560,8 @@ class Coqtail(object):
             start = {'line': sline, 'col': scol + 1}
             stop = {'line': eline + 1, 'col': ecol}
             zone = _make_matcher(start, stop)
-            vim.command("let b:sent = matchadd('SentToCoq', '{}')".format(zone))
+            vim.command("let b:sent = matchadd('SentToCoq', '{}')"
+                        .format(zone))
 
         if self.error_at is not None:
             ((sline, scol), (eline, ecol)) = self.error_at
@@ -565,7 +569,8 @@ class Coqtail(object):
             start = {'line': sline + 1, 'col': scol}
             stop = {'line': eline + 1, 'col': ecol}
             zone = _make_matcher(start, stop)
-            vim.command("let b:errors = matchadd('CoqError', '{}')".format(zone))
+            vim.command("let b:errors = matchadd('CoqError', '{}')"
+                        .format(zone))
 
             self.error_at = None
 
@@ -637,7 +642,7 @@ class Coqtail(object):
                 vim.command('while !b:coqtop_done | endwhile')
                 break
             except KeyboardInterrupt:
-                # Forwrd interrupt to Coqtop
+                # Forward interrupt to Coqtop
                 self.coqtop.interrupt()
                 stopped = True
 
