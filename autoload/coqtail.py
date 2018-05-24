@@ -328,10 +328,10 @@ class Coqtail(object):
         message = "Locate {}.".format(target)
 
         try:
-            success, res_msg = self.call_and_wait(self.coqtop.dispatch,
-                                                  message,
-                                                  in_script=False,
-                                                  encoding=self.encoding)
+            success, res_msg, _ = self.call_and_wait(self.coqtop.dispatch,
+                                                     message,
+                                                     in_script=False,
+                                                     encoding=self.encoding)
         except CT.CoqtopError as e:
             fail(e)
             return None
@@ -372,11 +372,11 @@ class Coqtail(object):
         message = 'Print LoadPath.'
 
         try:
-            success, loadpath = self.call_and_wait(self.coqtop.dispatch,
-                                                   message,
-                                                   in_script=False,
-                                                   encoding=self.encoding,
-                                                   timeout=self.timeout)
+            success, loadpath, _ = self.call_and_wait(self.coqtop.dispatch,
+                                                      message,
+                                                      in_script=False,
+                                                      encoding=self.encoding,
+                                                      timeout=self.timeout)
         except CT.CoqtopError as e:
             fail(e)
             return None, str(e)
