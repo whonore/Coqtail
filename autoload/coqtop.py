@@ -183,7 +183,7 @@ class Coqtop(object):
             # Reset state id to before the error
             call = self.call(self.xml.edit_at(self.state_id, 1))
             next(call)
-            _ = yield  # type: ignore
+            yield  # type: ignore
             call.send(False)
             yield False, msgs, status.loc
             return
@@ -354,7 +354,7 @@ class Coqtop(object):
         # does not depend on the value it is passed since it is None
         if msg is None:
             self.done_callback()
-            _ = yield  # type: ignore
+            yield  # type: ignore
             yield self.xml.standardize(cmd, Ok(None))
             return
 
