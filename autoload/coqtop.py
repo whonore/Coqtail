@@ -41,8 +41,8 @@ from xmlInterface import XmlInterface, Ok, Err, STOPPED_ERR, TIMEOUT_ERR
 
 # For Mypy
 try:
-    from typing import (Any, Callable, Dict, Iterable, List, Optional, Text,
-                        Tuple, Type, Union)
+    from typing import (Any, Callable, Generator, List, Optional, Text, Tuple,
+                        Union)
 except ImportError:
     pass
 
@@ -50,6 +50,7 @@ except ImportError:
 class Ref(object):
     """A mutable value to be passed between threads."""
     def __init__(self, val=None):
+        # type: (Any) -> None
         self.val = val
 
 
@@ -89,8 +90,11 @@ class Coqtop(object):
     # capture signals while running Python plugins, so we have to busy wait in
     # Vim instead.
 
+    # Ideally the type would be Generator[None, bool, bool] and the final
+    # 'yield's would be 'return's, but Python 2 doesn't support returning
+    # values from generators.
     def start(self, *args, **kwargs):
-        # type: (*str, **int) -> bool
+        # type: (*str, **int) -> Generator[bool, bool, None]
         """Launch the Coqtop process."""
         assert self.coqtop is None
 
@@ -114,7 +118,7 @@ class Coqtop(object):
             # Initialize Coqtop
             call = self.call(self.xml.init(), timeout=timeout)
             next(call)
-            stopped = yield
+            stopped = yield  # type: ignore
             response = call.send(stopped)
 
             if isinstance(response, Err):
@@ -149,12 +153,12 @@ class Coqtop(object):
             self.coqtop = None
 
     def advance(self, cmd, encoding='utf-8', timeout=None):
-        # type: (Text, str, Optional[int]) -> Tuple[bool, Text, Optional[Tuple[int, int]]]
+        # type: (Text, str, Optional[int]) -> Generator[Tuple[bool, Text, Optional[Tuple[int, int]]], bool, None]
         """Advance Coqtop by sending 'cmd'."""
         call = self.call(self.xml.add(cmd, self.state_id, encoding=encoding),
                          timeout=timeout)
         next(call)
-        stopped = yield
+        stopped = yield  # type: ignore
         response = call.send(stopped)
 
         if isinstance(response, Err):
@@ -165,7 +169,7 @@ class Coqtop(object):
         # to be evaluated
         call = self.call(self.xml.status(encoding=encoding), timeout=timeout)
         next(call)
-        stopped = yield
+        stopped = yield  # type: ignore
         status = call.send(stopped)
 
         # Combine messages
@@ -179,7 +183,7 @@ class Coqtop(object):
             # Reset state id to before the error
             call = self.call(self.xml.edit_at(self.state_id, 1))
             next(call)
-            _ = yield
+            _ = yield  # type: ignore
             call.send(False)
             yield False, msgs, status.loc
             return
@@ -190,7 +194,7 @@ class Coqtop(object):
         yield True, msgs, None
 
     def rewind(self, steps=1):
-        # type: (int) -> Tuple[bool, int]
+        # type: (int) -> Generator[Tuple[bool, int], bool, None]
         """Go back 'steps' states."""
         if steps > len(self.states):
             self.state_id = self.root_state
@@ -210,7 +214,7 @@ class Coqtop(object):
 
         call = self.call(self.xml.edit_at(self.state_id, steps))
         next(call)
-        stopped = yield
+        stopped = yield  # type: ignore
         response = call.send(stopped)
 
         if isinstance(response, Ok):
@@ -219,12 +223,12 @@ class Coqtop(object):
             yield False, 0
 
     def query(self, cmd, in_script, encoding='utf-8', timeout=None):
-        # type: (Text, bool, str, Optional[int]) -> Tuple[bool, Text, Optional[Tuple[int, int]]]
+        # type: (Text, bool, str, Optional[int]) -> Generator[Tuple[bool, Text, Optional[Tuple[int, int]]], bool, None]
         """Query Coqtop with 'cmd'."""
         call = self.call(self.xml.query(cmd, self.state_id, encoding=encoding),
                          timeout=timeout)
         next(call)
-        stopped = yield
+        stopped = yield  # type: ignore
         response = call.send(stopped)
 
         if isinstance(response, Ok):
@@ -242,11 +246,11 @@ class Coqtop(object):
             yield False, response.msg, response.loc
 
     def goals(self, timeout=None):
-        # type: (Optional[int]) -> Tuple[bool, Text, Any]
+        # type: (Optional[int]) -> Generator[Tuple[bool, Text, Any], bool, None]
         """Get the current set of hypotheses and goals."""
         call = self.call(self.xml.goal(), timeout=timeout)
         next(call)
-        stopped = yield
+        stopped = yield  # type: ignore
         response = call.send(stopped)
 
         if isinstance(response, Ok):
@@ -255,12 +259,12 @@ class Coqtop(object):
             yield False, '', []
 
     def mk_cases(self, ty, encoding='utf-8', timeout=None):
-        # type: (Text, str, Optional[int]) -> Tuple[bool, Text]
+        # type: (Text, str, Optional[int]) -> Generator[Tuple[bool, Text], bool, None]
         """Return cases for each constructor of 'ty'."""
         call = self.call(self.xml.mk_cases(ty, encoding=encoding),
                          timeout=timeout)
         next(call)
-        stopped = yield
+        stopped = yield  # type: ignore
         response = call.send(stopped)
 
         if isinstance(response, Ok):
@@ -269,13 +273,13 @@ class Coqtop(object):
             yield False, response.msg
 
     def do_option(self, cmd, in_script, encoding='utf-8', timeout=None):
-        # type: (Text, bool, str, Optional[int]) -> Tuple[bool, Text, Optional[Tuple[int, int]]]
+        # type: (Text, bool, str, Optional[int]) -> Generator[Tuple[bool, Text, Optional[Tuple[int, int]]], bool, None]
         """Set or get an option."""
         if cmd.startswith('Test'):
             call = self.call(self.xml.get_options(encoding=encoding),
                              timeout=timeout)
             next(call)
-            stopped = yield
+            stopped = yield  # type: ignore
             response = call.send(stopped)
 
             if isinstance(response, Ok):
@@ -290,7 +294,7 @@ class Coqtop(object):
             call = self.call(self.xml.set_options(cmd, encoding=encoding),
                              timeout=timeout)
             next(call)
-            stopped = yield
+            stopped = yield  # type: ignore
             response = call.send(stopped)
             ret = response.msg
 
@@ -306,7 +310,7 @@ class Coqtop(object):
             yield False, response.msg, response.loc
 
     def dispatch(self, cmd, in_script=True, encoding='utf-8', timeout=None):
-        # type: (Text, bool, str, Optional[int]) -> Tuple[bool, Text, Optional[Tuple[int, int]]]
+        # type: (Text, bool, str, Optional[int]) -> Generator[Tuple[bool, Text, Optional[Tuple[int, int]]], bool, None]
         """Decide whether 'cmd' is setting/getting an option, a query, or a
         regular command."""
         # Python 2 will throw an error if unicode is in 'cmd' unless we decode
@@ -325,7 +329,7 @@ class Coqtop(object):
 
         next(call)
         while True:
-            stopped = yield
+            stopped = yield  # type: ignore
             ret = call.send(stopped)
             if ret is not None:
                 yield ret
@@ -333,7 +337,7 @@ class Coqtop(object):
 
     # Interacting with Coqtop #
     def call(self, cmdtype_msg, timeout=None):
-        # type: (Tuple[Text, Optional[Text]], Optional[int]) -> Union[Ok, Err]
+        # type: (Tuple[Text, Optional[Text]], Optional[int]) -> Generator[Union[Ok, Err], bool, None]
         """Send 'msg' to the Coqtop process and wait for the response."""
         # Check if Coqtop has stopped
         if not self.running():
@@ -350,8 +354,9 @@ class Coqtop(object):
         # does not depend on the value it is passed since it is None
         if msg is None:
             self.done_callback()
-            _ = yield
+            _ = yield  # type: ignore
             yield self.xml.standardize(cmd, Ok(None))
+            return
 
         self.send_cmd(msg)
 
@@ -378,7 +383,7 @@ class Coqtop(object):
         # Start threads and yield back to caller to wait for Coqtop to finish
         timeout_thread.start()
         answer_thread.start()
-        stopped = yield
+        stopped = yield  # type: ignore
 
         # Notify timeout_thread that a response is received and wait for
         # threads to finish
@@ -490,6 +495,8 @@ class Coqtop(object):
     def interrupt(self):
         # type: () -> None
         """Send a SIGINT signal to Coqtop."""
+        if self.coqtop is None:
+            raise CoqtopError('coqtop must not be None in interrupt()')
         self.coqtop.send_signal(signal.SIGINT)
 
     # Current State #

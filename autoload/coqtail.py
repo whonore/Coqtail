@@ -38,8 +38,7 @@ import vimbufsync
 
 # For Mypy
 try:
-    from typing import (Any, Callable, Dict, Iterable, List, Optional, Text,
-                        Tuple, Type, Union)
+    from typing import (Dict, List, Optional, Tuple, Type)
 except ImportError:
     pass
 
@@ -107,8 +106,8 @@ class Coqtail(object):
         errmsg = ['Failed to launch Coq']
 
         def set_done():
-            """Callback to be triggered when Coqtop is done executing."""
             # type: () -> None
+            """Callback to be triggered when Coqtop is done executing."""
             vim.current.buffer.vars['coqtop_done'] = 1
 
         try:
@@ -838,7 +837,9 @@ def _skip_block(lines, sline, scol, estr, sstr=None, nesting=1):
                            estr, sstr, nesting - 1)
     elif blk_start != -1:
         # Found a new start
-        return _skip_block(lines, sline, scol + blk_start + len(sstr),
+        # N.B. mypy complains that 'sstr' might be None, but it won't be if
+        # 'blk_start' != -1
+        return _skip_block(lines, sline, scol + blk_start + len(sstr),  # type: ignore
                            estr, sstr, nesting + 1)
     else:
         # Nothing on this line
