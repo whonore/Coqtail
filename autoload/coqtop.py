@@ -158,11 +158,6 @@ class Coqtop(object):
         response = call.send(stopped)
 
         if isinstance(response, Err):
-            # Reset state id to before the error
-            call = self.call(self.xml.edit_at(self.state_id, 1))
-            next(call)
-            _ = yield
-            call.send(False)
             yield False, response.msg, response.loc
             return
 
@@ -391,13 +386,14 @@ class Coqtop(object):
         timeout_thread.join()
         answer_thread.join()
 
+        response = res_ref.val
+
         # Check for user interrupt or timeout
-        if stopped:
-            response = STOPPED_ERR
-        elif timed_out.is_set():
-            response = TIMEOUT_ERR
-        elif not stopped:
-            response = res_ref.val
+        if isinstance(response, Err):
+            if stopped:
+                response = STOPPED_ERR
+            elif timed_out.is_set():
+                response = TIMEOUT_ERR
 
         yield self.xml.standardize(cmd, response)
 

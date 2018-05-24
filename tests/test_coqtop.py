@@ -4,6 +4,7 @@ File: test_coqtop.py
 Author: Wolf Honore
 
 Description: Unit/integration tests for coqtop.py.
+TODO: test timeout similarly to manual interrupt
 """
 
 from __future__ import absolute_import
@@ -19,7 +20,6 @@ from coqtop import Coqtop
 # Check current version
 # TODO: something less ugly
 VERSION = check_output(('coqtop', '--version')).split()[5].decode()
-TIMEOUT = 3
 DONE = False
 
 
@@ -42,7 +42,7 @@ def wait_done(stop):
         pass
 
 
-def call_and_wait(func, *args, **kwargs):
+def call_and_wait(coq, func, *args, **kwargs):
     """Call a Coqtop function and wait for it to finish."""
     global DONE
     DONE = False
@@ -56,6 +56,8 @@ def call_and_wait(func, *args, **kwargs):
     func_iter = func(*args, **kwargs)
 
     next(func_iter)
+    if stop:
+        coq.interrupt()
     while True:
         wait_done(stop)
         ret = func_iter.send(stop)
@@ -68,7 +70,7 @@ def call_and_wait(func, *args, **kwargs):
 def coq():
     """Return a Coqtop for each version."""
     ct = Coqtop(VERSION, set_done)
-    if call_and_wait(ct.start):
+    if call_and_wait(ct, ct.start):
         yield ct
         ct.stop()
     else:
@@ -87,101 +89,88 @@ def test_init_state(coq):
 def test_rewind_start(coq):
     """Rewinding at the start should do nothing."""
     old_state = get_state(coq)
-    call_and_wait(coq.rewind, 1)
+    call_and_wait(coq, coq.rewind, 1)
     assert old_state == get_state(coq)
-    call_and_wait(coq.rewind, 5)
+    call_and_wait(coq, coq.rewind, 5)
     assert old_state == get_state(coq)
 
 
 def test_dispatch_rewind(coq):
     """Rewinding should cancel out in_script dispatches."""
-    succ, _, _ = call_and_wait(coq.dispatch, 'Let a := 0.', timeout=TIMEOUT)
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Let a := 0.')
     old_state = get_state(coq)
 
-    succ, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT)
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Let x := 1.')
     assert succ
-    call_and_wait(coq.rewind, 1)
+    call_and_wait(coq, coq.rewind, 1)
     assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq.dispatch, 'Print nat.', timeout=TIMEOUT)
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Print nat.')
     assert succ
-    call_and_wait(coq.rewind, 1)
+    call_and_wait(coq, coq.rewind, 1)
     assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq.dispatch, 'Test Silent.', timeout=TIMEOUT)
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Test Silent.')
     assert succ
-    call_and_wait(coq.rewind, 1)
+    call_and_wait(coq, coq.rewind, 1)
     assert old_state == get_state(coq)
 
 
 def test_dispatch_not_in_script(coq):
     """Dispatch with not in_script arguments shouldn't change the state."""
     old_state = get_state(coq)
-    call_and_wait(coq.dispatch, 'Print nat.', in_script=False, timeout=TIMEOUT)
+    call_and_wait(coq, coq.dispatch, 'Print nat.', in_script=False)
     assert old_state == get_state(coq)
-    call_and_wait(coq.dispatch, 'Test Silent.', in_script=False,
-                  timeout=TIMEOUT)
+    call_and_wait(coq, coq.dispatch, 'Test Silent.', in_script=False)
     assert old_state == get_state(coq)
 
 
 def test_goals_no_change(coq):
     """Calling goals will not change the state."""
     old_state = get_state(coq)
-    call_and_wait(coq.goals, timeout=TIMEOUT)
+    call_and_wait(coq, coq.goals)
     assert old_state == get_state(coq)
 
 
 def test_mk_cases_no_change(coq):
     """Calling mk_cases will not change the state."""
     old_state = get_state(coq)
-    call_and_wait(coq.mk_cases, 'nat', timeout=TIMEOUT)
+    call_and_wait(coq, coq.mk_cases, 'nat')
     assert old_state == get_state(coq)
 
 
 def test_advance_fail(coq):
     """If advance fails then the state will not change."""
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq.dispatch, 'SyntaxError', timeout=TIMEOUT)
+    fail, _, _ = call_and_wait(coq, coq.dispatch, 'SyntaxError')
     assert not fail
     assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq.dispatch, 'Lemma x : False.',
-                               timeout=TIMEOUT)
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Lemma x : False.')
     assert succ
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq.dispatch, 'reflexivity.', timeout=TIMEOUT)
+    fail, _, _ = call_and_wait(coq, coq.dispatch, 'reflexivity.')
     assert not fail
     assert old_state == get_state(coq)
 
 
 def test_advance_stop(coq):
     """If advance is interrupted then the state will not change."""
-    succ, _, _ = call_and_wait(coq.dispatch, 'Ltac inf := inf.',
-                               timeout=TIMEOUT)
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Goal True.')
     assert succ
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq.dispatch, 'Let x := ltac:(inf).',
-                               timeout=TIMEOUT, _stop=True)
-    assert not fail
-    assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT)
-    assert succ
-
-
-def test_advance_same_stop(coq):
-    """If advance is interrupted then Coqtop will rollback."""
-    old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT,
+    fail, _, _ = call_and_wait(coq, coq.dispatch, 'repeat eapply proj1.',
                                _stop=True)
     assert not fail
     assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT)
-    assert succ
 
 
-def test_query_stop(coq):
-    """If query is interrupted then the state will not change."""
+def test_advance_stop_rewind(coq):
+    """If advance is interrupted then succeeds, rewind will succeed."""
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq.dispatch, 'Print nat.', timeout=TIMEOUT,
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Goal True.')
+    assert succ
+    fail, _, _ = call_and_wait(coq, coq.dispatch, 'repeat eapply proj1.',
                                _stop=True)
     assert not fail
-    assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq.dispatch, 'Let x := 1.', timeout=TIMEOUT)
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'exact I.')
     assert succ
+    call_and_wait(coq, coq.rewind, 5)
+    assert old_state == get_state(coq)
