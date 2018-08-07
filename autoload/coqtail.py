@@ -38,7 +38,8 @@ import vimbufsync
 
 # For Mypy
 try:
-    from typing import (Dict, List, Optional, Tuple, Type)
+    from typing import (Any, Callable, Deque, Generator, List, Optional,
+                        Mapping, Text, Tuple, Type)
 except ImportError:
     pass
 
@@ -47,12 +48,14 @@ vimbufsync.check_version('0.1.0', who='coqtail')
 
 # Error Messages #
 def fail(err):
+    # type: (Exception) -> None
     """Print an error and stop Coqtail."""
     print(err, file=sys.stderr)
     vim.command('call coqtail#Stop()')
 
 
 def unexpected(response, where):
+    # type: (Any, str) -> None
     """Print a debugging error about an unexpected response."""
     print("Coqtail received unexpected response {} in {}"
           .format(response, where),
@@ -63,11 +66,13 @@ class Coqtail(object):
     """Manage Coqtop interfaces and goal and info buffers for each Coq file."""
 
     def __init__(self):
+        # type: () -> None
         """Initialize variables."""
-        self.coqtop = None
+        self.coqtop = None  # type: Optional[CT.Coqtop]
         self._reset()
 
     def _reset(self):
+        # type: () -> None
         """Reset variables to initial state.
 
         saved_sync - The last vimbufsync BufferRevision object
@@ -79,15 +84,16 @@ class Coqtail(object):
         goal_msg - The text to display in the goal panel
         """
         self.saved_sync = None
-        self.endpoints = []
-        self.send_queue = deque([])
-        self.error_at = None
-        self.info_msg = ''
-        self.goal_msg = 'No goals.'
+        self.endpoints = []  # type: List[Tuple[int, int]]
+        self.send_queue = deque([])  # type: Deque[Mapping[str, Tuple[int, int]]]
+        self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
+        self.info_msg = ''  # type: Text
+        self.goal_msg = 'No goals.'  # type: Text
 
         self.reset_color()
 
     def sync(self):
+        # type: () -> None
         """Check if buffer has been updated and rewind Coqtop if so."""
         curr_sync = vimbufsync.sync()
 
@@ -101,6 +107,7 @@ class Coqtail(object):
 
     # Coqtop Interface #
     def start(self, version, *args):
+        # type: (Text, *Text) -> None
         """Start a new Coqtop instance."""
         success = False
         errmsg = ['Failed to launch Coq']
@@ -121,12 +128,15 @@ class Coqtail(object):
             print('. '.join(errmsg), file=sys.stderr)
 
     def stop(self):
+        # type: () -> None
         """Stop Coqtop and reset variables."""
-        self.coqtop.stop()
+        if self.coqtop is not None:
+            self.coqtop.stop()
         self._reset()
         self.coqtop = None
 
     def step(self):
+        # type: () -> None
         """Advance Coq by one step."""
         self.sync()
 
@@ -144,7 +154,10 @@ class Coqtail(object):
         self.send_until_fail()
 
     def rewind(self, steps=1):
+        # type: (int) -> None
         """Rewind Coq by 'steps' steps."""
+        assert self.coqtop is not None
+
         if steps < 1 or self.endpoints == []:
             return
 
@@ -162,6 +175,7 @@ class Coqtail(object):
         self.refresh()
 
     def to_cursor(self):
+        # type: () -> None
         """Advance Coq to the cursor position."""
         self.sync()
 
@@ -185,11 +199,15 @@ class Coqtail(object):
             self.send_until_fail()
 
     def to_top(self):
+        # type: () -> None
         """Rewind to the beginning of the file."""
         self.rewind_to(0, 1)
 
     def query(self, *args):
+        # type: (*Text) -> None
         """Forward Coq query to Coqtop interface."""
+        assert self.coqtop is not None
+
         self.clear_info()
 
         message = ' '.join(args)
@@ -206,6 +224,7 @@ class Coqtail(object):
         self.show_info()
 
     def jump_to_end(self):
+        # type: () -> None
         """Move the cursor to the end of the Coq checked section."""
         # Get the location of the last '.'
         if self.endpoints != []:
@@ -216,6 +235,7 @@ class Coqtail(object):
         vim.current.window.cursor = (line + 1, col)
 
     def find_def(self, target):
+        # type: (Text) -> None
         """Locate where the current word is defined and jump to it."""
         # Get the fully qualified version of 'target'
         qual_info = self.qual_name(target)
@@ -245,7 +265,10 @@ class Coqtail(object):
                         pass
 
     def make_match(self, ty):
+        # type: (Text) -> None
         """Create a "match" statement template for the given inductive type."""
+        assert self.coqtop is not None
+
         try:
             success, msg = self.call_and_wait(self.coqtop.mk_cases, ty,
                                               encoding=self.encoding)
@@ -273,7 +296,10 @@ class Coqtail(object):
 
     # Helpers #
     def send_until_fail(self):
+        # type: () -> None
         """Send all chunks in 'send_queue' until an error is encountered."""
+        assert self.coqtop is not None
+
         msgs = []
 
         while self.send_queue:
@@ -318,13 +344,17 @@ class Coqtail(object):
         self.refresh()
 
     def rewind_to(self, line, col):
+        # type: (int, int) -> None
         """Rewind to a specific location."""
         # Count the number of endpoints after the specified location
         steps_too_far = sum(pos > (line, col) for pos in self.endpoints)
         self.rewind(steps_too_far)
 
     def qual_name(self, target):
+        # type: (Text) -> Optional[Tuple[Text, Text]]
         """Find the fully qualified name of 'target' using 'Locate'."""
+        assert self.coqtop is not None
+
         message = "Locate {}.".format(target)
 
         try:
@@ -368,7 +398,10 @@ class Coqtail(object):
         return qual_tgt, tgt_type
 
     def log_to_phy(self, qual_tgt, tgt_type):
+        # type: (Text, Text) -> Tuple[Optional[Text], Text]
         """Find the Coq file corresponding to the logical path 'qual_tgt'."""
+        assert self.coqtop is not None
+
         message = 'Print LoadPath.'
 
         try:
@@ -383,7 +416,7 @@ class Coqtail(object):
 
         # Build a map from logical to physical paths using LoadPath
         if success:
-            path_map = ddict(list)
+            path_map = ddict(list)  # type: Mapping[Text, List[Text]]
             paths = loadpath.split()[4:]
             logic = paths[::2]
             physic = paths[1::2]
@@ -422,7 +455,7 @@ class Coqtail(object):
                              for libpath in path_map['<>']]
 
             # Convert to absolute path and filter out nonexistent files
-            tgt_files = [f for f in map(os.path.abspath, tgt_files)
+            tgt_files = [f for f in map(os.path.abspath, tgt_files)  # type: ignore
                          if os.path.isfile(f)]
 
             if tgt_files == []:
@@ -437,6 +470,7 @@ class Coqtail(object):
         return tgt_file, tgt_name
 
     def call_and_wait(self, func, *args, **kwargs):
+        # type: (Callable[..., Generator[Any, bool, None]], *Any, **Any) -> Any
         """Call a Coqtop function and wait for it to finish."""
         func_iter = func(*args, **kwargs)
 
@@ -456,13 +490,17 @@ class Coqtail(object):
 
     # Goals and Infos #
     def refresh(self):
+        # type: () -> None
         """Refresh the goals and info panels."""
         self.show_goal()
         self.show_info()
         self.reset_color()
 
     def show_goal(self):
+        # type: () -> None
         """Display the current goals."""
+        assert self.coqtop is not None
+
         try:
             success, msg, goals = self.call_and_wait(self.coqtop.goals,
                                                      timeout=self.timeout)
@@ -497,6 +535,7 @@ class Coqtail(object):
         self.restore_goal()
 
     def restore_goal(self):
+        # type: () -> None
         """Restore the last-displayed goals."""
         # Switch to goal window and save the view
         cur_win = vim.current.window
@@ -513,6 +552,7 @@ class Coqtail(object):
         vim.current.window = cur_win
 
     def show_info(self):
+        # type: () -> None
         """Display the info_msg buffer in the info panel."""
         # Switch to info window and save the view
         cur_win = vim.current.window
@@ -529,11 +569,13 @@ class Coqtail(object):
         vim.current.window = cur_win
 
     def clear_info(self):
+        # type: () -> None
         """Clear the info panel."""
         self.info_msg = ''
         self.show_info()
 
     def reset_color(self):
+        # type: () -> None
         """Recolor sections."""
         vim.command('call coqtail#ClearHighlight()')
 
@@ -574,6 +616,7 @@ class Coqtail(object):
             self.error_at = None
 
     def splash(self, version):
+        # type: (Text) -> None
         """Display the logo in the info panel."""
         # This is called before the panels are displayed so the window size is
         # actually half
@@ -600,33 +643,38 @@ class Coqtail(object):
         msg_maxw = max(len(line) for line in msg)
         msg = [line.center(w - msg_maxw // 2) for line in msg]
 
-        top_pad = [''] * ((h // 2) - (len(msg) // 2 + 1))
+        top_pad = [u''] * ((h // 2) - (len(msg) // 2 + 1))
 
         self.info_msg = '\n'.join(top_pad + msg)
 
     # Vim Helpers #
     @property
     def encoding(self):
+        # type: () -> str
         """Get the encoding or default to utf-8."""
         return vim.options['encoding'].decode('utf-8') or 'utf-8'
 
     @property
     def timeout(self):
+        # type: () -> int
         """Get the value of coq_timeout for this buffer."""
-        return vim.current.buffer.vars['coq_timeout']
+        return vim.current.buffer.vars['coq_timeout']  # type: ignore
 
     @property
     def goal_buf(self):
+        # type: () -> Any
         """Get this buffer's goal buffer."""
         return vim.buffers[vim.current.buffer.vars['goal_buf']]
 
     @property
     def info_buf(self):
+        # type: () -> Any
         """Get this buffer's info buffer."""
         return vim.buffers[vim.current.buffer.vars['info_buf']]
 
     @staticmethod
     def bufwin(buf):
+        # type: (Any) -> Any
         """Get the window that contains buf."""
         return vim.windows[int(vim.eval("bufwinnr({})".format(buf.number))) - 1]
 
@@ -634,6 +682,8 @@ class Coqtail(object):
         # type: () -> bool
         """Wait for b:coqtop_done to be set and report whether it was
         interrupted."""
+        assert self.coqtop is not None
+
         stopped = False
 
         while True:
@@ -653,10 +703,11 @@ class Coqtail(object):
 # section/module, or sometimes by looking at the type (for constructors for
 # example, or record projections)
 def get_searches(tgt_type, tgt_name):
+    # type: (Text, Text) -> List[Text]
     """Construct a search expression given an object type and name."""
     auto_names = [('Constructor', 'Inductive', 'Build_(.*)', 1),
                   ('Constant', 'Inductive', '(.*)_(ind|rect?)', 1)]
-    searches = []
+    searches = []  # type: List[Text]
     type_to_vernac = {
         'Inductive': ['Inductive', 'Class', 'Record'],
         'Constant': ['Definition', 'Fixpoint', 'Function', 'Instance', 'Fact',
@@ -667,21 +718,23 @@ def get_searches(tgt_type, tgt_name):
         'Ltac': ['Ltac'],
         'Module': ['Module'],
         'Module Type': ['Module Type']
-    }
+    }  # type: Mapping[Text, List[Text]]
 
     # Look for some implicitly generated names
-    search_name = [tgt_name]
-    search_type = [tgt_type]
+    search_names = [tgt_name]
+    search_types = [tgt_type]
     for from_type, to_type, pat, grp in auto_names:
-        if tgt_type == from_type and re.match(pat, tgt_name) is not None:
-            search_name.append(re.match(pat, tgt_name).groups(grp)[0])
-            search_type.append(to_type)
-    search_name = '|'.join(search_name)
+        if tgt_type == from_type:
+            match = re.match(pat, tgt_name)
+            if match is not None:
+                search_names.append(match.groups(grp)[0])  # type: ignore
+                search_types.append(to_type)
+    search_name = '|'.join(search_names)
 
     # What Vernacular command to look for
     search_vernac = '|'.join(vernac
-                             for typ in search_type
-                             for vernac in type_to_vernac.get(typ, ''))
+                             for typ in search_types
+                             for vernac in type_to_vernac.get(typ, []))
 
     searches.append(r"<({})>\s*<({})>".format(search_vernac, search_name))
     searches.append(r"<({})>".format(search_name))
@@ -692,6 +745,7 @@ def get_searches(tgt_type, tgt_name):
 # Finding Start and End of Coq Chunks #
 # From here on is largely copied from Coquille
 def _pos_from_offset(col, msg, offset):
+    # type: (int, Text, int) -> Tuple[int, int]
     """Calculate the line and column of a given offset."""
     msg = msg[:offset]
     lines = msg.split('\n')
@@ -703,13 +757,14 @@ def _pos_from_offset(col, msg, offset):
 
 
 def _between(start, end):
+    # type: (Tuple[int, int], Tuple[int, int]) -> Text
     """Return the text between a given start and end point."""
     (sline, scol) = start
     (eline, ecol) = end
 
     buf = vim.current.buffer
 
-    lines = []
+    lines = []  # type: List[Text]
     for idx, line in enumerate(buf[sline:eline + 1]):
         lcol = scol if idx == 0 else 0
         rcol = ecol + 1 if idx == eline - sline else len(line)
@@ -719,7 +774,7 @@ def _between(start, end):
 
 
 def _get_message_range(lines, after):
-    # type: (List[str], Tuple[int, int]) -> Optional[Dict[str, Tuple[int, int]]]
+    # type: (List[str], Tuple[int, int]) -> Optional[Mapping[str, Tuple[int, int]]]
     """Return the next chunk to send after a given point."""
     end_pos = _find_next_chunk(lines, *after)
 
@@ -848,6 +903,7 @@ def _skip_block(lines, sline, scol, estr, sstr=None, nesting=1):
 
 # Region Highlighting #
 def _make_matcher(start, stop):
+    # type: (Mapping[str, int], Mapping[str, int]) -> str
     """A wrapper function to call the appropriate _matcher function."""
     if start['line'] == stop['line']:
         return _easy_matcher(start, stop)
@@ -855,6 +911,7 @@ def _make_matcher(start, stop):
 
 
 def _easy_matcher(start, stop):
+    # type: (Mapping[str, int], Mapping[str, Optional[int]]) -> str
     """Create a single-line Vim match expression."""
     startl = ''
     startc = ''
@@ -864,6 +921,7 @@ def _easy_matcher(start, stop):
     if start['col'] > 0:
         startc = r"\%>{0}c".format(start['col'])
 
+    assert stop['line'] is not None
     start_match = "{0}{1}".format(startl, startc)
     if stop['col'] is not None:
         end_match = r"\%<{0}l\%<{1}c".format(stop['line'] + 1, stop['col'] + 1)
@@ -874,6 +932,7 @@ def _easy_matcher(start, stop):
 
 
 def _hard_matcher(start, stop):
+    # type: (Mapping[str, int], Mapping[str, int]) -> str
     """Create a multi-line Vim match expression."""
     first_start = {'line': start['line'], 'col': start['col']}
     first_stop = {'line': start['line'], 'col': None}
@@ -892,80 +951,95 @@ def _hard_matcher(start, stop):
 
 # Method Dispatch #
 # A mapping from buffer numbers to Coqtail classes
-bufmap = ddict(Coqtail)
+bufmap = ddict(Coqtail)  # type: Mapping[object, Coqtail]
 
 
 # Call the corresponding method on the current buffer
-def sync(*args):
+def sync():
+    # type: () -> None
     """Call sync() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].sync(*args)
+    bufmap[vim.current.buffer].sync()
 
 
-def start(*args):
+def start(version, *args):
+    # type: (Text, *Text) -> None
     """Call start() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].start(*args)
+    bufmap[vim.current.buffer].start(version, *args)
 
 
-def stop(*args):
+def stop():
+    # type: () -> None
     """Call stop() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].stop(*args)
+    bufmap[vim.current.buffer].stop()
 
 
-def step(*args):
+def step():
+    # type: () -> None
     """Call step() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].step(*args)
+    bufmap[vim.current.buffer].step()
 
 
-def rewind(*args):
+def rewind():
+    # type: () -> None
     """Call def () on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].rewind(*args)
+    bufmap[vim.current.buffer].rewind()
 
 
-def to_cursor(*args):
+def to_cursor():
+    # type: () -> None
     """Call to_cursor() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].to_cursor(*args)
+    bufmap[vim.current.buffer].to_cursor()
 
 
-def to_top(*args):
+def to_top():
+    # type: () -> None
     """Call to_top() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].to_top(*args)
+    bufmap[vim.current.buffer].to_top()
 
 
 def query(*args):
+    # type: (*Text) -> None
     """Call query() on current buffer's Coqtop."""
     bufmap[vim.current.buffer].query(*args)
 
 
-def jump_to_end(*args):
+def jump_to_end():
+    # type: () -> None
     """Call jump_to_end() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].jump_to_end(*args)
+    bufmap[vim.current.buffer].jump_to_end()
 
 
-def find_def(*args):
+def find_def(target):
+    # type: (Text) -> None
     """Call find_def() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].find_def(*args)
+    bufmap[vim.current.buffer].find_def(target)
 
 
-def make_match(*args):
+def make_match(ty):
+    # type: (Text) -> None
     """Call make_match() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].make_match(*args)
+    bufmap[vim.current.buffer].make_match(ty)
 
 
-def reset_color(*args):
+def reset_color():
+    # type: () -> None
     """Call reset_color() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].reset_color(*args)
+    bufmap[vim.current.buffer].reset_color()
 
 
-def restore_goal(*args):
+def restore_goal():
+    # type: () -> None
     """Call restore_goal() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].restore_goal(*args)
+    bufmap[vim.current.buffer].restore_goal()
 
 
-def show_info(*args):
+def show_info():
+    # type: () -> None
     """Call show_info() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].show_info(*args)
+    bufmap[vim.current.buffer].show_info()
 
 
-def splash(*args):
+def splash(version):
+    # type: (Text) -> None
     """Call splash() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].splash(*args)
+    bufmap[vim.current.buffer].splash(version)
