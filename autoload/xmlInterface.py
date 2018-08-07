@@ -1066,6 +1066,15 @@ class XmlInterface87(XmlInterface86):
                             encoding))
 
 
+class XmlInterface88(XmlInterface87):
+    """The version 8.8.* XML interface."""
+
+    def __init__(self, versions):
+        # type: (Tuple[int, ...]) -> None
+        """Add to conversion maps."""
+        super(XmlInterface88, self).__init__(versions)
+
+
 def XmlInterface(version):
     # type: (Text) -> XmlInterfaceBase
     """Return the appropriate XmlInterface class for the given version."""
@@ -1089,5 +1098,7 @@ def XmlInterface(version):
         return XmlInterface86(versions)
     elif (8, 7, 0) <= versions < (8, 8, 0):
         return XmlInterface87(versions)
+    elif (8, 8, 0) <= versions < (8, 9, 0):
+        return XmlInterface88(versions)
     else:
         raise ValueError("Unsupported version: {}".format(version))

@@ -10,7 +10,7 @@ PYTEST_OPT += -q
 PYV := 2 3
 PYS := $(addprefix py, $(PYV))
 
-COQV := 8_4 8_5 8_6 8_7
+COQV := 8_4 8_5 8_6 8_7 8_8
 COQS := $(addprefix coq_, $(COQV))
 
 COQ_PYS := $(foreach PY, $(PYS), $(foreach COQ, $(COQS), $(COQ)-$(PY)))
