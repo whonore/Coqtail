@@ -33,9 +33,9 @@ import sys
 import threading
 
 if sys.version_info[0] >= 3:
-    import queue
+    from queue import Queue, Empty
 else:
-    import Queue as queue
+    from Queue import Queue, Empty
 
 from xmlInterface import XmlInterface, Ok, Err, STOPPED_ERR, TIMEOUT_ERR
 
@@ -81,7 +81,7 @@ class Coqtop(object):
         self.states = []  # type: List[int]
         self.state_id = -1
         self.root_state = -1
-        self.out_q = queue.Queue()  # type: queue.Queue[bytes]
+        self.out_q = Queue()  # type: Queue[bytes]
         self.xml = XmlInterface(version)
         self.stopping = False
 
@@ -440,7 +440,7 @@ class Coqtop(object):
         while not self.out_q.empty():
             try:
                 self.out_q.get_nowait()
-            except queue.Empty:
+            except Empty:
                 return
 
     def capture_out(self):

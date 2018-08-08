@@ -48,12 +48,11 @@ class Ok(object):
 class Err(object):
     """A response representing failure."""
 
-    def __init__(self, msg, loc=(-1, -1), timed_out=False):
-        # type: (Text, Tuple[int, int], bool) -> None
+    def __init__(self, msg, loc=(-1, -1)):
+        # type: (Text, Tuple[int, int]) -> None
         """Initialize values."""
         self.msg = msg
         self.loc = loc
-        self.timed_out = timed_out
 
 
 # The error in case of a user interrupt
@@ -62,8 +61,7 @@ STOPPED_ERR = Err('Coq interrupted.')
 
 # The error in case of a timeout
 TIMEOUT_ERR = Err('Coq timed out. You can change the timeout with '
-                  '<leader>ct and try again.',
-                  timed_out=True)
+                  '<leader>ct and try again.')
 
 
 # Helpers #
@@ -980,7 +978,7 @@ class XmlInterface85(XmlInterfaceBase):
         onoff = self.OptionValue(opts[0] == 'Set')
         name = opts[1:]
 
-        # TODO: extra '[]' needed so _build_xml treats it as one list instead
+        # extra '[]' needed so _build_xml treats it as one list instead
         # of several children to convert
         return ('SetOptions',
                 ET.tostring(self._build_xml('call', 'SetOptions',
