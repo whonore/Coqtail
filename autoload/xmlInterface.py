@@ -172,6 +172,8 @@ class XmlInterfaceBase(object):
     def _to_string(self, xml):
         # type: (ET.Element) -> Text
         """<string>str</string>"""
+        # In Python 2 itertext returns Generator[Any, None, None] instead
+        # of Generator[str, None, None]
         return ''.join(xml.itertext())  # type: ignore
 
     def _from_string(self, val):

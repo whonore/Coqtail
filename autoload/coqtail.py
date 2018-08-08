@@ -39,7 +39,7 @@ import vimbufsync
 # For Mypy
 try:
     from typing import (Any, Callable, Deque, Generator, List, Optional,
-                        Mapping, Text, Tuple, Type)
+                        Mapping, Sequence, Text, Tuple)
 except ImportError:
     pass
 
@@ -455,7 +455,7 @@ class Coqtail(object):
                              for libpath in path_map['<>']]
 
             # Convert to absolute path and filter out nonexistent files
-            tgt_files = [f for f in map(os.path.abspath, tgt_files)  # type: ignore
+            tgt_files = [f for f in (os.path.abspath(f) for f in tgt_files)
                          if os.path.isfile(f)]
 
             if tgt_files == []:
@@ -727,7 +727,7 @@ def get_searches(tgt_type, tgt_name):
         if tgt_type == from_type:
             match = re.match(pat, tgt_name)
             if match is not None:
-                search_names.append(match.groups(grp)[0])  # type: ignore
+                search_names.append(match.group(grp))
                 search_types.append(to_type)
     search_name = '|'.join(search_names)
 
@@ -774,7 +774,7 @@ def _between(start, end):
 
 
 def _get_message_range(lines, after):
-    # type: (List[str], Tuple[int, int]) -> Optional[Mapping[str, Tuple[int, int]]]
+    # type: (Sequence[str], Tuple[int, int]) -> Optional[Mapping[str, Tuple[int, int]]]
     """Return the next chunk to send after a given point."""
     end_pos = _find_next_chunk(lines, *after)
 
@@ -784,7 +784,7 @@ def _get_message_range(lines, after):
 
 
 def _find_next_chunk(lines, sline, scol):
-    # type: (List[str], int, int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[str], int, int) -> Optional[Tuple[int, int]]
     """Find the next chunk to send to Coq."""
     bullets = ['{', '}', '-', '+', '*']
 
@@ -820,7 +820,7 @@ def _find_next_chunk(lines, sline, scol):
 
 
 def _find_dot_after(lines, sline, scol):
-    # type: (List[str], int, int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[str], int, int) -> Optional[Tuple[int, int]]
     """Find the next '.' after a given point."""
     if sline >= len(lines):
         return None
@@ -859,19 +859,19 @@ def _find_dot_after(lines, sline, scol):
 
 
 def _skip_str(lines, sline, scol):
-    # type: (List[str], int, int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[str], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in " "."""
     return _skip_block(lines, sline, scol, '"')
 
 
 def _skip_comment(lines, sline, scol):
-    # type: (List[str], int, int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[str], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in (* *)."""
     return _skip_block(lines, sline, scol, '*)', '(*')
 
 
 def _skip_block(lines, sline, scol, estr, sstr=None, nesting=1):
-    # type: (List[str], int, int, str, Optional[str], int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[str], int, int, str, Optional[str], int) -> Optional[Tuple[int, int]]
     """A generic function to skip the next block contained in sstr estr."""
     if nesting == 0:
         return (sline, scol)
@@ -894,7 +894,8 @@ def _skip_block(lines, sline, scol, estr, sstr=None, nesting=1):
         # Found a new start
         # N.B. mypy complains that 'sstr' might be None, but it won't be if
         # 'blk_start' != -1
-        return _skip_block(lines, sline, scol + blk_start + len(sstr),  # type: ignore
+        assert sstr is not None
+        return _skip_block(lines, sline, scol + blk_start + len(sstr),
                            estr, sstr, nesting + 1)
     else:
         # Nothing on this line

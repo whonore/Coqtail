@@ -46,11 +46,13 @@ try:
 except ImportError:
     pass
 
+DEFAULT_REF = Err('Default Ref value. Should never be seen.')
+
 
 class Ref(object):
     """A mutable value to be passed between threads."""
-    def __init__(self, val=None):
-        # type: (Any) -> None
+    def __init__(self, val=DEFAULT_REF):
+        # type: (Union[Ok, Err]) -> None
         self.val = val
 
 
