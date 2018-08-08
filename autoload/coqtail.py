@@ -38,7 +38,7 @@ import vimbufsync
 
 # For Mypy
 try:
-    from typing import (Any, Callable, Deque, Generator, List, Optional,
+    from typing import (Any, Callable, Deque, Dict, Generator, List, Optional,
                         Mapping, Sequence, Text, Tuple)
 except ImportError:
     pass
@@ -64,12 +64,24 @@ def unexpected(response, where):
 
 class Coqtail(object):
     """Manage Coqtop interfaces and goal and info buffers for each Coq file."""
+    _bufmap = {}  # type: Dict[int, Coqtail]
+
+    def __new__(cls):
+        # type: () -> Coqtail
+        """Create one Coqtail instance per Vim buffer."""
+        num = vim.current.buffer.number
+        # Return same instance if already exists, otherwise create new instance
+        return Coqtail._bufmap.get(num, super(Coqtail, cls).__new__(cls))
 
     def __init__(self):
         # type: () -> None
         """Initialize variables."""
-        self.coqtop = None  # type: Optional[CT.Coqtop]
-        self._reset()
+        num = vim.current.buffer.number
+        # Only initialize if this is a new instance
+        if num not in Coqtail._bufmap:
+            Coqtail._bufmap[num] = self
+            self.coqtop = None  # type: Optional[CT.Coqtop]
+            self._reset()
 
     def _reset(self):
         # type: () -> None
@@ -948,99 +960,3 @@ def _hard_matcher(start, stop):
     last_line = _easy_matcher(last_start, last_stop)
 
     return r"{0}\|{1}\|{2}".format(first_line, middle, last_line)
-
-
-# Method Dispatch #
-# A mapping from buffer numbers to Coqtail classes
-bufmap = ddict(Coqtail)  # type: Mapping[object, Coqtail]
-
-
-# Call the corresponding method on the current buffer
-def sync():
-    # type: () -> None
-    """Call sync() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].sync()
-
-
-def start(version, *args):
-    # type: (Text, *Text) -> None
-    """Call start() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].start(version, *args)
-
-
-def stop():
-    # type: () -> None
-    """Call stop() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].stop()
-
-
-def step():
-    # type: () -> None
-    """Call step() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].step()
-
-
-def rewind():
-    # type: () -> None
-    """Call def () on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].rewind()
-
-
-def to_cursor():
-    # type: () -> None
-    """Call to_cursor() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].to_cursor()
-
-
-def to_top():
-    # type: () -> None
-    """Call to_top() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].to_top()
-
-
-def query(*args):
-    # type: (*Text) -> None
-    """Call query() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].query(*args)
-
-
-def jump_to_end():
-    # type: () -> None
-    """Call jump_to_end() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].jump_to_end()
-
-
-def find_def(target):
-    # type: (Text) -> None
-    """Call find_def() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].find_def(target)
-
-
-def make_match(ty):
-    # type: (Text) -> None
-    """Call make_match() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].make_match(ty)
-
-
-def reset_color():
-    # type: () -> None
-    """Call reset_color() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].reset_color()
-
-
-def restore_goal():
-    # type: () -> None
-    """Call restore_goal() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].restore_goal()
-
-
-def show_info():
-    # type: () -> None
-    """Call show_info() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].show_info()
-
-
-def splash(version):
-    # type: (Text) -> None
-    """Call splash() on current buffer's Coqtop."""
-    bufmap[vim.current.buffer].splash(version)

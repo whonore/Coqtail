@@ -51,7 +51,7 @@ let s:current_dir = expand('<sfile>:p:h')
 Py import sys, vim
 Py if not vim.eval('s:current_dir') in sys.path:
 \    sys.path.append(vim.eval('s:current_dir'))
-Py import coqtail
+Py from coqtail import Coqtail
 
 " Get the word under the cursor using the special '<cword>' variable. First
 " add some characters to the 'iskeyword' option to treat them as part of the
@@ -132,7 +132,7 @@ function! coqtail#InitPanels()
     let b:goal_buf = l:goal_buf
     let b:info_buf = l:info_buf
 
-    Py coqtail.splash(vim.eval('b:version'))
+    Py Coqtail().splash(vim.eval('b:version'))
     let g:counter += 1
 endfunction
 
@@ -150,9 +150,9 @@ function! coqtail#OpenPanels()
     " Switch back to main panel
     execute l:coq_win . 'wincmd w'
 
-    Py coqtail.reset_color()
-    Py coqtail.restore_goal()
-    Py coqtail.show_info()
+    Py Coqtail().reset_color()
+    Py Coqtail().restore_goal()
+    Py Coqtail().show_info()
 endfunction
 
 " Clear Coqtop highlighting.
@@ -228,7 +228,7 @@ endfunction
 
 " Interface to Python query function.
 function! coqtail#Query(...)
-    Py coqtail.query(*vim.eval('a:000'))
+    Py Coqtail().query(*vim.eval('a:000'))
 endfunction
 
 " Mappings for Coq queries on the current word.
@@ -274,7 +274,7 @@ function! coqtail#Stop()
 
         " Stop Coqtop
         try
-            Py coqtail.stop()
+            Py Coqtail().stop()
         catch
         endtry
 
@@ -372,7 +372,7 @@ function! coqtail#Start(...)
 
         " Launch Coqtop
         try
-            Py coqtail.start(vim.eval('b:version'),
+            Py Coqtail().start(vim.eval('b:version'),
             \                *vim.eval('map(copy(l:proj_args+a:000),'
             \                          '"expand(v:val)")'))
 
@@ -382,20 +382,20 @@ function! coqtail#Start(...)
             command! -buffer CoqStop call coqtail#Stop()
 
             " Move Coq position
-            command! -buffer CoqNext Py coqtail.step()
-            command! -buffer CoqUndo Py coqtail.rewind()
-            command! -buffer CoqToCursor Py coqtail.to_cursor()
-            command! -buffer CoqToTop Py coqtail.to_top()
+            command! -buffer CoqNext Py Coqtail().step()
+            command! -buffer CoqUndo Py Coqtail().rewind()
+            command! -buffer CoqToCursor Py Coqtail().to_cursor()
+            command! -buffer CoqToTop Py Coqtail().to_top()
 
             " Coq query
             command! -buffer -nargs=* Coq call coqtail#Query(<f-args>)
 
             " Move cursor
-            command! -buffer JumpToEnd Py coqtail.jump_to_end()
-            command! -buffer -nargs=1 FindDef Py coqtail.find_def(<f-args>)
+            command! -buffer JumpToEnd Py Coqtail().jump_to_end()
+            command! -buffer -nargs=1 FindDef Py Coqtail().find_def(<f-args>)
 
             " Insert match template
-            command! -buffer -nargs=1 MakeMatch Py coqtail.make_match(<f-args>)
+            command! -buffer -nargs=1 MakeMatch Py Coqtail().make_match(<f-args>)
 
             " Initialize goals and info panels
             call coqtail#InitPanels()
@@ -406,7 +406,7 @@ function! coqtail#Start(...)
             " panels as needed
             augroup coqtail#Autocmds
                 autocmd! * <buffer>
-                autocmd InsertEnter <buffer> Py coqtail.sync()
+                autocmd InsertEnter <buffer> Py Coqtail().sync()
                 autocmd BufWinLeave <buffer> call coqtail#HidePanels()
                 autocmd BufWinEnter <buffer> call coqtail#OpenPanels()
                 autocmd QuitPre <buffer> call coqtail#Stop()
