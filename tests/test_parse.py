@@ -46,6 +46,8 @@ tests = (
     ('bullet {', ['{ A. }'], (0, 0)),
     ('dot2', ['A..'], (0, 2)),  # TODO: is this what it should do?
     ('dot3', ['A...'], (0, 3)),
+    ('large space', ('A' + ('\n' * 5000) + '.').split('\n'), (5000, 0)),
+    ('large comment', ('(*' + ('\n' * 5000) + '*) A.').split('\n'), (5000, 4)),
 
     # Valid tests, offset
     ('bullet }', ['{ A. }'], (0, 4), (0, 5)),

@@ -834,40 +834,43 @@ def _find_next_chunk(lines, sline, scol):
 def _find_dot_after(lines, sline, scol):
     # type: (Sequence[str], int, int) -> Optional[Tuple[int, int]]
     """Find the next '.' after a given point."""
-    if sline >= len(lines):
-        return None
+    max_line = len(lines)
 
-    line = lines[sline][scol:]
-    dot_pos = line.find('.')
-    com_pos = line.find('(*')
-    str_pos = line.find('"')
+    while sline < max_line:
+        line = lines[sline][scol:]
+        dot_pos = line.find('.')
+        com_pos = line.find('(*')
+        str_pos = line.find('"')
 
-    if com_pos == -1 and dot_pos == -1 and str_pos == -1:
-        # Nothing on this line
-        return _find_dot_after(lines, sline + 1, 0)
-    elif dot_pos == -1 or (0 <= com_pos < dot_pos) or (0 <= str_pos < dot_pos):
-        if str_pos == -1 or (0 <= com_pos < str_pos):
-            # We see a comment opening before the next '.'
-            com_end = _skip_comment(lines, sline, scol + com_pos + 2)
-            if com_end is None:
-                return None
+        if com_pos == -1 and dot_pos == -1 and str_pos == -1:
+            # Nothing on this line
+            sline += 1
+            scol = 0
+        elif dot_pos == -1 or (0 <= com_pos < dot_pos) or (0 <= str_pos < dot_pos):
+            if str_pos == -1 or (0 <= com_pos < str_pos):
+                # We see a comment opening before the next '.'
+                com_end = _skip_comment(lines, sline, scol + com_pos + 2)
+                if com_end is None:
+                    return None
 
-            return _find_dot_after(lines, *com_end)
+                sline, scol = com_end
+            else:
+                # We see a string starting before the next '.'
+                str_end = _skip_str(lines, sline, scol + str_pos + 1)
+                if str_end is None:
+                    return None
+
+                sline, scol = str_end
+        elif line[dot_pos:dot_pos + 2] in ('.', '. '):
+            # Don't stop for '.' used in qualified name or for '..'
+            return (sline, scol + dot_pos)
+        elif line[dot_pos:dot_pos + 3] == '...':
+            # But do allow '...'
+            return (sline, scol + dot_pos + 2)
         else:
-            # We see a string starting before the next '.'
-            str_end = _skip_str(lines, sline, scol + str_pos + 1)
-            if str_end is None:
-                return None
+            scol += dot_pos + 1
 
-            return _find_dot_after(lines, *str_end)
-    elif line[dot_pos:dot_pos + 2] in ('.', '. '):
-        # Don't stop for '.' used in qualified name or for '..'
-        return (sline, scol + dot_pos)
-    elif line[dot_pos:dot_pos + 3] == '...':
-        # But do allow '...'
-        return (sline, scol + dot_pos + 2)
-    else:
-        return _find_dot_after(lines, sline, scol + dot_pos + 1)
+    return None
 
 
 def _skip_str(lines, sline, scol):
@@ -882,36 +885,40 @@ def _skip_comment(lines, sline, scol):
     return _skip_block(lines, sline, scol, '*)', '(*')
 
 
-def _skip_block(lines, sline, scol, estr, sstr=None, nesting=1):
-    # type: (Sequence[str], int, int, str, Optional[str], int) -> Optional[Tuple[int, int]]
+def _skip_block(lines, sline, scol, estr, sstr=None):
+    # type: (Sequence[str], int, int, str, Optional[str]) -> Optional[Tuple[int, int]]
     """A generic function to skip the next block contained in sstr estr."""
-    if nesting == 0:
-        return (sline, scol)
+    nesting = 1
+    max_line = len(lines)
 
-    if sline >= len(lines):
-        return None
+    while nesting > 0:
+        if sline >= max_line:
+            return None
 
-    line = lines[sline][scol:]
-    blk_end = line.find(estr)
-    if sstr is not None:
-        blk_start = line.find(sstr)
-    else:
-        blk_start = -1
+        line = lines[sline][scol:]
+        blk_end = line.find(estr)
+        if sstr is not None:
+            blk_start = line.find(sstr)
+        else:
+            blk_start = -1
 
-    if blk_end != -1 and (blk_end < blk_start or blk_start == -1):
-        # Found an end and no new start
-        return _skip_block(lines, sline, scol + blk_end + len(estr),
-                           estr, sstr, nesting - 1)
-    elif blk_start != -1:
-        # Found a new start
-        # N.B. mypy complains that 'sstr' might be None, but it won't be if
-        # 'blk_start' != -1
-        assert sstr is not None
-        return _skip_block(lines, sline, scol + blk_start + len(sstr),
-                           estr, sstr, nesting + 1)
-    else:
-        # Nothing on this line
-        return _skip_block(lines, sline + 1, 0, estr, sstr, nesting)
+        if blk_end != -1 and (blk_end < blk_start or blk_start == -1):
+            # Found an end and no new start
+            scol += blk_end + len(estr)
+            nesting -= 1
+        elif blk_start != -1:
+            # Found a new start
+            # N.B. mypy complains that 'sstr' might be None, but it won't be if
+            # 'blk_start' != -1
+            assert sstr is not None
+            scol += blk_start + len(sstr)
+            nesting += 1
+        else:
+            # Nothing on this line
+            sline += 1
+            scol = 0
+
+    return (sline, scol)
 
 
 # Region Highlighting #
