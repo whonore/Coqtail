@@ -31,6 +31,7 @@ import subprocess
 import signal
 import sys
 import threading
+import time
 
 if sys.version_info[0] >= 3:
     from queue import Queue, Empty
@@ -480,7 +481,7 @@ class Coqtop(object):
         # type: () -> None
         """Continually check if Coqtop has died."""
         while self.running():
-            pass
+            time.sleep(1)
         self.stop()
 
     def send_cmd(self, cmd):
@@ -498,7 +499,7 @@ class Coqtop(object):
         # type: () -> None
         """Send a SIGINT signal to Coqtop."""
         if self.coqtop is None:
-            raise CoqtopError('coqtop must not be None in interrupt()')
+            raise CoqtopError('Coqtop is not running.')
         self.coqtop.send_signal(signal.SIGINT)
 
     # Current State #
