@@ -112,7 +112,7 @@ class Coqtail(object):
         if self.saved_sync is None or curr_sync.buf() != self.saved_sync.buf():
             self._reset()
         else:
-            (line, col) = self.saved_sync.pos()
+            line, col = self.saved_sync.pos()
             self.rewind_to(line - 1, col)
 
         self.saved_sync = curr_sync
@@ -154,9 +154,9 @@ class Coqtail(object):
 
         # Get the location of the last '.'
         if self.endpoints != []:
-            (line, col) = self.endpoints[-1]
+            line, col = self.endpoints[-1]
         else:
-            (line, col) = (0, 0)
+            line, col = (0, 0)
 
         to_send = _get_message_range(vim.current.buffer, (line, col))
         if to_send is None:
@@ -191,11 +191,11 @@ class Coqtail(object):
         """Advance Coq to the cursor position."""
         self.sync()
 
-        (cline, ccol) = vim.current.window.cursor
+        cline, ccol = vim.current.window.cursor
         if self.endpoints != []:
-            (line, col) = self.endpoints[-1]
+            line, col = self.endpoints[-1]
         else:
-            (line, col) = (0, 0)
+            line, col = (0, 0)
 
         # Check if should rewind or advance
         if cline - 1 < line or (cline - 1 == line and ccol < col):
@@ -203,7 +203,7 @@ class Coqtail(object):
         else:
             to_send = _get_message_range(vim.current.buffer, (line, col))
             while to_send is not None and to_send['stop'] <= (cline - 1, ccol):
-                (eline, ecol) = to_send['stop']
+                eline, ecol = to_send['stop']
                 self.send_queue.append(to_send)
                 to_send = _get_message_range(vim.current.buffer,
                                              (eline, ecol + 1))
@@ -240,9 +240,9 @@ class Coqtail(object):
         """Move the cursor to the end of the Coq checked section."""
         # Get the location of the last '.'
         if self.endpoints != []:
-            (line, col) = self.endpoints[-1]
+            line, col = self.endpoints[-1]
         else:
-            (line, col) = (0, 1)
+            line, col = (0, 1)
 
         vim.current.window.cursor = (line + 1, col)
 
@@ -332,7 +332,7 @@ class Coqtail(object):
 
             msgs.append(msg)
             if success:
-                (line, col) = to_send['stop']
+                line, col = to_send['stop']
                 self.endpoints.append((line, col + 1))
             else:
                 self.send_queue.clear()
@@ -341,12 +341,12 @@ class Coqtail(object):
                 loc_s, loc_e = err_loc
                 if loc_s == loc_e == -1:
                     self.error_at = (to_send['start'], to_send['stop'])
-                    (sline, scol) = to_send['start']
-                    (eline, ecol) = to_send['stop']
+                    sline, scol = to_send['start']
+                    eline, ecol = to_send['stop']
                 else:
-                    (line, col) = to_send['start']
-                    (sline, scol) = _pos_from_offset(col, message, loc_s)
-                    (eline, ecol) = _pos_from_offset(col, message, loc_e)
+                    line, col = to_send['start']
+                    sline, scol = _pos_from_offset(col, message, loc_s)
+                    eline, ecol = _pos_from_offset(col, message, loc_e)
                     self.error_at = ((line + sline, scol),
                                      (line + eline, ecol))
 
@@ -593,34 +593,34 @@ class Coqtail(object):
 
         # Recolor
         if self.endpoints != []:
-            (line, col) = self.endpoints[-1]
+            line, col = self.endpoints[-1]
 
-            start = {'line': 0, 'col': 0}
-            stop = {'line': line + 1, 'col': col}
+            start = (0, 0)
+            stop = (line + 1, col)
             zone = _make_matcher(start, stop)
             vim.command("let b:checked = matchadd('CheckedByCoq', '{}')"
                         .format(zone))
 
         if self.send_queue:
             if self.endpoints != []:
-                (sline, scol) = self.endpoints[-1]
+                sline, scol = self.endpoints[-1]
             else:
-                (sline, scol) = (0, -1)
+                sline, scol = (0, -1)
 
             to_send = self.send_queue[0]
-            (eline, ecol) = to_send['stop']
+            eline, ecol = to_send['stop']
 
-            start = {'line': sline, 'col': scol + 1}
-            stop = {'line': eline + 1, 'col': ecol}
+            start = (sline, scol + 1)
+            stop = (eline + 1, ecol)
             zone = _make_matcher(start, stop)
             vim.command("let b:sent = matchadd('SentToCoq', '{}')"
                         .format(zone))
 
         if self.error_at is not None:
-            ((sline, scol), (eline, ecol)) = self.error_at
+            (sline, scol), (eline, ecol) = self.error_at
 
-            start = {'line': sline + 1, 'col': scol}
-            stop = {'line': eline + 1, 'col': ecol}
+            start = (sline + 1, scol)
+            stop = (eline + 1, ecol)
             zone = _make_matcher(start, stop)
             vim.command("let b:errors = matchadd('CoqError', '{}')"
                         .format(zone))
@@ -755,7 +755,6 @@ def get_searches(tgt_type, tgt_name):
 
 
 # Finding Start and End of Coq Chunks #
-# From here on is largely copied from Coquille
 def _pos_from_offset(col, msg, offset):
     # type: (int, Text, int) -> Tuple[int, int]
     """Calculate the line and column of a given offset."""
@@ -771,8 +770,8 @@ def _pos_from_offset(col, msg, offset):
 def _between(start, end):
     # type: (Tuple[int, int], Tuple[int, int]) -> Text
     """Return the text between a given start and end point."""
-    (sline, scol) = start
-    (eline, ecol) = end
+    sline, scol = start
+    eline, ecol = end
 
     buf = vim.current.buffer
 
@@ -800,7 +799,7 @@ def _find_next_chunk(lines, sline, scol):
     """Find the next chunk to send to Coq."""
     bullets = ['{', '}', '-', '+', '*']
 
-    (line, col) = (sline, scol)
+    line, col = (sline, scol)
     while True:
         # Skip leading whitespace
         for line in range(sline, len(lines)):
@@ -819,7 +818,7 @@ def _find_next_chunk(lines, sline, scol):
             if com_end is None:
                 return None
 
-            (sline, col) = com_end
+            sline, col = com_end
         else:
             break
 
@@ -923,47 +922,50 @@ def _skip_block(lines, sline, scol, estr, sstr=None):
 
 # Region Highlighting #
 def _make_matcher(start, stop):
-    # type: (Mapping[str, int], Mapping[str, int]) -> str
+    # type: (Tuple[int, int], Tuple[int, int]) -> str
     """A wrapper function to call the appropriate _matcher function."""
-    if start['line'] == stop['line']:
+    if start[0] == stop[0]:
         return _easy_matcher(start, stop)
     return _hard_matcher(start, stop)
 
 
 def _easy_matcher(start, stop):
-    # type: (Mapping[str, int], Mapping[str, Optional[int]]) -> str
-    """Create a single-line Vim match expression."""
-    startl = ''
-    startc = ''
+    # type: (Tuple[int, int], Tuple[int, Optional[int]]) -> str
+    """Create a Vim match expression with the same start and end columns."""
+    startl = startc = ''
+    sline, scol = start
+    eline, ecol = stop
 
-    if start['line'] > 0:
-        startl = r"\%>{0}l".format(start['line'] - 1)
-    if start['col'] > 0:
-        startc = r"\%>{0}c".format(start['col'])
+    if sline > 0:
+        startl = r"\%>{0}l".format(sline - 1)
+    if scol > 0:
+        startc = r"\%>{0}c".format(scol)
 
-    assert stop['line'] is not None
-    start_match = "{0}{1}".format(startl, startc)
-    if stop['col'] is not None:
-        end_match = r"\%<{0}l\%<{1}c".format(stop['line'] + 1, stop['col'] + 1)
+    start_match = startl + startc
+    if ecol is not None:
+        end_match = r"\%<{0}l\%<{1}c".format(eline + 1, ecol + 1)
     else:
-        end_match = r"\%<{0}l".format(stop['line'] + 1)
+        end_match = r"\%<{0}l".format(eline + 1)
 
-    return ''.join((start_match, end_match))
+    return start_match + end_match
 
 
 def _hard_matcher(start, stop):
-    # type: (Mapping[str, int], Mapping[str, int]) -> str
-    """Create a multi-line Vim match expression."""
-    first_start = {'line': start['line'], 'col': start['col']}
-    first_stop = {'line': start['line'], 'col': None}
+    # type: (Tuple[int, int], Tuple[int, int]) -> str
+    """Create a Vim match expression with different start and end columns."""
+    sline, scol = start
+    eline, ecol = stop
+
+    first_start = (sline, scol)
+    first_stop = (sline, None)
     first_line = _easy_matcher(first_start, first_stop)
 
-    mid_start = {'line': start['line'] + 1, 'col': 0}
-    mid_stop = {'line': stop['line'] - 1, 'col': None}
+    mid_start = (sline + 1, 0)
+    mid_stop = (eline - 1, None)
     middle = _easy_matcher(mid_start, mid_stop)
 
-    last_start = {'line': stop['line'], 'col': 0}
-    last_stop = {'line': stop['line'], 'col': stop['col']}
+    last_start = (eline, 0)
+    last_stop = (eline, ecol)
     last_line = _easy_matcher(last_start, last_stop)
 
     return r"{0}\|{1}\|{2}".format(first_line, middle, last_line)
