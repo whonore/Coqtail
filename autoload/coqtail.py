@@ -199,7 +199,7 @@ class Coqtail(object):
 
         # Check if should rewind or advance
         if cline - 1 < line or (cline - 1 == line and ccol < col):
-            self.rewind_to(cline - 1, ccol + 1)
+            self.rewind_to(cline - 1, ccol + 2)
         else:
             to_send = _get_message_range(vim.current.buffer, (line, col))
             while to_send is not None and to_send['stop'] <= (cline - 1, ccol):
@@ -359,7 +359,7 @@ class Coqtail(object):
         # type: (int, int) -> None
         """Rewind to a specific location."""
         # Count the number of endpoints after the specified location
-        steps_too_far = sum(pos > (line, col) for pos in self.endpoints)
+        steps_too_far = sum(pos >= (line, col) for pos in self.endpoints)
         self.rewind(steps_too_far)
 
     def qual_name(self, target):
