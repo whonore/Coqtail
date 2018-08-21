@@ -53,8 +53,10 @@ syn keyword coqVernacCmd         Functional Scheme Back Combined
 syn keyword coqFeedback          Show About Print
 
 " Modules
-syn region coqModule contains=coqIdent matchgroup=coqTopLevel start="Module" end="\.\_s" end=":="me=e-2 nextgroup=coqModVal
-syn region coqModVal contains=coqIdent start=":=" end="\.\_s"
+syn region coqModule contains=coqModule,coqSection,coqVernacPunctuation,coqModBinder,@coqVernac matchgroup=coqVernacCmd start="\<Module\%(\_s\+Type\)\?\_s\+\z([_[:alpha:]][_'[:alnum:]]*\)\%([^=]*\.\_s\)\@=" end="\<End\_s\+\z1\_s*\.\_s"
+syn region coqModule contains=coqVernacPunctuation,coqModBinder matchgroup=coqVernacCmd start="\<Module\%(\_s\+Type\)\?\_s\+\z([_[:alpha:]][_'[:alnum:]]*\)\%(.*:=\)\@=" end=":="me=e-2 nextgroup=coqModVal
+syn region coqModBinder contained contains=coqIdent matchgroup=coqVernacPunctuation start="(" end=")" keepend
+syn region coqModVal contains=coqIdent,coqTermPunctuation start=":=" end="\.\_s"
 
 " Terms
 syn cluster coqTerm            contains=coqKwd,coqTermPunctuation,coqKwdMatch,coqKwdLet,coqKwdParen
@@ -65,19 +67,20 @@ syn keyword coqKwd             contained else end exists2 fix forall fun if in s
 syn match   coqKwd             contained "\<where\>"
 syn match   coqKwd             contained "\<exists!\?"
 syn match   coqKwd             contained "|\|/\\\|\\/\|<->\|\~\|->\|=>\|{\|}\|&\|+\|-\|*\|=\|>\|<\|<="
-syn match coqTermPunctuation   contained ":=\|:>\|:\|;\|,\|||\|\[\|\]\|@\|?\|\<_\>"
+syn match coqTermPunctuation   contained ":=\|:>\|:\|;\|,\|||\|\[\|\]\|@\|?\|\<_\>\|<+"
 
 " Various
 syn region coqRequire contains=coqString matchgroup=coqVernacCmd start="\<Require\>\%(\_s\+\%(Export\|Import\)\>\)\?" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqRequire matchgroup=coqVernacCmd start="\<Import\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqRequire matchgroup=coqVernacCmd start="\<Export\>" matchgroup=coqVernacPunctuation end="\.\_s"
+syn region coqRequire matchgroup=coqVernacCmd start="\<Include\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqRequire contains=coqString,coqRequire matchgroup=coqVernacCmd start="\<From\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqCheck   contains=@coqTerm matchgroup=coqVernacCmd start="\<Check\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqOpaque  matchgroup=coqVernacCmd start="\<\%(\%(Local\|Global\)\_s\+\)\?\%(Opaque\|Transparent\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqShow       matchgroup=coqVernacCmd start="\<Show\_s\+\%(\%(Implicits\|Script\|Tree\|Proof\|Conjectures\|Intros\?\|Existentials\)\>\)\?" end="\.\_s"
 
 " Sections
-syn region coqSection contains=coqSection,@coqVernac matchgroup=coqVernacCmd start="\<Section\_s*\z(\S\+\)\_s*\.\_s" end="\<End\_s\+\z1\_s*\.\_s"
+syn region coqSection contains=coqSection,@coqVernac matchgroup=coqVernacCmd start="\<Section\_s\+\z(\S\+\)\_s*\.\_s" end="\<End\_s\+\z1\_s*\.\_s"
 
 " Obligations
 syn region coqObligation contains=coqIdent   matchgroup=coqVernacCmd start="\<\%(\%(\%(Admit\_s\+\)\?Obligations\)\|\%(Obligation\_s\+\d\+\)\|\%(Next\_s\+Obligation\)\|Preterm\)\%(\_s\+of\)\?\>" end="\.\_s"
@@ -294,7 +297,8 @@ syn region coqRecField   contained contains=coqField matchgroup=coqVernacPunctua
 syn match coqField       contained "[_[:alpha:]][_'[:alnum:]]*"
 
 " Typeclasses
-syn region coqCls contains=coqRecProfile start="\<Class\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqCls        contains=coqClsProfile start="\<Class\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqClsProfile contained contains=coqIdent,coqRecTerm,coqRecBinder matchgroup=coqVernacCmd start="Class" matchgroup=NONE end="\.\_s"
 
 " Typeclass instances
 syn region coqIns contains=coqDefName matchgroup=coqVernacCmd start="\<\%(\%(Global\|Local\)\_s\+\)\?Instance\>" matchgroup=coqVernacPunctuation end=":="me=e-2 end="\.$"me=e-1 end="\.\s"me=e-2 nextgroup=coqDefContents1,coqProofBody keepend skipnl skipwhite skipempty
