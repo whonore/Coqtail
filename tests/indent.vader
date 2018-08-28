@@ -199,6 +199,24 @@ Expect coq (indented-sections):
     End S3.
   End S1.
 
+Given coq (empty-sections):
+  Section S1.
+  End S1.
+  Section S2.
+
+  End S2.
+
+Do (indent-empty-sections):
+  gg
+  vG=
+
+Expect coq (indented-empty-sections):
+  Section S1.
+  End S1.
+  Section S2.
+
+  End S2.
+
 Given coq (modules):
   Module M1.
   Definition x := 1.
@@ -226,6 +244,42 @@ Expect coq (indented-modules):
       Definition z := 3.
     End M3.
   End M1.
+
+Given coq (empty-modules):
+  Module M1.
+  End M1.
+  Module M2.
+
+  End M2.
+
+Do (indent-empty-modules):
+  gg
+  vG=
+
+Expect coq (indented-empty-modules):
+  Module M1.
+  End M1.
+  Module M2.
+
+  End M2.
+
+Given coq (one-line-modules):
+  Module M4 := M1.
+  Module M5 := M1 <+
+  M2.
+  Module M6. End M6.
+  Definition w := 4.
+
+Do (indent-one-line-modules):
+  gg
+  vG=
+
+Expect coq (indented-one-line-modules):
+  Module M4 := M1.
+  Module M5 := M1 <+
+    M2.
+  Module M6. End M6.
+  Definition w := 4.
 
 Given coq (record-same-line):
   Record r := {

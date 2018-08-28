@@ -178,9 +178,12 @@ function GetCoqIndent()
 
     return ind
 
-  " previous line begins with 'Section':
+  " previous line begins with 'Section/Module':
   elseif previousline =~ '^\s*\%(Section\|Module\)\>'
-    return ind + &sw
+    " don't indent if Section/Module is empty or is defined on one line
+    if currentline !~ '^\s*End\>' && previousline !~ ':=.*\.\s*$' && previousline !~ '\<End\>'
+      return ind + &sw
+    endif
 
   " current line begins with 'End':
   elseif currentline =~ '^\s*End\>'
