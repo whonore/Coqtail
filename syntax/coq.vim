@@ -302,6 +302,7 @@ syn region coqClsProfile contained contains=coqIdent,coqRecTerm,coqRecBinder mat
 
 " Typeclass instances
 syn region coqIns contains=coqDefName matchgroup=coqVernacCmd start="\<\%(\%(Global\|Local\)\_s\+\)\?Instance\>" matchgroup=coqVernacPunctuation end=":="me=e-2 end="\.$"me=e-1 end="\.\s"me=e-2 nextgroup=coqDefContents1,coqProofBody keepend skipnl skipwhite skipempty
+syn region coqIns matchgroup=coqVernacCmd start="\<Existing\_s\+Instance\>" matchgroup=coqVernacPunctuation end="\.$"me=e-1 end="\.\s"me=e-2
 
 " Various (High priority)
 syn region  coqComment           containedin=ALL contains=coqComment,coqTodo start="(\*" end="\*)" extend keepend
