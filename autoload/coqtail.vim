@@ -138,6 +138,11 @@ endfunction
 
 " Reopen goals and info panels and re-highlight.
 function! coqtail#OpenPanels()
+    " Do nothing if windows already open
+    if bufwinnr(b:goal_buf) != -1 || bufwinnr(b:info_buf) != -1
+        return
+    endif
+
     let l:coq_win = winnr()
 
     " Need to save in local vars because will be changing buffers
