@@ -300,6 +300,11 @@ class XmlInterfaceBase(object):
         else:
             raise unexpected(('good', 'fail'), val)
 
+    def worth_parsing(self, data):
+        # type: (bytes) -> bool
+        """Check if data contains a complete value node yet."""
+        return b'</value>' in data
+
     def raw_response(self, data):
         # type: (bytes) -> Optional[Union[Ok, Err]]
         """Try to parse an XML response from Coqtop into an Ok or Err."""
