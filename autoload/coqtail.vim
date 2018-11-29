@@ -333,7 +333,7 @@ function! coqtail#ParseCoqProj(file)
         let l:parts = split(line, ' ')
 
         " TODO: recognize more options
-        if l:parts[0] == '-R'
+        if l:parts[0] == '-R' || l:parts[0] == '-Q'
             " Convert the directory to an absolute path
             let l:absdir = finddir(l:parts[1], l:file_dir)
             if l:absdir != ''
