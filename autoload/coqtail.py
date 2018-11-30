@@ -797,7 +797,7 @@ def _get_message_range(lines, after):
 def _find_next_chunk(lines, sline, scol):
     # type: (Sequence[str], int, int) -> Optional[Tuple[int, int]]
     """Find the next chunk to send to Coq."""
-    bullets = ['{', '}', '-', '+', '*']
+    bullets = ('{', '}', '-', '+', '*')
 
     line, col = (sline, scol)
     while True:
@@ -824,6 +824,12 @@ def _find_next_chunk(lines, sline, scol):
 
     # Check if the first character of the chunk is a bullet
     if first_line[0] in bullets:
+        # '-', '+', '*' can be repeated
+        for c in first_line[1:]:
+            if c in bullets[2:] and c == first_line[0]:
+                col += 1
+            else:
+                break
         return (line, col)
 
     # Otherwise, find an ending '.'
