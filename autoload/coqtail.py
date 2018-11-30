@@ -866,6 +866,9 @@ def _find_dot_after(lines, sline, scol):
         elif line[dot_pos:dot_pos + 3] == '...':
             # But do allow '...'
             return (sline, scol + dot_pos + 2)
+        elif line[dot_pos:dot_pos + 2] == '..':
+            # Skip second '.'
+            scol += dot_pos + 2
         else:
             scol += dot_pos + 1
 

@@ -445,7 +445,7 @@ class XmlInterfaceBase(object):
         opt = ' '.join(opts[1:])
 
         if ty not in allowed:
-            unexpected(allowed, ty)
+            raise unexpected(allowed, ty)
 
         return ty, opt
 
