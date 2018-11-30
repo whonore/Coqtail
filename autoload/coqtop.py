@@ -278,7 +278,9 @@ class Coqtop(object):
     def do_option(self, cmd, in_script, encoding='utf-8', timeout=None):
         # type: (Text, bool, str, Optional[int]) -> Generator[Tuple[bool, Text, Optional[Tuple[int, int]]], bool, None]
         """Set or get an option."""
-        if cmd.startswith('Test'):
+        ty, opt = self.xml.parse_option(cmd)
+
+        if ty == 'Test':
             call = self.call(self.xml.get_options(encoding=encoding),
                              timeout=timeout)
             next(call)
@@ -287,14 +289,15 @@ class Coqtop(object):
 
             if isinstance(response, Ok):
                 optval = [(val, desc) for name, desc, val in response.val
-                          if name in cmd]
+                          if name == opt]
 
                 if optval != []:
                     ret = "{}: {}".format(optval[0][1], optval[0][0])  # type: Text
                 else:
                     ret = 'Invalid option name'
         else:
-            call = self.call(self.xml.set_options(cmd, encoding=encoding),
+            val = (ty == 'Set')
+            call = self.call(self.xml.set_options(opt, val, encoding=encoding),
                              timeout=timeout)
             next(call)
             stopped = yield  # type: ignore

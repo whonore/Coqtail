@@ -20,7 +20,7 @@ import pytest
 # Mock vim modules
 sys.modules['vim'] = Mock()
 sys.modules['vimbufsync'] = Mock()
-from coqtail import _get_message_range
+from coqtail import _get_message_range, _strip_comments
 
 # Test Values #
 tests = (
@@ -78,3 +78,25 @@ def test_parse(_name, lines, start, stop):
     else:
         mrange = None
     assert _get_message_range(lines, start) == mrange
+
+
+com_tests = (
+    ('no comment', 'abc', 'abc'),
+    ('pre', '(*abc*)def', 'def'),
+    ('mid', 'ab(* c *)de', 'abde'),
+    ('post', 'abc(*def *)', 'abc'),
+    ('multi', 'abc (* com1 *)  def (*com2 *) g', 'abc   def  g'),
+    ('nested', 'abc (* c1 (*c2 (*c3*) (*c4*) *) *)def', 'abc def'),
+    ('no comment newline', '\nabc\n\n', '\nabc\n\n'),
+    ('pre newline', '(*ab\nc*)d\nef', 'd\nef'),
+    ('mid newline', 'ab(* c *)\nde', 'ab\nde'),
+    ('post newline', 'abc\n(*def *)\n', 'abc\n\n'),
+    ('multi newline', 'abc (* com1 *)\n def \n(*\ncom2 *) g',
+     'abc \n def \n g'),
+    ('nested newline', '\nabc (* c1 (*c2 \n\n(*c3\n*) (*c4*) *) *)def\n',
+     '\nabc def\n')
+)
+
+@pytest.mark.parametrize('_name, msg, expected', com_tests)
+def test_strip_comment(_name, msg, expected):
+    assert _strip_comments(msg) == expected

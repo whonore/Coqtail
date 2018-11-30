@@ -396,8 +396,8 @@ class XmlInterfaceBase(object):
         pass
 
     @abstractmethod
-    def set_options(self, cmd, encoding='utf-8'):
-        # type: (Text, str) -> Tuple[Text, Optional[Text]]
+    def set_options(self, option, val, encoding='utf-8'):
+        # type: (Text, bool, str) -> Tuple[Text, Optional[Text]]
         """Create an XML string to set one of Coqtop's options."""
         pass
 
@@ -420,7 +420,7 @@ class XmlInterfaceBase(object):
 
     def is_option(self, cmd):
         # type: (Text) -> bool
-        """Check if 'cmd' is trying to set/get an option."""
+        """Check if 'cmd' is trying to set/get/check an option."""
         # Starts with Set, Unset, Test
         # N.B. 'cmd' could be split over multiple lines. We just want to know
         # if any start with an option keyword
@@ -434,6 +434,20 @@ class XmlInterfaceBase(object):
         # N.B. see is_option()
         return any(re.match(re_str, line) is not None
                    for line in cmd.split('\n'))
+
+    def parse_option(self, cmd):
+        # type: (Text) -> Tuple[Text, Text]
+        """Parse what option is being set/get/checked."""
+        # Assumes cmd is of the form 'Set|Unset|Test {option_name}'
+        allowed = ('Set', 'Unset', 'Test')
+        opts = cmd.strip('.').split()
+        ty = opts[0]
+        opt = ' '.join(opts[1:])
+
+        if ty not in allowed:
+            unexpected(allowed, ty)
+
+        return ty, opt
 
 
 class XmlInterface84(XmlInterfaceBase):
@@ -685,22 +699,19 @@ class XmlInterface84(XmlInterfaceBase):
         return res
 
     # TODO: allow non-boolean arguments
-    def set_options(self, cmd, encoding='utf-8'):
-        # type: (Text, str) -> Tuple[Text, Optional[Text]]
+    def set_options(self, option, val, encoding='utf-8'):
+        # type: (Text, bool, str) -> Tuple[Text, Optional[Text]]
         """Create an XML string for the 'SetOptions' command."""
         # Args:
         #   list (option_name * option_value) - The options to update and the
         #                                       values to set
-        opts = cmd.strip('.').split()
-        onoff = self.OptionValue(opts[0] == 'Set')
-        name = opts[1:]
-
         # TODO: Coq source (toplevel/interface.mli) looks like the argument
         # should be a list like in version 8.5 and on, but it only seems to
         # work if it is a single element
         return ('SetOptions',
                 ET.tostring(self._build_xml('call', 'setoptions',
-                                            (name, onoff)),
+                                            (option.split(),
+                                             self.OptionValue(val))),
                             encoding))
 
 
@@ -973,21 +984,18 @@ class XmlInterface85(XmlInterfaceBase):
         return res
 
     # TODO: allow non-boolean arguments
-    def set_options(self, cmd, encoding='utf-8'):
-        # type: (Text, str) -> Tuple[Text, Optional[Text]]
+    def set_options(self, option, val, encoding='utf-8'):
+        # type: (Text, bool, str) -> Tuple[Text, Optional[Text]]
         """Create an XML string for the 'SetOptions' command."""
         # Args:
         #   list (option_name * option_value) - The options to update and the
         #                                       values to set
-        opts = cmd.strip('.').split()
-        onoff = self.OptionValue(opts[0] == 'Set')
-        name = opts[1:]
-
         # extra '[]' needed so _build_xml treats it as one list instead
         # of several children to convert
         return ('SetOptions',
                 ET.tostring(self._build_xml('call', 'SetOptions',
-                                            [[(name, onoff)]]),
+                                            [[(option.split(),
+                                               self.OptionValue(val))]]),
                             encoding))
 
 

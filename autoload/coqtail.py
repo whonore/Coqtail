@@ -226,7 +226,7 @@ class Coqtail(object):
 
         try:
             _, self.info_msg, _ = self.call_and_wait(self.coqtop.dispatch,
-                                                     message,
+                                                     _strip_comments(message),
                                                      in_script=False,
                                                      encoding=self.encoding)
         except CT.CoqtopError as e:
@@ -323,7 +323,7 @@ class Coqtail(object):
 
             try:
                 success, msg, err_loc = self.call_and_wait(self.coqtop.dispatch,
-                                                           message,
+                                                           _strip_comments(message),
                                                            encoding=self.encoding,
                                                            timeout=self.timeout)
             except CT.CoqtopError as e:
@@ -969,3 +969,34 @@ def _hard_matcher(start, stop):
     last_line = _easy_matcher(last_start, last_stop)
 
     return r"{0}\|{1}\|{2}".format(first_line, middle, last_line)
+
+
+# Misc #
+def _strip_comments(msg):
+    # type: (Text) -> Text
+    """Remove all comments from 'msg'."""
+    # N.B. Coqtop will ignore comments, but it makes it easier to inspect
+    # commands in Coqtail (e.g. options in coqtop.do_option) if we remove
+    # them.
+    nocom = []
+    nesting = 0
+
+    while msg != '':
+        start = msg.find('(*')
+        end = msg.find('*)')
+        if start == -1 and end == -1:
+            # No comments left
+            nocom.append(msg)
+            break
+        elif start != -1 and (start < end or end == -1):
+            # New nested comment
+            if nesting == 0:
+                nocom.append(msg[:start])
+            msg = msg[start + 2:]
+            nesting += 1
+        elif end != -1 and (end < start or start == -1):
+            # End of a comment
+            msg = msg[end + 2:]
+            nesting -= 1
+
+    return ''.join(nocom)

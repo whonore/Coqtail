@@ -24,6 +24,7 @@ DONE = False
 
 
 # Test Helpers #
+# TODO: Should also look at current goal, messages returned by Coqtop
 def get_state(coq):
     """Collect the state variables for coq."""
     return coq.root_state, coq.state_id, coq.states[:]
@@ -174,3 +175,13 @@ def test_advance_stop_rewind(coq):
     assert succ
     call_and_wait(coq, coq.rewind, 5)
     assert old_state == get_state(coq)
+
+def test_dispatch_ignore_comments_newlines(coq):
+    """Dispatch ignores comments and extraneous newlines."""
+    succ, _, _ = call_and_wait(coq, coq.dispatch, '(*pre*) Test Silent .')
+    assert succ
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Set  (*mid*) Silent.')
+    assert succ
+    succ, _, _ = call_and_wait(coq, coq.dispatch,
+                               '(*pre*) Unset\n (*mid*)\nSilent  (*post*).')
+    assert succ
