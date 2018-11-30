@@ -94,6 +94,7 @@ def prettyxml(xml):
     # type: (bytes) -> Text
     """Pretty print XML for debugging."""
     xml = _unescape(xml)
+    # No stubs for xml.dom.minidom
     return parseString(xml).toprettyxml()  # type: ignore
 
 
@@ -349,6 +350,7 @@ class XmlInterfaceBase(object):
             if xml.tag == 'value':
                 res = self._to_response(xml)
             elif xml.tag in ('message', 'feedback'):
+                # _to_value guaranteed to return Text for message or feedback
                 msgs.append(self._to_value(xml))  # type: ignore
             else:
                 raise unexpected(('value', 'message', 'feedback'), xml.tag)
@@ -374,55 +376,55 @@ class XmlInterfaceBase(object):
     # Coqtop Commands #
     @abstractmethod
     def init(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to initialize Coqtop."""
         pass
 
     @abstractmethod
     def add(self, cmd, state, encoding='utf-8'):
-        # type: (Text, int, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to advance Coqtop."""
         pass
 
     @abstractmethod
     def edit_at(self, state, steps, encoding='utf-8'):
-        # type: (int, int, str) -> Tuple[Text, Optional[Text]]
+        # type: (int, int, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to move Coqtop to a specific location."""
         pass
 
     @abstractmethod
     def query(self, cmd, state, encoding='utf-8'):
-        # type: (Text, int, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to pose a query to Coqtop."""
         pass
 
     @abstractmethod
     def goal(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to check the current goal state."""
         pass
 
     @abstractmethod
     def status(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to check Coqtop's status."""
         pass
 
     @abstractmethod
     def mk_cases(self, ty, encoding='utf-8'):
-        # type: (Text, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to construct a match statement for ty."""
         pass
 
     @abstractmethod
     def get_options(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to check the state of Coqtop's options."""
         pass
 
     @abstractmethod
     def set_options(self, option, val, encoding='utf-8'):
-        # type: (Text, bool, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, bool, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to set one of Coqtop's options."""
         pass
 
@@ -563,6 +565,7 @@ class XmlInterface84(XmlInterfaceBase):
     def _to_message(self, xml):
         # type: (ET.Element) -> Text
         """<message>message_level string</message>"""
+        # xml[1] is a string
         return self._to_value(xml[1])  # type: ignore
 
     def _to_feedback(self, xml):
@@ -573,6 +576,7 @@ class XmlInterface84(XmlInterfaceBase):
         content = xml[0]
 
         if content.get('val') == 'errormsg':
+            # content[1] is a string
             return self._to_value(content[1])  # type: ignore
         else:
             # TODO: maybe make use of this info?
@@ -581,7 +585,7 @@ class XmlInterface84(XmlInterfaceBase):
     # TODO: specify arg and ret types for all commands
     # Coqtop Commands #
     def init(self, _encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Fake the 'Init' command."""
         return ('Init', None)
 
@@ -592,7 +596,7 @@ class XmlInterface84(XmlInterfaceBase):
         return Ok(0)
 
     def add(self, cmd, state, encoding='utf-8'):
-        # type: (Text, int, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'interp' command."""
         # Attrs:
         #   bool - Verbose output
@@ -616,7 +620,7 @@ class XmlInterface84(XmlInterfaceBase):
         return res
 
     def edit_at(self, _state, steps, encoding='utf-8'):
-        # type: (int, int, str) -> Tuple[Text, Optional[Text]]
+        # type: (int, int, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'rewind' command."""
         # Attrs:
         #   int - The number of steps to rewind
@@ -625,7 +629,7 @@ class XmlInterface84(XmlInterfaceBase):
         return ('Edit_at', ET.tostring(elt, encoding))
 
     def query(self, cmd, state, encoding='utf-8'):
-        # type: (Text, int, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'interp' command."""
         # Attrs:
         #   raw - ?
@@ -650,7 +654,7 @@ class XmlInterface84(XmlInterfaceBase):
         return res
 
     def goal(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'goal' command."""
         # Args:
         #   unit - Empty arg
@@ -670,7 +674,7 @@ class XmlInterface84(XmlInterfaceBase):
         return res
 
     def status(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'status' command."""
         # Args:
         #   unit - Empty arg
@@ -678,7 +682,7 @@ class XmlInterface84(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'status', ()), encoding))
 
     def mk_cases(self, ty, encoding='utf-8'):
-        # type: (Text, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'MkCases' command."""
         # Args:
         #   str - The inductive type to make cases for
@@ -687,7 +691,7 @@ class XmlInterface84(XmlInterfaceBase):
         return ('MkCases', ET.tostring(elt, encoding))
 
     def get_options(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'GetOptions' command."""
         # Args:
         #   unit - Empty arg
@@ -709,7 +713,7 @@ class XmlInterface84(XmlInterfaceBase):
 
     # TODO: allow non-boolean arguments
     def set_options(self, option, val, encoding='utf-8'):
-        # type: (Text, bool, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, bool, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'SetOptions' command."""
         # Args:
         #   list (option_name * option_value) - The options to update and the
@@ -768,10 +772,13 @@ class XmlInterface85(XmlInterfaceBase):
             'feedback': self._to_feedback
         })
 
-        self._from_value_funcs.update({
+        # Need to declare separately or Mypy infers the type as
+        # Dict[Text, Callable[[OptionValue], ET.Element]]
+        new_from = {
             'OptionValue': self._from_option_value,
             'StateId': self._from_state_id
-        })
+        }  # type: Dict[Text, Callable[[Any], ET.Element]]
+        self._from_value_funcs.update(new_from)
 
         self._standardize_funcs.update({
             'Init': self._standardize_init,
@@ -848,6 +855,7 @@ class XmlInterface85(XmlInterfaceBase):
     def _to_message(self, xml):
         # type: (ET.Element) -> Text
         """<message>message_level string</message>"""
+        # xml[1] is a string
         return self._to_value(xml[1])  # type: ignore
 
     def _to_feedback(self, xml):
@@ -858,6 +866,7 @@ class XmlInterface85(XmlInterfaceBase):
         content = xml[0]
 
         if content.get('val') == 'errormsg':
+            # content[1] is a string
             return self._to_value(content[1])  # type: ignore
         else:
             # TODO: maybe make use of this info?
@@ -865,7 +874,7 @@ class XmlInterface85(XmlInterfaceBase):
 
     # Coqtop Commands #
     def init(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'Init' command."""
         # Args:
         #   option string - A Coq file to add to the LoadPath to do ?
@@ -882,7 +891,7 @@ class XmlInterface85(XmlInterfaceBase):
         return res
 
     def add(self, cmd, state, encoding='utf-8'):
-        # type: (Text, int, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'Add' command."""
         # Args:
         #   string - The command to evaluate
@@ -906,7 +915,7 @@ class XmlInterface85(XmlInterfaceBase):
         return res
 
     def edit_at(self, state, _steps, encoding='utf-8'):
-        # type: (int, int, str) -> Tuple[Text, Optional[Text]]
+        # type: (int, int, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'Edit_at' command."""
         # Args:
         #   state_id - The state_id to move to
@@ -924,7 +933,7 @@ class XmlInterface85(XmlInterfaceBase):
         return res
 
     def query(self, cmd, state, encoding='utf-8'):
-        # type: (Text, int, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'Query' command."""
         # Args:
         #   string - The command to query
@@ -935,7 +944,7 @@ class XmlInterface85(XmlInterfaceBase):
                             encoding))
 
     def goal(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'Goal' command."""
         # Args:
         #   unit - Empty arg
@@ -956,7 +965,7 @@ class XmlInterface85(XmlInterfaceBase):
         return res
 
     def status(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'Status' command."""
         # Args:
         #   bool - Force all pending evaluations
@@ -964,7 +973,7 @@ class XmlInterface85(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'Status', True), encoding))
 
     def mk_cases(self, ty, encoding='utf-8'):
-        # type: (Text, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'MkCases' command."""
         # Args:
         #   str - The inductive type to make cases for
@@ -972,7 +981,7 @@ class XmlInterface85(XmlInterfaceBase):
                 ET.tostring(self._build_xml('call', 'MkCases', ty), encoding))
 
     def get_options(self, encoding='utf-8'):
-        # type: (str) -> Tuple[Text, Optional[Text]]
+        # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'GetOptions' command."""
         # Args:
         #   unit - Empty arg
@@ -994,7 +1003,7 @@ class XmlInterface85(XmlInterfaceBase):
 
     # TODO: allow non-boolean arguments
     def set_options(self, option, val, encoding='utf-8'):
-        # type: (Text, bool, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, bool, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'SetOptions' command."""
         # Args:
         #   list (option_name * option_value) - The options to update and the
@@ -1026,6 +1035,7 @@ class XmlInterface86(XmlInterface85):
         # type: (ET.Element) -> Text
         """<message>message_level (option ?) richpp</message>"""
         # TODO: see if option or message_level are useful
+        # xml[2] is a string
         return self._to_value(xml[2])  # type: ignore
 
     # Overrides _to_feedback() from 8.5
@@ -1037,6 +1047,7 @@ class XmlInterface86(XmlInterface85):
         content = xml[1]
 
         if content.get('val') == 'message':
+            # content[0] is a string
             return self._to_value(content[0])  # type: ignore
         else:
             # TODO: maybe make use of this info?
@@ -1075,7 +1086,7 @@ class XmlInterface87(XmlInterface86):
     # Coqtop Commands #
     # Overrides query() from 8.6
     def query(self, cmd, state, encoding='utf-8'):
-        # type: (Text, int, str) -> Tuple[Text, Optional[Text]]
+        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string for the 'Query' command."""
         # Args:
         #   route_id - The routeId ?

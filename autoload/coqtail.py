@@ -683,6 +683,7 @@ class Coqtail(object):
     def timeout(self):
         # type: () -> int
         """Get the value of coq_timeout for this buffer."""
+        # Mypy doesn't know type of vim variables
         return vim.current.buffer.vars['coq_timeout']  # type: ignore
 
     @property
