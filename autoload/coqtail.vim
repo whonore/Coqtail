@@ -269,6 +269,9 @@ function! coqtail#Mapping()
 
     map <silent> <leader>ct :call coqtail#SetTimeout()<CR>
 
+    map <silent> <leader>cd :ToggleDebug<CR>
+    imap <silent> <leader>cd <C-\><C-o>:ToggleDebug<CR>
+
     call coqtail#QueryMapping()
 endfunction
 
@@ -309,6 +312,7 @@ function! coqtail#Stop()
             delcommand JumpToEnd
             delcommand FindDef
             delcommand MakeMatch
+            delcommand ToggleDebug
 
             command! -buffer -nargs=* Coq echoerr 'Coq is not running.'
         catch
@@ -401,6 +405,9 @@ function! coqtail#Start(...)
 
             " Insert match template
             command! -buffer -nargs=1 MakeMatch Py Coqtail().make_match(<f-args>)
+
+            " Toggle debugging
+            command! -buffer ToggleDebug Py Coqtail().toggle_debug()
 
             " Initialize goals and info panels
             call coqtail#InitPanels()

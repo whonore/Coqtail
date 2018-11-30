@@ -26,24 +26,27 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import datetime
+import logging
 import os
 import subprocess
 import signal
 import sys
 import threading
 import time
+from tempfile import NamedTemporaryFile
 
 if sys.version_info[0] >= 3:
     from queue import Queue, Empty
 else:
     from Queue import Queue, Empty
 
-from xmlInterface import XmlInterface, Ok, Err, STOPPED_ERR, TIMEOUT_ERR
+from xmlInterface import prettyxml, XmlInterface, Ok, Err, STOPPED_ERR, TIMEOUT_ERR
 
 # For Mypy
 try:
-    from typing import (Any, Callable, Generator, List, Optional, Text, Tuple,
-                        Union)
+    from typing import (Any, Callable, Generator, IO, List, Optional, Text,
+                        Tuple, Union)
 except ImportError:
     pass
 
@@ -86,6 +89,13 @@ class Coqtop(object):
         self.xml = XmlInterface(version)
         self.stopping = False
 
+        # Debugging
+        self.log = None  # type: Optional[IO[Text]]
+        self.handler = logging.NullHandler()  # type: logging.Handler
+        self.logger = logging.getLogger(str(id(self)))
+        self.logger.addHandler(self.handler)
+        self.logger.setLevel(logging.INFO)
+
     # Coqtop Interface #
     # These are expressed as generators that spawn a thread to interact with
     # Coqtop, yield and wait to be told whether the user interrupted with
@@ -101,6 +111,7 @@ class Coqtop(object):
         """Launch the Coqtop process."""
         assert self.coqtop is None
 
+        self.logger.debug('start')
         timeout = kwargs.get('timeout', None)
 
         options = ['coqtop'] + self.xml.launch_args
@@ -139,7 +150,14 @@ class Coqtop(object):
         # type: () -> None
         """End the Coqtop process."""
         if self.coqtop is not None:
+            self.logger.debug('stop')
             self.stopping = True
+
+            # Close debugging log
+            self.handler.flush()
+            self.handler.close()
+            if self.log is not None:
+                self.log.close()
 
             try:
                 # Try to terminate Coqtop cleanly
@@ -158,6 +176,7 @@ class Coqtop(object):
     def advance(self, cmd, encoding='utf-8', timeout=None):
         # type: (Text, str, Optional[int]) -> Generator[Tuple[bool, Text, Optional[Tuple[int, int]]], bool, None]
         """Advance Coqtop by sending 'cmd'."""
+        self.logger.debug("advance: %s", cmd)
         call = self.call(self.xml.add(cmd, self.state_id, encoding=encoding),
                          timeout=timeout)
         next(call)
@@ -199,6 +218,7 @@ class Coqtop(object):
     def rewind(self, steps=1):
         # type: (int) -> Generator[Tuple[bool, int], bool, None]
         """Go back 'steps' states."""
+        self.logger.debug("rewind: %d", steps)
         if steps > len(self.states):
             self.state_id = self.root_state
             self.states = []
@@ -228,6 +248,7 @@ class Coqtop(object):
     def query(self, cmd, in_script, encoding='utf-8', timeout=None):
         # type: (Text, bool, str, Optional[int]) -> Generator[Tuple[bool, Text, Optional[Tuple[int, int]]], bool, None]
         """Query Coqtop with 'cmd'."""
+        self.logger.debug("query: %s", cmd)
         call = self.call(self.xml.query(cmd, self.state_id, encoding=encoding),
                          timeout=timeout)
         next(call)
@@ -251,6 +272,7 @@ class Coqtop(object):
     def goals(self, timeout=None):
         # type: (Optional[int]) -> Generator[Tuple[bool, Text, Any], bool, None]
         """Get the current set of hypotheses and goals."""
+        self.logger.debug('goals')
         call = self.call(self.xml.goal(), timeout=timeout)
         next(call)
         stopped = yield  # type: ignore
@@ -264,6 +286,7 @@ class Coqtop(object):
     def mk_cases(self, ty, encoding='utf-8', timeout=None):
         # type: (Text, str, Optional[int]) -> Generator[Tuple[bool, Text], bool, None]
         """Return cases for each constructor of 'ty'."""
+        self.logger.debug("mk_cases: %s", ty)
         call = self.call(self.xml.mk_cases(ty, encoding=encoding),
                          timeout=timeout)
         next(call)
@@ -278,6 +301,7 @@ class Coqtop(object):
     def do_option(self, cmd, in_script, encoding='utf-8', timeout=None):
         # type: (Text, bool, str, Optional[int]) -> Generator[Tuple[bool, Text, Optional[Tuple[int, int]]], bool, None]
         """Set or get an option."""
+        self.logger.debug("do_option: %s", cmd)
         ty, opt = self.xml.parse_option(cmd)
 
         if ty == 'Test':
@@ -364,6 +388,9 @@ class Coqtop(object):
             yield self.xml.standardize(cmd, Ok(None))
             return
 
+        # Don't bother doing prettyxml if debugging isn't on
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self.logger.debug(prettyxml(msg))
         self.send_cmd(msg)
 
         if timeout == 0:
@@ -436,6 +463,9 @@ class Coqtop(object):
             if response is None:
                 continue
 
+            # Don't bother doing prettyxml if debugging isn't on
+            if self.logger.isEnabledFor(logging.DEBUG):
+                self.logger.debug(prettyxml(b'<response>' + xml + b'</response>'))
             res_ref.val = response
             # Notify the caller that Coqtop is done
             self.done_callback()
@@ -513,3 +543,33 @@ class Coqtop(object):
         # type: () -> bool
         """Check if Coqtop has already been started."""
         return self.coqtop is not None and self.coqtop.poll() is None
+
+    # Debugging #
+    def toggle_debug(self):
+        # type: () -> Optional[str]
+        """Enable or disable logging of debug messages."""
+        self.logger.removeHandler(self.handler)
+        self.handler.flush()
+        self.handler.close()
+
+        if self.log is None:
+            # Create unique log file
+            pre = "coqtop_{}_".format(datetime.datetime.now()
+                                      .strftime("%y%m%d_%H%M%S"))
+            fmt = logging.Formatter("%(asctime)s: %(message)s")
+            self.log = NamedTemporaryFile(mode='w', prefix=pre, delete=False)
+            self.handler = logging.StreamHandler(self.log)
+            self.handler.setFormatter(fmt)
+            self.logger.addHandler(self.handler)
+            self.logger.setLevel(logging.DEBUG)
+            return self.log.name
+        else:
+            # Clean up old logging
+            self.log.close()
+
+            # Set to null logging
+            self.log = None
+            self.handler = logging.NullHandler()
+            self.logger.addHandler(self.handler)
+            self.logger.setLevel(logging.CRITICAL)
+            return None

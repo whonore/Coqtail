@@ -16,6 +16,7 @@ import sys
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
+from xml.dom.minidom import parseString  # Only for pretty printing
 
 # For Mypy
 # TODO: Replace some of the 'Any's with more specific types. But in order
@@ -70,6 +71,30 @@ def unexpected(expected, got, error=ValueError):
     """Return an exception with a message showing what was expected."""
     expect = ' or '.join(map(str, expected))
     return error("Expected {}, but got {}".format(expect, str(got)))
+
+
+def _unescape(cmd):
+    # type: (bytes) -> bytes
+    """Replace escaped characters with the unescaped version."""
+    charmap = {
+        b'&nbsp;': b' ',
+        b'&apos;': b'\'',
+        b'&#40;': b'(',
+        b'&#41;': b')'
+    }
+
+    for escape, unescape in charmap.items():
+        cmd = cmd.replace(escape, unescape)
+
+    return cmd
+
+
+# Debugging #
+def prettyxml(xml):
+    # type: (bytes) -> Text
+    """Pretty print XML for debugging."""
+    xml = _unescape(xml)
+    return parseString(xml).toprettyxml()  # type: ignore
 
 
 class XmlInterfaceBase(object):
@@ -313,7 +338,7 @@ class XmlInterfaceBase(object):
 
         try:
             xmls = ET.fromstring(b'<coqtoproot>' +
-                                 self._unescape(data) +
+                                 _unescape(data) +
                                  b'</coqtoproot>')
         except ET.ParseError:
             # If not all data has been read, the XML might not be well-formed
@@ -402,22 +427,6 @@ class XmlInterfaceBase(object):
         pass
 
     # Helpers #
-    @staticmethod
-    def _unescape(cmd):
-        # type: (bytes) -> bytes
-        """Replace escaped characters with the unescaped version."""
-        charmap = {
-            b'&nbsp;': b' ',
-            b'&apos;': b'\'',
-            b'&#40;': b'(',
-            b'&#41;': b')'
-        }
-
-        for escape, unescape in charmap.items():
-            cmd = cmd.replace(escape, unescape)
-
-        return cmd
-
     def is_option(self, cmd):
         # type: (Text) -> bool
         """Check if 'cmd' is trying to set/get/check an option."""

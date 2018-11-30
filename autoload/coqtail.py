@@ -659,6 +659,19 @@ class Coqtail(object):
 
         self.info_msg = '\n'.join(top_pad + msg)
 
+    def toggle_debug(self):
+        # type: () -> None
+        """Enable or disable logging of debug messages."""
+        assert self.coqtop is not None
+
+        log = self.coqtop.toggle_debug()
+        if log is None:
+            self.info_msg = 'Debugging disabled.'
+        else:
+            self.info_msg = "Debugging enabled. Log: {}.".format(log)
+
+        self.show_info()
+
     # Vim Helpers #
     @property
     def encoding(self):
