@@ -176,6 +176,7 @@ def test_advance_stop_rewind(coq):
     call_and_wait(coq, coq.rewind, 5)
     assert old_state == get_state(coq)
 
+
 def test_dispatch_ignore_comments_newlines(coq):
     """Dispatch ignores comments and extraneous newlines."""
     succ, _, _ = call_and_wait(coq, coq.dispatch, '(*pre*) Test Silent .')

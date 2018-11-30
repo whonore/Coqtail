@@ -102,6 +102,8 @@ com_tests = (
      '\nabc def\n')
 )
 
+
 @pytest.mark.parametrize('_name, msg, expected', com_tests)
 def test_strip_comment(_name, msg, expected):
+    """_strip_comments() should remove only comments"""
     assert _strip_comments(msg) == expected
