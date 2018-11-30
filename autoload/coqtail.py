@@ -146,6 +146,7 @@ class Coqtail(object):
             self.coqtop.stop()
         self._reset()
         self.coqtop = None
+        self.coq_log_name = ''
 
     def step(self):
         # type: () -> None
@@ -667,8 +668,10 @@ class Coqtail(object):
         log = self.coqtop.toggle_debug()
         if log is None:
             self.info_msg = 'Debugging disabled.'
+            self.coq_log_name = ''
         else:
             self.info_msg = "Debugging enabled. Log: {}.".format(log)
+            self.coq_log_name = log
 
         self.show_info()
 
@@ -697,6 +700,17 @@ class Coqtail(object):
         # type: () -> Any
         """Get this buffer's info buffer."""
         return vim.buffers[vim.current.buffer.vars['info_buf']]
+
+    @property
+    def coq_log_name(self):
+        # type: () -> Text
+        # Mypy doesn't know type of vim variables
+        return vim.current.buffer.vars['coq_log_name']  # type: ignore
+
+    @coq_log_name.setter
+    def coq_log_name(self, log):
+        # type: (Text) -> None
+        vim.current.buffer.vars['coq_log_name'] = log
 
     @staticmethod
     def bufwin(buf):

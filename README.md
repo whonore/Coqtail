@@ -56,6 +56,8 @@ Coqtail provides the following commands (see `:help coqtail` for more detail)
   term under the cursor and opens it in another file if possible
 - MakeMatch (`<leader>cm`) - Insert a 'match' template for a given Inductive
   type at the cursor location
+- ToggleDebug (`<leader>cd`) - Toggle logging of debug messages to a file (off
+  by default)
 
 The mappings shown above are set by default by `coqtail#Mapping()`, but you can
 disable these and define your own by setting `g:coqtail_nomap = 1` in your

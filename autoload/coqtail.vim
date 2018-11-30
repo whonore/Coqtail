@@ -441,6 +441,7 @@ function! coqtail#Register(version, supported)
         let b:coq_timeout = 0
         let b:coqtop_done = 0
         let b:version = a:version
+        let b:coq_log_name = ''
 
         " TODO: find a less hacky solution
         " Define a dummy command for 'Coq' so it does not autocomplete to

@@ -131,6 +131,22 @@ Miscellaneous Commands						  *coqtail-misc*
 			The first version will use {arg}, while the second will
 			prompt for an Inductive type.
 
+==================
+Debugging Commands						 *coqtail-debug*
+
+				  *<leader>cd* *:ToggleDebug* *coqtail-toggle-debug*
+:ToggleDebug
+<leader>cd		Enable or disable logging of debugging statements to a
+			file. Enabling will create a temporary file and display
+			the name in the info panel. The name is also stored in
+			|b:coq_log_name|. Disabling and enabling again will
+			create a new log file. Disabled initially.
+
+					       *b:coq_log_name* *coqtail-log-name*
+b:coq_log_name		The name of the debugging log file. Set automatically
+			by enabling/disabling debugging with |:ToggleDebug|.
+			Defaults to ''.
+
 =============
 Configuration						 *coqtail-configuration*
 
