@@ -15,10 +15,12 @@ COQS := $(addprefix coq_, $(COQV))
 
 COQ_PYS := $(foreach PY, $(PYS), $(foreach COQ, $(COQS), $(COQ)-$(PY)))
 
-.PHONY: test py py-cov coq-py indent
+VIM_TESTS := indent coq_project
+
+.PHONY: test py py-cov coq-py vim $(VIM_TESTS)
 
 # All tests
-test: py indent
+test: py vim
 
 # All Python tests with Python 2 and 3
 py: $(PYS)
@@ -62,9 +64,12 @@ $(COQ_PYS):
 	@echo "*************"
 	@nix-shell -p $(COQ) --run "$(MAKE) $(PY)"
 
-# Run indentation tests
-indent:
+# All Vim tests
+vim: $(VIM_TESTS)
+
+# Run Vim tests
+$(VIM_TESTS):
 	@echo "*******************"
-	@echo "TESTING indentation"
+	@echo "TESTING $@"
 	@echo "*******************"
-	@vim -Nu vimrc -c 'Vader! indent.vader'
+	@vim -Nu vimrc -c 'Vader! $@.vader'

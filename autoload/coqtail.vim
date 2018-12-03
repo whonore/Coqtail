@@ -80,7 +80,7 @@ function! coqtail#SetTimeout()
     let l:old_timeout = b:coq_timeout
 
     let b:coq_timeout = input('Set timeout to (secs): ')
-    echo "\n"
+    echo '\n'
 
     if b:coq_timeout !~ '^[0-9]\+$' || b:coq_timeout < 0
         echoerr 'Invalid timeout, keeping old value.'
@@ -325,28 +325,39 @@ endfunction
 function! coqtail#ParseCoqProj(file)
     let l:proj_args = []
     let l:file_dir = fnamemodify(a:file, ':p:h')
+    " TODO: recognize more options
+    let l:valid_opts = ['-R', '-Q']
 
-    for l:line in readfile(a:file)
-        " Remove any excess whitespace
-        let l:line = join(split(l:line, ' '), ' ')
+    " Remove any excess whitespace
+    let l:opts = filter(split(join(readfile(a:file)), ' '), "v:val != ''")
+    let l:idx = 0
 
-        if line == ''
-            continue
-        endif
+    while l:idx < len(l:opts)
+        if index(l:valid_opts, l:opts[l:idx]) >= 0
+            let l:absdir = l:opts[l:idx + 1]
+            if l:absdir[0] != '/'
+                " Join relative paths with 'l:file_dir'
+                let l:absdir = join([l:file_dir, l:absdir], '/')
+            endif
 
-        let l:parts = split(line, ' ')
+            " Ignore directories that don't exist
+            if finddir(l:absdir, l:file_dir) != ''
+                let l:opts[l:idx + 1] = fnamemodify(l:absdir, ':p')
+                " Can be either '-R dir -as coqdir' or '-R dir coqdir'
+                if l:opts[l:idx + 2] == '-as'
+                    let l:end = l:idx + 3
+                else
+                    let l:end = l:idx + 2
+                endif
 
-        " TODO: recognize more options
-        if l:parts[0] == '-R' || l:parts[0] == '-Q'
-            " Convert the directory to an absolute path
-            let l:absdir = finddir(l:parts[1], l:file_dir)
-            if l:absdir != ''
-                " Ignore directories that don't exist
-                let l:parts[1] = fnamemodify(l:absdir, ':p')
-                let l:proj_args = add(l:proj_args, join(l:parts, ' '))
+                let l:proj_args = add(l:proj_args, join(l:opts[l:idx : l:end], ' '))
+            else
+                echohl WarningMsg | echom l:opts[l:idx + 1] . ' does not exist.' | echohl None
             endif
         endif
-    endfor
+
+        let l:idx += 1
+    endwhile
 
     return split(join(l:proj_args))
 endfunction
