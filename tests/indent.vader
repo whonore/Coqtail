@@ -362,24 +362,25 @@ Expect coq (indented-record-constructor-nested):
       f2 := con3
     |}.
 
-Given coq (comments):
-  Definition x := 1.
-  (* Line comment *)
-  Definition y := 2.
-  (* Block
-  comment *)
-  Definition z := 3.
+" TODO
+" Given coq (comments):
+"   Definition x := 1.
+"   (* Line comment *)
+"   Definition y := 2.
+"   (* Block
+"   comment *)
+"   Definition z := 3.
 
-Do (indent-comments):
-  vip=
+" Do (indent-comments):
+"   vip=
 
-Expect coq (indented-comments):
-  Definition x := 1.
-  (* Line comment *)
-  Definition y := 2.
-  (* Block
-     comment *)
-  Definition z := 3.
+" Expect coq (indented-comments):
+"   Definition x := 1.
+"   (* Line comment *)
+"   Definition y := 2.
+"   (* Block
+"      comment *)
+"   Definition z := 3.
 
 Given coq (single-bullets):
   Lemma p (b1 b2 b3 : bool) : True.
