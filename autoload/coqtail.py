@@ -430,7 +430,9 @@ class Coqtail(object):
         # Build a map from logical to physical paths using LoadPath
         if success:
             path_map = ddict(list)  # type: Mapping[Text, List[Text]]
-            paths = loadpath.split()[4:]
+            # Skip the first line
+            loadpath = re.sub(r'.*\n', '', loadpath, count=1)
+            paths = loadpath.split()
             logic = paths[::2]
             physic = paths[1::2]
 
