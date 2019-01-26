@@ -114,7 +114,7 @@ class Coqtop(object):
         self.logger.debug('start')
         timeout = kwargs.get('timeout', None)
 
-        options = ['coqtop'] + self.xml.launch_args
+        options = [self.xml.coqtop] + self.xml.launch_args
         try:
             self.coqtop = subprocess.Popen(
                 options + list(args),

@@ -10,8 +10,10 @@ PYTEST_OPT += -q
 PYV := 2 3
 PYS := $(addprefix py, $(PYV))
 
-COQV := 8_4 8_5 8_6 8_7 8_8
+COQV := 8_4 8_5 8_6 8_7 8_8 8_9
 COQS := $(addprefix coq_, $(COQV))
+# coq_8_4 is no longer in the default nixpkgs so have to use an archived version
+COQ4_PKGS := https://github.com/NixOS/nixpkgs/archive/18.03.tar.gz
 
 COQ_PYS := $(foreach PY, $(PYS), $(foreach COQ, $(COQS), $(COQ)-$(PY)))
 
@@ -59,10 +61,11 @@ py%-cov:
 $(COQ_PYS):
 	@$(eval COQ := $(firstword $(subst -, , $@)))
 	@$(eval PY := $(lastword $(subst -, , $@)))
+	$(eval PKGS := $(if $(findstring coq_8_4, $@), -I nixpkgs=$(COQ4_PKGS),))
 	@echo "*************"
 	@echo "USING $(COQ)"
 	@echo "*************"
-	@nix-shell -p $(COQ) --run "$(MAKE) $(PY)"
+	@nix-shell $(PKGS) -p $(COQ) --run "$(MAKE) $(PY)"
 
 # All Vim tests
 vim: $(VIM_TESTS)

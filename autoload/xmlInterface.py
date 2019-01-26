@@ -118,6 +118,7 @@ class XmlInterfaceBase(object):
         """Initialize maps for converting between XML and Python values."""
         self.versions = versions
 
+        self.coqtop = 'coqtop'
         self.launch_args = ['-ideslave']
 
         # Valid query commands
@@ -1108,6 +1109,19 @@ class XmlInterface88(XmlInterface87):
         super(XmlInterface88, self).__init__(versions)
 
 
+class XmlInterface89(XmlInterface88):
+    """The version 8.9.* XML interface."""
+
+    def __init__(self, versions):
+        # type: (Tuple[int, ...]) -> None
+        """Add to conversion maps."""
+        super(XmlInterface89, self).__init__(versions)
+
+        # Coq 8.9 split 'coqtop -ideslave' into a separate coqidetop binary
+        self.coqtop = 'coqidetop'
+        self.launch_args.remove('-ideslave')
+
+
 def XmlInterface(version):
     # type: (Text) -> XmlInterfaceBase
     """Return the appropriate XmlInterface class for the given version."""
@@ -1133,5 +1147,7 @@ def XmlInterface(version):
         return XmlInterface87(versions)
     elif (8, 8, 0) <= versions < (8, 9, 0):
         return XmlInterface88(versions)
+    elif (8, 9, 0) <= versions < (8, 10, 0):
+        return XmlInterface89(versions)
     else:
         raise ValueError("Unsupported version: {}".format(version))
