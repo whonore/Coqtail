@@ -62,10 +62,12 @@ function! coqtail#GetCurWord()
     setlocal iskeyword+=.
     setlocal iskeyword+='
 
-    " Check if current word ends in '.' and remove it if so
     let l:cword = expand('<cword>')
-    if l:cword =~ '.*[.]$'
-        let l:cword = l:cword[:-2]
+
+    " Strip trailing '.'s
+    let l:dotidx = match(l:cword, '[.]\+$')
+    if l:dotidx > -1
+        let l:cword = l:cword[: l:dotidx - 1]
     endif
 
     " Reset iskeyword
