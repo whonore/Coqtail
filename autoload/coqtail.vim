@@ -380,8 +380,13 @@ endfunction
 " Initialize Python interface, commands, autocmds, and goals and info panels.
 function! coqtail#Start(...)
     " Highlighting for checked parts
-    hi default CheckedByCoq ctermbg=17 guibg=LightGreen
-    hi default SentToCoq ctermbg=60 guibg=LimeGreen
+    if &t_Co > 16
+        hi default CheckedByCoq ctermbg=17 guibg=LightGreen
+        hi default SentToCoq ctermbg=60 guibg=LimeGreen
+    else
+        hi default CheckedByCoq ctermbg=4 guibg=LightGreen
+        hi default SentToCoq ctermbg=7 guibg=LimeGreen
+    end
     hi link CoqError Error
 
     if b:coq_running == 1
