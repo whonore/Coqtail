@@ -235,7 +235,12 @@ endfunction
 
 " Interface to Python query function.
 function! coqtail#Query(...)
-    Py Coqtail().query(*vim.eval('a:000'))
+    let l:args = a:000[:]
+    " Make sure the query ends in '.'
+    if l:args[-1] !~ '[.]$'
+        let l:args[-1] .= '.'
+    endif
+    Py Coqtail().query(*vim.eval('l:args'))
 endfunction
 
 " Mappings for Coq queries on the current word.
