@@ -186,3 +186,14 @@ def test_dispatch_ignore_comments_newlines(coq):
     succ, _, _ = call_and_wait(coq, coq.dispatch,
                                '(*pre*) Unset\n (*mid*)\nSilent  (*post*).')
     assert succ
+
+def test_recognize_not_option(coq):
+    """Dispatch correctly identifies certain lines as not option commands."""
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Require Import\nSetoid.')
+    assert succ
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Variable x :\nSet.')
+    assert succ
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Definition Test := Type.')
+    assert succ
+    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Variable y :\n Test.')
+    assert succ

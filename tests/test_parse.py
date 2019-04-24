@@ -87,19 +87,19 @@ def test_parse(_name, lines, start, stop):
 
 com_tests = (
     ('no comment', 'abc', 'abc'),
-    ('pre', '(*abc*)def', 'def'),
-    ('mid', 'ab(* c *)de', 'abde'),
+    ('pre', '(*abc*)def', ' def'),
+    ('mid', 'ab(* c *)de', 'ab de'),
     ('post', 'abc(*def *)', 'abc'),
-    ('multi', 'abc (* com1 *)  def (*com2 *) g', 'abc   def  g'),
-    ('nested', 'abc (* c1 (*c2 (*c3*) (*c4*) *) *)def', 'abc def'),
+    ('multi', 'abc (* com1 *)  def (*com2 *) g', 'abc    def   g'),
+    ('nested', 'abc (* c1 (*c2 (*c3*) (*c4*) *) *)def', 'abc  def'),
     ('no comment newline', '\nabc\n\n', '\nabc\n\n'),
-    ('pre newline', '(*ab\nc*)d\nef', 'd\nef'),
-    ('mid newline', 'ab(* c *)\nde', 'ab\nde'),
-    ('post newline', 'abc\n(*def *)\n', 'abc\n\n'),
+    ('pre newline', '(*ab\nc*)d\nef', ' d\nef'),
+    ('mid newline', 'ab(* c *)\nde', 'ab \nde'),
+    ('post newline', 'abc\n(*def *)\n', 'abc\n \n'),
     ('multi newline', 'abc (* com1 *)\n def \n(*\ncom2 *) g',
-     'abc \n def \n g'),
+     'abc  \n def \n  g'),
     ('nested newline', '\nabc (* c1 (*c2 \n\n(*c3\n*) (*c4*) *) *)def\n',
-     '\nabc def\n')
+     '\nabc  def\n')
 )
 
 

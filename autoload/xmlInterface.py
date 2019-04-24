@@ -434,10 +434,9 @@ class XmlInterfaceBase(object):
         # type: (Text) -> bool
         """Check if 'cmd' is trying to set/get/check an option."""
         # Starts with Set, Unset, Test
-        # N.B. 'cmd' could be split over multiple lines. We just want to know
-        # if any start with an option keyword
-        return any(re.match('(Uns|S)et|Test', line.strip()) is not None
-                   for line in cmd.split('\n'))
+        # N.B. 'cmd' has been stripped of comments and leading whitespace so
+        # just check for option commands at the start
+        return re.match('(Uns|S)et|Test$', cmd.split()[0])
 
     def is_query(self, cmd):
         # type: (Text) -> bool

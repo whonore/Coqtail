@@ -1038,4 +1038,4 @@ def _strip_comments(msg):
             msg = msg[end + 2:]
             nesting -= 1
 
-    return ''.join(nocom)
+    return ' '.join(nocom)
