@@ -42,7 +42,6 @@ function! coqtail#GetCurWord()
   " Add '.' and ''' to definition of a keyword
   let l:old_keywd = &iskeyword
   setlocal iskeyword+=.
-  setlocal iskeyword+='
 
   let l:cword = expand('<cword>')
 
