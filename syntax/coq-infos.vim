@@ -5,6 +5,7 @@
 " Last Change: 2015 Jul 8: Fix Print Module and Print Scope coloring
 "              2015 Jul 7: Initial version
 " License:     public domain
+" Modified By: Wolf Honore
 " TODO:        Show commands
 
 " Only load this syntax file when user didn't opt out
@@ -15,9 +16,9 @@ endif
 " For version 5.x: Clear all syntax items
 " For version 6.x: Quit when a syntax file was already loaded
 if version < 600
- syntax clear
+  syntax clear
 elseif exists("b:current_syntax") && b:current_syntax == "coq-infos"
- finish
+  finish
 endif
 
 " Coq is case sensitive.
@@ -149,66 +150,66 @@ syn sync maxlines=500
 " For version 5.7 and earlier: only when not done already
 " For version 5.8 and later: only when an item doesn't have highlighting yet
 if version >= 508 || !exists("did_coq_infos_syntax_inits")
- if version < 508
-  let did_coq_infos_syntax_inits = 1
-  command -nargs=+ HiLink hi link <args>
- else
-  command -nargs=+ HiLink hi def link <args>
- endif
+  if version < 508
+    let did_coq_infos_syntax_inits = 1
+    command -nargs=+ HiLink hi link <args>
+  else
+    command -nargs=+ HiLink hi def link <args>
+  endif
 
- " TERMS AND TYPES
- HiLink coqTerm                      Type
- HiLink coqKwd             coqTerm
- HiLink coqTermPunctuation coqTerm
+  " TERMS AND TYPES
+  HiLink coqTerm                      Type
+  HiLink coqKwd             coqTerm
+  HiLink coqTermPunctuation coqTerm
 
- " VERNACULAR COMMANDS
- HiLink coqVernacCmd         coqVernacular
- HiLink coqVernacPunctuation coqVernacular
- HiLink coqTopLevel          coqVernacular
- HiLink coqSectionDecl       coqTopLevel
- HiLink coqModuleEnd         coqTopLevel
+  " VERNACULAR COMMANDS
+  HiLink coqVernacCmd         coqVernacular
+  HiLink coqVernacPunctuation coqVernacular
+  HiLink coqTopLevel          coqVernacular
+  HiLink coqSectionDecl       coqTopLevel
+  HiLink coqModuleEnd         coqTopLevel
 
- " DEFINED OBJECTS
- HiLink coqIdent                     Identifier
- HiLink coqSectionName               Identifier
- HiLink coqDefName                   Identifier
- HiLink coqDefNameHidden             Identifier
- HiLink coqNotationString coqIdent
+  " DEFINED OBJECTS
+  HiLink coqIdent                     Identifier
+  HiLink coqSectionName               Identifier
+  HiLink coqDefName                   Identifier
+  HiLink coqDefNameHidden             Identifier
+  HiLink coqNotationString coqIdent
 
- " CONSTRUCTORS AND FIELDS
- HiLink coqConstructor               Keyword
- HiLink coqField coqConstructor
+  " CONSTRUCTORS AND FIELDS
+  HiLink coqConstructor               Keyword
+  HiLink coqField coqConstructor
 
- " NOTATION SPECIFIC ("at level", "format", etc)
- HiLink coqNotationKwd               Special
+  " NOTATION SPECIFIC ("at level", "format", etc)
+  HiLink coqNotationKwd               Special
 
- " SPECIFICATIONS
- HiLink coqArgumentSpecificationKeywords      Underlined
- HiLink coqScopeSpecification                 Underlined
+  " SPECIFICATIONS
+  HiLink coqArgumentSpecificationKeywords      Underlined
+  HiLink coqScopeSpecification                 Underlined
 
- " WARNINGS AND ERRORS
- HiLink coqBad                       WarningMsg
- HiLink coqVeryBad                   ErrorMsg
- HiLink coqWarningMsg                WarningMsg
- HiLink coqBad                       WarningMsg
+  " WARNINGS AND ERRORS
+  HiLink coqBad                       WarningMsg
+  HiLink coqVeryBad                   ErrorMsg
+  HiLink coqWarningMsg                WarningMsg
+  HiLink coqBad                       WarningMsg
 
 
- " USUAL VIM HIGHLIGHTINGS
-   " Comments
-   HiLink coqComment                   Comment
-   HiLink coqSectionDelimiter          Comment
-   HiLink coqProofComment coqComment
+  " USUAL VIM HIGHLIGHTINGS
+  " Comments
+  HiLink coqComment                   Comment
+  HiLink coqSectionDelimiter          Comment
+  HiLink coqProofComment coqComment
 
-   " Todo
-   HiLink coqTodo                      Todo
+  " Todo
+  HiLink coqTodo                      Todo
 
-   " Errors
-   HiLink coqError                     Error
+  " Errors
+  HiLink coqError                     Error
 
-   " Strings
-   HiLink coqString                    String
+  " Strings
+  HiLink coqString                    String
 
- delcommand HiLink
+  delcommand HiLink
 endif
 
 let b:current_syntax = "coq-infos"

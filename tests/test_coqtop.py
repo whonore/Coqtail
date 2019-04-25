@@ -12,6 +12,7 @@ from __future__ import division
 from __future__ import print_function
 
 from subprocess import check_output
+
 import pytest
 
 from coqtop import Coqtop
@@ -19,7 +20,7 @@ from coqtop import Coqtop
 # Test Values #
 # Check current version
 # TODO: something less ugly
-VERSION = check_output(('coqtop', '--version')).split()[5].decode()
+VERSION = check_output(("coqtop", "--version")).split()[5].decode()
 DONE = False
 
 
@@ -48,9 +49,9 @@ def call_and_wait(coq, func, *args, **kwargs):
     global DONE
     DONE = False
 
-    if '_stop' in kwargs:
-        stop = kwargs['_stop']
-        del kwargs['_stop']
+    if "_stop" in kwargs:
+        stop = kwargs["_stop"]
+        del kwargs["_stop"]
     else:
         stop = False
 
@@ -67,7 +68,7 @@ def call_and_wait(coq, func, *args, **kwargs):
 
 
 # Test Fixtures #
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def coq():
     """Return a Coqtop for each version."""
     ct = Coqtop(VERSION, set_done)
@@ -75,7 +76,7 @@ def coq():
         yield ct
         ct.stop()
     else:
-        print('Failed to create Coqtop instance')
+        print("Failed to create Coqtop instance")
         yield None
 
 
@@ -98,18 +99,18 @@ def test_rewind_start(coq):
 
 def test_dispatch_rewind(coq):
     """Rewinding should cancel out in_script dispatches."""
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Let a := 0.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Let a := 0.")
     old_state = get_state(coq)
 
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Let x := 1.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Let x := 1.")
     assert succ
     call_and_wait(coq, coq.rewind, 1)
     assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Print nat.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Print nat.")
     assert succ
     call_and_wait(coq, coq.rewind, 1)
     assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Test Silent.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Test Silent.")
     assert succ
     call_and_wait(coq, coq.rewind, 1)
     assert old_state == get_state(coq)
@@ -118,10 +119,18 @@ def test_dispatch_rewind(coq):
 def test_dispatch_not_in_script(coq):
     """Dispatch with not in_script arguments shouldn't change the state."""
     old_state = get_state(coq)
-    call_and_wait(coq, coq.dispatch, 'Print nat.', in_script=False)
+    call_and_wait(coq, coq.dispatch, "Print nat.", in_script=False)
     assert old_state == get_state(coq)
-    call_and_wait(coq, coq.dispatch, 'Test Silent.', in_script=False)
+    call_and_wait(coq, coq.dispatch, "Test Silent.", in_script=False)
     assert old_state == get_state(coq)
+
+
+def test_dispatch_unicode(coq):
+    """Should be able to use unicode characters."""
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Let α := 0.")
+    assert succ
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Print α.")
+    assert succ
 
 
 def test_goals_no_change(coq):
@@ -134,31 +143,30 @@ def test_goals_no_change(coq):
 def test_mk_cases_no_change(coq):
     """Calling mk_cases will not change the state."""
     old_state = get_state(coq)
-    call_and_wait(coq, coq.mk_cases, 'nat')
+    call_and_wait(coq, coq.mk_cases, "nat")
     assert old_state == get_state(coq)
 
 
 def test_advance_fail(coq):
     """If advance fails then the state will not change."""
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq, coq.dispatch, 'SyntaxError')
+    fail, _, _ = call_and_wait(coq, coq.dispatch, "SyntaxError")
     assert not fail
     assert old_state == get_state(coq)
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Lemma x : False.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Lemma x : False.")
     assert succ
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq, coq.dispatch, 'reflexivity.')
+    fail, _, _ = call_and_wait(coq, coq.dispatch, "reflexivity.")
     assert not fail
     assert old_state == get_state(coq)
 
 
 def test_advance_stop(coq):
     """If advance is interrupted then the state will not change."""
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Goal True.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Goal True.")
     assert succ
     old_state = get_state(coq)
-    fail, _, _ = call_and_wait(coq, coq.dispatch, 'repeat eapply proj1.',
-                               _stop=True)
+    fail, _, _ = call_and_wait(coq, coq.dispatch, "repeat eapply proj1.", _stop=True)
     assert not fail
     assert old_state == get_state(coq)
 
@@ -166,12 +174,11 @@ def test_advance_stop(coq):
 def test_advance_stop_rewind(coq):
     """If advance is interrupted then succeeds, rewind will succeed."""
     old_state = get_state(coq)
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Goal True.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Goal True.")
     assert succ
-    fail, _, _ = call_and_wait(coq, coq.dispatch, 'repeat eapply proj1.',
-                               _stop=True)
+    fail, _, _ = call_and_wait(coq, coq.dispatch, "repeat eapply proj1.", _stop=True)
     assert not fail
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'exact I.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "exact I.")
     assert succ
     call_and_wait(coq, coq.rewind, 5)
     assert old_state == get_state(coq)
@@ -179,21 +186,23 @@ def test_advance_stop_rewind(coq):
 
 def test_dispatch_ignore_comments_newlines(coq):
     """Dispatch ignores comments and extraneous newlines."""
-    succ, _, _ = call_and_wait(coq, coq.dispatch, '(*pre*) Test Silent .')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "(*pre*) Test Silent .")
     assert succ
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Set  (*mid*) Silent.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Set  (*mid*) Silent.")
     assert succ
-    succ, _, _ = call_and_wait(coq, coq.dispatch,
-                               '(*pre*) Unset\n (*mid*)\nSilent  (*post*).')
+    succ, _, _ = call_and_wait(
+        coq, coq.dispatch, "(*pre*) Unset\n (*mid*)\nSilent  (*post*)."
+    )
     assert succ
+
 
 def test_recognize_not_option(coq):
     """Dispatch correctly identifies certain lines as not option commands."""
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Require Import\nSetoid.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Require Import\nSetoid.")
     assert succ
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Variable x :\nSet.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Variable x :\nSet.")
     assert succ
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Definition Test := Type.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Definition Test := Type.")
     assert succ
-    succ, _, _ = call_and_wait(coq, coq.dispatch, 'Variable y :\n Test.')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Variable y :\n Test.")
     assert succ

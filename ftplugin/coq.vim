@@ -1,11 +1,11 @@
 " Supported versions (-1 means any number)
 let s:supported = [
-    \[8, 4, -1],
-    \[8, 5, -1],
-    \[8, 6, -1],
-    \[8, 7, -1],
-    \[8, 8, -1],
-    \[8, 9, -1]
+  \[8, 4, -1],
+  \[8, 5, -1],
+  \[8, 6, -1],
+  \[8, 7, -1],
+  \[8, 8, -1],
+  \[8, 9, -1]
 \]
 
 " Check that Coq version is supported
@@ -18,29 +18,29 @@ let s:versions = map(split(s:version, '\v(\.|pl)'), 'str2nr(v:val)')
 
 " Pad missing version numbers with 0
 while len(s:versions) < 3
-    let s:versions = add(s:versions, 0)
+  let s:versions = add(s:versions, 0)
 endwhile
 
 let s:found_sup = 0
 for s:supp in s:supported
-    let s:is_sup = 1
+  let s:is_sup = 1
 
-    for s:idx in range(3)
-        if s:supp[s:idx] != s:versions[s:idx] && s:supp[s:idx] != -1
-            let s:is_sup = 0
-            break
-        endif
-    endfor
-
-    if s:is_sup
-        let s:found_sup = 1
-        break
+  for s:idx in range(3)
+    if s:supp[s:idx] != s:versions[s:idx] && s:supp[s:idx] != -1
+      let s:is_sup = 0
+      break
     endif
+  endfor
+
+  if s:is_sup
+    let s:found_sup = 1
+    break
+  endif
 endfor
 
 call coqtail#Register(s:version, s:found_sup)
 
 " Default mapping unless user opted out
 if !exists('g:coqtail_nomap') || !g:coqtail_nomap
-    call coqtail#Mapping()
+  call coqtail#Mapping()
 endif

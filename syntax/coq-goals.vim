@@ -4,6 +4,7 @@
 " Maintainer:  Laurent Georget <laurent@lgeorget.eu>
 " Last Change: 2015 Jul 07 - Initial syntax coloring, pretty stable
 " License:     public domain
+" Modified By: Wolf Honore
 
 " Only load this syntax file when user didn't opt out
 if exists('g:coqtail_nosyntax') && g:coqtail_nosyntax
@@ -13,9 +14,9 @@ endif
 " For version 5.x: Clear all syntax items
 " For version 6.x: Quit when a syntax file was already loaded
 if version < 600
- syntax clear
+  syntax clear
 elseif exists("b:current_syntax") && b:current_syntax == "coq-goals"
- finish
+  finish
 endif
 
 " Coq is case sensitive.
@@ -61,33 +62,33 @@ syn sync maxlines=500
 " For version 5.7 and earlier: only when not done already
 " For version 5.8 and later: only when an item doesn't have highlighting yet
 if version >= 508 || !exists("did_coq_goals_syntax_inits")
- if version < 508
-  let did_coq_goals_syntax_inits = 1
-  command -nargs=+ HiLink hi link <args>
- else
-  command -nargs=+ HiLink hi def link <args>
- endif
+  if version < 508
+    let did_coq_goals_syntax_inits = 1
+    command -nargs=+ HiLink hi link <args>
+  else
+    command -nargs=+ HiLink hi def link <args>
+  endif
 
- " TERMS AND TYPES
- HiLink coqTerm                      Type
- HiLink coqKwd             coqTerm
- HiLink coqTermPunctuation coqTerm
+  " TERMS AND TYPES
+  HiLink coqTerm                      Type
+  HiLink coqKwd             coqTerm
+  HiLink coqTermPunctuation coqTerm
 
- " WORK LEFT
- HiLink coqNumberGoals               Todo
- HiLink coqGoalLine                  Todo
+  " WORK LEFT
+  HiLink coqNumberGoals               Todo
+  HiLink coqGoalLine                  Todo
 
- " GOAL IDENTIFIER
- HiLink coqGoalNumber                Underlined
+  " GOAL IDENTIFIER
+  HiLink coqGoalNumber                Underlined
 
- " USUAL VIM HIGHLIGHTINGS
- " Comments
- HiLink coqComment                   Comment
+  " USUAL VIM HIGHLIGHTINGS
+  " Comments
+  HiLink coqComment                   Comment
 
- " Strings
- HiLink coqString                    String
+  " Strings
+  HiLink coqString                    String
 
- delcommand HiLink
+  delcommand HiLink
 endif
 
 let b:current_syntax = "coq-goals"

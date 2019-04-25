@@ -23,6 +23,7 @@
 "              2007 Nov 6 - Added "Defined" keyword (thanks to Serge Leblanc)
 "              2007 Nov 5 - Initial version.
 " License:     public domain
+" Modified By: Wolf Honore
 " TODO: mark bad constructions (eg. Section ended but not opened)
 
 " Only load this syntax file when user didn't opt out
@@ -33,9 +34,9 @@ endif
 " For version 5.x: Clear all syntax items
 " For version 6.x: Quit when a syntax file was already loaded
 if version < 600
- syntax clear
+  syntax clear
 elseif exists("b:current_syntax") && b:current_syntax == "coq"
- finish
+  finish
 endif
 
 " Coq is case sensitive.
@@ -246,7 +247,7 @@ syn keyword coqTactic    contained set simpl[e] simplify_eq specialize split sub
 syn keyword coqTactic    contained transitivity trivial unfold vm_compute
 syn keyword coqTacticKwd contained as by in using with into after until return
 
-  " The following is just to help other plugins to detect via syntax groups that we are inside a proof
+" The following is just to help other plugins to detect via syntax groups that we are inside a proof
 syn keyword coqProofKwd         contained else end exists exists2 forall fun if in match let struct then where with as return
 syn match   coqProofKwd         contained "|\|/\\\|\\/\|<->\|\~\|->\|=>\|{\|}\|&\|+\|="
 syn match   coqProofPunctuation contained "(\|)\|:=\|:>\|:\|\.\|;\|,\|||\|\[\|\]\|@\|?"
@@ -319,66 +320,66 @@ syn sync maxlines=500
 " For version 5.7 and earlier: only when not done already
 " For version 5.8 and later: only when an item doesn't have highlighting yet
 if version >= 508 || !exists("did_coq_syntax_inits")
- if version < 508
-  let did_coq_syntax_inits = 1
-  command -nargs=+ HiLink hi link <args>
- else
-  command -nargs=+ HiLink hi def link <args>
- endif
+  if version < 508
+    let did_coq_syntax_inits = 1
+    command -nargs=+ HiLink hi link <args>
+  else
+    command -nargs=+ HiLink hi def link <args>
+  endif
 
- " PROOFS
- HiLink coqTactic                    Keyword
- HiLink coqLtac coqTactic
- HiLink coqProofKwd coqTactic
- HiLink coqProofPunctuation coqTactic
- HiLink coqTacticKwd coqTactic
- HiLink coqTacNotationKwd coqTactic
- HiLink coqEvalFlag coqTactic
- " Exception
- HiLink coqProofDot coqVernacular
+  " PROOFS
+  HiLink coqTactic                    Keyword
+  HiLink coqLtac coqTactic
+  HiLink coqProofKwd coqTactic
+  HiLink coqProofPunctuation coqTactic
+  HiLink coqTacticKwd coqTactic
+  HiLink coqTacNotationKwd coqTactic
+  HiLink coqEvalFlag coqTactic
+  " Exception
+  HiLink coqProofDot coqVernacular
 
- " PROOF DELIMITERS ("Proof", "Qed", "Defined", "Save")
- HiLink coqProofDelim                Underlined
+  " PROOF DELIMITERS ("Proof", "Qed", "Defined", "Save")
+  HiLink coqProofDelim                Underlined
 
- " TERMS AND TYPES
- HiLink coqTerm                      Type
- HiLink coqKwd             coqTerm
- HiLink coqTermPunctuation coqTerm
+  " TERMS AND TYPES
+  HiLink coqTerm                      Type
+  HiLink coqKwd             coqTerm
+  HiLink coqTermPunctuation coqTerm
 
- " VERNACULAR COMMANDS
- HiLink coqVernacular                PreProc
- HiLink coqVernacCmd         coqVernacular
- HiLink coqVernacPunctuation coqVernacular
- HiLink coqHint              coqVernacular
- HiLink coqFeedback          coqVernacular
- HiLink coqTopLevel          coqVernacular
+  " VERNACULAR COMMANDS
+  HiLink coqVernacular                PreProc
+  HiLink coqVernacCmd         coqVernacular
+  HiLink coqVernacPunctuation coqVernacular
+  HiLink coqHint              coqVernacular
+  HiLink coqFeedback          coqVernacular
+  HiLink coqTopLevel          coqVernacular
 
- " DEFINED OBJECTS
- HiLink coqIdent                     Identifier
- HiLink coqNotationString coqIdent
+  " DEFINED OBJECTS
+  HiLink coqIdent                     Identifier
+  HiLink coqNotationString coqIdent
 
- " CONSTRUCTORS AND FIELDS
- HiLink coqConstructor               Keyword
- HiLink coqField coqConstructor
+  " CONSTRUCTORS AND FIELDS
+  HiLink coqConstructor               Keyword
+  HiLink coqField coqConstructor
 
- " NOTATION SPECIFIC ("at level", "format", etc)
- HiLink coqNotationKwd               Special
+  " NOTATION SPECIFIC ("at level", "format", etc)
+  HiLink coqNotationKwd               Special
 
- " USUAL VIM HIGHLIGHTINGS
-   " Comments
-   HiLink coqComment                   Comment
-   HiLink coqProofComment coqComment
+  " USUAL VIM HIGHLIGHTINGS
+  " Comments
+  HiLink coqComment                   Comment
+  HiLink coqProofComment coqComment
 
-   " Todo
-   HiLink coqTodo                      Todo
+  " Todo
+  HiLink coqTodo                      Todo
 
-   " Errors
-   HiLink coqError                     Error
+  " Errors
+  HiLink coqError                     Error
 
-   " Strings
-   HiLink coqString                    String
+  " Strings
+  HiLink coqString                    String
 
- delcommand HiLink
+  delcommand HiLink
 endif
 
 let b:current_syntax = "coq"

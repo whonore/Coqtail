@@ -11,24 +11,25 @@ from __future__ import division
 from __future__ import print_function
 
 from collections import namedtuple
-from inspect import getmembers, ismethod, isfunction
+from inspect import getmembers, isfunction, ismethod
 from subprocess import check_output
-from xml.etree.ElementTree import tostring, Element
+from xml.etree.ElementTree import Element, tostring
+
 import pytest
 
-from xmlInterface import XmlInterface
+from xmlInterface import XMLInterface
 
 # Test Values #
 # Check current version
-VERSION = check_output(('coqtop', '--version')).split()[5].decode()
+VERSION = check_output(("coqtop", "--version")).split()[5].decode()
 
 
 # Pairs of Python values and the corresponding XML representation. Parametrized
-# over an XmlInterface
-PyXml = namedtuple('PyXml', ['py', 'xml'])
+# over an XMLInterface
+PyXML = namedtuple("PyXML", ("py", "xml", "bijection"))
 
 
-def mkXml(tag, text='', attrs=None, children=None):
+def mkXML(tag, text="", attrs=None, children=None):
     """Help build XML Elements."""
     if attrs is None:
         attrs = {}
@@ -40,83 +41,101 @@ def mkXml(tag, text='', attrs=None, children=None):
     return xml
 
 
-class ToFromTests(object):
-    """Methods return test cases for _from_value and _to_value as PyXml
+class ToOfTests(object):
+    """Methods return test cases for _of_py and _to_py as PyXML
     objects."""
+
     @staticmethod
     def all_tests():
         """Return the names of all test cases."""
+
         def isfunc(f):
             return ismethod(f) or isfunction(f)
-        return [n for n, _ in getmembers(ToFromTests, isfunc)
-                if n not in ('__init__', 'all_tests')]
+
+        return [
+            n
+            for n, _ in getmembers(ToOfTests, isfunc)
+            if n not in ("__init__", "all_tests")
+        ]
 
     def __init__(self, xmlInt):
         self.xi = xmlInt
 
     def unit(self):
-        return PyXml((), mkXml('unit'))
+        return PyXML((), mkXML("unit"), True)
 
     def true(self):
-        return PyXml(True, mkXml('bool', attrs={'val': 'true'}))
+        return PyXML(True, mkXML("bool", attrs={"val": "true"}), True)
 
     def false(self):
-        return PyXml(False, mkXml('bool', attrs={'val': 'false'}))
+        return PyXML(False, mkXML("bool", attrs={"val": "false"}), True)
 
     def one(self):
-        return PyXml(1, mkXml('int', text='1'))
+        return PyXML(1, mkXML("int", text="1"), True)
 
     def abc(self):
-        return PyXml('abc', mkXml('string', text='abc'))
+        return PyXML("abc", mkXML("string", text="abc"), True)
 
     def abc_u(self):
-        return PyXml(u'abc', self.abc().xml)
+        return PyXML(u"abc", self.abc().xml, True)
 
     def abc_richpp(self):
         if self.xi.versions >= (8, 6, 0):
-            return PyXml(self.abc().py, mkXml('richpp', text='abc'))
+            return PyXML(self.abc().py, mkXML("richpp", text="abc"), True)
         return None
 
     def list1(self):
         unit = self.unit()
-        return PyXml([unit.py], mkXml('list', children=[unit]))
+        return PyXML([unit.py], mkXML("list", children=[unit]), True)
 
     def list2(self):
         one = self.one()
         list1 = self.list1()
-        return PyXml([one.py, list1.py], mkXml('list', children=[one, list1]))
+        return PyXML([one.py, list1.py], mkXML("list", children=[one, list1]), True)
 
     def pair(self):
         one = self.one()
         abc = self.abc()
-        return PyXml((one.py, abc.py), mkXml('pair', children=[one, abc]))
+        return PyXML((one.py, abc.py), mkXML("pair", children=[one, abc]), True)
 
     def some(self):
         false = self.false()
-        return PyXml(self.xi.Option(false.py),
-                     mkXml('option', attrs={'val': 'some'}, children=[false]))
+        return PyXML(
+            self.xi.Option(false.py),
+            mkXML("option", attrs={"val": "some"}, children=[false]),
+            True,
+        )
 
     def none(self):
-        return PyXml(None, mkXml('option', attrs={'val': 'none'}))
+        return PyXML(None, mkXML("option", attrs={"val": "none"}), True)
 
     def inl(self):
         true = self.true()
-        return PyXml(self.xi.Inl(true.py),
-                     mkXml('union', attrs={'val': 'in_l'}, children=[true]))
+        return PyXML(
+            self.xi.Inl(true.py),
+            mkXML("union", attrs={"val": "in_l"}, children=[true]),
+            True,
+        )
 
     def inr(self):
         none = self.none()
-        return PyXml(self.xi.Inr(none.py),
-                     mkXml('union', attrs={'val': 'in_r'}, children=[none]))
+        return PyXML(
+            self.xi.Inr(none.py),
+            mkXML("union", attrs={"val": "in_r"}, children=[none]),
+            True,
+        )
 
     def evar(self):
         abc = self.abc()
-        return PyXml(self.xi.Evar(abc.py), mkXml('evar', children=[abc]))
+        return PyXML(self.xi.Evar(abc.py), mkXML("evar", children=[abc]), False)
 
     def coq_info(self):
         abc = self.abc()
-        return PyXml(self.xi.CoqInfo(abc.py, abc.py, abc.py, abc.py),
-                     mkXml('coq_info', children=[abc, abc, abc, abc]))
+        return PyXML(
+            self.xi.CoqInfo(abc.py, abc.py, abc.py, abc.py),
+            mkXML("coq_info", children=[abc, abc, abc, abc]),
+            False,
+        )
 
     def goal(self):
         abc = self.abc()
@@ -124,152 +143,200 @@ class ToFromTests(object):
             abc_rich = abc
         else:
             abc_rich = self.abc_richpp()
-        abc_list = PyXml([abc_rich.py], mkXml('list', children=[abc_rich]))
-        return PyXml(self.xi.Goal(abc.py, abc_list.py, abc_rich.py),
-                     mkXml('goal', children=[abc, abc_list, abc_rich]))
+        abc_list = PyXML([abc_rich.py], mkXML("list", children=[abc_rich]), True)
+        return PyXML(
+            self.xi.Goal(abc.py, abc_list.py, abc_rich.py),
+            mkXML("goal", children=[abc, abc_list, abc_rich]),
+            False,
+        )
 
     def goals(self):
         goal = self.goal()
-        goal_list = PyXml([goal.py], mkXml('list', children=[goal]))
-        goal_pair = PyXml((goal_list.py, goal_list.py),
-                          mkXml('pair', children=[goal_list, goal_list]))
-        goal_pair_list = PyXml([goal_pair.py],
-                               mkXml('list', children=[goal_pair]))
+        goal_list = PyXML([goal.py], mkXML("list", children=[goal]), False)
+        goal_pair = PyXML(
+            (goal_list.py, goal_list.py),
+            mkXML("pair", children=[goal_list, goal_list]),
+            False,
+        )
+        goal_pair_list = PyXML(
+            [goal_pair.py], mkXML("list", children=[goal_pair]), False
+        )
         if self.xi.versions < (8, 5, 0):
-            return PyXml(self.xi.Goals(goal_list.py, goal_pair_list.py),
-                         mkXml('goals', children=[goal_list, goal_pair_list]))
+            return PyXML(
+                self.xi.Goals(goal_list.py, goal_pair_list.py),
+                mkXML("goals", children=[goal_list, goal_pair_list]),
+                False,
+            )
         else:
-            return PyXml(self.xi.Goals(goal_list.py, goal_pair_list.py,
-                                       goal_list.py, goal_list.py),
-                         mkXml('goals', children=[goal_list, goal_pair_list,
-                                                  goal_list, goal_list]))
+            return PyXML(
+                self.xi.Goals(
+                    goal_list.py, goal_pair_list.py, goal_list.py, goal_list.py
+                ),
+                mkXML(
+                    "goals", children=[goal_list, goal_pair_list, goal_list, goal_list]
+                ),
+                False,
+            )
 
     def option_value_bool(self):
         true = self.true()
-        return PyXml(self.xi.OptionValue(true.py),
-                     mkXml('option_value', attrs={'val': 'boolvalue'},
-                           children=[true]))
+        return PyXML(
+            self.xi.OptionValue(true.py),
+            mkXML("option_value", attrs={"val": "boolvalue"}, children=[true]),
+            True,
+        )
 
     def option_value_int(self):
         one = self.one()
-        opt = PyXml(self.xi.Option(one.py),
-                    mkXml('option', attrs={'val': 'some'}, children=[one]))
-        return PyXml(self.xi.OptionValue(opt.py),
-                     mkXml('option_value', attrs={'val': 'intvalue'},
-                           children=[opt]))
+        opt = PyXML(
+            self.xi.Option(one.py),
+            mkXML("option", attrs={"val": "some"}, children=[one]),
+            True,
+        )
+        return PyXML(
+            self.xi.OptionValue(opt.py),
+            mkXML("option_value", attrs={"val": "intvalue"}, children=[opt]),
+            True,
+        )
 
     def option_value_string(self):
         abc = self.abc()
-        return PyXml(self.xi.OptionValue(abc.py),
-                     mkXml('option_value', attrs={'val': 'stringvalue'},
-                           children=[abc]))
+        return PyXML(
+            self.xi.OptionValue(abc.py),
+            mkXML("option_value", attrs={"val": "stringvalue"}, children=[abc]),
+            True,
+        )
 
     def option_value_string_opt(self):
         abc = self.abc()
-        opt = PyXml(self.xi.Option(abc.py),
-                    mkXml('option', attrs={'val': 'some'}, children=[abc]))
+        opt = PyXML(
+            self.xi.Option(abc.py),
+            mkXML("option", attrs={"val": "some"}, children=[abc]),
+            True,
+        )
         if self.xi.versions >= (8, 5, 0):
-            return PyXml(self.xi.OptionValue(opt.py),
-                         mkXml('option_value', attrs={'val': 'stringoptvalue'},
-                               children=[opt]))
+            return PyXML(
+                self.xi.OptionValue(opt.py),
+                mkXML("option_value", attrs={"val": "stringoptvalue"}, children=[opt]),
+                True,
+            )
         return None
 
     def option_state(self):
         true = self.true()
         abc = self.abc()
         opt = self.option_value_bool()
-        return PyXml(self.xi.OptionState(true.py, true.py, abc.py, opt.py),
-                     mkXml('option_state', children=[true, true, abc, opt]))
+        return PyXML(
+            self.xi.OptionState(true.py, true.py, abc.py, opt.py),
+            mkXML("option_state", children=[true, true, abc, opt]),
+            False,
+        )
 
     def status(self):
         one = self.one()
         abc = self.abc()
-        abc_list = PyXml([abc.py], mkXml('list', children=[abc]))
-        abc_opt = PyXml(self.xi.Option(abc.py),
-                        mkXml('option', attrs={'val': 'some'}, children=[abc]))
+        abc_list = PyXML([abc.py], mkXML("list", children=[abc]), True)
+        abc_opt = PyXML(
+            self.xi.Option(abc.py),
+            mkXML("option", attrs={"val": "some"}, children=[abc]),
+            True,
+        )
         if self.xi.versions < (8, 5, 0):
-            return PyXml(self.xi.Status(abc_list.py, abc_opt.py, abc_list.py,
-                                        one.py, one.py),
-                         mkXml('status', children=[abc_list, abc_opt, abc_list,
-                                                   one, one]))
+            return PyXML(
+                self.xi.Status(abc_list.py, abc_opt.py, abc_list.py, one.py, one.py),
+                mkXML("status", children=[abc_list, abc_opt, abc_list, one, one]),
+                False,
+            )
         else:
-            return PyXml(self.xi.Status(abc_list.py, abc_opt.py, abc_list.py,
-                                        one.py),
-                         mkXml('status', children=[abc_list, abc_opt, abc_list,
-                                                   one]))
+            return PyXML(
+                self.xi.Status(abc_list.py, abc_opt.py, abc_list.py, one.py),
+                mkXML("status", children=[abc_list, abc_opt, abc_list, one]),
+                False,
+            )
 
     def message(self):
         # TODO: actually parse the level and location
         abc = self.abc()
-        level = PyXml((), mkXml('fake_message_level'))
-        loc = PyXml((), mkXml('fake_loc'))
+        level = PyXML((), mkXML("fake_message_level"), False)
+        loc = PyXML((), mkXML("fake_loc"), False)
         if self.xi.versions < (8, 6, 0):
-            return PyXml(abc.py, mkXml('message', children=[level, abc]))
+            return PyXML(abc.py, mkXML("message", children=[level, abc]), False)
         else:
-            return PyXml(abc.py, mkXml('message', children=[level, loc, abc]))
+            return PyXML(abc.py, mkXML("message", children=[level, loc, abc]), False)
 
     def feedback(self):
         # TODO: parse feedback correctly
         abc = self.abc()
-        edit_id = PyXml((), mkXml('fake_edit_id'))
+        edit_id = PyXML((), mkXML("fake_edit_id"), False)
         if self.xi.versions < (8, 6, 0):
-            route = self.one()
-            content = PyXml((),
-                            mkXml('fake_feedback_content',
-                                  attrs={'val': 'errormsg'},
-                                  children=[abc, abc]))
-            return PyXml(abc.py, mkXml('feedback', children=[content]))
+            route = self.one()  # noqa: F841
+            content = PyXML(
+                (),
+                mkXML(
+                    "fake_feedback_content",
+                    attrs={"val": "errormsg"},
+                    children=[abc, abc],
+                ),
+                False,
+            )
+            return PyXML(abc.py, mkXML("feedback", children=[content]), False)
         else:
-            route = self.route_id()
-            content = PyXml((),
-                            mkXml('fake_feedback_content',
-                                  attrs={'val': 'message'},
-                                  children=[abc, abc]))
-            return PyXml(abc.py,
-                         mkXml('feedback', children=[edit_id, content]))
+            route = self.route_id()  # noqa: F841
+            content = PyXML(
+                (),
+                mkXML(
+                    "fake_feedback_content",
+                    attrs={"val": "message"},
+                    children=[abc, abc],
+                ),
+                False,
+            )
+            return PyXML(abc.py, mkXML("feedback", children=[edit_id, content]), False)
 
     def state_id(self):
         one = self.one()
         if self.xi.versions >= (8, 5, 0):
-            return PyXml(self.xi.StateId(one.py),
-                         mkXml('state_id', attrs={'val': str(one.py)}))
+            return PyXML(
+                self.xi.StateId(one.py),
+                mkXML("state_id", attrs={"val": str(one.py)}),
+                True,
+            )
         return None
 
     def route_id(self):
         one = self.one()
         if self.xi.versions >= (8, 7, 0):
-            return PyXml(self.xi.RouteId(one.py),
-                         mkXml('route_id', attrs={'val': str(one.py)}))
+            return PyXML(
+                self.xi.RouteId(one.py),
+                mkXML("route_id", attrs={"val": str(one.py)}),
+                True,
+            )
         return None
 
 
 # Test Fixtures #
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def xmlInt():
-    """Return an XmlInterface for each version."""
-    return XmlInterface(VERSION)
+    """Return an XMLInterface for each version."""
+    return XMLInterface(VERSION)
 
 
-@pytest.fixture(scope='module', params=ToFromTests.all_tests())
+@pytest.fixture(scope="module", params=ToOfTests.all_tests())
 def py_xml(xmlInt, request):
-    """Return PyXml objects from ToFromTests."""
-    return getattr(ToFromTests(xmlInt), request.param)()
+    """Return PyXML objects from ToOfTests."""
+    return getattr(ToOfTests(xmlInt), request.param)()
 
 
 # Test Cases #
-def test_tofrom_value(xmlInt, py_xml):
-    """Test whether _to_value() and _from_value() convert correctly."""
+def test_to_of_py(xmlInt, py_xml):
+    """Test whether _to_py() and _of_py() convert correctly."""
     if py_xml is None:
-        pytest.skip('No tests for this version')
+        pytest.skip("No tests for this version")
     py = py_xml.py
     xml = py_xml.xml
 
-    assert xmlInt._to_value(xml) == py
-    try:
-        # TODO: parse message and feedback back correctly
-        if xml.tag in ('message', 'feedback'):
-            return
-        assert (tostring(xmlInt._from_value(py)) ==
-                tostring(xml).replace(b'richpp', b'string'))
-    except KeyError:
-        pass
+    assert xmlInt._to_py(xml) == py
+    if py_xml.bijection:
+        assert tostring(xmlInt._of_py(py)) == tostring(xml).replace(
+            b"richpp", b"string"
+        )

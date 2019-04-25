@@ -6,9 +6,10 @@
 " Last Change: 2007 Dec 2  - Bugfix.
 "              2007 Nov 28 - Handle proofs that do not start with 'Proof'.
 "              2007 Nov 27 - Initial version.
+" Modified By: Wolf Honore
 
 " Only load this indent file when no other was loaded and user didn't opt out.
-if exists("b:did_indent") || (exists('g:coqtail_noindent') && g:coqtail_noindent)
+if exists('b:did_indent') || (exists('g:coqtail_noindent') && g:coqtail_noindent)
   finish
 endif
 let b:did_indent = 1
@@ -22,16 +23,15 @@ setlocal shiftwidth=2
 setlocal tabstop=2
 
 " Comment handling
-if !exists("no_coq_comments")
-  if (has("comments"))
+if !exists('no_coq_comments')
+  if has('comments')
     setlocal comments=srn:(*,mb:*,exn:*)
-    " setlocal fo=cqort
     setlocal fo=cqt
   endif
 endif
 
 " Only define the function once.
-if exists("*GetCoqIndent")
+if exists('*GetCoqIndent')
   finish
 endif
 
@@ -88,11 +88,11 @@ function GetCoqIndent()
 
   " current line begins with 'end':
   elseif currentline =~ '\C^\s*end\>'
-    return s:indent_of_previous_pair('\<match\>', '','\<end\>', 1)
+    return s:indent_of_previous_pair('\<match\>', '', '\<end\>', 1)
 
   " current line begins with 'in':
   elseif currentline =~ '^\s*\<in\>'
-    return s:indent_of_previous_pair('\<let\>', '','\<in\>', 1)
+    return s:indent_of_previous_pair('\<let\>', '', '\<in\>', 1)
 
   " current line begins with '|':
   elseif currentline =~ '^\s*|}\@!'
@@ -112,9 +112,9 @@ function GetCoqIndent()
 
   " end of proof
   elseif currentline =~ '^\s*}'
-    return s:indent_of_previous_pair('{','','}', 1)
+    return s:indent_of_previous_pair('{', '', '}', 1)
   elseif currentline =~ '^\s*)'
-    return s:indent_of_previous_pair('(','',')', 1)
+    return s:indent_of_previous_pair('(', '', ')', 1)
   elseif currentline =~ '\<\%(Qed\|Defined\|Abort\|Admitted\)\>'
     let s:inside_proof = 0
     return s:indent_of_previous(s:vernac.'\&\%(\<\%(Qed\|Defined\|Abort\|Admitted\)\>\)\@!')
@@ -203,7 +203,7 @@ function GetCoqIndent()
 
   " back to normal indent after lines ending with '.'
   elseif previousline =~ '\.$'
-    if (synIDattr(synID(line('.')-1,col('.'),0),"name") =~? '\cproof\|tactic')
+    if synIDattr(synID(line('.') - 1, col('.'), 0), "name") =~? '\cproof\|tactic'
       return ind
     else
       return s:indent_of_previous(s:vernac)

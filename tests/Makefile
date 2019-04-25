@@ -3,7 +3,7 @@
 # Description: Run test cases.
 
 MAKE := $(MAKE) --no-print-directory
-CODE_DIR := ../autoload
+CODE_DIR := ../python
 PYTEST = PYTHONPATH=$(CODE_DIR) python$* -m pytest $(PYTEST_OPT)
 PYTEST_OPT += -q
 
