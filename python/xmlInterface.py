@@ -454,9 +454,9 @@ class XMLInterfaceBase(object):
     def is_query(self, cmd):
         # type: (Text) -> bool
         """Check if 'cmd' is a query."""
-        re_str = "|".join(self.queries)
+        re_str = "|".join(self.queries) + "$"
         # N.B. see is_option()
-        return any(re.match(re_str, line) is not None for line in cmd.split("\n"))
+        return re.match(re_str, cmd.split()[0]) is not None
 
     def parse_option(self, cmd):
         # type: (Text) -> Tuple[Text, Text]

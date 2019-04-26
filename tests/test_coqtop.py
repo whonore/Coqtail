@@ -125,6 +125,15 @@ def test_dispatch_not_in_script(coq):
     assert old_state == get_state(coq)
 
 
+def test_option_query_same_state_id(coq):
+    """Dispatch with a query or option command shouldn't change the state id."""
+    old_id = coq.state_id
+    call_and_wait(coq, coq.dispatch, "Print nat.")
+    assert old_id == coq.state_id
+    call_and_wait(coq, coq.dispatch, "Test Silent.")
+    assert old_id == coq.state_id
+
+
 def test_dispatch_unicode(coq):
     """Should be able to use unicode characters."""
     succ, _, _ = call_and_wait(coq, coq.dispatch, "Let α := 0.")
@@ -188,7 +197,7 @@ def test_dispatch_ignore_comments_newlines(coq):
     """Dispatch ignores comments and extraneous newlines."""
     succ, _, _ = call_and_wait(coq, coq.dispatch, "(*pre*) Test Silent .")
     assert succ
-    succ, _, _ = call_and_wait(coq, coq.dispatch, "Set  (*mid*) Silent.")
+    succ, _, _ = call_and_wait(coq, coq.dispatch, " Set  (*mid*) Silent.")
     assert succ
     succ, _, _ = call_and_wait(
         coq, coq.dispatch, "(*pre*) Unset\n (*mid*)\nSilent  (*post*)."
@@ -206,3 +215,21 @@ def test_recognize_not_option(coq):
     assert succ
     succ, _, _ = call_and_wait(coq, coq.dispatch, "Variable y :\n Test.")
     assert succ
+
+
+def test_recognize_not_query(coq):
+    """Dispatch correctly identifies certain lines as not query commands."""
+    if coq.xml.versions < (8, 5, 0):
+        pytest.skip('Only 8.5+ uses state ids')
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Definition Print := Type.")
+    assert succ
+    old_id = coq.state_id
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Variable x :\nPrint.")
+    assert succ
+    assert old_id != coq.state_id
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Definition Abouts := Type.")
+    assert succ
+    old_id = coq.state_id
+    succ, _, _ = call_and_wait(coq, coq.dispatch, "Variable y :\n Abouts.")
+    assert succ
+    assert old_id != coq.state_id

@@ -349,7 +349,6 @@ class Coqtop(object):
         """
         # Make sure 'cmd' is a string format that supports unicode
         cmd = ensure_text(cmd, encoding)  # type: ignore
-        cmd = cmd.strip()
 
         if self.xml.is_option(cmd):
             call = self.do_option(cmd, in_script, encoding, timeout)
