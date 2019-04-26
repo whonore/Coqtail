@@ -220,7 +220,7 @@ class Coqtail(object):
         try:
             _, self.info_msg, _ = self.call_and_wait(
                 self.coqtop.dispatch,
-                _strip_comments(message),
+                _strip_comments(message)[0],
                 in_script=False,
                 encoding=self.encoding,
             )
@@ -317,9 +317,10 @@ class Coqtail(object):
             message = _between(to_send["start"], to_send["stop"])
 
             try:
+                no_comments, com_pos = _strip_comments(message)
                 success, msg, err_loc = self.call_and_wait(
                     self.coqtop.dispatch,
-                    _strip_comments(message),
+                    no_comments,
                     encoding=self.encoding,
                     timeout=self.timeout,
                 )
@@ -338,10 +339,9 @@ class Coqtail(object):
                 loc_s, loc_e = err_loc
                 if loc_s == loc_e == -1:
                     self.error_at = (to_send["start"], to_send["stop"])
-                    sline, scol = to_send["start"]
-                    eline, ecol = to_send["stop"]
                 else:
                     line, col = to_send["start"]
+                    loc_s, loc_e = _adjust_offset(loc_s, loc_e, com_pos)
                     sline, scol = _pos_from_offset(col, message, loc_s)
                     eline, ecol = _pos_from_offset(col, message, loc_e)
                     self.error_at = ((line + sline, scol), (line + eline, ecol))
@@ -786,6 +786,20 @@ def get_searches(tgt_type, tgt_name):
 
 
 # Finding Start and End of Coq Chunks #
+def _adjust_offset(start, end, com_pos):
+    # type: (int, int, List[List[int]]) -> Tuple[int, int]
+    """Adjust offsets by taking the stripped comments into account."""
+    # Move start and end forward by the length of the preceding comments
+    for coff, clen in com_pos:
+        if coff <= start:
+            # N.B. Subtract one because comments are replaced by " ", not ""
+            start += clen - 1
+        if coff <= end:
+            end += clen - 1
+
+    return (start, end)
+
+
 def _pos_from_offset(col, msg, offset):
     # type: (int, Text, int) -> Tuple[int, int]
     """Calculate the line and column of a given offset."""
@@ -1021,13 +1035,15 @@ def _hard_matcher(start, stop):
 
 # Misc #
 def _strip_comments(msg):
-    # type: (Text) -> Text
+    # type: (Text) -> Tuple[Text, List[List[int]]]
     """Remove all comments from 'msg'."""
     # N.B. Coqtop will ignore comments, but it makes it easier to inspect
     # commands in Coqtail (e.g. options in coqtop.do_option) if we remove
     # them.
     # N.B. Assumes comments are properly matched.
     nocom = []
+    com_pos = []  # Remember comment offset and length
+    off = 0
     nesting = 0
 
     while msg != "":
@@ -1041,11 +1057,16 @@ def _strip_comments(msg):
             # New nested comment
             if nesting == 0:
                 nocom.append(msg[:start])
+                com_pos.append([off + start, 0])
             msg = msg[start + 2 :]
+            off += start + 2
             nesting += 1
         elif end != -1 and (end < start or start == -1):
             # End of a comment
             msg = msg[end + 2 :]
+            off += end + 2
             nesting -= 1
+            if nesting == 0:
+                com_pos[-1][1] = off - com_pos[-1][0]
 
-    return " ".join(nocom)
+    return " ".join(nocom), com_pos

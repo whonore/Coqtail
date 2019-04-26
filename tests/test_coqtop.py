@@ -220,7 +220,7 @@ def test_recognize_not_option(coq):
 def test_recognize_not_query(coq):
     """Dispatch correctly identifies certain lines as not query commands."""
     if coq.xml.versions < (8, 5, 0):
-        pytest.skip('Only 8.5+ uses state ids')
+        pytest.skip("Only 8.5+ uses state ids")
     succ, _, _ = call_and_wait(coq, coq.dispatch, "Definition Print := Type.")
     assert succ
     old_id = coq.state_id
