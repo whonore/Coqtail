@@ -1,8 +1,0 @@
-" Small vimrc for running tests with Vader
-set nocompatible
-filetype off
-set rtp+=~/.vim/bundle/vader.vim
-set rtp+=~/.vim/bundle/coqtail
-set rtp+=~/.vim/bundle/vimbufsync
-filetype plugin indent on
-syntax enable
