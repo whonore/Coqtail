@@ -480,6 +480,28 @@ class Coqtail(object):
 
         return tgt_file, tgt_name
 
+    def next_bullet(self):
+        # type: () -> Optional[Text]
+        """Check the bullet expected for the next subgoal."""
+        assert self.coqtop is not None
+
+        message = "Show."
+
+        try:
+            success, show, _ = self.call_and_wait(
+                self.coqtop.dispatch,
+                message,
+                in_script=False,
+                encoding=self.encoding,
+                timeout=self.timeout,
+            )
+        except CT.CoqtopError as e:
+            fail(e)
+            return None
+
+        bmatch = re.search(r'(?:bullet |unfocusing with ")([-+*}]+)', show)
+        return bmatch.group(1) if bmatch is not None else None
+
     def call_and_wait(self, func, *args, **kwargs):
         # type: (Callable[..., Generator[Any, bool, None]], *Any, **Any) -> Any
         """Call a Coqtop function and wait for it to finish."""
@@ -530,11 +552,64 @@ class Coqtail(object):
         if goals is None:
             self.goal_msg = "No goals."
         else:
-            ngoals = len(goals)
-            plural = "" if ngoals == 1 else "s"
-            msg = ["{} subgoal{}\n".format(ngoals, plural)]
+            fg, bg, shelved, given_up = goals
+            bg_joined = [pre + post for pre, post in bg]
 
-            for idx, goal in enumerate(goals):
+            ngoals = len(fg)
+            nhidden = len(bg_joined[0]) if bg_joined != [] else 0
+            nshelved = len(shelved)
+            nadmit = len(given_up)
+
+            # Information about number of remaining goals
+            plural = "" if ngoals == 1 else "s"
+            goal_info = "{} subgoal{}".format(ngoals, plural)
+            hidden_info = (
+                "{} unfocused at this level".format(nhidden) if nhidden > 0 else ""
+            )
+            extra_info = " ".join(
+                s
+                for s in (
+                    "{} shelved".format(nshelved) if nshelved > 0 else "",
+                    "{} admitted".format(nadmit) if nadmit > 0 else "",
+                )
+                if s != ""
+            )
+            if hidden_info != "":
+                goal_info += " ({})".format(hidden_info)
+
+            msg = [goal_info]
+            if extra_info != "":
+                msg.append(extra_info + "\n")
+            else:
+                msg[0] += "\n"
+
+            # When a subgoal is finished
+            if ngoals == 0:
+                next_goal = None
+                for bgs in bg_joined:
+                    if len(bgs) > 0:
+                        next_goal = bgs[0]
+                        break
+
+                if next_goal is not None:
+                    bullet = self.next_bullet()
+                    bullet_info = ""
+                    if bullet is not None:
+                        if bullet == "}":
+                            bullet_info = "end this goal with '}'"
+                        else:
+                            bullet_info = "use bullet '{}'".format(bullet)
+
+                    next_info = "\nNext goal"
+                    if bullet_info != "":
+                        next_info += " ({})".format(bullet_info)
+                    next_info += ":\n"
+
+                    msg += [next_info, next_goal.ccl]
+                else:
+                    msg.append("All goals completed.")
+
+            for idx, goal in enumerate(fg):
                 if idx == 0:
                     # Print the environment only for the current goal
                     msg += goal.hyp

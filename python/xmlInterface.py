@@ -121,6 +121,7 @@ class XMLInterfaceBase(object):
             "Print",
             "About",
             "Locate",
+            "Show",
         ]
 
         # Map from Python types to appropriate XML marshalling function
@@ -696,14 +697,20 @@ class XMLInterface84(XMLInterfaceBase):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]
         """Standardize the info returned by 'Goal'.
         Return:
-          fg: list Goal - The current goals
+          fg: list Goals - The current goals
+          bg: list (list Goals * list Goals) - Unfocused goals
+          shelved: list Goals - Shelved goals (dummy value in 8.4)
+          given_up: list Goals - Admitted goals (dummy value in 8.4)
         """
         if isinstance(res, Ok):
             opt_goals = res.val  # type: Union[None, XMLInterfaceBase.Option]
             if opt_goals is not None:
                 goals = opt_goals.val  # type: XMLInterface84.Goals
                 fg = goals.fg  # type: List[XMLInterface84.Goal]
-                res.val = fg
+                bg = (
+                    goals.bg
+                )  # type: List[Tuple[List[XMLInterface84.Goal], List[XMLInterface84.Goal]]]
+                res.val = (fg, bg, [], [])
         return res
 
     def status(self, encoding="utf-8"):
@@ -1015,14 +1022,22 @@ class XMLInterface85(XMLInterfaceBase):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]
         """Standardize the info returned by 'Goal'.
         Return:
-          fg: list Goal - The current goals
+          fg: list Goals - The current goals
+          bg: list (list Goals * list Goals) - Unfocused goals
+          shelved: list Goals - Shelved goals
+          given_up: list Goals - Admitted goals
         """
         if isinstance(res, Ok):
             opt_goals = res.val  # type: Union[None, XMLInterfaceBase.Option]
             if opt_goals is not None:
                 goals = opt_goals.val  # type: XMLInterface85.Goals
                 fg = goals.fg  # type: List[XMLInterface85.Goal]
-                res.val = fg
+                bg = (
+                    goals.bg
+                )  # type: List[Tuple[List[XMLInterface85.Goal], List[XMLInterface85.Goal]]]
+                shelved = goals.shelved  # type: List[XMLInterface85.Goal]
+                given_up = goals.given_up  # type: List[XMLInterface85.Goal]
+                res.val = (fg, bg, shelved, given_up)
         return res
 
     def status(self, encoding="utf-8"):
