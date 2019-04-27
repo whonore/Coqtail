@@ -28,7 +28,10 @@ syn match   coqVernacPunctuation ":=\|\.\|:"
 syn match   coqIdent             contained "[_[:alpha:]][_'[:alnum:]]*"
 
 " Number of goals
-syn match   coqNumberGoals       '\d\+ subgoals\?' nextgroup=coqGoal
+syn match   coqNumberGoals       '\d\+ subgoals\?'
+syn match   coqNumberUnfocused   '(\d\+ unfocused at this level)'
+syn match   coqNumberAdmitted    '\d\+ admitted'
+syn match   coqNumberShelved     '\d\+ shelved'
 
 " Hypothesis
 syn region  coqHypothesisBlock  contains=coqHypothesis start="^[_[:alpha:]][_'[:alnum:]]*\s*:" end="^$" keepend
@@ -37,8 +40,12 @@ syn region  coqHypothesisBody   contained contains=@coqTerm matchgroup=coqVernac
 
 " Separator
 syn match   coqGoalNumber       contained "(\s*\d\+\s*\/\s*\d\+\s*)"
-syn region  coqGoalSep          matchgroup=coqGoalLine start='^=\+' matchgroup=NONE end='^$' contains=coqGoalSepNumber
-syn region  coqGoalSepNumber    matchgroup=coqGoalNumber start="(\s*\d\+\s*\/\s*\d\+\s*)" matchgroup=NONE end="^$" contains=@coqTerm
+syn region  coqGoalSep          matchgroup=coqGoalLine start='^=\+' matchgroup=NONE end='^$\n' contains=coqGoalSepNumber nextgroup=coqGoalBlock keepend
+syn region  coqGoalSepNumber    matchgroup=coqGoalNumber start="(\s*\d\+\s*\/\s*\d\+\s*)" matchgroup=NONE end=")"
+syn region  coqNextGoal         start='Next goal' end='^$\n' nextgroup=coqGoalBlock keepend
+
+" Goals
+syn region coqGoalBlock contained contains=@coqTerm start='\S' end='^$'
 
 " Terms
 syn cluster coqTerm            contains=coqKwd,coqTermPunctuation,coqKwdMatch,coqKwdLet,coqKwdParen
@@ -76,10 +83,14 @@ if version >= 508 || !exists("did_coq_goals_syntax_inits")
 
   " WORK LEFT
   HiLink coqNumberGoals               Todo
+  HiLink coqNumberUnfocused           Todo
+  HiLink coqNumberAdmitted            Error
+  HiLink coqNumberShelved             Todo
   HiLink coqGoalLine                  Todo
 
   " GOAL IDENTIFIER
   HiLink coqGoalNumber                Underlined
+  HiLink coqNextGoal                  Underlined
 
   " USUAL VIM HIGHLIGHTINGS
   " Comments
