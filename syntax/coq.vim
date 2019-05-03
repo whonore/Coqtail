@@ -42,13 +42,13 @@ endif
 " Coq is case sensitive.
 syn case match
 
-syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqLtacDecl,coqDef,coqFix,coqInd,coqRec,coqCls,coqIns,coqShow
+syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqLtacDecl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqShow
 
 " Various
 syn match   coqError             "\S\+"
 syn match   coqVernacPunctuation ":=\|\.\|:"
 syn match   coqIdent             contained "[_[:alpha:]][_'[:alnum:]]*"
-syn keyword coqTopLevel          Declare Type Canonical Structure Cd Coercion Derive Drop Existential
+syn keyword coqTopLevel          Declare Type Canonical Structure Cd Derive Drop Existential
 "...
 syn keyword coqVernacCmd         Functional Scheme Back Combined
 syn keyword coqFeedback          Show About Print
@@ -260,6 +260,12 @@ syn region coqDefBinder     contained contains=coqDefBinderType matchgroup=coqVe
 syn region coqDefBinderType contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" end=")"
 syn region coqDefType       contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" matchgroup=NONE end="\.\_s" end=":="
 syn region coqDefContents1  contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":=" matchgroup=coqVernacPunctuation end="\.\_s"
+
+" Coercions
+syn region coqCoercion      contains=coqCoercionName,coqCoercionBody1,coqCoercionBody2 matchgroup=coqVernacCmd start="\<\%(\%(Local\|Global\)\_s\+\)\?\%(Identity\_s\+\)\?Coercion\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqCoercionName  contained contains=coqDefBinder,coqDefType matchgroup=coqIdent start="[_[:alpha:]][_'[:alnum:]]*" matchgroup=NONE end=":="me=e-2 end=">->"me=e-3 keepend
+syn region coqCoercionBody1 contained contains=coqIdent matchgroup=coqVernacPunctuation start=">->" end="\.\_s""
+syn region coqCoercionBody2 contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":=" end="\.\_s""
 
 " Fixpoints
 syn region coqFix     contains=coqFixBody start="\<\%(Program\_s\+\)\?\%(\%(\%(Co\)\?Fixpoint\)\|Fixpoint\|Function\)\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
