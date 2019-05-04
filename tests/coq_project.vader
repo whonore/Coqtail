@@ -1,106 +1,106 @@
 Execute (dot):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    call writefile(['-R . top'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', d . '/', 'top'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  call writefile(['-R . top'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', d . '/', 'top'], args
 
 Execute (absolute-cwd):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    call writefile(['-R ' . d . ' top'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', d . '/', 'top'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  call writefile(['-R ' . d . ' top'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', d . '/', 'top'], args
 
 Execute (relative-subdir):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    let sd = 'relative-subdir'
-    let dsd = join([d, sd], '/')
-    call mkdir(dsd)
-    call writefile(['-R ' . sd . ' top'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', dsd . '/', 'top'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  let sd = 'relative-subdir'
+  let dsd = join([d, sd], '/')
+  call mkdir(dsd)
+  call writefile(['-R ' . sd . ' top'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', dsd . '/', 'top'], args
 
 Execute (relative-dot-subdir):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    let sd = 'relative-dot-subdir'
-    let dsd = join([d, sd], '/')
-    call mkdir(dsd)
-    call writefile(['-R ./' . sd . ' top'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', dsd . '/', 'top'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  let sd = 'relative-dot-subdir'
+  let dsd = join([d, sd], '/')
+  call mkdir(dsd)
+  call writefile(['-R ./' . sd . ' top'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', dsd . '/', 'top'], args
 
 Execute (absolute-subdir):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    let sd = 'absolute-subdir'
-    let dsd = join([d, sd], '/')
-    call mkdir(dsd)
-    call writefile(['-R ' . dsd . ' top'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', dsd . '/', 'top'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  let sd = 'absolute-subdir'
+  let dsd = join([d, sd], '/')
+  call mkdir(dsd)
+  call writefile(['-R ' . dsd . ' top'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', dsd . '/', 'top'], args
 
 Execute (sibling-dir):
-    let d = fnamemodify(tempname(), ':p:h')
-    let sd1 = 'sibling-dir1'
-    let sd2 = 'sibling-dir2'
-    let dsd1 = join([d, sd1], '/')
-    let dsd2 = join([d, sd2], '/')
-    let f = join([dsd1, 'f'], '/')
-    call mkdir(dsd1)
-    call mkdir(dsd2)
-    call writefile(['-R ../' . sd2 . ' top'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', dsd2 . '/', 'top'], args
+  let d = fnamemodify(tempname(), ':p:h')
+  let sd1 = 'sibling-dir1'
+  let sd2 = 'sibling-dir2'
+  let dsd1 = join([d, sd1], '/')
+  let dsd2 = join([d, sd2], '/')
+  let f = join([dsd1, 'f'], '/')
+  call mkdir(dsd1)
+  call mkdir(dsd2)
+  call writefile(['-R ../' . sd2 . ' top'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', dsd2 . '/', 'top'], args
 
 Execute (split-line):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    call writefile(['-R', '.', 'top'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', d . '/', 'top'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  call writefile(['-R', '.', 'top'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', d . '/', 'top'], args
 
 Execute (multi-option-diff-lines):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    call writefile(['-R . top', '-Q . top2'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', d . '/', 'top', '-Q', d . '/', 'top2'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  call writefile(['-R . top', '-Q . top2'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', d . '/', 'top', '-Q', d . '/', 'top2'], args
 
 Execute (multi-option-same-line):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    call writefile(['-R . top -Q . top2'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', d . '/', 'top', '-Q', d . '/', 'top2'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  call writefile(['-R . top -Q . top2'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', d . '/', 'top', '-Q', d . '/', 'top2'], args
 
 Execute (nonexist-subdir):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    let sd = 'nonexist-subdir'
-    call writefile(['-R ' . sd . ' top'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual [], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  let sd = 'nonexist-subdir'
+  call writefile(['-R ' . sd . ' top'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual [], args
 
 Execute (extra-whitespace):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    call writefile([' -R  .  top '], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', d . '/', 'top'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  call writefile([' -R  .  top '], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', d . '/', 'top'], args
 
 Execute (alternate-R):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    call writefile(['-R . -as top'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', d . '/', '-as', 'top'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  call writefile(['-R . -as top'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', d . '/', '-as', 'top'], args
 
 Execute (ignore-unknown):
-    let f = tempname()
-    let d = fnamemodify(f, ':p:h')
-    call writefile(['-R . top', '-A fake', '-Q . top2'], f)
-    let args = coqtail#ParseCoqProj(f)
-    AssertEqual ['-R', d . '/', 'top', '-Q', d . '/', 'top2'], args
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  call writefile(['-R . top', '-A fake', '-Q . top2'], f)
+  let args = coqtail#ParseCoqProj(f)
+  AssertEqual ['-R', d . '/', 'top', '-Q', d . '/', 'top2'], args
