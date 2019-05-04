@@ -54,9 +54,24 @@ function s:GetLineWithoutFullComment(lnum)
   return lnum
 endfunction
 
+let s:zflag = has('patch-7.4.984') ? 'z' : ''
+
 " Indent of a previous match
 function s:indent_of_previous(patt)
-  return indent(search(a:patt, 'bWnz'))
+  " If 'z' flag isn't supported then move the cursor to the start of the line
+  if s:zflag == ''
+    let l:pos = getcurpos()
+    call cursor(line('.'), 1)
+  endif
+
+  let l:indent = indent(search(a:patt, 'bWn' . s:zflag))
+
+  " Restore cursor
+  if s:zflag == ''
+    call setpos('.', l:pos)
+  endif
+
+  return l:indent
 endfunction
 
 " Indent pairs
