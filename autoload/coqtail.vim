@@ -57,6 +57,12 @@ function! coqtail#GetCurWord()
   return l:cword
 endfunction
 
+function! coqtail#FindLib(lib)
+  return b:coq_running
+  \ ? pyxeval("Coqtail().find_lib(vim.eval('a:lib')) or vim.eval('a:lib')")
+  \ : a:lib
+endfunction
+
 " Set the maximum time Coqtail will wait after sending a command before
 " interrupting Coqtop.
 function! coqtail#SetTimeout()

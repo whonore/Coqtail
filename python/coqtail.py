@@ -249,13 +249,12 @@ class Coqtail(object):
 
         if qual_info is not None:
             qual_tgt, tgt_type = qual_info
-            tgt_file, tgt_name = self.log_to_phy(qual_tgt, tgt_type)
+            path = self.log_to_phy(qual_tgt, tgt_type)
+            if path is None:
+                return
 
-            if tgt_file is None:
-                print(
-                    "Failed to locate {}: {}".format(target, tgt_name), file=sys.stderr
-                )
-            elif tgt_file == "Coq":
+            tgt_file, tgt_name = path
+            if tgt_file == "Coq":
                 print("{} is part of the Coq StdLib".format(tgt_name))
             else:
                 # Open 'tgt_file' if it is not the current file
@@ -358,84 +357,90 @@ class Coqtail(object):
         steps_too_far = sum(pos >= (line, col) for pos in self.endpoints)
         self.rewind(steps_too_far)
 
-    def qual_name(self, target):
-        # type: (Text) -> Optional[Tuple[Text, Text]]
-        """Find the fully qualified name of 'target' using 'Locate'."""
+    def do_query(self, query):
+        # type: (Text) -> Optional[Text]
+        """Execute a query and return the reply."""
         assert self.coqtop is not None
 
-        message = "Locate {}.".format(target)
-
         try:
-            success, res_msg, _ = self.call_and_wait(
-                self.coqtop.dispatch, message, in_script=False, encoding=self.encoding
-            )
-        except CT.CoqtopError as e:
-            fail(e)
-            return None
-
-        if not success:
-            print(res_msg)
-            return None
-
-        # Join lines that start with whitespace to the previous line
-        res_msg = re.sub(r"\n +", " ", res_msg)
-
-        # Choose first match from 'Locate' since that is the default in the
-        # current context
-        qual_tgt = None
-        match = res_msg.split("\n")[0]
-        if "No object of basename" in match:
-            return None
-        else:
-            info = match.split()
-            # Special case for Module Type
-            if info[0] == "Module" and info[1] == "Type":
-                tgt_type = "Module Type"
-                qual_tgt = info[2]
-            else:
-                tgt_type = info[0]
-                qual_tgt = info[1]
-
-            # Look for alias
-            alias = re.search(r"\(alias of (.*)\)", match)
-            if alias is not None:
-                # Found an alias, search again using that
-                return self.qual_name(alias.group(1))
-
-        return qual_tgt, tgt_type
-
-    def log_to_phy(self, qual_tgt, tgt_type):
-        # type: (Text, Text) -> Tuple[Optional[Text], Text]
-        """Find the Coq file corresponding to the logical path 'qual_tgt'."""
-        assert self.coqtop is not None
-
-        message = "Print LoadPath."
-
-        try:
-            success, loadpath, _ = self.call_and_wait(
+            success, msg, _ = self.call_and_wait(
                 self.coqtop.dispatch,
-                message,
+                query,
                 in_script=False,
                 encoding=self.encoding,
                 timeout=self.timeout,
             )
         except CT.CoqtopError as e:
             fail(e)
-            return None, str(e)
+            return None
+
+        return msg if success else None
+
+    def qual_name(self, target):
+        # type: (Text) -> Optional[Tuple[Text, Text]]
+        """Find the fully qualified name of 'target' using 'Locate'."""
+        assert self.coqtop is not None
+
+        locate = self.do_query("Locate {}.".format(target))
+        if locate is None:
+            return None
+
+        # Join lines that start with whitespace to the previous line
+        locate = re.sub(r"\n +", " ", locate)
+
+        # Choose first match from 'Locate' since that is the default in the
+        # current context
+        match = locate.split("\n")[0]
+        if "No object of basename" in match:
+            return None
+        else:
+            # Look for alias
+            alias = re.search(r"\(alias of (.*)\)", match)
+            if alias is not None:
+                # Found an alias, search again using that
+                return self.qual_name(alias.group(1))
+
+            info = match.split()
+            # Special case for Module Type
+            if info[0] == "Module" and info[1] == "Type":
+                tgt_type = "Module Type"  # type: Text
+                qual_tgt = info[2]
+            else:
+                tgt_type, qual_tgt = info[:2]
+
+        return qual_tgt, tgt_type
+
+    def find_lib(self, lib):
+        # type: (Text) -> Optional[Text]
+        """Find the path to the .v file corresponding to the libary 'lib'."""
+        assert self.coqtop is not None
+
+        locate = self.do_query("Locate Library {}.".format(lib))
+        if locate is None:
+            return None
+
+        path = re.search(r"file\s+(.*)\.vo", locate)
+        return path.group(1) if path is not None else None
+
+    def log_to_phy(self, qual_tgt, tgt_type):
+        # type: (Text, Text) -> Optional[Tuple[Text, Text]]
+        """Find the Coq file corresponding to the logical path 'qual_tgt'."""
+        assert self.coqtop is not None
+
+        loadpath = self.do_query("Print LoadPath.")
+        if loadpath is None:
+            return None
 
         # Build a map from logical to physical paths using LoadPath
-        if success:
-            path_map = ddict(list)  # type: Mapping[Text, List[Text]]
-            # Skip the first line
-            loadpath = re.sub(r".*\n", "", loadpath, count=1)
-            paths = loadpath.split()
-            logic = paths[::2]
-            physic = paths[1::2]
+        path_map = ddict(list)  # type: Mapping[Text, List[Text]]
+        # Skip the first line
+        loadpath = re.sub(r".*\n", "", loadpath, count=1)
+        paths = loadpath.split()
+        logic = paths[::2]
+        physic = paths[1::2]
 
-            for log, phy in zip(logic, physic):
-                path_map[log].append(phy)
-        else:
-            return None, "Failed to query LoadPath."
+        for log, phy in zip(logic, physic):
+            path_map[log].append(phy)
 
         # Return the location of the target
         loc = qual_tgt.split(".")
@@ -471,7 +476,7 @@ class Coqtail(object):
             ]
 
             if tgt_files == []:
-                return None, "Could not find {}".format(qual_tgt)
+                return None
 
             # TODO: Currently assume only file is left. Maybe this is false
             if len(tgt_files) > 1:
@@ -485,18 +490,8 @@ class Coqtail(object):
         """Check the bullet expected for the next subgoal."""
         assert self.coqtop is not None
 
-        message = "Show."
-
-        try:
-            success, show, _ = self.call_and_wait(
-                self.coqtop.dispatch,
-                message,
-                in_script=False,
-                encoding=self.encoding,
-                timeout=self.timeout,
-            )
-        except CT.CoqtopError as e:
-            fail(e)
+        show = self.do_query("Show.")
+        if show is None:
             return None
 
         bmatch = re.search(r'(?:bullet |unfocusing with ")([-+*}]+)', show)
@@ -816,23 +811,25 @@ def get_searches(tgt_type, tgt_name):
     ]
     searches = []  # type: List[Text]
     type_to_vernac = {
-        "Inductive": ["Inductive", "Class", "Record"],
+        "Inductive": ["(Co)?Inductive", "Variant", "Class", "Record"],
         "Constant": [
             "Definition",
-            "Fixpoint",
+            "Let",
+            "(Co)?Fixpoint",
             "Function",
             "Instance",
-            "Fact",
-            "Remark",
-            "Lemma",
-            "Corollary",
             "Theorem",
-            "Axiom",
-            "Conjecture",
-            "Let",
+            "Lemma",
+            "Remark",
+            "Fact",
+            "Corollary",
+            "Proposition",
+            "Parameters?",
+            "Axioms?",
+            "Conjectures?",
         ],
         "Notation": ["Notation"],
-        "Variable": ["Variables?", "Context"],
+        "Variable": ["Variables?", "Hypothes[ie]s", "Context"],
         "Ltac": ["Ltac"],
         "Module": ["Module"],
         "Module Type": ["Module Type"],
