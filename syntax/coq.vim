@@ -64,7 +64,7 @@ syn cluster coqTerm            contains=coqKwd,coqTermPunctuation,coqKwdMatch,co
 syn region coqKwdMatch         contained contains=@coqTerm matchgroup=coqKwd start="\<match\>" end="\<with\>"
 syn region coqKwdLet           contained contains=@coqTerm matchgroup=coqKwd start="\<let\>"   end=":="
 syn region coqKwdParen         contained contains=@coqTerm matchgroup=coqTermPunctuation start="(" end=")" keepend extend
-syn keyword coqKwd             contained else end exists2 fix forall fun if in struct then as return
+syn keyword coqKwd             contained else end exists2 fix cofix forall fun if in struct then as return
 syn match   coqKwd             contained "\<where\>"
 syn match   coqKwd             contained "\<exists!\?"
 syn match   coqKwd             contained "|\|/\\\|\\/\|<->\|\~\|->\|=>\|{\|}\|&\|+\|-\|*\|=\|>\|<\|<="
@@ -245,7 +245,7 @@ syn keyword coqTactic    contained absurd apply assert assumption auto
 syn keyword coqTactic    contained case[_eq] change clear[body] cofix cbn cbv compare compute congruence constructor contradiction cut[rewrite]
 syn keyword coqTactic    contained decide decompose dependent destruct discriminate double
 syn keyword coqTactic    contained eapply eassumption eauto econstructor elim[type] equality erewrite evar exact eexact exists eexists exfalso
-syn keyword coqTactic    contained fix f_equal fold functional generalize hnf
+syn keyword coqTactic    contained fix cofix f_equal fold functional generalize hnf
 syn keyword coqTactic    contained idtac induction injection instantiate intro[s] intuition inversion[_clear]
 syn keyword coqTactic    contained lapply left move omega pattern pose proof quote
 syn keyword coqTactic    contained red refine reflexivity rename replace revert rewrite right ring
