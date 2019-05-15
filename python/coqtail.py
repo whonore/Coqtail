@@ -6,10 +6,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import re
 import sys
-from collections import defaultdict as ddict, deque
+from collections import deque
 
 # Mypy doesn't know where to find these modules
 import vim  # type: ignore
@@ -241,34 +240,6 @@ class Coqtail(object):
 
         vim.current.window.cursor = (line + 1, col)
 
-    def find_def(self, target):
-        # type: (Text) -> None
-        """Locate where the current word is defined and jump to it."""
-        # Get the fully qualified version of 'target'
-        qual_info = self.qual_name(target)
-
-        if qual_info is not None:
-            qual_tgt, tgt_type = qual_info
-            path = self.log_to_phy(qual_tgt, tgt_type)
-            if path is None:
-                return
-
-            tgt_file, tgt_name = path
-            if tgt_file == "Coq":
-                print("{} is part of the Coq StdLib".format(tgt_name))
-            else:
-                # Open 'tgt_file' if it is not the current file
-                if tgt_file != vim.eval('expand("%:p")'):
-                    vim.command("hide argedit " + tgt_file)
-
-                # Try progressively broader searches
-                for search in get_searches(tgt_type, tgt_name):
-                    try:
-                        vim.command(r"0/\v{}".format(search))
-                        break
-                    except vim.error:
-                        pass
-
     def make_match(self, ty):
         # type: (Text) -> None
         """Create a "match" statement template for the given inductive type."""
@@ -422,68 +393,44 @@ class Coqtail(object):
         path = re.search(r"file\s+(.*)\.vo", locate)
         return path.group(1) if path is not None else None
 
-    def log_to_phy(self, qual_tgt, tgt_type):
+    def find_qual(self, qual_tgt, tgt_type):
         # type: (Text, Text) -> Optional[Tuple[Text, Text]]
-        """Find the Coq file corresponding to the logical path 'qual_tgt'."""
+        """Find the Coq file containing the qualified name 'qual_tgt'."""
         assert self.coqtop is not None
 
-        loadpath = self.do_query("Print LoadPath.")
-        if loadpath is None:
+        qual_comps = qual_tgt.split(".")
+        base_name = qual_comps[-1]
+
+        # If 'qual_comps' starts with Top or 'tgt_type' is Variable then
+        # 'qual_tgt' is defined in the current file
+        if qual_comps[0] == "Top" or tgt_type == "Variable":
+            return self.filename, base_name
+
+        # Find the longest prefix of 'qual_tgt' that matches a logical path in
+        # 'path_map'
+        for end in range(-1, -len(qual_comps), -1):
+            path = self.find_lib(".".join(qual_comps[:end]))
+            if path is not None:
+                return path + ".v", base_name
+
+        return None
+
+    def find_def(self, target):
+        # type: (Text) -> Optional[Tuple[Text, List[Text]]]
+        """Create patterns to jump to the definition of 'target'."""
+        # Get the fully qualified version of 'target'
+        qual = self.qual_name(target)
+        if qual is None:
             return None
+        qual_tgt, tgt_type = qual
 
-        # Build a map from logical to physical paths using LoadPath
-        path_map = ddict(list)  # type: Mapping[Text, List[Text]]
-        # Skip the first line
-        loadpath = re.sub(r".*\n", "", loadpath, count=1)
-        paths = loadpath.split()
-        logic = paths[::2]
-        physic = paths[1::2]
+        # Find what file the definition is in and what type it is
+        tgt = self.find_qual(qual_tgt, tgt_type)
+        if tgt is None:
+            return None
+        tgt_file, tgt_name = tgt
 
-        for log, phy in zip(logic, physic):
-            path_map[log].append(phy)
-
-        # Return the location of the target
-        loc = qual_tgt.split(".")
-        tgt_name = loc[-1]
-        if loc[0] == "Top" or tgt_type == "Variable":
-            # If 'tgt_type' is Variable then 'target' is defined using
-            # Variable or Context inside a section
-            tgt_file = vim.eval('expand("%:p")')
-        elif loc[0] == "Coq":
-            tgt_file = "Coq"
-        else:
-            # Find the longest prefix of 'loc' that matches a logical path in
-            # 'path_map'
-            for end in range(-1, -len(loc), -1):
-                logpath = ".".join(loc[:end])
-
-                if logpath in path_map:
-                    libpaths = path_map[logpath]
-                    coqfile = loc[end] + ".v"
-                    tgt_files = [os.path.join(libpath, coqfile) for libpath in libpaths]
-                    # TODO: maybe should return tgt_name = '.'.join(loc[end:])?
-                    break
-            else:
-                # Check the empty (<>) logical path
-                coqfile = loc[0] + ".v"
-                tgt_files = [
-                    os.path.join(libpath, coqfile) for libpath in path_map["<>"]
-                ]
-
-            # Convert to absolute path and filter out nonexistent files
-            tgt_files = [
-                f for f in (os.path.abspath(f) for f in tgt_files) if os.path.isfile(f)
-            ]
-
-            if tgt_files == []:
-                return None
-
-            # TODO: Currently assume only file is left. Maybe this is false
-            if len(tgt_files) > 1:
-                print("Warning: More than one file matches: {}".format(tgt_files))
-            tgt_file = tgt_files[0]
-
-        return tgt_file, tgt_name
+        return tgt_file, get_searches(tgt_type, tgt_name)
 
     def next_bullet(self):
         # type: () -> Optional[Text]
@@ -771,7 +718,14 @@ class Coqtail(object):
     @coq_log_name.setter
     def coq_log_name(self, log):
         # type: (Text) -> None
+        """Set the name of this buffer's debug log."""
         vim.current.buffer.vars["coq_log_name"] = log
+
+    @property
+    def filename(self):
+        # type: () -> Text
+        """Get the absolute path of this buffer's current Coq file."""
+        return vim.eval("expand('%:p')")  # type: ignore
 
     @staticmethod
     def bufwin(buf):
@@ -809,7 +763,6 @@ def get_searches(tgt_type, tgt_name):
         ("Constructor", "Inductive", "Build_(.*)", 1),
         ("Constant", "Inductive", "(.*)_(ind|rect?)", 1),
     ]
-    searches = []  # type: List[Text]
     type_to_vernac = {
         "Inductive": ["(Co)?Inductive", "Variant", "Class", "Record"],
         "Constant": [
@@ -824,6 +777,7 @@ def get_searches(tgt_type, tgt_name):
             "Fact",
             "Corollary",
             "Proposition",
+            "Example",
             "Parameters?",
             "Axioms?",
             "Conjectures?",
@@ -851,10 +805,10 @@ def get_searches(tgt_type, tgt_name):
         vernac for typ in search_types for vernac in type_to_vernac.get(typ, [])
     )
 
-    searches.append(r"<({})>\s*<({})>".format(search_vernac, search_name))
-    searches.append(r"<({})>".format(search_name))
-
-    return searches
+    return [
+        r"<({})>\s*\zs<({})>".format(search_vernac, search_name),
+        r"<({})>".format(search_name),
+    ]
 
 
 # Finding Start and End of Coq Chunks #

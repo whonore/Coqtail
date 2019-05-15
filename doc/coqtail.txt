@@ -13,19 +13,20 @@ the |arglist| or |buffer-list|.
 3. Coq Queries				|coqtail-queries|
 4. Miscellaneous Commands		|coqtail-misc|
 5. Configuration			|coqtail-configuration|
+6. Debugging				|coqtail-debug|
 
 =============================
 Starting and Stopping Coqtail				    *coqtail-start-stop*
 
 					    *<leader>cc* *:CoqStart* *coqtail-start*
 :CoqStart	or
-<leader>cc		Start the plugin. Spawns Coqtop in the background and
-			opens two windows on the right of the screen for the
+<leader>cc		Start the plugin. Spawn Coqtop in the background and
+			open two windows on the right of the screen for the
 			Goal and Info panels.
 
 					      *<leader>cq* *:CoqStop* *coqtail-stop*
 :CoqStop	or
-<leader>cq		Stop the plugin. Stops Coqtop and closes the Goal and
+<leader>cq		Stop the plugin. Stop Coqtop and close the Goal and
 			Info panels.
 
 =================
@@ -34,28 +35,22 @@ Movement Commands					      *coqtail-movement*
 					      *<leader>cj* *i_<leader>cj* *:CoqNext*
 								  *coqtail-next*
 :CoqNext	or
-<leader>cj		Submit the next block of text up to the next '.' to
-			Coqtop for checking. If successful, the text will be
-			highlighted and the Goal and Info panels will be
-			updated accordingly. Otherwise, the part that caused an
-			error will be highlighted and the Info panel will
-			display the error message.
+<leader>cj		Submit the next sentence to Coqtop for checking.
+			If successful, highlight the sentence and update the
+			Goal and Info panels accordingly. Otherwise, highlight
+			the error and display the error message in the Info
+			panel.
 
 					      *<leader>ck* *i_<leader>ck* *:CoqUndo*
 								  *coqtail-undo*
 :CoqUndo	or
-<leader>ck		Rewind by one step. The previous block will be
-			un-highlighted and the Goal and Info panels will be
-			updated.
+<leader>ck		Rewind by one step. Un-highlight the previous sentence
+			and update the Goal and Info panels.
 
 				          *<leader>cl* *i_<leader>cl* *:CoqToCursor*
 							     *coqtail-to-cursor*
 :CoqToCursor	or
-<leader>cl		Move the checked region to the cursor position. If this
-			is before the current checked region then Coqtop will
-			be rewound to the last '.' before the cursor. Otherwise
-			it will advance to the last '.' before (or under) the
-			cursor.
+<leader>cl		Check/rewind all sentences up to the cursor position.
 
 					     *<leader>cT* *i_<leader>cT* *:CoqToTop*
 								*coqtail-to-top*
@@ -65,87 +60,63 @@ Movement Commands					      *coqtail-movement*
 						         *<leader>cG* *:JumpToEnd*
 							   *coqtail-jump-to-end*
 :JumpToEnd	or
-<leader>cG		Move the cursor to the end of the checked region. Does
-			not move the checked region.
+<leader>cG		Move the cursor to the end of the checked region. This
+			does not move the checked region.
+
+				       *<leader>cg* *:CoqGotoDef* *coqtail-goto-def*
+:CoqGotoDef {arg}
+<leader>cg		Populate the |quickfix| list with possible locations
+			of the definition of a Coq term and try to jump to
+			the first one. If jumping is impossible open the
+			|quickfix-window| instead. The first version uses
+			{arg}, while the second uses the term under the cursor.
 
 ===========
 Coq Queries						       *coqtail-queries*
 
 							    *:Coq* *coqtail-query*
-:Coq {args}		Send an arbitrary command to Coqtop. Some of the common
-			commands are listed below.
+:Coq {args}		Send an arbitrary query to Coqtop. Some of the common
+			queries are listed below.
 
 					       *<leader>cs* *coqtail-search-about*
 :Coq SearchAbout {arg}
 <leader>cs		Send the SearchAbout command to Coqtop. The first
-			version will use {arg}, while the second will use the
-			term under the cursor. The response will be written to
-			the Info panel.
+			version uses {arg}, while the second uses the term
+			under the cursor. Write the response to the Info panel.
 
 						      *<leader>ch* *coqtail-check*
 :Coq Check {arg}
 <leader>ch		Send the Check command to Coqtop. The first version
-			will use {arg}, while the second will use the term
-			under the cursor. The response will be written to the
-			Info panel.
+			uses {arg}, while the second uses the term under the
+			cursor. Write the response to the Info panel.
 
 						      *<leader>ca* *coqtail-about*
 :Coq About {arg}
 <leader>ca		Send the About command to Coqtop. The first version
-			will use {arg}, while the second will use the term
-			under the cursor. The response will be written to the
-			Info panel.
+			uses {arg}, while the second uses the term under the
+			cursor. Write the response to the Info panel.
 
 						      *<leader>cp* *coqtail-print*
 :Coq Print {arg}
 <leader>cp		Send the Print command to Coqtop. The first version
-			will use {arg}, while the second will use the term
-			under the cursor. The response will be written to the
-			Info panel.
+			uses {arg}, while the second uses the term under the
+			cursor. Write the response to the Info panel.
 
 						     *<leader>cf* *coqtail-locate*
 :Coq Locate {arg}
 <leader>cf		Send the Locate command to Coqtop. The first version
-			will use {arg}, while the second will use the term
-			under the cursor. The response will be written to the
-			Info panel.
+			uses {arg}, while the second uses the term under the
+			cursor. Write the response to the Info panel.
 
 ======================
 Miscellaneous Commands						  *coqtail-misc*
 
-				           *<leader>co* *:FindDef* *coqtail-finddef*
-:FindDef {arg}
-<leader>co		Searches for the definition of a Coq term and jumps to
-			it in a new file if possible. The first version will
-			use {arg}, while the second will use the term under the
-			cursor. If multiple definitions are found you will be
-			prompted to select one. If found, the file will be
-			added to the |arglist| and opened for editing at the
-			location of the definition. If the definition is in the
-			current file a new one will not be opened.
-
 					    *<leader>cm* *i_<leader>cm* *:MakeMatch*
 							    *coqtail-make-match*
 :MakeMatch {arg}
-<leader>cm		Inserts a "match" template for a given Inductive type.
-			The first version will use {arg}, while the second will
-			prompt for an Inductive type.
-
-==================
-Debugging Commands						 *coqtail-debug*
-
-				  *<leader>cd* *:ToggleDebug* *coqtail-toggle-debug*
-:ToggleDebug
-<leader>cd		Enable or disable logging of debugging statements to a
-			file. Enabling will create a temporary file and display
-			the name in the info panel. The name is also stored in
-			|b:coq_log_name|. Disabling and enabling again will
-			create a new log file. Disabled initially.
-
-					       *b:coq_log_name* *coqtail-log-name*
-b:coq_log_name		The name of the debugging log file. Set automatically
-			by enabling/disabling debugging with |:ToggleDebug|.
-			Defaults to ''.
+<leader>cm		Insert a "match" template for a given Inductive type.
+			The first version uses {arg}, while the second prompts
+			for an Inductive type.
 
 =============
 Configuration						 *coqtail-configuration*
@@ -154,32 +125,47 @@ Configuration						 *coqtail-configuration*
 b:coq_timeout		The time in seconds before a command sent to Coqtop
 			will be interrupted. Prevents vim from getting stuck if
 			Coqtop goes into an infinite loop. Can be adjusted or
-			disabled with |<leader>ct|. A value of 0 will disable
-			the timeout. Defaults to 0. Coq can also be interrupted
+			disabled with |<leader>ct|. A value of 0 disables the
+			timeout. Defaults to 0. Coq can also be interrupted
 			with CTRL-C.
 
 					        *<leader>ct* *coqtail-set-timeout*
-<leader>ct		Prompts for a value to set |b:coq_timeout| to.
+<leader>ct		Prompt for a value to set |b:coq_timeout| to.
 
 					      *g:coq_proj_file* *coq-project-file*
 g:coq_proj_file		The name of the Coq Project file. Set to "_CoqProject"
-			by default. When it is started, Coqtail will search for
+			by default. When it is started, Coqtail searches for
 			a file with this name starting from the current
 			directory up to the root directory. If one is found it
-			is parsed and the options are passed to Coqtop.
-			Otherwise nothing happens.
+			is parsed and the options are passed to Coqtop during
+			:CoqStart.
 
 					        *g:coqtail_nomap* *coq-no-mapping*
-g:coqtail_nomap		If this variable is set to 1 then the default mappings
-			in |coqtail-movement|, |coqtail-queries|, and
-			|coqtail-misc| will not be used.
+g:coqtail_nomap		If true then don't set any default mappings for
+			Coqtail	commands.
 
 					      *g:coqtail_nosyntax* *coq-no-syntax*
-g:coqtail_nosyntax	If this variable is set to 1 then the syntax script
-			provided with Coqtail will not be used.
+g:coqtail_nosyntax	If true then don't use the syntax script included with
+			Coqtail.
 
 					      *g:coqtail_noindent* *coq-no-indent*
-g:coqtail_noindent	If this variable is set to 1 then the indent script
-			provided with Coqtail will not be used.
+g:coqtail_noindent	If true then don't use the indent script included with
+			Coqtail.
+
+=========
+Debugging							 *coqtail-debug*
+
+				  *<leader>cd* *:ToggleDebug* *coqtail-toggle-debug*
+:ToggleDebug
+<leader>cd		Enable or disable logging of debugging statements to a
+			file. Enabling creates a temporary file and displays
+			the name in the info panel. The name is also stored in
+			|b:coq_log_name|. Disabling and enabling again creates
+			a new log file. Disabled initially.
+
+					       *b:coq_log_name* *coqtail-log-name*
+b:coq_log_name		The name of the debugging log file. Set automatically
+			by enabling/disabling debugging with |:ToggleDebug|.
+			Defaults to ''.
 
  vim:tw=78:ts=8:ft=help:norl:noet

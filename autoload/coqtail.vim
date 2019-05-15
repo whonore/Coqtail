@@ -230,6 +230,58 @@ function! coqtail#Query(...)
   Py Coqtail().query(*vim.eval('l:args'))
 endfunction
 
+" Remove entries in the quickfix list with the same position.
+function s:UniqQFList()
+  let l:qfl = getqflist()
+  let l:seen = {}
+  let l:uniq = []
+
+  for l:entry in l:qfl
+    let l:pos = string([l:entry.lnum, l:entry.col])
+    if !has_key(l:seen, l:pos)
+      let l:seen[l:pos] = 1
+      let l:uniq = add(l:uniq, l:entry)
+    endif
+  endfor
+
+  call setqflist(l:uniq)
+endfunction
+
+function! coqtail#GotoDef(target)
+  let l:loc = pyxeval('Coqtail().find_def(vim.eval("a:target")) or []')
+  if l:loc == []
+    echohl WarningMsg | echom 'Cannot locate ' . a:target . '.' | echohl None
+    return
+  endif
+  let [l:path, l:searches] = l:loc
+
+  " Try progressively broader searches
+  let l:found_match = 0
+  for l:search in l:searches
+    try
+      if !l:found_match
+        execute 'vimgrep /\v' . l:search . '/j' l:path
+        let l:found_match = 1
+      else
+        execute 'vimgrepadd /\v' . l:search . '/j' l:path
+      endif
+    catch /^Vim\%((\a\+)\)\=:E480/
+    endtry
+  endfor
+
+  if l:found_match
+    " Filter duplicate matches
+    call s:UniqQFList()
+
+    " Jump to first if possible, otherwise open list
+    try
+      cfirst
+    catch /^Vim(cfirst):/
+      botright cwindow
+    endtry
+  endif
+endfunction
+
 " Mappings for Coq queries on the current word.
 function! coqtail#QueryMapping()
   map <silent> <leader>cs :Coq SearchAbout <C-r>=expand(coqtail#GetCurWord())<CR>.<CR>
@@ -238,7 +290,7 @@ function! coqtail#QueryMapping()
   map <silent> <leader>cp :Coq Print <C-r>=expand(coqtail#GetCurWord())<CR>.<CR>
   map <silent> <leader>cf :Coq Locate <C-r>=expand(coqtail#GetCurWord())<CR>.<CR>
 
-  map <silent> <leader>co :FindDef <C-r>=expand(coqtail#GetCurWord())<CR><CR>
+  map <silent> <leader>cg :CoqGotoDef <C-r>=expand(coqtail#GetCurWord())<CR><CR>
 endfunction
 
 " Mappings for Coqtail commands.
@@ -304,7 +356,7 @@ function! coqtail#Stop()
       delcommand CoqToTop
       delcommand Coq
       delcommand JumpToEnd
-      delcommand FindDef
+      delcommand CoqGotoDef
       delcommand MakeMatch
       delcommand ToggleDebug
 
@@ -411,7 +463,7 @@ function! coqtail#Start(...)
 
       " Move cursor
       command! -buffer JumpToEnd Py Coqtail().jump_to_end()
-      command! -buffer -nargs=1 FindDef Py Coqtail().find_def(<f-args>)
+      command! -buffer -nargs=1 CoqGotoDef call coqtail#GotoDef(<f-args>)
 
       " Insert match template
       command! -buffer -nargs=1 MakeMatch Py Coqtail().make_match(<f-args>)
