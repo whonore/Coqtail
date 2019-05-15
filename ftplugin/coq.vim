@@ -40,11 +40,6 @@ endfor
 
 call coqtail#Register(s:version, s:found_sup)
 
-" Default mapping unless user opted out
-if !exists('g:coqtail_nomap') || !g:coqtail_nomap
-  call coqtail#Mapping()
-endif
-
 " Treat ' as a part of keywords
 setlocal iskeyword+='
 

@@ -74,7 +74,7 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | `CoqUndo` | `<leader>ck` | Step back one sentence |
 | `CoqToCursor` | `<leader>cl` | Check/rewind all sentences up to the cursor position |
 | `CoqToTop` | `<leader>cT` | Rewind to the beginning of the file |
-| `JumpToEnd` | `<leader>cG` | Move the cursor to the end of the checked region |
+| `CoqJumpToEnd` | `<leader>cG` | Move the cursor to the end of the checked region |
 | `CoqGotoDef <arg>` | `<leader>cg` | Populate the quickfix list with possible locations of the definition of `<arg>` |
 
 ---
@@ -90,9 +90,10 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | `Coq Locate <arg>` | `<leader>cf` | Show where `<arg>` is defined |
 | `Coq SearchAbout <args>`  | `<leader>cs` | Show theorems about `<args>` |
 
-The mappings shown above are set by default by `coqtail#Mapping()`, but you can
-disable these and define your own by setting `g:coqtail_nomap = 1` in your
-.vimrc.
+The mappings shown above are set by default, but you can disable them all and
+define your own by setting `g:coqtail_nomap = 1` in your .vimrc.
+Alternatively, you can choose to only remap specific commands and the defaults
+will still be used for the rest.
 
 Coqtail also comes with an ftdetect script for Coq, as well as modified
 versions of Vincent Aravantinos'

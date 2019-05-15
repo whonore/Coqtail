@@ -120,7 +120,7 @@ class Coqtail(object):
         def set_done():
             # type: () -> None
             """Callback to be triggered when Coqtop is done executing."""
-            vim.current.buffer.vars["coqtop_done"] = 1
+            self.coqtop_done = True
 
         try:
             self.coqtop = CT.Coqtop(version, set_done)
@@ -138,7 +138,7 @@ class Coqtail(object):
             self.coqtop.stop()
         self._reset()
         self.coqtop = None
-        self.coq_log_name = ""
+        self.log = ""
 
     def step(self):
         # type: () -> None
@@ -210,23 +210,8 @@ class Coqtail(object):
     def query(self, *args):
         # type: (*Text) -> None
         """Forward Coq query to Coqtop interface."""
-        assert self.coqtop is not None
-
         self.clear_info()
-
-        message = " ".join(args)
-
-        try:
-            _, self.info_msg, _ = self.call_and_wait(
-                self.coqtop.dispatch,
-                _strip_comments(message)[0],
-                in_script=False,
-                encoding=self.encoding,
-            )
-        except CT.CoqtopError as e:
-            fail(e)
-            return
-
+        _, self.info_msg = self.do_query(" ".join(args))
         self.show_info()
 
     def jump_to_end(self):
@@ -329,9 +314,13 @@ class Coqtail(object):
         self.rewind(steps_too_far)
 
     def do_query(self, query):
-        # type: (Text) -> Optional[Text]
+        # type: (Text) -> Tuple[bool, Text]
         """Execute a query and return the reply."""
         assert self.coqtop is not None
+
+        # Ensure that the query ends in '.'
+        if not query.endswith("."):
+            query += "."
 
         try:
             success, msg, _ = self.call_and_wait(
@@ -343,17 +332,15 @@ class Coqtail(object):
             )
         except CT.CoqtopError as e:
             fail(e)
-            return None
+            return False, str(e)
 
-        return msg if success else None
+        return success, msg
 
     def qual_name(self, target):
         # type: (Text) -> Optional[Tuple[Text, Text]]
         """Find the fully qualified name of 'target' using 'Locate'."""
-        assert self.coqtop is not None
-
-        locate = self.do_query("Locate {}.".format(target))
-        if locate is None:
+        success, locate = self.do_query("Locate {}.".format(target))
+        if not success:
             return None
 
         # Join lines that start with whitespace to the previous line
@@ -384,10 +371,8 @@ class Coqtail(object):
     def find_lib(self, lib):
         # type: (Text) -> Optional[Text]
         """Find the path to the .v file corresponding to the libary 'lib'."""
-        assert self.coqtop is not None
-
-        locate = self.do_query("Locate Library {}.".format(lib))
-        if locate is None:
+        success, locate = self.do_query("Locate Library {}.".format(lib))
+        if not success:
             return None
 
         path = re.search(r"file\s+(.*)\.vo", locate)
@@ -396,8 +381,6 @@ class Coqtail(object):
     def find_qual(self, qual_tgt, tgt_type):
         # type: (Text, Text) -> Optional[Tuple[Text, Text]]
         """Find the Coq file containing the qualified name 'qual_tgt'."""
-        assert self.coqtop is not None
-
         qual_comps = qual_tgt.split(".")
         base_name = qual_comps[-1]
 
@@ -435,10 +418,8 @@ class Coqtail(object):
     def next_bullet(self):
         # type: () -> Optional[Text]
         """Check the bullet expected for the next subgoal."""
-        assert self.coqtop is not None
-
-        show = self.do_query("Show.")
-        if show is None:
+        success, show = self.do_query("Show.")
+        if not success:
             return None
 
         bmatch = re.search(r'(?:bullet |unfocusing with ")([-+*}]+)', show)
@@ -454,8 +435,8 @@ class Coqtail(object):
         while True:
             # Wait for Coqtop
             stopped = self.wait_coqtop()
-            # Reset b:coqtop_done
-            vim.current.buffer.vars["coqtop_done"] = 0
+            # Reset b:coqtail_coqtop_done
+            self.coqtop_done = False
             # Respond with whether user interrupted
             ret = func_iter.send(stopped)
             # If 'ret' is None then Coqtop is being called again, otherwise it
@@ -529,7 +510,7 @@ class Coqtail(object):
             if ngoals == 0:
                 next_goal = None
                 for bgs in bg_joined:
-                    if len(bgs) > 0:
+                    if bgs != []:
                         next_goal = bgs[0]
                         break
 
@@ -582,12 +563,12 @@ class Coqtail(object):
     def restore_goal(self):
         # type: () -> None
         """Restore the last-displayed goals."""
-        self.restore_panel(self.goal_buf, self.goal_msg)
+        self.restore_panel(self.panel("goal"), self.goal_msg)
 
     def show_info(self):
         # type: () -> None
         """Display the info_msg buffer in the info panel."""
-        self.restore_panel(self.info_buf, self.info_msg)
+        self.restore_panel(self.panel("info"), self.info_msg)
 
     def clear_info(self):
         # type: () -> None
@@ -603,11 +584,11 @@ class Coqtail(object):
         # Recolor
         if self.endpoints != []:
             line, col = self.endpoints[-1]
-
-            start = (0, 0)
-            stop = (line + 1, col)
-            zone = _make_matcher(start, stop)
-            vim.command("let b:checked = matchadd('CheckedByCoq', '{}')".format(zone))
+            self.matchadd(
+                "coqtail_checked",
+                "CoqtailChecked",
+                _make_matcher((0, 0), (line + 1, col)),
+            )
 
         if self.send_queue:
             if self.endpoints != []:
@@ -617,20 +598,19 @@ class Coqtail(object):
 
             to_send = self.send_queue[0]
             eline, ecol = to_send["stop"]
-
-            start = (sline, scol + 1)
-            stop = (eline + 1, ecol)
-            zone = _make_matcher(start, stop)
-            vim.command("let b:sent = matchadd('SentToCoq', '{}')".format(zone))
+            self.matchadd(
+                "coqtail_sent",
+                "CoqtailSent",
+                _make_matcher((sline, scol + 1), (eline + 1, ecol)),
+            )
 
         if self.error_at is not None:
             (sline, scol), (eline, ecol) = self.error_at
-
-            start = (sline + 1, scol)
-            stop = (eline + 1, ecol)
-            zone = _make_matcher(start, stop)
-            vim.command("let b:errors = matchadd('CoqError', '{}')".format(zone))
-
+            self.matchadd(
+                "coqtail_errors",
+                "CoqtailError",
+                _make_matcher((sline + 1, scol), (eline + 1, ecol)),
+            )
             self.error_at = None
 
     def splash(self, version):
@@ -675,10 +655,10 @@ class Coqtail(object):
         log = self.coqtop.toggle_debug()
         if log is None:
             self.info_msg = "Debugging disabled."
-            self.coq_log_name = ""
+            self.log = ""
         else:
             self.info_msg = "Debugging enabled. Log: {}.".format(log)
-            self.coq_log_name = log
+            self.log = log
 
         self.show_info()
 
@@ -694,32 +674,32 @@ class Coqtail(object):
         # type: () -> int
         """Get the value of coq_timeout for this buffer."""
         # Mypy doesn't know type of vim variables
-        return vim.current.buffer.vars["coq_timeout"]  # type: ignore
+        return vim.current.buffer.vars["coqtail_timeout"]  # type: ignore
 
     @property
-    def goal_buf(self):
-        # type: () -> Any
-        """Get this buffer's goal buffer."""
-        return vim.buffers[vim.current.buffer.vars["goal_buf"]]
+    def coqtop_done(self):
+        # type: () -> bool
+        """Check if Coqtop is done."""
+        return bool(vim.current.buffer.vars["coqtail_coqtop_done"])
+
+    @coqtop_done.setter
+    def coqtop_done(self, done):
+        # type: (bool) -> None
+        """Set whether Coqtop is done."""
+        vim.current.buffer.vars["coqtail_coqtop_done"] = int(done)
 
     @property
-    def info_buf(self):
-        # type: () -> Any
-        """Get this buffer's info buffer."""
-        return vim.buffers[vim.current.buffer.vars["info_buf"]]
-
-    @property
-    def coq_log_name(self):
+    def log(self):
         # type: () -> Text
         """Get the name of this buffer's debug log."""
         # Mypy doesn't know type of vim variables
-        return vim.current.buffer.vars["coq_log_name"]  # type: ignore
+        return vim.current.buffer.vars["coqtail_log_name"]  # type: ignore
 
-    @coq_log_name.setter
-    def coq_log_name(self, log):
+    @log.setter
+    def log(self, log):
         # type: (Text) -> None
         """Set the name of this buffer's debug log."""
-        vim.current.buffer.vars["coq_log_name"] = log
+        vim.current.buffer.vars["coqtail_log_name"] = log
 
     @property
     def filename(self):
@@ -728,21 +708,33 @@ class Coqtail(object):
         return vim.eval("expand('%:p')")  # type: ignore
 
     @staticmethod
+    def panel(name):
+        # type: (str) -> Any
+        """Get the goal or info panel for this buffer."""
+        return vim.buffers[vim.current.buffer.vars["coqtail_panel_bufs"][name]]
+
+    @staticmethod
     def bufwin(buf):
         # type: (Any) -> Any
         """Get the window that contains buf."""
         return vim.windows[int(vim.eval("bufwinnr({})".format(buf.number))) - 1]
 
+    @staticmethod
+    def matchadd(var, group, zone):
+        # type: (str, str, str) -> None
+        """Highlight 'zone' using 'group'."""
+        vim.command("let b:{} = matchadd('{}', '{}')".format(var, group, zone))
+
     def wait_coqtop(self):
         # type: () -> bool
-        """Wait for b:coqtop_done to be set and report whether it was interrupted."""
+        """Wait for b:coqtail_coqtop_done to be set and report whether it was interrupted."""
         assert self.coqtop is not None
 
         stopped = False
 
         while True:
             try:
-                vim.command("while !b:coqtop_done | endwhile")
+                vim.command("while !b:coqtail_coqtop_done | endwhile")
                 break
             except KeyboardInterrupt:
                 # Forward interrupt to Coqtop

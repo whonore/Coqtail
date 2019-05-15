@@ -47,7 +47,7 @@ Movement Commands					      *coqtail-movement*
 <leader>ck		Rewind by one step. Un-highlight the previous sentence
 			and update the Goal and Info panels.
 
-				          *<leader>cl* *i_<leader>cl* *:CoqToCursor*
+					  *<leader>cl* *i_<leader>cl* *:CoqToCursor*
 							     *coqtail-to-cursor*
 :CoqToCursor	or
 <leader>cl		Check/rewind all sentences up to the cursor position.
@@ -57,9 +57,9 @@ Movement Commands					      *coqtail-movement*
 :CoqToTop	or
 <leader>cT		Rewind to the top of the file.
 
-						         *<leader>cG* *:JumpToEnd*
+						      *<leader>cG* *:CoqJumpToEnd*
 							   *coqtail-jump-to-end*
-:JumpToEnd	or
+:CoqJumpToEnd	or
 <leader>cG		Move the cursor to the end of the checked region. This
 			does not move the checked region.
 
@@ -111,9 +111,9 @@ Coq Queries						       *coqtail-queries*
 ======================
 Miscellaneous Commands						  *coqtail-misc*
 
-					    *<leader>cm* *i_<leader>cm* *:MakeMatch*
+					 *<leader>cm* *i_<leader>cm* *:CoqMakeMatch*
 							    *coqtail-make-match*
-:MakeMatch {arg}
+:CoqMakeMatch {arg}
 <leader>cm		Insert a "match" template for a given Inductive type.
 			The first version uses {arg}, while the second prompts
 			for an Inductive type.
@@ -121,51 +121,62 @@ Miscellaneous Commands						  *coqtail-misc*
 =============
 Configuration						 *coqtail-configuration*
 
-					         *b:coq_timeout* *coqtail-timeout*
-b:coq_timeout		The time in seconds before a command sent to Coqtop
+					     *b:coqtail_timeout* *coqtail-timeout*
+b:coqtail_timeout	The time in seconds before a command sent to Coqtop
 			will be interrupted. Prevents vim from getting stuck if
-			Coqtop goes into an infinite loop. Can be adjusted or
-			disabled with |<leader>ct|. A value of 0 disables the
-			timeout. Defaults to 0. Coq can also be interrupted
-			with CTRL-C.
+			Coqtop goes into an infinite loop. A value of 0
+			disables the timeout. Defaults to 0. Coq can also be
+			interrupted with CTRL-C.
 
-					        *<leader>ct* *coqtail-set-timeout*
-<leader>ct		Prompt for a value to set |b:coq_timeout| to.
-
-					      *g:coq_proj_file* *coq-project-file*
-g:coq_proj_file		The name of the Coq Project file. Set to "_CoqProject"
+				       *g:coqtail_project_name* *coq-project-file*
+g:coqtail_project_name	The name of the Coq project file. Set to "_CoqProject"
 			by default. When it is started, Coqtail searches for
 			a file with this name starting from the current
 			directory up to the root directory. If one is found it
 			is parsed and the options are passed to Coqtop during
 			:CoqStart.
 
-					        *g:coqtail_nomap* *coq-no-mapping*
-g:coqtail_nomap		If true then don't set any default mappings for
-			Coqtail	commands.
+							*b:coqtail_project_file*
+b:coqtail_project_file	The path to the Coq project file. Set automatically if
+			one is found during :CoqStart.
 
-					      *g:coqtail_nosyntax* *coq-no-syntax*
+					    *g:coqtail_nomap* *coqtail-no-mapping*
+g:coqtail_nomap		If true then don't set any default mappings for
+			Coqtail	commands. Only specific mappings can also be
+			overwritten by defining new mappings for the desired
+			commands. The defaults will continue to be used for the
+			rest.
+
+					  *g:coqtail_nosyntax* *coqtail-no-syntax*
 g:coqtail_nosyntax	If true then don't use the syntax script included with
 			Coqtail.
 
-					      *g:coqtail_noindent* *coq-no-indent*
+					  *g:coqtail_noindent* *coqtail-no-indent*
 g:coqtail_noindent	If true then don't use the indent script included with
 			Coqtail.
 
+							  *g:CoqtailHighlight()*
+g:CoqtailHighlight()	Optional function to overwrite the default highlighting
+			for CoqtailChecked and CoqtailSent. E.g.  >
+		    function! g:CoqtailHighlight()
+		      hi def CoqtailChecked ctermbg=19
+		      hi def CoqtailSent ctermbg=62
+		    endfunction
+<
 =========
 Debugging							 *coqtail-debug*
 
-				  *<leader>cd* *:ToggleDebug* *coqtail-toggle-debug*
-:ToggleDebug
+			       *<leader>cd* *:CoqToggleDebug* *coqtail-toggle-debug*
+:CoqToggleDebug
 <leader>cd		Enable or disable logging of debugging statements to a
 			file. Enabling creates a temporary file and displays
 			the name in the info panel. The name is also stored in
-			|b:coq_log_name|. Disabling and enabling again creates
-			a new log file. Disabled initially.
+			|b:coqtail_log_name|. Disabling and enabling again
+			creates a new log file. Disabled initially.
 
-					       *b:coq_log_name* *coqtail-log-name*
-b:coq_log_name		The name of the debugging log file. Set automatically
-			by enabling/disabling debugging with |:ToggleDebug|.
+					   *b:coqtail_log_name* *coqtail-log-name*
+b:coqtail_log_name	The name of the debugging log file. Set automatically
+			by enabling/disabling debugging with |:CoqToggleDebug|.
 			Defaults to ''.
 
  vim:tw=78:ts=8:ft=help:norl:noet
