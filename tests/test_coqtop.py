@@ -15,6 +15,11 @@ from subprocess import check_output
 
 import pytest
 
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
+
 from coqtop import Coqtop
 
 # Test Values #
@@ -132,6 +137,22 @@ def test_option_query_same_state_id(coq):
     assert old_id == coq.state_id
     call_and_wait(coq, coq.dispatch, "Test Silent.")
     assert old_id == coq.state_id
+
+
+@patch.object(Coqtop, "do_option")
+@patch.object(Coqtop, "query")
+@patch.object(Coqtop, "advance")
+def test_dispatch_correct(advance, query, do_option, coq):
+    """Dispatch calls the correct methods."""
+    advance.return_value = iter((None, None))
+    query.return_value = iter((None, None))
+    do_option.return_value = iter((None, None))
+    next(coq.dispatch("Let x := 0."))
+    advance.assert_called()
+    next(coq.dispatch("Show.", in_script=False))
+    query.assert_called()
+    next(coq.dispatch("Test Silent.", in_script=False))
+    do_option.assert_called()
 
 
 def test_dispatch_unicode(coq):

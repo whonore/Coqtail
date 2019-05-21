@@ -450,14 +450,14 @@ class XMLInterfaceBase(object):
         # Starts with Set, Unset, Test
         # N.B. 'cmd' has been stripped of comments and leading whitespace so
         # just check for option commands at the start
-        return re.match("(Uns|S)et|Test$", cmd.split()[0]) is not None
+        return re.match("((Uns|S)et|Test)$", cmd.split()[0]) is not None
 
     def is_query(self, cmd):
         # type: (Text) -> bool
         """Check if 'cmd' is a query."""
-        re_str = "|".join(self.queries) + "$"
+        re_str = "(" + "|".join(self.queries) + ")$"
         # N.B. see is_option()
-        return re.match(re_str, cmd.split()[0]) is not None
+        return re.match(re_str, cmd.split()[0].rstrip(".")) is not None
 
     def parse_option(self, cmd):
         # type: (Text) -> Tuple[Text, Text]
