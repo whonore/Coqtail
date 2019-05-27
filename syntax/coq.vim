@@ -48,7 +48,7 @@ syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqEval,coqNotation,co
 syn match   coqError             "\S\+"
 syn match   coqVernacPunctuation ":=\|\.\|:"
 syn match   coqIdent             contained "[_[:alpha:]][_'[:alnum:]]*"
-syn keyword coqTopLevel          Declare Type Canonical Structure Cd Derive Drop Existential
+syn keyword coqTopLevel          Declare Type Canonical Structure Cd Drop Existential
 "...
 syn keyword coqVernacCmd         Functional Scheme Back Combined
 syn keyword coqFeedback          Show About Print
@@ -319,6 +319,23 @@ syn region coqClsProfile contained contains=coqIdent,coqRecTerm,coqRecBinder mat
 syn region coqIns contains=coqDefName matchgroup=coqVernacCmd start="\<\%(\%(Global\|Local\)\_s\+\)\?Instance\>" matchgroup=coqVernacPunctuation end=":="me=e-2 end="\.$"me=e-1 end="\.\_s"me=e-2 nextgroup=coqDefContents1,coqProofBody keepend skipnl skipwhite skipempty
 syn region coqIns matchgroup=coqVernacCmd start="\<Existing\_s\+Instance\>" matchgroup=coqVernacPunctuation end="\.$"me=e-1 end="\.\s"me=e-2
 
+" Equations
+syn region coqEqn           contains=coqEqnProfile start="\<Equations?\?\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqEqnProfile    contained contains=coqIdent,coqEqnTerm,coqEqnBinder matchgroup=coqVernacCmd start="Equations?\?" matchgroup=NONE end="\.\_s"
+syn region coqEqnBinder     contained contains=coqEqnOptions,@coqTerm matchgroup=coqTermPunctuation start="(" end=")"
+syn region coqEqnTerm       contained contains=@coqTerm,coqEqnContent matchgroup=coqVernacPunctuation start=":" end="\.\_s"
+syn region coqEqnContent    contained contains=coqEqnBrackClause,coqEqnWhereClause,coqEqnClause matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
+syn region coqEqnBrackClause contained contains=@coqTerm,coqEqnClause,coqEqnKwd matchgroup=coqVernacPunctuation start="{" end="}"
+syn region coqEqnWhereClause contained contains=@coqTerm,coqEqnClause,coqEqnKwd matchgroup=coqEqnKwd start="\<where\>" matchgroup=coqVernacPunctuation end=":="
+syn region coqEqnClause     contained contains=@coqTerm,coqEqnKwd matchgroup=coqVernacPunctuation start=";" start=":=" end=":=" end="=>"
+syn keyword coqEqnKwd       contained with where
+syn keyword coqEqnOptions   contained noind noeqns
+
+syn region coqDerive        contains=coqDeriveCmds,coqIdent start="\<Derive\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqDeriveCmds    contained contains=coqDeriveCmd matchgroup=coqVernacCmd start="\<Derive\>" end="\<for\>"
+syn keyword coqDeriveCmd    contained DependentEliminationPackage Signature NoConfusion
+syn keyword coqDeriveCmd    contained NoConfusionHom EqDec Subterm
+
 " Various (High priority)
 syn region  coqComment           containedin=ALL contains=coqComment,coqTodo start="(\*" end="\*)" extend keepend
 syn keyword coqTodo              contained TODO FIXME XXX NOTE
@@ -347,6 +364,7 @@ if version >= 508 || !exists("did_coq_syntax_inits")
   HiLink coqTacticKwd coqTactic
   HiLink coqTacNotationKwd coqTactic
   HiLink coqEvalFlag coqTactic
+  HiLink coqEqnKwd coqTactic
   " Exception
   HiLink coqProofDot coqVernacular
 
@@ -376,6 +394,7 @@ if version >= 508 || !exists("did_coq_syntax_inits")
 
   " NOTATION SPECIFIC ("at level", "format", etc)
   HiLink coqNotationKwd               Special
+  HiLink coqEqnOptions                coqNotationKwd
 
   " USUAL VIM HIGHLIGHTINGS
   " Comments
