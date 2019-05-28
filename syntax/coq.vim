@@ -42,7 +42,7 @@ endif
 " Coq is case sensitive.
 syn case match
 
-syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqLtacDecl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqShow
+syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqShow
 
 " Various
 syn match   coqError             "\S\+"
