@@ -99,10 +99,9 @@ syn region coqOblExpr    contains=coqLtac   matchgroup=coqVernacPunctuation star
 " Scopes
 syn region coqBind    contains=coqScope matchgroup=coqVernacCmd start="\<Bind\|Delimit\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
 syn region coqArgsScope contains=coqScope matchgroup=coqVernacCmd start="\<\%(\%(Local\|Global\)\_s\+\)\?Arguments\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
-syn region coqOpen    contains=coqScope matchgroup=coqVernacCmd start="\<Open\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
-syn region coqClose   contains=coqScope,coqLocalScope matchgroup=coqVernacCmd start="\<Close\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqOpen    contains=coqScope matchgroup=coqVernacCmd start="\%(\<\%(Local\|Global\)\>\_s\+\)\?\<Open\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqClose   contains=coqScope matchgroup=coqVernacCmd start="\%(\<\%(Local\|Global\)\>\_s\+\)\?\<Close\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
 syn region coqScope   contained matchgroup=coqVernacCmd start="\<Scope\>" end="\.\_s"
-syn region coqLocalScope contained contains=coqScope matchgroup=coqVernacCmd start="\<Local\>" end="\.\_s"
 
 " Hints
 syn region coqHint contains=coqHintOption start="\<\%(\%(Local\|Global\)\_s\+\)\?Hint\>" end="\.\_s" keepend
@@ -128,7 +127,7 @@ syn region coqAddOption2        contained contains=coqAddMLPath matchgroup=coqVe
 syn region coqAddMLPath         contained contains=coqString matchgroup=coqVernacCmd start="\<Path\>" end="\.\_s"
 
 " Set
-syn region coqSet       contains=coqSetOption matchgroup=coqVernacCmd start="\<Set\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqSet       contains=coqSetOption matchgroup=coqVernacCmd start="\%(\<\%(Local\|Global\)\>\_s\+\)\?\<Set\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
 syn region coqSetOption           contained contains=coqSetPrintingOption matchgroup=coqVernacCmd start="\<Printing\>" end="\.\_s"
 syn region coqSetPrintingOption   contained matchgroup=coqVernacCmd start="\<\%(Coercions\|All\|Implicit\|Matching\|Notations\|Synth\|Universes\|Wildcard\)\>" end="\.\_s"
 syn region coqSetPrintingOption   contained matchgroup=coqVernacCmd start="\<\%(Width\|Depth\)\>" end="\.\_s"
