@@ -338,22 +338,17 @@ function! s:cleanup()
   catch
   endtry
 
-  " Unset Coqtail commands
-  try
-    delcommand CoqStop
-    delcommand CoqNext
-    delcommand CoqUndo
-    delcommand CoqToCursor
-    delcommand CoqToTop
-    delcommand Coq
-    delcommand CoqJumpToEnd
-    delcommand CoqGotoDef
-    delcommand CoqMakeMatch
-    delcommand CoqToggleDebug
-
-    command! -buffer -nargs=* Coq echoerr 'Coq is not running.'
-  catch
-  endtry
+  " Reset Coqtail commands
+  command! -bar -buffer -nargs=* -complete=file CoqStart call coqtail#Start(<f-args>)
+  command! -bar -buffer -nargs=* -complete=file CoqNext        CoqStart | CoqNext
+  command! -bar -buffer -nargs=* -complete=file CoqUndo        CoqStart | CoqUndo
+  command! -bar -buffer -nargs=* -complete=file CoqToCursor    CoqStart | CoqToCursor
+  command! -bar -buffer -nargs=* -complete=file CoqToTop       CoqStart | CoqToTop
+  command! -bar -buffer -nargs=* -complete=file CoqGotoDef     CoqStart | CoqGotoDef
+  command! -buffer -nargs=1                     CoqGotoDef     CoqStart | call coqtail#GotoDef(<f-args>)
+  command! -buffer -nargs=+                     Coq            CoqStart | Py Coqtail().query(<f-args>)
+  command! -buffer -nargs=1                     CoqMakeMatch   CoqStart | Py Coqtail().make_match(<f-args>)
+  command! -buffer                              CoqToggleDebug CoqStart | Py Coqtail().toggle_debug()
 endfunction
 
 " Initialize Python interface, commands, autocmds, and goals and info panels.
@@ -452,15 +447,8 @@ function! coqtail#Register(version, supported)
     let b:coqtail_version = a:version
     let b:coqtail_log_name = ''
 
-    " TODO: find a less hacky solution
-    " Define a dummy command for 'Coq' so it does not autocomplete to
-    " 'CoqStart' and cause Coqtop to hang
-    command! -buffer -nargs=* Coq echoerr 'Coq is not running.'
-
     if a:supported
-      command! -bar -buffer -nargs=* -complete=file CoqStart call coqtail#Start(<f-args>)
-    else
-      command! -bar -buffer -nargs=* -complete=file CoqStart echoerr 'Coqtail does not support Coq version ' . b:coqtail_version
+      call s:cleanup()
     endif
 
     call s:mappings()
