@@ -16,6 +16,15 @@ It supports:
 
 ## Installation and Requirements
 
+As a [vim package](https://vimhelp.org/repeat.txt.html#packages):
+
+```sh
+mkdir ~/.vim/pack/coq/start
+git clone https://github.com/let-def/vimbufsync.git ~/.vim/pack/coq/start/vimbufsync
+git clone https://github.com/whonore/coqtail.git ~/.vim/pack/coq/start/coqtail
+vim +helptags\ .vim/pack/coq/start/coqtail/doc +q
+```
+
 Using
 [pathogen](https://github.com/tpope/vim-pathogen):
 
