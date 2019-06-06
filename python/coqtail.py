@@ -906,6 +906,32 @@ def _find_next_sentence(lines, sline, scol):
                 break
         return (line, col)
 
+    # Check if this is a bracketed goal selector
+    if first_line[0].isdigit():
+        state = "digit"
+        selcol = col
+        for c in first_line[1:]:
+            if state == "digit" and c.isdigit():
+                selcol += 1
+            elif state == "digit" and c.isspace():
+                state = "beforecolon"
+                selcol += 1
+            elif state == "digit" and c == ":":
+                state = "aftercolon"
+                selcol += 1
+            elif state == "beforecolon" and c.isspace():
+                selcol += 1
+            elif state == "beforecolon" and c == ":":
+                state = "aftercolon"
+                selcol += 1
+            elif state == "aftercolon" and c.isspace():
+                selcol += 1
+            elif state == "aftercolon" and c == "{":
+                selcol += 1
+                return (line, selcol)
+            else:
+                break
+
     # Otherwise, find an ending '.'
     return _find_dot_after(lines, line, col)
 
