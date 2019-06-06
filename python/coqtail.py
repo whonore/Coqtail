@@ -140,22 +140,25 @@ class Coqtail(object):
         self.coqtop = None
         self.log = ""
 
-    def step(self):
+    def step(self, steps=1):
         # type: () -> None
-        """Advance Coq by one sentence."""
+        """Advance Coq by 'steps' sentences."""
         self.sync()
 
-        # Get the location of the last '.'
-        if self.endpoints != []:
-            line, col = self.endpoints[-1]
-        else:
-            line, col = (0, 0)
-
-        to_send = _get_message_range(vim.current.buffer, (line, col))
-        if to_send is None:
+        if steps < 1:
             return
 
-        self.send_queue.append(to_send)
+        # Get the location of the last '.'
+        line, col = self.endpoints[-1] if self.endpoints != [] else (0, 0)
+
+        to_send = _get_message_range(vim.current.buffer, (line, col))
+        for _ in range(steps):
+            if to_send is None:
+                break
+            eline, ecol = to_send["stop"]
+            self.send_queue.append(to_send)
+            to_send = _get_message_range(vim.current.buffer, (eline, ecol + 1))
+
         self.send_until_fail()
 
     def rewind(self, steps=1):
@@ -179,23 +182,28 @@ class Coqtail(object):
 
         self.refresh()
 
-    def to_cursor(self):
-        # type: () -> None
-        """Advance Coq to the cursor position."""
+    def to_line(self, line):
+        # type: (int) -> None
+        """Advance/rewind Coq to the given position."""
         self.sync()
 
-        cline, ccol = vim.current.window.cursor
-        if self.endpoints != []:
-            line, col = self.endpoints[-1]
+        if line == 0:
+            # If no line was given then use the cursor's position
+            line, col = vim.current.window.cursor
         else:
-            line, col = (0, 0)
+            # Otherwise, use the last column in the line
+            col = len(vim.current.buffer[line - 1])
+        line -= 1
+
+        # Get the location of the last '.'
+        sline, scol = self.endpoints[-1] if self.endpoints != [] else (0, 0)
 
         # Check if should rewind or advance
-        if cline - 1 < line or (cline - 1 == line and ccol < col):
-            self.rewind_to(cline - 1, ccol + 2)
+        if (line, col) < (sline, scol):
+            self.rewind_to(line, col + 2)
         else:
-            to_send = _get_message_range(vim.current.buffer, (line, col))
-            while to_send is not None and to_send["stop"] <= (cline - 1, ccol):
+            to_send = _get_message_range(vim.current.buffer, (sline, scol))
+            while to_send is not None and to_send["stop"] <= (line, col):
                 eline, ecol = to_send["stop"]
                 self.send_queue.append(to_send)
                 to_send = _get_message_range(vim.current.buffer, (eline, ecol + 1))

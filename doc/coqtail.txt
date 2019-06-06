@@ -34,28 +34,39 @@ Movement Commands					      *coqtail-movement*
 
 					      *<leader>cj* *i_<leader>cj* *:CoqNext*
 								  *coqtail-next*
-:CoqNext	or
-<leader>cj		Submit the next sentence to Coqtop for checking.
-			If successful, highlight the sentence and update the
-			Goal and Info panels accordingly. Otherwise, highlight
-			the error and display the error message in the Info
-			panel.
+:[count]CoqNext	or
+[count]<leader>cj	Submit the next [count] sentences to Coqtop for
+			checking. If successful, highlight the sentences and
+			update the Goal and Info panels accordingly. Otherwise,
+			highlight the error and display the error message in
+			the Info panel. [count] defaults to 1.
 
 					      *<leader>ck* *i_<leader>ck* *:CoqUndo*
 								  *coqtail-undo*
-:CoqUndo	or
-<leader>ck		Rewind by one step. Un-highlight the previous sentence
-			and update the Goal and Info panels.
+:[count]CoqUndo	or
+[count]<leader>ck	Rewind by [count] steps. Un-highlight the previous
+			sentences and update the Goal and Info panels. [count]
+			defaults to 1.
 
-					  *<leader>cl* *i_<leader>cl* *:CoqToCursor*
-							     *coqtail-to-cursor*
-:CoqToCursor	or
-<leader>cl		Check/rewind all sentences up to the cursor position.
-
+					    *<leader>cl* *i_<leader>cl* *:CoqToLine*
+							       *coqtail-to-line*
+:[count]CoqToLine or
+[count]<leader>cl	Check/rewind all sentences up to line [count]. If
+			multiple sentences end on the same line then check
+			until just past the last one. However, if no [count] is
+			given, use the cursor position instead, including the
+			column. For example, given the line below, where '^'
+			represents the cursor position, `:CoqToLine` would
+			position the end of the checked section just after '1'
+			whereas `:27CoqToLine` would put it after '2'. >
+    line 27:	   Let x := 1.^Let y := 2.
+<
 					     *<leader>cT* *i_<leader>cT* *:CoqToTop*
 								*coqtail-to-top*
 :CoqToTop	or
-<leader>cT		Rewind to the top of the file.
+<leader>cT		Rewind to the top of the file. Differs from
+			`:1CoqToLine` because it rewinds to the beginning of
+			the line.
 
 						      *<leader>cG* *:CoqJumpToEnd*
 							   *coqtail-jump-to-end*
@@ -64,7 +75,7 @@ Movement Commands					      *coqtail-movement*
 			does not move the checked region.
 
 				       *<leader>cg* *:CoqGotoDef* *coqtail-goto-def*
-:CoqGotoDef {arg}
+:CoqGotoDef[!] {arg}
 <leader>cg		Populate the |quickfix| list with possible locations
 			of the definition of a Coq term and try to jump to
 			the first one. If jumping is impossible open the
@@ -134,11 +145,11 @@ g:coqtail_project_name	The name of the Coq project file. Set to "_CoqProject"
 			a file with this name starting from the current
 			directory up to the root directory. If one is found it
 			is parsed and the options are passed to Coqtop during
-			:CoqStart.
+			`:CoqStart`.
 
 							*b:coqtail_project_file*
 b:coqtail_project_file	The path to the Coq project file. Set automatically if
-			one is found during :CoqStart.
+			one is found during `:CoqStart`.
 
 					    *g:coqtail_nomap* *coqtail-no-mapping*
 g:coqtail_nomap		If true then don't set any default mappings for
@@ -176,7 +187,7 @@ Debugging							 *coqtail-debug*
 
 					   *b:coqtail_log_name* *coqtail-log-name*
 b:coqtail_log_name	The name of the debugging log file. Set automatically
-			by enabling/disabling debugging with |:CoqToggleDebug|.
+			by enabling/disabling debugging with `:CoqToggleDebug`.
 			Defaults to ''.
 
  vim:tw=78:ts=8:ft=help:norl:noet

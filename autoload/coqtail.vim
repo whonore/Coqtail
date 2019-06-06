@@ -181,7 +181,8 @@ endfunction
 
 " Populate the quickfix list with possible locations of the definition of
 " 'target'.
-function! coqtail#GotoDef(target)
+function! coqtail#GotoDef(target, bang)
+  let l:bang = a:bang ? '!' : ''
   let l:loc = pyxeval('Coqtail().find_def(vim.eval("a:target")) or []')
   if l:loc == []
     echohl WarningMsg | echom 'Cannot locate ' . a:target . '.' | echohl None
@@ -209,7 +210,7 @@ function! coqtail#GotoDef(target)
 
     " Jump to first if possible, otherwise open list
     try
-      cfirst
+      execute 'cfirst' . l:bang
     catch /^Vim(cfirst):/
       botright cwindow
     endtry
@@ -293,19 +294,52 @@ function! s:getCurWord()
   return l:cword
 endfunction
 
+" List query options for use in Coq command completion.
+function! s:queryComplete(arg, cmd, cursor)
+  let l:queries = [
+        \'Search', 'SearchAbout', 'SearchPattern', 'SearchRewrite',
+        \'SearchHead', 'Check', 'Print', 'About', 'Locate', 'Show'
+  \]
+  " Only complete one command
+  if len(split(a:cmd)) <= 2
+    return join(l:queries, "\n")
+  else
+    return ''
+  endif
+endfunction
+
+" Define CoqStart and define all other commands to first call it.
+function! s:initCommands()
+  command! -buffer -bar -nargs=* -complete=file CoqStart
+  \                                       call coqtail#Start(<f-args>)
+  command! -buffer -count=1 CoqNext       CoqStart | <count>CoqNext
+  command! -buffer -count=1 CoqUndo       CoqStart | <count>CoqUndo
+  command! -buffer -count=0 CoqToLine     CoqStart | <count>CoqToLine
+  command! -buffer CoqToTop               CoqStart | CoqToTop
+  command! -buffer CoqJumpToEnd           CoqStart | CoqJumpToEnd
+  command! -buffer -bang -nargs=1 CoqGotoDef
+  \                                       CoqStart | <bang>CoqGotoDef <args>
+  command! -buffer -nargs=+ -complete=custom,s:queryComplete Coq
+  \                                       CoqStart | Coq <args>
+  command! -buffer -nargs=1 CoqMakeMatch  CoqStart | CoqMakeMatch <args>
+  command! -buffer CoqToggleDebug         CoqStart | CoqToggleDebug
+endfunction
+
 " Initialize commands, panels, and autocommands.
 function! s:prepare()
   " Commands
-  command! -buffer CoqStop call coqtail#Stop()
-  command! -buffer CoqNext Py Coqtail().step()
-  command! -buffer CoqUndo Py Coqtail().rewind()
-  command! -buffer CoqToCursor Py Coqtail().to_cursor()
-  command! -buffer CoqToTop Py Coqtail().to_top()
-  command! -buffer CoqJumpToEnd Py Coqtail().jump_to_end()
-  command! -buffer -nargs=1 CoqGotoDef call coqtail#GotoDef(<f-args>)
-  command! -buffer -nargs=+ Coq Py Coqtail().query(<f-args>)
-  command! -buffer -nargs=1 CoqMakeMatch Py Coqtail().make_match(<f-args>)
-  command! -buffer CoqToggleDebug Py Coqtail().toggle_debug()
+  command! -buffer CoqStop                call coqtail#Stop()
+  command! -buffer -count=1 CoqNext       Py Coqtail().step(<count>)
+  command! -buffer -count=1 CoqUndo       Py Coqtail().rewind(<count>)
+  command! -buffer -count=0 CoqToLine     Py Coqtail().to_line(<count>)
+  command! -buffer CoqToTop               Py Coqtail().to_top()
+  command! -buffer CoqJumpToEnd           Py Coqtail().jump_to_end()
+  command! -buffer -bang -nargs=1 CoqGotoDef
+  \                                       call coqtail#GotoDef(<f-args>, <bang>0)
+  command! -buffer -nargs=+ -complete=custom,s:queryComplete Coq
+  \                                       Py Coqtail().query(<f-args>)
+  command! -buffer -nargs=1 CoqMakeMatch  Py Coqtail().make_match(<f-args>)
+  command! -buffer CoqToggleDebug         Py Coqtail().toggle_debug()
 
   " Initialize goals and info panels
   call coqtail#InitPanels()
@@ -340,17 +374,7 @@ function! s:cleanup()
   catch
   endtry
 
-  " Reset Coqtail commands
-  command! -bar -buffer -nargs=* -complete=file CoqStart call coqtail#Start(<f-args>)
-  command! -bar -buffer -nargs=* -complete=file CoqNext        CoqStart | CoqNext
-  command! -bar -buffer -nargs=* -complete=file CoqUndo        CoqStart | CoqUndo
-  command! -bar -buffer -nargs=* -complete=file CoqToCursor    CoqStart | CoqToCursor
-  command! -bar -buffer -nargs=* -complete=file CoqToTop       CoqStart | CoqToTop
-  command! -bar -buffer -nargs=* -complete=file CoqGotoDef     CoqStart | CoqGotoDef
-  command! -buffer -nargs=1                     CoqGotoDef     CoqStart | call coqtail#GotoDef(<f-args>)
-  command! -buffer -nargs=+                     Coq            CoqStart | Py Coqtail().query(<f-args>)
-  command! -buffer -nargs=1                     CoqMakeMatch   CoqStart | Py Coqtail().make_match(<f-args>)
-  command! -buffer                              CoqToggleDebug CoqStart | Py Coqtail().toggle_debug()
+  call s:initCommands()
 endfunction
 
 " Initialize Python interface, commands, autocmds, and goals and info panels.
@@ -396,14 +420,14 @@ endfunction
 function! s:mappings()
   nnoremap <silent> <Plug>CoqStart :CoqStart<CR>
   nnoremap <silent> <Plug>CoqStop :CoqStop<CR>
-  nnoremap <silent> <Plug>CoqNext :CoqNext<CR>
-  nnoremap <silent> <Plug>CoqUndo :CoqUndo<CR>
-  nnoremap <silent> <Plug>CoqToCursor :CoqToCursor<CR>
+  nnoremap <silent> <Plug>CoqNext :<C-U>execute v:count1 'CoqNext'<CR>
+  nnoremap <silent> <Plug>CoqUndo :<C-U>execute v:count1 'CoqUndo'<CR>
+  nnoremap <silent> <Plug>CoqToLine :<C-U>execute v:count 'CoqToLine'<CR>
   nnoremap <silent> <Plug>CoqToTop :CoqToTop<CR>
   nnoremap <silent> <Plug>CoqJumpToEnd :CoqJumpToEnd<CR>
   inoremap <silent> <Plug>CoqNext <C-\><C-o>:CoqNext<CR>
   inoremap <silent> <Plug>CoqUndo <C-\><C-o>:CoqUndo<CR>
-  inoremap <silent> <Plug>CoqToCursor <C-\><C-o>:CoqToCursor<CR>
+  inoremap <silent> <Plug>CoqToLine <C-\><C-o>:CoqToLine<CR>
   inoremap <silent> <Plug>CoqToTop <C-\><C-o>:CoqToTop<CR>
   inoremap <silent> <Plug>CoqJumpToEnd <C-\><C-o>:CoqJumpToEnd<CR>
   nnoremap <silent> <Plug>CoqGotoDef :CoqGotoDef <C-r>=expand(<SID>getCurWord())<CR><CR>
@@ -421,7 +445,7 @@ function! s:mappings()
 
   let l:maps = [
     \['Start', 'c', 'n'], ['Stop', 'q', 'n'], ['Next', 'j', 'ni'],
-    \['Undo', 'k', 'ni'], ['ToCursor', 'l', 'ni'], ['ToTop', 'T', 'ni'],
+    \['Undo', 'k', 'ni'], ['ToLine', 'l', 'ni'], ['ToTop', 'T', 'ni'],
     \['JumpToEnd', 'G', 'ni'], ['GotoDef', 'g', 'n'], ['Search', 's', 'n'],
     \['Check', 'h', 'n'], ['About', 'a', 'n'], ['Print', 'p', 'n'],
     \['Locate', 'f', 'n'], ['ToggleDebug', 'd', 'n']
@@ -450,7 +474,7 @@ function! coqtail#Register(version, supported)
     let b:coqtail_log_name = ''
 
     if a:supported
-      call s:cleanup()
+      call s:initCommands()
     endif
 
     call s:mappings()
