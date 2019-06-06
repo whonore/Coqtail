@@ -66,6 +66,7 @@ endfunction
 " Create buffers for the goals and info panels.
 function! coqtail#InitPanels()
   let l:coq_buf = bufnr('%')
+  let l:curpos = getcurpos()[2]
 
   " Add panels
   let l:goal_buf = s:initPanel('Goals', l:coq_buf)
@@ -73,6 +74,7 @@ function! coqtail#InitPanels()
 
   " Switch back to main panel
   execute 'hide edit #' . l:coq_buf
+  call cursor('.', l:curpos)
   let b:coqtail_panel_bufs = {'goal': l:goal_buf, 'info': l:info_buf}
 
   Py Coqtail().splash(vim.eval('b:coqtail_version'))
