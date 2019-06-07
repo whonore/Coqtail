@@ -26,6 +26,24 @@
 " Modified By: Wolf Honore
 " TODO: mark bad constructions (eg. Section ended but not opened)
 
+function! s:CoqtailHighlight()
+  " Use user-defined colors if they exist
+  if exists('*g:CoqtailHighlight')
+    call g:CoqtailHighlight()
+  elseif &t_Co > 16
+    hi def CoqtailChecked ctermbg=17 guibg=LightGreen
+    hi def CoqtailSent ctermbg=60 guibg=LimeGreen
+  else
+    hi def CoqtailChecked ctermbg=4 guibg=LightGreen
+    hi def CoqtailSent ctermbg=7 guibg=LimeGreen
+  endif
+endfunction
+
+call s:CoqtailHighlight()
+" N.B. Setting a colorscheme usually calls 'syntax reset' so have to set
+" Coqtail highlighting colors again
+autocmd ColorScheme * call s:CoqtailHighlight()
+
 " Only load this syntax file when user didn't opt out
 if exists('g:coqtail_nosyntax') && g:coqtail_nosyntax
   finish
@@ -415,23 +433,5 @@ if version >= 508 || !exists("did_coq_syntax_inits")
 
   delcommand HiLink
 endif
-
-function! s:CoqtailHighlight()
-  " Use user-defined colors if they exist
-  if exists('*g:CoqtailHighlight')
-    call g:CoqtailHighlight()
-  elseif &t_Co > 16
-    hi def CoqtailChecked ctermbg=17 guibg=LightGreen
-    hi def CoqtailSent ctermbg=60 guibg=LimeGreen
-  else
-    hi def CoqtailChecked ctermbg=4 guibg=LightGreen
-    hi def CoqtailSent ctermbg=7 guibg=LimeGreen
-  endif
-endfunction
-
-call s:CoqtailHighlight()
-" N.B. Setting a colorscheme usually calls 'syntax reset' so have to set
-" Coqtail highlighting colors again
-autocmd ColorScheme * call s:CoqtailHighlight()
 
 let b:current_syntax = "coq"
