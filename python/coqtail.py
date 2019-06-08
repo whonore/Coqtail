@@ -141,7 +141,7 @@ class Coqtail(object):
         self.log = ""
 
     def step(self, steps=1):
-        # type: () -> None
+        # type: (int) -> None
         """Advance Coq by 'steps' sentences."""
         self.sync()
 
