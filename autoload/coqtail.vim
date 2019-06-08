@@ -418,25 +418,25 @@ endfunction
 
 " Define <Plug> and default mappings for Coqtail commands.
 function! s:mappings()
-  nnoremap <silent> <Plug>CoqStart :CoqStart<CR>
-  nnoremap <silent> <Plug>CoqStop :CoqStop<CR>
-  nnoremap <silent> <Plug>CoqNext :<C-U>execute v:count1 'CoqNext'<CR>
-  nnoremap <silent> <Plug>CoqUndo :<C-U>execute v:count1 'CoqUndo'<CR>
-  nnoremap <silent> <Plug>CoqToLine :<C-U>execute v:count 'CoqToLine'<CR>
-  nnoremap <silent> <Plug>CoqToTop :CoqToTop<CR>
-  nnoremap <silent> <Plug>CoqJumpToEnd :CoqJumpToEnd<CR>
-  inoremap <silent> <Plug>CoqNext <C-\><C-o>:CoqNext<CR>
-  inoremap <silent> <Plug>CoqUndo <C-\><C-o>:CoqUndo<CR>
-  inoremap <silent> <Plug>CoqToLine <C-\><C-o>:CoqToLine<CR>
-  inoremap <silent> <Plug>CoqToTop <C-\><C-o>:CoqToTop<CR>
-  inoremap <silent> <Plug>CoqJumpToEnd <C-\><C-o>:CoqJumpToEnd<CR>
-  nnoremap <silent> <Plug>CoqGotoDef :CoqGotoDef <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <silent> <Plug>CoqSearch :Coq SearchAbout <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <silent> <Plug>CoqCheck :Coq Check <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <silent> <Plug>CoqAbout :Coq About <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <silent> <Plug>CoqPrint :Coq Print <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <silent> <Plug>CoqLocate :Coq Locate <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <silent> <Plug>CoqToggleDebug :CoqToggleDebug<CR>
+  nnoremap <buffer> <silent> <Plug>CoqStart :CoqStart<CR>
+  nnoremap <buffer> <silent> <Plug>CoqStop :CoqStop<CR>
+  nnoremap <buffer> <silent> <Plug>CoqNext :<C-U>execute v:count1 'CoqNext'<CR>
+  nnoremap <buffer> <silent> <Plug>CoqUndo :<C-U>execute v:count1 'CoqUndo'<CR>
+  nnoremap <buffer> <silent> <Plug>CoqToLine :<C-U>execute v:count 'CoqToLine'<CR>
+  nnoremap <buffer> <silent> <Plug>CoqToTop :CoqToTop<CR>
+  nnoremap <buffer> <silent> <Plug>CoqJumpToEnd :CoqJumpToEnd<CR>
+  inoremap <buffer> <silent> <Plug>CoqNext <C-\><C-o>:CoqNext<CR>
+  inoremap <buffer> <silent> <Plug>CoqUndo <C-\><C-o>:CoqUndo<CR>
+  inoremap <buffer> <silent> <Plug>CoqToLine <C-\><C-o>:CoqToLine<CR>
+  inoremap <buffer> <silent> <Plug>CoqToTop <C-\><C-o>:CoqToTop<CR>
+  inoremap <buffer> <silent> <Plug>CoqJumpToEnd <C-\><C-o>:CoqJumpToEnd<CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoDef :CoqGotoDef <C-r>=expand(<SID>getCurWord())<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqSearch :Coq SearchAbout <C-r>=expand(<SID>getCurWord())<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqCheck :Coq Check <C-r>=expand(<SID>getCurWord())<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqAbout :Coq About <C-r>=expand(<SID>getCurWord())<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqPrint :Coq Print <C-r>=expand(<SID>getCurWord())<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqLocate :Coq Locate <C-r>=expand(<SID>getCurWord())<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqToggleDebug :CoqToggleDebug<CR>
 
   " Use default mappings unless user opted out
   if exists('g:coqtail_nomap') && g:coqtail_nomap
@@ -454,7 +454,7 @@ function! s:mappings()
   for [l:cmd, l:key, l:types] in l:maps
     for l:type in split(l:types, '\zs')
       if !hasmapto('<Plug>Coq' . l:cmd, l:type)
-        execute l:type . 'map <leader>c' . l:key . ' <Plug>Coq' . l:cmd
+        execute l:type . 'map <buffer> <leader>c' . l:key . ' <Plug>Coq' . l:cmd
       endif
     endfor
   endfor
