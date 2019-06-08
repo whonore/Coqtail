@@ -1108,6 +1108,13 @@ class XMLInterface86(XMLInterface85):
         """Update conversion maps with new types."""
         super(XMLInterface86, self).__init__(versions)
 
+        self.launch_args += [
+            "-async-proofs-command-error-resilience",
+            "off",
+            "-async-proofs-tactic-error-resilience",
+            "off",
+        ]
+
         self._to_py_funcs.update({"richpp": self._to_string})
 
     # XML Parsing and Marshalling #
