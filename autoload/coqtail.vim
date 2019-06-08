@@ -308,38 +308,58 @@ function! s:queryComplete(arg, cmd, cursor)
   endif
 endfunction
 
+" Define Coqtail commands with the correct options.
+let s:cmd_opts = {
+  \'CoqStart': '-nargs=* -complete=file',
+  \'CoqStop': '',
+  \'CoqNext': '-count=1',
+  \'CoqUndo': '-count=1',
+  \'CoqToLine': '-count=0',
+  \'CoqToTop': '',
+  \'CoqJumpToEnd': '',
+  \'CoqGotoDef': '-bang -nargs=1',
+  \'Coq': '-nargs=+ -complete=custom,s:queryComplete',
+  \'CoqMakeMatch': '-nargs=1',
+  \'CoqToggleDebug': ''
+\}
+function! s:cmdDef(name, act)
+  execute printf('command! -buffer -bar %s %s %s', s:cmd_opts[a:name], a:name, a:act)
+endfunction
+
 " Define CoqStart and define all other commands to first call it.
-function! s:initCommands()
-  command! -buffer -bar -nargs=* -complete=file CoqStart
-  \                                       call coqtail#Start(<f-args>)
-  command! -buffer -count=1 CoqNext       CoqStart | <count>CoqNext
-  command! -buffer -count=1 CoqUndo       CoqStart | <count>CoqUndo
-  command! -buffer -count=0 CoqToLine     CoqStart | <count>CoqToLine
-  command! -buffer CoqToTop               CoqStart | CoqToTop
-  command! -buffer CoqJumpToEnd           CoqStart | CoqJumpToEnd
-  command! -buffer -bang -nargs=1 CoqGotoDef
-  \                                       CoqStart | <bang>CoqGotoDef <args>
-  command! -buffer -nargs=+ -complete=custom,s:queryComplete Coq
-  \                                       CoqStart | Coq <args>
-  command! -buffer -nargs=1 CoqMakeMatch  CoqStart | CoqMakeMatch <args>
-  command! -buffer CoqToggleDebug         CoqStart | CoqToggleDebug
+function! s:initCommands(supported)
+  if a:supported
+    call s:cmdDef('CoqStart', 'call coqtail#Start(<f-args>)')
+    call s:cmdDef('CoqStop', '')
+    call s:cmdDef('CoqNext', 'CoqStart | <count>CoqNext')
+    call s:cmdDef('CoqUndo', 'CoqStart | <count>CoqUndo')
+    call s:cmdDef('CoqToLine', 'CoqStart | <count>CoqToLine')
+    call s:cmdDef('CoqToTop', 'CoqStart | CoqToTop')
+    call s:cmdDef('CoqJumpToEnd', 'CoqStart | CoqJumpToEnd')
+    call s:cmdDef('CoqGotoDef', 'CoqStart | <bang>CoqGotoDef <args>')
+    call s:cmdDef('Coq', 'CoqStart | Coq <args>')
+    call s:cmdDef('CoqMakeMatch', 'CoqStart | CoqMakeMatch <args>')
+    call s:cmdDef('CoqToggleDebug', 'CoqStart | CoqToggleDebug')
+  else
+    for l:cmd in keys(s:cmd_opts)
+      call s:cmdDef(l:cmd, 'echoerr "Coqtail does not support Coq version " . b:coqtail_version')
+    endfor
+  endif
 endfunction
 
 " Initialize commands, panels, and autocommands.
 function! s:prepare()
   " Commands
-  command! -buffer CoqStop                call coqtail#Stop()
-  command! -buffer -count=1 CoqNext       Py Coqtail().step(<count>)
-  command! -buffer -count=1 CoqUndo       Py Coqtail().rewind(<count>)
-  command! -buffer -count=0 CoqToLine     Py Coqtail().to_line(<count>)
-  command! -buffer CoqToTop               Py Coqtail().to_top()
-  command! -buffer CoqJumpToEnd           Py Coqtail().jump_to_end()
-  command! -buffer -bang -nargs=1 CoqGotoDef
-  \                                       call coqtail#GotoDef(<f-args>, <bang>0)
-  command! -buffer -nargs=+ -complete=custom,s:queryComplete Coq
-  \                                       Py Coqtail().query(<f-args>)
-  command! -buffer -nargs=1 CoqMakeMatch  Py Coqtail().make_match(<f-args>)
-  command! -buffer CoqToggleDebug         Py Coqtail().toggle_debug()
+  call s:cmdDef('CoqStop', 'call coqtail#Stop()')
+  call s:cmdDef('CoqNext', 'Py Coqtail().step(<count>)')
+  call s:cmdDef('CoqUndo', 'Py Coqtail().rewind(<count>)')
+  call s:cmdDef('CoqToLine', 'Py Coqtail().to_line(<count>)')
+  call s:cmdDef('CoqToTop', 'Py Coqtail().to_top()')
+  call s:cmdDef('CoqJumpToEnd', 'Py Coqtail().jump_to_end()')
+  call s:cmdDef('CoqGotoDef', 'call coqtail#GotoDef(<f-args>, <bang>0)')
+  call s:cmdDef('Coq', 'Py Coqtail().query(<f-args>)')
+  call s:cmdDef('CoqMakeMatch', 'Py Coqtail().make_match(<f-args>)')
+  call s:cmdDef('CoqToggleDebug', 'Py Coqtail().toggle_debug()')
 
   " Initialize goals and info panels
   call coqtail#InitPanels()
@@ -374,7 +394,7 @@ function! s:cleanup()
   catch
   endtry
 
-  call s:initCommands()
+  call s:initCommands(1)
 endfunction
 
 " Initialize Python interface, commands, autocmds, and goals and info panels.
@@ -460,7 +480,7 @@ function! s:mappings()
   endfor
 endfunction
 
-" Initialize buffer local variables and the 'CoqStart' command.
+" Initialize buffer local variables, commands, and mappings.
 function! coqtail#Register(version, supported)
   " Initialize once
   if !exists('b:coqtail_running')
@@ -473,10 +493,7 @@ function! coqtail#Register(version, supported)
     let b:coqtail_version = a:version
     let b:coqtail_log_name = ''
 
-    if a:supported
-      call s:initCommands()
-    endif
-
+    call s:initCommands(a:supported)
     call s:mappings()
   endif
 endfunction
