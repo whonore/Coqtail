@@ -555,12 +555,12 @@ class Coqtail(object):
     def restore_panel(self, buf, msg):
         # type: (Any, Text) -> None
         """Set the text in 'buf' to 'msg' while preserving the current window's view."""
-        # Switch to goal window and save the view
+        # Switch windows and save the view
         cur_win = vim.current.window
         vim.current.window = self.bufwin(buf)
         view = vim.eval("winsaveview()")
 
-        # Update goal buffer text
+        # Update buffer text
         vim.current.buffer[:] = msg.split("\n")
 
         # Restore the view and switch to original window
