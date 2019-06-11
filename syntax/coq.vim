@@ -37,6 +37,7 @@ function! s:CoqtailHighlight()
     hi def CoqtailChecked ctermbg=4 guibg=LightGreen
     hi def CoqtailSent ctermbg=7 guibg=LimeGreen
   endif
+  hi def link CoqtailError Error
 endfunction
 
 call s:CoqtailHighlight()
@@ -427,9 +428,6 @@ if version >= 508 || !exists("did_coq_syntax_inits")
 
   " Strings
   HiLink coqString                    String
-
-  " Coqtail
-  HiLink CoqtailError coqError
 
   delcommand HiLink
 endif
