@@ -45,13 +45,13 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
 " Skipping pattern, for comments
 " (stolen from indent/ocaml.vim, thanks to the authors)
 function s:GetLineWithoutFullComment(lnum)
-  let lnum = prevnonblank(a:lnum - 1)
-  let previousline = substitute(getline(lnum), '(\*.*\*)\s*$', '', '')
-  while previousline =~ '^\s*$' && lnum > 0
-    let lnum = prevnonblank(lnum - 1)
-    let previousline = substitute(getline(lnum), '(\*.*\*)\s*$', '', '')
+  let l:lnum = prevnonblank(a:lnum - 1)
+  let l:previousline = substitute(getline(l:lnum), '(\*.*\*)\s*$', '', '')
+  while l:previousline =~ '^\s*$' && l:lnum > 0
+    let l:lnum = prevnonblank(l:lnum - 1)
+    let l:previousline = substitute(getline(l:lnum), '(\*.*\*)\s*$', '', '')
   endwhile
-  return lnum
+  return l:lnum
 endfunction
 
 let s:zflag = has('patch-7.4.984') ? 'z' : ''
@@ -76,7 +76,7 @@ endfunction
 
 " Indent pairs
 function s:indent_of_previous_pair(pstart, pmid, pend, searchFirst)
-  if searchFirst
+  if a:searchFirst
     call search(a:pend, 'bW')
   endif
   return indent(searchpair(a:pstart, a:pmid, a:pend, 'bWn', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"'))
@@ -85,98 +85,99 @@ endfunction
 " Main function
 function GetCoqIndent()
   " Find a non-commented currentline above the current currentline.
-  let lnum = s:GetLineWithoutFullComment(v:lnum)
+  let l:lnum = s:GetLineWithoutFullComment(v:lnum)
 
   " At the start of the file use zero indent.
-  if lnum == 0
+  if l:lnum == 0
     return 0
   endif
 
-  let ind = indent(lnum)
-  let previousline = substitute(getline(lnum), '(\*.*\*)\s*$', '', '')
-
-  let currentline = getline(v:lnum)
+  let l:ind = indent(l:lnum)
+  let l:previousline = substitute(getline(l:lnum), '(\*.*\*)\s*$', '', '')
+  let l:currentline = getline(v:lnum)
 
   " current line begins with '.':
-  if currentline =~ '^\s*\.'
+  if l:currentline =~ '^\s*\.'
     return s:indent_of_previous(s:vernac)
 
   " current line begins with 'end':
-  elseif currentline =~ '\C^\s*end\>'
-    return s:indent_of_previous_pair('\<match\>', '', '\<end\>', 1)
+  elseif l:currentline =~ '\C^\s*end\>'
+    return s:indent_of_previous_pair('\<match\>', '', '\<end\>', 0)
 
   " current line begins with 'in':
-  elseif currentline =~ '^\s*\<in\>'
-    return s:indent_of_previous_pair('\<let\>', '', '\<in\>', 1)
+  elseif l:currentline =~ '^\s*\<in\>'
+    return s:indent_of_previous_pair('\<let\>', '', '\<in\>', 0)
 
   " current line begins with '|':
-  elseif currentline =~ '^\s*|}\@!'
-    if previousline =~ '^\s*Inductive'
-      return ind + &sw
-    elseif previousline =~ '^\s*match'
-      return ind
-    elseif previousline =~ '^\s*end\>'
+  elseif l:currentline =~ '^\s*|}\@!'
+    if l:previousline =~ '^\s*Inductive'
+      return l:ind + &sw
+    elseif l:previousline =~ '^\s*match'
+      return l:ind
+    elseif l:previousline =~ '^\s*end\>'
       return s:indent_of_previous_pair('\<match\>', '', '\<end\>', 0)
     else
       return s:indent_of_previous('^\s*|}\@!')
     endif
 
   " current line begins with terminating '|}'
-  elseif currentline =~ '^\s*|}'
-    return s:indent_of_previous_pair('{|', '', '|}', 1)
+  elseif l:currentline =~ '^\s*|}'
+    return s:indent_of_previous_pair('{|', '', '|}', 0)
+
+  " ending } or )
+  elseif l:currentline =~ '^\s*}'
+    return s:indent_of_previous_pair('{', '', '}', 0)
+  elseif l:currentline =~ '^\s*)'
+    return s:indent_of_previous_pair('(', '', ')', 0)
 
   " end of proof
-  elseif currentline =~ '^\s*}'
-    return s:indent_of_previous_pair('{', '', '}', 1)
-  elseif currentline =~ '^\s*)'
-    return s:indent_of_previous_pair('(', '', ')', 1)
-  elseif currentline =~ '\<\%(Qed\|Defined\|Abort\|Admitted\)\>'
+  elseif l:currentline =~ '\<\%(Qed\|Defined\|Abort\|Admitted\)\>'
     let s:inside_proof = 0
     return s:indent_of_previous(s:vernac.'\&\%(\<\%(Qed\|Defined\|Abort\|Admitted\)\>\)\@!')
 
   " start of proof
-  elseif previousline =~ s:proofstart
+  elseif l:previousline =~ s:proofstart
     let s:inside_proof = 1
-    return ind + &sw
+    return l:ind + &sw
 
   " bullet in proof
-  elseif currentline =~ '^\s*[-+*]' || previousline =~ '^\s*[-+*]'
-    let proof_start = search(s:proofstart, 'bWn')
+  elseif l:currentline =~ '^\s*[-+*]' || l:previousline =~ '^\s*[-+*]'
+    let l:proof_start = search(s:proofstart, 'bWn')
 
-    if proof_start != 0
+    if l:proof_start != 0
       " In proof
 
-      if currentline =~ '^\s*[-+*]'
+      if l:currentline =~ '^\s*[-+*]'
         " Bullet in a '{' section
-        if previousline =~ '^\s*{'
-          return ind + &sw
+        if l:previousline =~ '^\s*{'
+          return l:ind + &sw
         endif
 
-        let bullet = matchstr(currentline, '[-+*]\+')
+        let l:bullet = matchstr(l:currentline, '[-+*]\+')
 
         while 1
           " Find previous bullet of the same length
-          let prev_bullet = search('\M^\s\*' . bullet . bullet[0] . '\@!', 'bW', proof_start)
+          let l:prev_bullet = search('\M^\s\*' . l:bullet . l:bullet[0] . '\@!', 'bW', l:proof_start)
 
           " If no previous ones to match, fall through and indent using another rule
-          if prev_bullet != 0
+          if l:prev_bullet != 0
             " Check for intervening unclosed '{' or '}'
-            let brack_open = search('{', 'W', v:lnum)
+            let l:brack_open = search('{', 'W', v:lnum)
 
-            if brack_open == 0 || searchpair('{', '', '}', 'Wn', '', v:lnum) > 0
+            if l:brack_open == 0 || searchpair('{', '', '}', 'Wn', '', v:lnum) > 0
               " No '{' or it is matched
               call cursor(v:lnum, 1)
-              let brack_close = search('}', 'bW', prev_bullet)
+              let l:brack_close = search('}', 'bW', l:prev_bullet)
 
-              if brack_close == 0 || searchpair('{', '', '}', 'bWn', '', prev_bullet) > 0
+              if l:brack_close == 0 || searchpair('{', '', '}', 'bWn', '', l:prev_bullet) > 0
                 " No '}'
-                return indent(prev_bullet)
+                return indent(l:prev_bullet)
               endif
               " else '}', but no matching '{', look for another bullet
             endif
 
             " Restore position
-            call cursor(prev_bullet, 1)
+            call cursor(l:prev_bullet, 1)
           else
             break
           endif
@@ -184,57 +185,57 @@ function GetCoqIndent()
       endif
 
       " after a bullet in proof
-      if previousline =~ '^\s*[-+*]'
-        let bullet = matchstr(previousline, '[-+*]\+')
+      if l:previousline =~ '^\s*[-+*]'
+        let l:bullet = matchstr(l:previousline, '[-+*]\+')
 
-        return ind + len(bullet) + 1
+        return l:ind + len(l:bullet) + 1
       endif
     endif
 
-    return ind
+    return l:ind
 
   " previous line begins with 'Section/Module':
-  elseif previousline =~ '^\s*\%(Section\|Module\)\>'
+  elseif l:previousline =~ '^\s*\%(Section\|Module\)\>'
     " don't indent if Section/Module is empty or is defined on one line
-    if currentline !~ '^\s*End\>' && previousline !~ ':=.*\.\s*$' && previousline !~ '\<End\>'
-      return ind + &sw
+    if l:currentline !~ '^\s*End\>' && l:previousline !~ ':=.*\.\s*$' && l:previousline !~ '\<End\>'
+      return l:ind + &sw
     endif
 
   " current line begins with 'End':
-  elseif currentline =~ '^\s*End\>'
-    return ind - &sw
+  elseif l:currentline =~ '^\s*End\>'
+    return l:ind - &sw
 
   " previous line has the form '|...'
-  elseif previousline =~ '{\@1<!|\%([^}]\%(\.\|end\)\@!\)*$'
-    return ind + &sw + &sw
+  elseif l:previousline =~ '{\@1<!|\%([^}]\%(\.\|end\)\@!\)*$'
+    return l:ind + &sw + &sw
 
   " previous line has '{|' or '{' with no matching '|}' or '}'
-  elseif previousline =~ '{|\?[^}]*$'
-    return ind + &sw
+  elseif l:previousline =~ '{|\?[^}]*$'
+    return l:ind + &sw
 
   " unterminated vernacular sentences
-  elseif previousline =~ s:vernac.'.*[^.]$' && previousline !~ '^\s*$'
-    return ind + &sw
+  elseif l:previousline =~ s:vernac.'.*[^.]$' && l:previousline !~ '^\s*$'
+    return l:ind + &sw
 
   " back to normal indent after lines ending with '.'
-  elseif previousline =~ '\.$'
+  elseif l:previousline =~ '\.$'
     if synIDattr(synID(line('.') - 1, col('.'), 0), "name") =~? '\cproof\|tactic'
-      return ind
+      return l:ind
     else
       return s:indent_of_previous(s:vernac)
     endif
 
   " previous line ends with 'with'
-  elseif previousline =~ '\<with$'
-    return ind + &sw
+  elseif l:previousline =~ '\<with$'
+    return l:ind + &sw
 
   " unterminated 'let ... in'
-  elseif previousline =~ '\<let\>\%(.\%(\<in\>\)\@!\)*$'
-    return ind + &sw
+  elseif l:previousline =~ '\<let\>\%(.\%(\<in\>\)\@!\)*$'
+    return l:ind + &sw
 
   " else
   else
-    return ind
+    return l:ind
   endif
 endfunction
 
