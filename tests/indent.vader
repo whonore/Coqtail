@@ -349,7 +349,11 @@ Given coq (record-constructor-nested):
   Definition d : r :=
   {|
   f1 := {| f1 := con1; f2 := con2 |};
-  f2 := con3
+  f2 := con3;
+  f3 := {|
+  f1 := con1;
+  f2 := con2
+  |}
   |}.
 
 Do (indent-record-constructor-nested):
@@ -359,7 +363,11 @@ Expect coq (indented-record-constructor-nested):
   Definition d : r :=
     {|
       f1 := {| f1 := con1; f2 := con2 |};
-      f2 := con3
+      f2 := con3;
+      f3 := {|
+        f1 := con1;
+        f2 := con2
+      |}
     |}.
 
 " TODO
@@ -556,3 +564,124 @@ Expect coq (indented-bullet-different-order):
         * auto.
     + auto.
   Qed.
+
+Given coq (bracket-close-end-of-line):
+  Goal True /\ True.
+  Proof.
+  split.
+  { idtac.
+  auto. }
+  auto.
+  Qed.
+
+Do (indent-bracket-close-end-of-line):
+  vip=
+
+Expect coq (indented-bracket-close-end-of-line):
+  Goal True /\ True.
+  Proof.
+    split.
+    { idtac.
+      auto. }
+    auto.
+  Qed.
+
+Given coq (bracket-close-end-of-line-nested):
+  Goal (True /\ True) /\ True.
+  Proof.
+  split.
+  { split.
+  { auto. }
+  { auto. } }
+  auto.
+  Qed.
+
+Do (indent-bracket-close-end-of-line-nested):
+  vip=
+
+Expect coq (indented-bracket-close-end-of-line-nested):
+  Goal (True /\ True) /\ True.
+  Proof.
+    split.
+    { split.
+      { auto. }
+      { auto. } }
+    auto.
+  Qed.
+
+Given coq (bullets-bracket-close-end-of-line-nested):
+  Goal (True /\ (True /\ True)) /\ True.
+  Proof.
+  split.
+  - split.
+  {
+  auto. }
+  { split.
+  { auto. }
+  { auto. } }
+  - auto.
+  Qed.
+
+Do (indent-bullets-bracket-close-end-of-line-nested):
+  vip=
+
+Expect coq (indented-bullets-bracket-close-end-of-line-nested):
+  Goal (True /\ (True /\ True)) /\ True.
+  Proof.
+    split.
+    - split.
+      {
+        auto. }
+      { split.
+        { auto. }
+        { auto. } }
+    - auto.
+  Qed.
+
+Given coq (empty-line-in-proof):
+  Goal True.
+  Proof.
+
+  idtac.
+
+  idtac;               idtac.
+
+             auto.
+
+  Qed.
+
+Do (indent-empty-line-in-proof):
+  gg
+  vG=
+
+Expect coq (indented-empty-line-in-proof):
+  Goal True.
+  Proof.
+
+    idtac.
+
+    idtac;               idtac.
+
+    auto.
+
+  Qed.
+
+Given coq (empty-line-between-definitions):
+  Definition x :=
+  match tt with
+  | tt => tt
+  end.
+
+  Definition y := tt.
+
+Do (indent-empty-line-between-definitions):
+  gg
+  vG=
+
+Expect coq (indented-line-between-definitions):
+  Definition x :=
+    match tt with
+    | tt => tt
+    end.
+
+  Definition y := tt.

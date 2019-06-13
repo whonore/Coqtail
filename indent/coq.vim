@@ -35,8 +35,6 @@ if exists('*GetCoqIndent')
   finish
 endif
 
-let s:inside_proof = 0
-
 " Some useful patterns
 let s:vernac = '\C\<\%(Abort\|About\|Add\|Admitted\|Arguments\|Axiom\|Back\|Bind\|Canonical\|Cd\|Check\|Close\|Coercion\|CoFixpoint\|CoInductive\|Combined\|Conjecture\|Context\|Corollary\|Declare\|Defined\|Definition\|Delimit\|Derive\|Drop\|End\|Eval\|Example\|Existential\|Export\|Extract\|Extraction\|Fact\|Fixpoint\|Focus\|Function\|Functional\|Goal\|Hint\|Hypothes[ie]s\|Identity\|Implicit\|Import\|Inductive\|Infix\|Inspect\|Lemma\|Let\|Load\|Locate\|Ltac\|Module\|Mutual\|Notation\|Opaque\|Open\|Parameters\=\|Print\|Program\|Proof\|Proposition\|Pwd\|Qed\|Quit\|Record\|Recursive\|Remark\|Remove\|Require\|Reserved\|Reset\|Restart\|Restore\|Resume\|Save\|Scheme\|Search\%(About\|Pattern\|Rewrite\)\=\|Section\|Set\|Show\|Structure\|SubClass\|Suspend\|Tactic\|Test\|Theorem\|Time\|Transparent\|Undo\|Unfocus\|Unset\|Variables\?\|Whelp\|Write\)\>'
 let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\|clear\%(body\)\?\|cofix\|cbv\|compare\|compute\|congruence\|constructor\|contradiction\|cut\%(rewrite\)\?\|decide\|decompose\|dependent\|destruct\|discriminate\|do\|double\|eapply\|eassumption\|econstructor\|elim\%(type\)\?\|equality\|evar\|exact\|eexact\|exists\|f_equal\|fold\|functional\|generalize\|hnf\|idtac\|induction\|info\|injection\|instantiate\|intros\?\|intuition\|inversion\%(_clear\)\?\|lapply\|left\|move\|omega\|pattern\|pose\|proof\|quote\|red\|refine\|reflexivity\|rename\|repeat\|replace\|revert\|rewrite\|right\|ring\|set\|simple\?\|simplify_eqsplit\|split\|subst\|stepl\|stepr\|symmetry\|transitivity\|trivial\|try\|unfold\|vm_compute'
@@ -132,12 +130,10 @@ function GetCoqIndent()
 
   " end of proof
   elseif l:currentline =~ '\<\%(Qed\|Defined\|Abort\|Admitted\)\>'
-    let s:inside_proof = 0
     return s:indent_of_previous(s:vernac.'\&\%(\<\%(Qed\|Defined\|Abort\|Admitted\)\>\)\@!')
 
   " start of proof
   elseif l:previousline =~ s:proofstart
-    let s:inside_proof = 1
     return l:ind + &sw
 
   " bullet in proof
@@ -148,11 +144,6 @@ function GetCoqIndent()
       " In proof
 
       if l:currentline =~ '^\s*[-+*]'
-        " Bullet in a '{' section
-        if l:previousline =~ '^\s*{'
-          return l:ind + &sw
-        endif
-
         let l:bullet = matchstr(l:currentline, '[-+*]\+')
 
         while 1
@@ -194,6 +185,11 @@ function GetCoqIndent()
 
     return l:ind
 
+  " } at end of previous line
+  " N.B. must come after the bullet cases
+  elseif l:previousline =~ '}\s*$'
+    return s:indent_of_previous_pair('{', '', '}', 1)
+
   " previous line begins with 'Section/Module':
   elseif l:previousline =~ '^\s*\%(Section\|Module\)\>'
     " don't indent if Section/Module is empty or is defined on one line
@@ -219,7 +215,7 @@ function GetCoqIndent()
 
   " back to normal indent after lines ending with '.'
   elseif l:previousline =~ '\.$'
-    if synIDattr(synID(line('.') - 1, col('.'), 0), "name") =~? '\cproof\|tactic'
+    if synIDattr(synID(l:lnum, 1, 0), "name") =~? '\cproof\|tactic'
       return l:ind
     else
       return s:indent_of_previous(s:vernac)
