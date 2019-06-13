@@ -685,3 +685,17 @@ Expect coq (indented-line-between-definitions):
     end.
 
   Definition y := tt.
+
+Given coq (trailing-whitespace-vernac):
+  Require Import Init.
+  Require Import Nat.
+
+Do (indent-trailing-whitespace-vernac):
+  gg
+  A \<ESC>
+  vip=
+  gg$x
+
+Expect coq (indented-trailing-whitespace-vernac):
+  Require Import Init.
+  Require Import Nat.

@@ -38,7 +38,7 @@ endif
 " Some useful patterns
 let s:vernac = '\C\<\%(Abort\|About\|Add\|Admitted\|Arguments\|Axiom\|Back\|Bind\|Canonical\|Cd\|Check\|Close\|Coercion\|CoFixpoint\|CoInductive\|Combined\|Conjecture\|Context\|Corollary\|Declare\|Defined\|Definition\|Delimit\|Derive\|Drop\|End\|Eval\|Example\|Existential\|Export\|Extract\|Extraction\|Fact\|Fixpoint\|Focus\|Function\|Functional\|Goal\|Hint\|Hypothes[ie]s\|Identity\|Implicit\|Import\|Inductive\|Infix\|Inspect\|Lemma\|Let\|Load\|Locate\|Ltac\|Module\|Mutual\|Notation\|Opaque\|Open\|Parameters\=\|Print\|Program\|Proof\|Proposition\|Pwd\|Qed\|Quit\|Record\|Recursive\|Remark\|Remove\|Require\|Reserved\|Reset\|Restart\|Restore\|Resume\|Save\|Scheme\|Search\%(About\|Pattern\|Rewrite\)\=\|Section\|Set\|Show\|Structure\|SubClass\|Suspend\|Tactic\|Test\|Theorem\|Time\|Transparent\|Undo\|Unfocus\|Unset\|Variables\?\|Whelp\|Write\)\>'
 let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\|clear\%(body\)\?\|cofix\|cbv\|compare\|compute\|congruence\|constructor\|contradiction\|cut\%(rewrite\)\?\|decide\|decompose\|dependent\|destruct\|discriminate\|do\|double\|eapply\|eassumption\|econstructor\|elim\%(type\)\?\|equality\|evar\|exact\|eexact\|exists\|f_equal\|fold\|functional\|generalize\|hnf\|idtac\|induction\|info\|injection\|instantiate\|intros\?\|intuition\|inversion\%(_clear\)\?\|lapply\|left\|move\|omega\|pattern\|pose\|proof\|quote\|red\|refine\|reflexivity\|rename\|repeat\|replace\|revert\|rewrite\|right\|ring\|set\|simple\?\|simplify_eqsplit\|split\|subst\|stepl\|stepr\|symmetry\|transitivity\|trivial\|try\|unfold\|vm_compute'
-let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.]\+\)\?\)\.$'
+let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.]\+\)\?\)\.\s*$'
 
 " Skipping pattern, for comments
 " (stolen from indent/ocaml.vim, thanks to the authors)
@@ -206,15 +206,15 @@ function GetCoqIndent()
     return l:ind + &sw + &sw
 
   " previous line has '{|' or '{' with no matching '|}' or '}'
-  elseif l:previousline =~ '{|\?[^}]*$'
+  elseif l:previousline =~ '{|\?[^}]*\s*$'
     return l:ind + &sw
 
   " unterminated vernacular sentences
-  elseif l:previousline =~ s:vernac.'.*[^.]$' && l:previousline !~ '^\s*$'
+  elseif l:previousline =~ s:vernac . '.*[^.[:space:]]\s*$' && l:previousline !~ '^\s*$'
     return l:ind + &sw
 
   " back to normal indent after lines ending with '.'
-  elseif l:previousline =~ '\.$'
+  elseif l:previousline =~ '\.\s*$'
     if synIDattr(synID(l:lnum, 1, 0), "name") =~? '\cproof\|tactic'
       return l:ind
     else
@@ -222,7 +222,7 @@ function GetCoqIndent()
     endif
 
   " previous line ends with 'with'
-  elseif l:previousline =~ '\<with$'
+  elseif l:previousline =~ '\<with\s*$'
     return l:ind + &sw
 
   " unterminated 'let ... in'
