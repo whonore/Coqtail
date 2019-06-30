@@ -92,8 +92,8 @@ class Coqtail(object):
         self.endpoints = []  # type: List[Tuple[int, int]]
         self.send_queue = deque([])  # type: Deque[Mapping[str, Tuple[int, int]]]
         self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
-        self.info_msg = ""  # type: Text
-        self.goal_msg = "No goals."  # type: Text
+        self.info_msg = []  # type: List[Text]
+        self.goal_msg = []  # type: List[Text]
 
         self.reset_color()
 
@@ -218,9 +218,8 @@ class Coqtail(object):
     def query(self, *args):
         # type: (*Text) -> None
         """Forward Coq query to Coqtop interface."""
-        self.clear_info()
-        _, self.info_msg = self.do_query(" ".join(args))
-        self.show_info()
+        _, msg = self.do_query(" ".join(args))
+        self.show_info(msg)
 
     def jump_to_end(self):
         # type: () -> None
@@ -270,11 +269,9 @@ class Coqtail(object):
         """Send all sentences in 'send_queue' until an error is encountered."""
         assert self.coqtop is not None
 
-        msgs = []
-
+        first = True
         while self.send_queue:
             self.reset_color()
-            vim.command("redraw")
 
             to_send = self.send_queue.popleft()
             message = _between(to_send["start"], to_send["stop"])
@@ -291,7 +288,10 @@ class Coqtail(object):
                 fail(e)
                 return
 
-            msgs.append(msg)
+            if msg != "":
+                self.show_info(msg, first)
+                first = False
+
             if success:
                 line, col = to_send["stop"]
                 self.endpoints.append((line, col + 1))
@@ -309,9 +309,9 @@ class Coqtail(object):
                     eline, ecol = _pos_from_offset(col, message, loc_e)
                     self.error_at = ((line + sline, scol), (line + eline, ecol))
 
-        self.clear_info()
-        self.info_msg = "\n\n".join(msg for msg in msgs if msg != "")
-
+        # Clear info if no messages
+        if first:
+            self.show_info("")
         self.refresh()
 
     def rewind_to(self, line, col):
@@ -456,13 +456,18 @@ class Coqtail(object):
     def refresh(self):
         # type: () -> None
         """Refresh the goal and info panels."""
-        self.show_goal()
-        self.show_info()
+        goals, info = self.get_goals()
+        if info != "":
+            self.show_info(info, False)
+        if goals is not None:
+            self.show_goal(self.pp_goals(goals))
+        else:
+            self.show_goal("")
         self.reset_color()
 
-    def show_goal(self):
-        # type: () -> None
-        """Display the current goals."""
+    def get_goals(self):
+        # type: () -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
+        """Get the current goals."""
         assert self.coqtop is not None
 
         try:
@@ -471,89 +476,86 @@ class Coqtail(object):
             )
         except CT.CoqtopError as e:
             fail(e)
-            return
+            return None, str(e)
 
         if not success:
-            unexpected(success, "show_goal()")
-            return
+            unexpected(success, "get_goals()")
+            return None, ""
 
-        if msg != "":
-            self.info_msg = msg
+        return goals, msg
 
-        if goals is None:
-            self.goal_msg = "No goals."
+    def pp_goals(self, goals):
+        # type: (Tuple[List[Any], List[Any], List[Any], List[Any]]) -> Text
+        """Pretty print the goals."""
+        fg, bg, shelved, given_up = goals
+        bg_joined = [pre + post for pre, post in bg]
+
+        ngoals = len(fg)
+        nhidden = len(bg_joined[0]) if bg_joined != [] else 0
+        nshelved = len(shelved)
+        nadmit = len(given_up)
+
+        # Information about number of remaining goals
+        plural = "" if ngoals == 1 else "s"
+        goal_info = "{} subgoal{}".format(ngoals, plural)
+        hidden_info = (
+            "{} unfocused at this level".format(nhidden) if nhidden > 0 else ""
+        )
+        extra_info = " ".join(
+            s
+            for s in (
+                "{} shelved".format(nshelved) if nshelved > 0 else "",
+                "{} admitted".format(nadmit) if nadmit > 0 else "",
+            )
+            if s != ""
+        )
+        if hidden_info != "":
+            goal_info += " ({})".format(hidden_info)
+
+        msg = [goal_info]
+        if extra_info != "":
+            msg.append(extra_info + "\n")
         else:
-            fg, bg, shelved, given_up = goals
-            bg_joined = [pre + post for pre, post in bg]
+            msg[0] += "\n"
 
-            ngoals = len(fg)
-            nhidden = len(bg_joined[0]) if bg_joined != [] else 0
-            nshelved = len(shelved)
-            nadmit = len(given_up)
+        # When a subgoal is finished
+        if ngoals == 0:
+            next_goal = None
+            for bgs in bg_joined:
+                if bgs != []:
+                    next_goal = bgs[0]
+                    break
 
-            # Information about number of remaining goals
-            plural = "" if ngoals == 1 else "s"
-            goal_info = "{} subgoal{}".format(ngoals, plural)
-            hidden_info = (
-                "{} unfocused at this level".format(nhidden) if nhidden > 0 else ""
-            )
-            extra_info = " ".join(
-                s
-                for s in (
-                    "{} shelved".format(nshelved) if nshelved > 0 else "",
-                    "{} admitted".format(nadmit) if nadmit > 0 else "",
-                )
-                if s != ""
-            )
-            if hidden_info != "":
-                goal_info += " ({})".format(hidden_info)
+            if next_goal is not None:
+                bullet = self.next_bullet()
+                bullet_info = ""
+                if bullet is not None:
+                    if bullet == "}":
+                        bullet_info = "end this goal with '}'"
+                    else:
+                        bullet_info = "use bullet '{}'".format(bullet)
 
-            msg = [goal_info]
-            if extra_info != "":
-                msg.append(extra_info + "\n")
+                next_info = "\nNext goal"
+                if bullet_info != "":
+                    next_info += " ({})".format(bullet_info)
+                next_info += ":\n"
+
+                msg += [next_info, next_goal.ccl]
             else:
-                msg[0] += "\n"
+                msg.append("All goals completed.")
 
-            # When a subgoal is finished
-            if ngoals == 0:
-                next_goal = None
-                for bgs in bg_joined:
-                    if bgs != []:
-                        next_goal = bgs[0]
-                        break
+        for idx, goal in enumerate(fg):
+            if idx == 0:
+                # Print the environment only for the current goal
+                msg += goal.hyp
 
-                if next_goal is not None:
-                    bullet = self.next_bullet()
-                    bullet_info = ""
-                    if bullet is not None:
-                        if bullet == "}":
-                            bullet_info = "end this goal with '}'"
-                        else:
-                            bullet_info = "use bullet '{}'".format(bullet)
+            msg.append("\n{:=>25} ({} / {})\n".format("", idx + 1, ngoals))
+            msg.append(goal.ccl)
 
-                    next_info = "\nNext goal"
-                    if bullet_info != "":
-                        next_info += " ({})".format(bullet_info)
-                    next_info += ":\n"
-
-                    msg += [next_info, next_goal.ccl]
-                else:
-                    msg.append("All goals completed.")
-
-            for idx, goal in enumerate(fg):
-                if idx == 0:
-                    # Print the environment only for the current goal
-                    msg += goal.hyp
-
-                msg.append("\n{:=>25} ({} / {})\n".format("", idx + 1, ngoals))
-                msg.append(goal.ccl)
-
-            self.goal_msg = "\n".join(msg)
-
-        self.restore_goal()
+        return "\n".join(msg)
 
     def restore_panel(self, buf, msg):
-        # type: (Any, Text) -> None
+        # type: (Any, List[Text]) -> None
         """Set the text in 'buf' to 'msg' while preserving the current window's view."""
         # Switch windows and save the view
         cur_win = vim.current.window
@@ -561,28 +563,32 @@ class Coqtail(object):
         view = vim.eval("winsaveview()")
 
         # Update buffer text
-        vim.current.buffer[:] = msg.split("\n")
+        vim.current.buffer[:] = msg
 
         # Restore the view and switch to original window
         vim.command("call winrestview({})".format(view))
-        vim.command("call coqtail#ScrollPanel({})".format(vim.current.buffer.number))
+        vim.command("call coqtail#ScrollPanel()")
         vim.current.window = cur_win
 
-    def restore_goal(self):
-        # type: () -> None
-        """Restore the last-displayed goals."""
+    def show_goal(self, msg=None):
+        # type: (Optional[Text]) -> None
+        """Update the goal panel."""
+        if msg is not None:
+            self.goal_msg = msg.split("\n")
+        if self.goal_msg == [] or self.goal_msg == [""]:
+            self.goal_msg = ["No goals."]
         self.restore_panel(self.panel("goal"), self.goal_msg)
 
-    def show_info(self):
-        # type: () -> None
-        """Display the info_msg buffer in the info panel."""
+    def show_info(self, msg=None, reset=True):
+        # type: (Optional[Text], bool) -> None
+        """Update the info panel."""
+        if msg is not None:
+            info = msg.split("\n")
+            if reset:
+                self.info_msg = info
+            else:
+                self.info_msg += [u""] + info
         self.restore_panel(self.panel("info"), self.info_msg)
-
-    def clear_info(self):
-        # type: () -> None
-        """Clear the info panel."""
-        self.info_msg = ""
-        self.show_info()
 
     def reset_color(self):
         # type: () -> None
@@ -621,6 +627,8 @@ class Coqtail(object):
             )
             self.error_at = None
 
+        vim.command("redraw")
+
     def splash(self, version):
         # type: (Text) -> None
         """Display the logo in the info panel."""
@@ -653,7 +661,7 @@ class Coqtail(object):
 
         top_pad = [u""] * ((h // 2) - (len(msg) // 2 + 1))
 
-        self.info_msg = "\n".join(top_pad + msg)
+        self.info_msg = top_pad + msg
 
     def toggle_debug(self):
         # type: () -> None
@@ -662,13 +670,13 @@ class Coqtail(object):
 
         log = self.coqtop.toggle_debug()
         if log is None:
-            self.info_msg = "Debugging disabled."
+            msg = "Debugging disabled."
             self.log = ""
         else:
-            self.info_msg = "Debugging enabled. Log: {}.".format(log)
+            msg = "Debugging enabled. Log: {}.".format(log)
             self.log = log
 
-        self.show_info()
+        self.show_info(msg)
 
     # Vim Helpers #
     @property

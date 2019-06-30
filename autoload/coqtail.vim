@@ -102,7 +102,7 @@ function! coqtail#OpenPanels()
   execute l:coq_win . 'wincmd w'
 
   Py Coqtail().reset_color()
-  Py Coqtail().restore_goal()
+  Py Coqtail().show_goal()
   Py Coqtail().show_info()
 endfunction
 
@@ -151,7 +151,7 @@ function! coqtail#HidePanels()
 endfunction
 
 " Scroll a panel up so text doesn't go off the top of the screen.
-function! coqtail#ScrollPanel(bufnum)
+function! coqtail#ScrollPanel()
   " Check if scrolling is necessary
   let l:winh = winheight(0)
   let l:disph = line('w$') - line('w0') + 1

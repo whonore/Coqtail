@@ -261,7 +261,7 @@ class Coqtop(object):
             yield False, response.msg, response.loc
 
     def goals(self, timeout=None):
-        # type: (Optional[int]) -> Generator[Tuple[bool, Text, Any], bool, None]
+        # type: (Optional[int]) -> Generator[Tuple[bool, Text, Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]]], bool, None]
         """Get the current set of hypotheses and goals."""
         self.logger.debug("goals")
         call = self.call(self.xml.goal(), timeout=timeout)
@@ -272,7 +272,7 @@ class Coqtop(object):
         if isinstance(response, Ok):
             yield True, response.msg, response.val
         else:
-            yield False, "", []
+            yield False, "", None
 
     def mk_cases(self, ty, encoding="utf-8", timeout=None):
         # type: (Text, str, Optional[int]) -> Generator[Tuple[bool, Text], bool, None]
