@@ -21,7 +21,7 @@ import pytest
 # Mock vim modules
 sys.modules["vim"] = Mock()
 sys.modules["vimbufsync"] = Mock()
-from coqtail import _get_message_range, _strip_comments
+from coqtail import _get_message_range, _strip_comments, NoDotError, UnmatchedError
 
 # Test Values #
 tests = (
@@ -72,17 +72,17 @@ tests = (
     ("focus space before colon", ["1 :{"], (0, 3)),
     ("focus trailing command no spaces", ["2:{t."], (0, 2)),
     ("focus trailing command with spaces", ["2 : { t."], (0, 4)),
-    # Invalid tests,
-    ("no dot", ["A"], None),
-    ("dot2", ["A.."], None),
-    ("unclosed comment pre", ["(* ."], None),
-    ("unclosed comment", ["A (* ."], None),
-    ("unclosed comment post", ["A *) ."], None),
-    ("unclosed comment nest pre", ["(* (* A *) ."], None),
-    ("unclosed comment nest post", ["(* A *) *) ."], None),
-    ("unclosed string", ['A " .'], None),
-    ("only white", [" "], None),
-    ("empty", [""], None),
+    # Invalid tests
+    ("no dot", ["A"], (NoDotError, None)),
+    ("dot2", ["A.."], (NoDotError, None)),
+    ("unclosed comment pre", ["(* ."], (UnmatchedError, (0, 0))),
+    ("unclosed comment", ["A (* ."], (UnmatchedError, (0, 2))),
+    ("unclosed comment post", ["A *) ."], (UnmatchedError, (0, 2))),
+    ("unclosed comment nest pre", ["(* (* A *) ."], (UnmatchedError, (0, 0))),
+    ("unclosed comment nest post", ["(* A *) *) ."], (UnmatchedError, (0, 8))),
+    ("unclosed string", ['A " .'], (UnmatchedError, (0, 2))),
+    ("only white", [" "], (NoDotError, None)),
+    ("empty", [""], (NoDotError, None)),
 )
 
 # Default 'start' to (0, 0)
@@ -96,11 +96,14 @@ tests = (
 @pytest.mark.parametrize("_name, lines, start, stop", tests)
 def test_parse(_name, lines, start, stop):
     """'_get_message_range(lines)' should range from 'start' to 'stop'."""
-    if stop is not None:
-        mrange = {"start": start, "stop": stop}
+    if isinstance(stop[0], int):
+        assert _get_message_range(lines, start) == {"start": start, "stop": stop}
     else:
-        mrange = None
-    assert _get_message_range(lines, start) == mrange
+        ex, stop = stop
+        with pytest.raises(ex) as e:
+            _get_message_range(lines, start)
+        if stop is not None:
+            assert e.value.range[0] == stop
 
 
 com_tests = (

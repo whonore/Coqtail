@@ -54,6 +54,20 @@ def unexpected(response, where):
     )
 
 
+class UnmatchedError(Exception):
+    """An unmatched comment or string was found."""
+
+    def __init__(self, token, loc):
+        # type: (Text, Tuple[int, int]) -> None
+        super(UnmatchedError, self).__init__("Found unmatched {}.".format(token))
+        line, col = loc
+        self.range = (loc, (line, col + len(token)))
+
+
+class NoDotError(Exception):
+    """No more sentences were found."""
+
+
 class Coqtail(object):
     """Manage Coqtop interfaces and goal and info buffers for each Coq file."""
 
@@ -151,15 +165,25 @@ class Coqtail(object):
         # Get the location of the last '.'
         line, col = self.endpoints[-1] if self.endpoints != [] else (0, 0)
 
-        to_send = _get_message_range(vim.current.buffer, (line, col))
+        unmatched = None
         for _ in range(steps):
-            if to_send is None:
+            try:
+                to_send = _get_message_range(vim.current.buffer, (line, col))
+            except UnmatchedError as e:
+                unmatched = e
                 break
-            eline, ecol = to_send["stop"]
+            except NoDotError:
+                break
+            line, col = to_send["stop"]
+            col += 1
             self.send_queue.append(to_send)
-            to_send = _get_message_range(vim.current.buffer, (eline, ecol + 1))
 
-        self.send_until_fail()
+        failed_at = self.send_until_fail()
+        if unmatched is not None and failed_at is None:
+            # Only report unmatched if no other errors occured first
+            self.show_info(str(unmatched), False)
+            self.error_at = unmatched.range
+            self.refresh()
 
     def rewind(self, steps=1):
         # type: (int) -> None
@@ -192,23 +216,39 @@ class Coqtail(object):
             line, col = vim.current.window.cursor
         else:
             # Otherwise, use the last column in the line
-            col = len(vim.current.buffer[line - 1])
+            col = len(vim.current.buffer[line - 1]) - 1
         line -= 1
 
         # Get the location of the last '.'
-        sline, scol = self.endpoints[-1] if self.endpoints != [] else (0, 0)
+        eline, ecol = self.endpoints[-1] if self.endpoints != [] else (0, 0)
 
         # Check if should rewind or advance
-        if (line, col) < (sline, scol):
+        if (line, col) < (eline, ecol):
             self.rewind_to(line, col + 2)
         else:
-            to_send = _get_message_range(vim.current.buffer, (sline, scol))
-            while to_send is not None and to_send["stop"] <= (line, col):
+            unmatched = None
+            while True:
+                try:
+                    to_send = _get_message_range(vim.current.buffer, (eline, ecol))
+                except UnmatchedError as e:
+                    # Only report unmatched if it occurs after the desired position
+                    if e.range[0] <= (line, col):
+                        unmatched = e
+                    break
+                except NoDotError:
+                    break
+                if (line, col) < to_send["stop"]:
+                    break
                 eline, ecol = to_send["stop"]
+                ecol += 1
                 self.send_queue.append(to_send)
-                to_send = _get_message_range(vim.current.buffer, (eline, ecol + 1))
 
-            self.send_until_fail()
+            failed_at = self.send_until_fail()
+            if unmatched is not None and failed_at is None:
+                # Only report unmatched if no other errors occured first
+                self.show_info(str(unmatched), False)
+                self.error_at = unmatched.range
+                self.refresh()
 
     def to_top(self):
         # type: () -> None
@@ -265,11 +305,12 @@ class Coqtail(object):
 
     # Helpers #
     def send_until_fail(self):
-        # type: () -> None
+        # type: () -> Optional[Tuple[int, int]]
         """Send all sentences in 'send_queue' until an error is encountered."""
         assert self.coqtop is not None
 
-        first = True
+        failed_at = None
+        no_msgs = True
         while self.send_queue:
             self.reset_color()
 
@@ -286,17 +327,18 @@ class Coqtail(object):
                 )
             except CT.CoqtopError as e:
                 fail(e)
-                return
+                return None
 
             if msg != "":
-                self.show_info(msg, first)
-                first = False
+                self.show_info(msg, no_msgs)
+                no_msgs = False
 
             if success:
                 line, col = to_send["stop"]
                 self.endpoints.append((line, col + 1))
             else:
                 self.send_queue.clear()
+                failed_at = to_send["start"]
 
                 # Highlight error location
                 loc_s, loc_e = err_loc
@@ -310,9 +352,10 @@ class Coqtail(object):
                     self.error_at = ((line + sline, scol), (line + eline, ecol))
 
         # Clear info if no messages
-        if first:
+        if no_msgs:
             self.show_info("")
         self.refresh()
+        return failed_at
 
     def rewind_to(self, line, col):
         # type: (int, int) -> None
@@ -584,7 +627,7 @@ class Coqtail(object):
         """Update the info panel."""
         if msg is not None:
             info = msg.split("\n")
-            if reset:
+            if reset or self.info_msg == [] or self.info_msg == [""]:
                 self.info_msg = info
             else:
                 self.info_msg += [u""] + info
@@ -864,17 +907,14 @@ def _between(start, end):
 
 
 def _get_message_range(lines, after):
-    # type: (Sequence[str], Tuple[int, int]) -> Optional[Mapping[str, Tuple[int, int]]]
+    # type: (Sequence[str], Tuple[int, int]) -> Mapping[str, Tuple[int, int]]
     """Return the next sentence to send after a given point."""
     end_pos = _find_next_sentence(lines, *after)
-
-    if end_pos is not None:
-        return {"start": after, "stop": end_pos}
-    return None
+    return {"start": after, "stop": end_pos}
 
 
 def _find_next_sentence(lines, sline, scol):
-    # type: (Sequence[str], int, int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[str], int, int) -> Tuple[int, int]
     """Find the next sentence to send to Coq."""
     bullets = ("{", "}", "-", "+", "*")
 
@@ -889,18 +929,18 @@ def _find_next_sentence(lines, sline, scol):
 
             col = 0
         else:  # break not reached, nothing left in the buffer but whitespace
-            return None
+            raise NoDotError()
 
         # Skip leading comments
         if first_line.startswith("(*"):
             com_end = _skip_comment(lines, line, col + 2)
             if com_end is None:
-                return None
+                raise UnmatchedError("(*", (line, col))
 
             sline, col = com_end
         elif first_line.startswith("*)"):
             # Unmatched end-comment
-            return None
+            raise UnmatchedError("*)", (line, col))
         else:
             break
 
@@ -945,7 +985,7 @@ def _find_next_sentence(lines, sline, scol):
 
 
 def _find_dot_after(lines, sline, scol):
-    # type: (Sequence[str], int, int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[str], int, int) -> Tuple[int, int]
     """Find the next '.' after a given point."""
     max_line = len(lines)
 
@@ -953,14 +993,14 @@ def _find_dot_after(lines, sline, scol):
         line = lines[sline][scol:]
         dot_pos = line.find(".")
         com_pos = line.find("(*")
-        com_end_post = line.find("*)")
+        com_end_pos = line.find("*)")
         str_pos = line.find('"')
 
-        if com_pos == -1 and com_end_post != -1:
+        if com_pos == -1 and com_end_pos != -1:
             # Unmatched end-comment
-            return None
+            raise UnmatchedError("*)", (sline, scol + com_end_pos))
 
-        if com_pos == -1 and dot_pos == -1 and str_pos == -1:
+        if dot_pos == -1 and com_pos == -1 and str_pos == -1:
             # Nothing on this line
             sline += 1
             scol = 0
@@ -969,14 +1009,14 @@ def _find_dot_after(lines, sline, scol):
                 # We see a comment opening before the next '.'
                 com_end = _skip_comment(lines, sline, scol + com_pos + 2)
                 if com_end is None:
-                    return None
+                    raise UnmatchedError("(*", (sline, scol + com_pos))
 
                 sline, scol = com_end
             else:
                 # We see a string starting before the next '.'
                 str_end = _skip_str(lines, sline, scol + str_pos + 1)
                 if str_end is None:
-                    return None
+                    raise UnmatchedError('"', (sline, scol + str_pos))
 
                 sline, scol = str_end
         elif line[dot_pos : dot_pos + 2] in (".", ". "):
@@ -991,7 +1031,7 @@ def _find_dot_after(lines, sline, scol):
         else:
             scol += dot_pos + 1
 
-    return None
+    raise NoDotError()
 
 
 def _skip_str(lines, sline, scol):
