@@ -889,7 +889,7 @@ class XMLInterface85(XMLInterfaceBase):
     def _to_state_id(self, xml):
         # type: (ET.Element) -> StateId
         """Expect: <state_id val="int" />"""
-        return self.StateId(int(xml.get("val")))
+        return self.StateId(int(xml.get("val", 0)))
 
     def _of_state_id(self, val):
         # type: (StateId) -> ET.Element
@@ -1161,7 +1161,7 @@ class XMLInterface87(XMLInterface86):
     def _to_route_id(self, xml):
         # type: (ET.Element) -> RouteId
         """Expect: <route_id val="int" />"""
-        return self.RouteId(int(xml.get("val")))
+        return self.RouteId(int(xml.get("val", 0)))
 
     def _of_route_id(self, val):
         # type: (RouteId) -> ET.Element

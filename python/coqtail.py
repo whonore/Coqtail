@@ -786,7 +786,7 @@ class Coqtail(object):
 
     def wait_coqtop(self):
         # type: () -> bool
-        """Wait for b:coqtail_coqtop_done to be set and report whether it was interrupted."""
+        """Wait for b:coqtail_coqtop_done to be set and report if it was interrupted."""
         assert self.coqtop is not None
 
         stopped = False
