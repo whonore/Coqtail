@@ -8,10 +8,16 @@ endif
 let g:coqtail_sourced = 1
 
 " Check python version
-if has('python')
-  command! -nargs=1 Py py <args>
-elseif has('python3')
+if has('python3')
   command! -nargs=1 Py py3 <args>
+  function! s:pyeval(expr)
+    return function('py3eval', [a:expr])
+  endfunction
+elseif has('python')
+  command! -nargs=1 Py py <args>
+  function! s:pyeval(expr)
+    return function('pyeval', [a:expr])
+  endfunction
 else
   echoerr 'Coqtail requires python support.'
   finish
@@ -38,7 +44,7 @@ Py from coqtail import Coqtail
 " Find the path corresponding to 'lib'. Used by includeexpr.
 function! coqtail#FindLib(lib)
   return b:coqtail_running
-  \ ? pyxeval("Coqtail().find_lib(vim.eval('a:lib')) or vim.eval('a:lib')")
+  \ ? s:pyeval("Coqtail().find_lib(vim.eval('a:lib')) or vim.eval('a:lib')")()
   \ : a:lib
 endfunction
 
@@ -183,7 +189,7 @@ endfunction
 " 'target'.
 function! coqtail#GotoDef(target, bang)
   let l:bang = a:bang ? '!' : ''
-  let l:loc = pyxeval('Coqtail().find_def(vim.eval("a:target")) or []')
+  let l:loc = s:pyeval('Coqtail().find_def(vim.eval("a:target")) or []')()
   if l:loc == []
     echohl WarningMsg | echom 'Cannot locate ' . a:target . '.' | echohl None
     return
