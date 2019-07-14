@@ -10,12 +10,12 @@ let g:coqtail_sourced = 1
 " Check python version
 if has('python3')
   command! -nargs=1 Py py3 <args>
-  function! s:pyeval(expr)
+  function! s:pyeval(expr) abort
     return function('py3eval', [a:expr])
   endfunction
 elseif has('python')
   command! -nargs=1 Py py <args>
-  function! s:pyeval(expr)
+  function! s:pyeval(expr) abort
     return function('pyeval', [a:expr])
   endfunction
 else
@@ -42,19 +42,19 @@ Py if not vim.eval('s:python_dir') in sys.path:
 Py from coqtail import Coqtail
 
 " Find the path corresponding to 'lib'. Used by includeexpr.
-function! coqtail#FindLib(lib)
+function! coqtail#FindLib(lib) abort
   return b:coqtail_running
   \ ? s:pyeval("Coqtail().find_lib(vim.eval('a:lib')) or vim.eval('a:lib')")()
   \ : a:lib
 endfunction
 
 " Open and initialize goal/info panel.
-function! s:initPanel(name, coq_buf)
-  let l:name_lower = substitute(a:name, '\u', "\\l\\0", '')
+function! s:initPanel(name, coq_buf) abort
+  let l:name_lower = substitute(a:name, '\u', '\l\0', '')
 
   execute 'hide edit ' . a:name . s:counter
   setlocal buftype=nofile
-  execute "setlocal filetype=coq-" . l:name_lower
+  execute 'setlocal filetype=coq-' . l:name_lower
   setlocal noswapfile
   setlocal bufhidden=hide
   setlocal nocursorline
@@ -70,7 +70,7 @@ function! s:initPanel(name, coq_buf)
 endfunction
 
 " Create buffers for the goals and info panels.
-function! coqtail#InitPanels()
+function! coqtail#InitPanels() abort
   let l:coq_buf = bufnr('%')
   let l:curpos = getcurpos()[2]
 
@@ -88,7 +88,7 @@ function! coqtail#InitPanels()
 endfunction
 
 " Reopen goals and info panels and re-highlight.
-function! coqtail#OpenPanels()
+function! coqtail#OpenPanels() abort
   " Do nothing if windows already open
   for l:buf in values(b:coqtail_panel_bufs)
     if bufwinnr(l:buf) != -1
@@ -113,7 +113,7 @@ function! coqtail#OpenPanels()
 endfunction
 
 " Clear Coqtop highlighting.
-function! coqtail#ClearHighlight()
+function! coqtail#ClearHighlight() abort
   for l:id in ['b:coqtail_checked', 'b:coqtail_sent', 'b:coqtail_errors']
     if eval(l:id) != -1
       call matchdelete(eval(l:id))
@@ -123,7 +123,7 @@ function! coqtail#ClearHighlight()
 endfunction
 
 " Close goal and info panels and clear highlighting.
-function! coqtail#HidePanels()
+function! coqtail#HidePanels() abort
   " If changing files from goal or info buffer
   " N.B. Switching files from anywhere other than the 3 main windows may
   " cause unexpected behaviors
@@ -157,19 +157,19 @@ function! coqtail#HidePanels()
 endfunction
 
 " Scroll a panel up so text doesn't go off the top of the screen.
-function! coqtail#ScrollPanel()
+function! coqtail#ScrollPanel() abort
   " Check if scrolling is necessary
   let l:winh = winheight(0)
   let l:disph = line('w$') - line('w0') + 1
 
   " Scroll
   if line('w0') != 1 && l:disph < l:winh
-    normal Gz-
+    normal! Gz-
   endif
 endfunction
 
 " Remove entries in the quickfix list with the same position.
-function s:uniqQFList()
+function! s:uniqQFList() abort
   let l:qfl = getqflist()
   let l:seen = {}
   let l:uniq = []
@@ -187,9 +187,9 @@ endfunction
 
 " Populate the quickfix list with possible locations of the definition of
 " 'target'.
-function! coqtail#GotoDef(target, bang)
+function! coqtail#GotoDef(target, bang) abort
   let l:bang = a:bang ? '!' : ''
-  let l:loc = s:pyeval('Coqtail().find_def(vim.eval("a:target")) or []')()
+  let l:loc = s:pyeval("Coqtail().find_def(vim.eval('a:target')) or []")()
   if l:loc == []
     echohl WarningMsg | echom 'Cannot locate ' . a:target . '.' | echohl None
     return
@@ -225,29 +225,29 @@ endfunction
 
 " Read a CoqProject file and parse it into options that can be passed to
 " Coqtop.
-function! coqtail#ParseCoqProj(file)
+function! coqtail#ParseCoqProj(file) abort
   let l:proj_args = []
   let l:file_dir = fnamemodify(a:file, ':p:h')
   " TODO: recognize more options
   let l:valid_opts = ['-R', '-Q']
 
   " Remove any excess whitespace
-  let l:opts = filter(split(join(readfile(a:file)), ' '), 'v:val != ""')
+  let l:opts = filter(split(join(readfile(a:file)), ' '), 'v:val !=# ""')
   let l:idx = 0
 
   while l:idx < len(l:opts)
     if index(l:valid_opts, l:opts[l:idx]) >= 0
       let l:absdir = l:opts[l:idx + 1]
-      if l:absdir[0] != '/'
+      if l:absdir[0] !=# '/'
         " Join relative paths with 'l:file_dir'
         let l:absdir = join([l:file_dir, l:absdir], '/')
       endif
 
       " Ignore directories that don't exist
-      if finddir(l:absdir, l:file_dir) != ''
+      if finddir(l:absdir, l:file_dir) !=# ''
         let l:opts[l:idx + 1] = fnamemodify(l:absdir, ':p')
         " Can be either '-R dir -as coqdir' or '-R dir coqdir'
-        if l:opts[l:idx + 2] == '-as'
+        if l:opts[l:idx + 2] ==# '-as'
           let l:end = l:idx + 3
         else
           let l:end = l:idx + 2
@@ -268,10 +268,10 @@ endfunction
 " Search for a CoqProject file using 'g:coqtail_project_name' starting in the
 " current directory and recursively try parent directories until '/' is
 " reached. Return the file name and a list of arguments to pass to Coqtop.
-function! coqtail#FindCoqProj()
+function! coqtail#FindCoqProj() abort
   let l:proj_args = []
   let l:proj_file = findfile(g:coqtail_project_name, '.;')
-  if l:proj_file != ''
+  if l:proj_file !=# ''
     let l:proj_args = coqtail#ParseCoqProj(l:proj_file)
   endif
 
@@ -281,7 +281,7 @@ endfunction
 " Get the word under the cursor using the special '<cword>' variable. First
 " add some characters to the 'iskeyword' option to treat them as part of the
 " current word.
-function! s:getCurWord()
+function! s:getCurWord() abort
   " Add '.' to definition of a keyword
   let l:old_keywd = &iskeyword
   setlocal iskeyword+=.
@@ -301,7 +301,7 @@ function! s:getCurWord()
 endfunction
 
 " List query options for use in Coq command completion.
-function! s:queryComplete(arg, cmd, cursor)
+function! s:queryComplete(arg, cmd, cursor) abort
   let l:queries = [
         \'Search', 'SearchAbout', 'SearchPattern', 'SearchRewrite',
         \'SearchHead', 'Check', 'Print', 'About', 'Locate', 'Show'
@@ -328,12 +328,12 @@ let s:cmd_opts = {
   \'CoqMakeMatch': '-nargs=1',
   \'CoqToggleDebug': ''
 \}
-function! s:cmdDef(name, act)
+function! s:cmdDef(name, act) abort
   execute printf('command! -buffer -bar %s %s %s', s:cmd_opts[a:name], a:name, a:act)
 endfunction
 
 " Define CoqStart and define all other commands to first call it.
-function! s:initCommands(supported)
+function! s:initCommands(supported) abort
   if a:supported
     call s:cmdDef('CoqStart', 'call coqtail#Start(<f-args>)')
     call s:cmdDef('CoqStop', '')
@@ -354,7 +354,7 @@ function! s:initCommands(supported)
 endfunction
 
 " Initialize commands, panels, and autocommands.
-function! s:prepare()
+function! s:prepare() abort
   " Commands
   call s:cmdDef('CoqStop', 'call coqtail#Stop()')
   call s:cmdDef('CoqNext', 'Py Coqtail().step(<count>)')
@@ -384,7 +384,7 @@ function! s:prepare()
 endfunction
 
 " Clean up commands, panels, and autocommands.
-function! s:cleanup()
+function! s:cleanup() abort
   " Clean up goal and info buffers
   try
     for l:buf in values(b:coqtail_panel_bufs)
@@ -404,7 +404,7 @@ function! s:cleanup()
 endfunction
 
 " Initialize Python interface, commands, autocmds, and goals and info panels.
-function! coqtail#Start(...)
+function! coqtail#Start(...) abort
   if b:coqtail_running
     echo 'Coq is already running.'
   else
@@ -428,7 +428,7 @@ function! coqtail#Start(...)
 endfunction
 
 " Stop the Coqtop interface and clean up goal and info buffers.
-function! coqtail#Stop()
+function! coqtail#Stop() abort
   if b:coqtail_running
     let b:coqtail_running = 0
 
@@ -443,7 +443,7 @@ function! coqtail#Stop()
 endfunction
 
 " Define <Plug> and default mappings for Coqtail commands.
-function! s:mappings()
+function! s:mappings() abort
   nnoremap <buffer> <silent> <Plug>CoqStart :CoqStart<CR>
   nnoremap <buffer> <silent> <Plug>CoqStop :CoqStop<CR>
   nnoremap <buffer> <silent> <Plug>CoqNext :<C-U>execute v:count1 'CoqNext'<CR>
@@ -487,7 +487,7 @@ function! s:mappings()
 endfunction
 
 " Initialize buffer local variables, commands, and mappings.
-function! coqtail#Register(version, supported)
+function! coqtail#Register(version, supported) abort
   " Initialize once
   if !exists('b:coqtail_running')
     let b:coqtail_running = 0

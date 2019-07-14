@@ -13,9 +13,9 @@ endif
 
 " For version 5.x: Clear all syntax items
 " For version 6.x: Quit when a syntax file was already loaded
-if version < 600
+if v:version < 600
   syntax clear
-elseif exists("b:current_syntax") && b:current_syntax == "coq-goals"
+elseif exists('b:current_syntax') && b:current_syntax ==# 'coq-goals'
   finish
 endif
 
@@ -28,10 +28,10 @@ syn match   coqVernacPunctuation ":=\|\.\|:"
 syn match   coqIdent             contained "[_[:alpha:]][_'[:alnum:]]*"
 
 " Number of goals
-syn match   coqNumberGoals       '\d\+ subgoals\?'
-syn match   coqNumberUnfocused   '(\d\+ unfocused at this level)'
-syn match   coqNumberAdmitted    '\d\+ admitted'
-syn match   coqNumberShelved     '\d\+ shelved'
+syn match   coqNumberGoals       "\d\+ subgoals\?"
+syn match   coqNumberUnfocused   "(\d\+ unfocused at this level)"
+syn match   coqNumberAdmitted    "\d\+ admitted"
+syn match   coqNumberShelved     "\d\+ shelved"
 
 " Hypothesis
 syn region  coqHypothesisBlock  contains=coqHypothesis start="^[_[:alpha:]][_'[:alnum:]]*\s*:" end="^$" keepend
@@ -40,12 +40,12 @@ syn region  coqHypothesisBody   contained contains=@coqTerm matchgroup=coqVernac
 
 " Separator
 syn match   coqGoalNumber       contained "(\s*\d\+\s*\/\s*\d\+\s*)"
-syn region  coqGoalSep          matchgroup=coqGoalLine start='^=\+' matchgroup=NONE end='^$\n' contains=coqGoalSepNumber nextgroup=coqGoalBlock keepend
+syn region  coqGoalSep          matchgroup=coqGoalLine start="^=\+" matchgroup=NONE end="^$\n" contains=coqGoalSepNumber nextgroup=coqGoalBlock keepend
 syn region  coqGoalSepNumber    matchgroup=coqGoalNumber start="(\s*\d\+\s*\/\s*\d\+\s*)" matchgroup=NONE end=")"
-syn region  coqNextGoal         start='Next goal' end='^$\n' nextgroup=coqGoalBlock keepend
+syn region  coqNextGoal         start="Next goal" end="^$\n" nextgroup=coqGoalBlock keepend
 
 " Goals
-syn region coqGoalBlock contained contains=@coqTerm start='\S' end='^$'
+syn region coqGoalBlock contained contains=@coqTerm start="\S" end="^$"
 
 " Terms
 syn cluster coqTerm            contains=coqKwd,coqTermPunctuation,coqKwdMatch,coqKwdLet,coqKwdParen
@@ -68,9 +68,9 @@ syn sync maxlines=500
 " Define the default highlighting.
 " For version 5.7 and earlier: only when not done already
 " For version 5.8 and later: only when an item doesn't have highlighting yet
-if version >= 508 || !exists("did_coq_goals_syntax_inits")
-  if version < 508
-    let did_coq_goals_syntax_inits = 1
+if v:version >= 508 || !exists('b:did_coq_goals_syntax_inits')
+  if v:version < 508
+    let b:did_coq_goals_syntax_inits = 1
     command -nargs=+ HiLink hi link <args>
   else
     command -nargs=+ HiLink hi def link <args>
@@ -102,4 +102,4 @@ if version >= 508 || !exists("did_coq_goals_syntax_inits")
   delcommand HiLink
 endif
 
-let b:current_syntax = "coq-goals"
+let b:current_syntax = 'coq-goals'

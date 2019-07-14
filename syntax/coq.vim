@@ -26,7 +26,7 @@
 " Modified By: Wolf Honore
 " TODO: mark bad constructions (eg. Section ended but not opened)
 
-function! s:CoqtailHighlight()
+function! s:CoqtailHighlight() abort
   " Use user-defined colors if they exist
   if exists('*g:CoqtailHighlight')
     call g:CoqtailHighlight()
@@ -52,9 +52,9 @@ endif
 
 " For version 5.x: Clear all syntax items
 " For version 6.x: Quit when a syntax file was already loaded
-if version < 600
+if v:version < 600
   syntax clear
-elseif exists("b:current_syntax") && b:current_syntax == "coq"
+elseif exists('b:current_syntax') && b:current_syntax ==# 'coq'
   finish
 endif
 
@@ -366,8 +366,8 @@ syn sync maxlines=500
 " Define the default highlighting.
 " For version 5.7 and earlier: only when not done already
 " For version 5.8 and later: only when an item doesn't have highlighting yet
-if version >= 508 || !exists("did_coq_syntax_inits")
-  if version < 508
+if v:version >= 508 || !exists('did_coq_syntax_inits')
+  if v:version < 508
     let did_coq_syntax_inits = 1
     command -nargs=+ HiLink hi link <args>
   else
@@ -432,4 +432,4 @@ if version >= 508 || !exists("did_coq_syntax_inits")
   delcommand HiLink
 endif
 
-let b:current_syntax = "coq"
+let b:current_syntax = 'coq'
