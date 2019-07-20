@@ -225,18 +225,18 @@ endfunction
 
 " Read a CoqProject file and parse it into options that can be passed to
 " Coqtop.
-function! coqtail#ParseCoqProj(file) abort
+function! coqtail#ParseCoqProj(file, silent) abort
   let l:proj_args = []
   let l:file_dir = fnamemodify(a:file, ':p:h')
   " TODO: recognize more options
-  let l:valid_opts = ['-R', '-Q']
+  let l:valid_opts = {'-R': 2, '-Q': 2, '-I': 1, '-include': 1}
 
   " Remove any excess whitespace
   let l:opts = filter(split(join(readfile(a:file)), ' '), 'v:val !=# ""')
   let l:idx = 0
 
   while l:idx < len(l:opts)
-    if index(l:valid_opts, l:opts[l:idx]) >= 0
+    if has_key(l:valid_opts, l:opts[l:idx])
       let l:absdir = l:opts[l:idx + 1]
       if l:absdir[0] !=# '/'
         " Join relative paths with 'l:file_dir'
@@ -246,16 +246,19 @@ function! coqtail#ParseCoqProj(file) abort
       " Ignore directories that don't exist
       if finddir(l:absdir, l:file_dir) !=# ''
         let l:opts[l:idx + 1] = fnamemodify(l:absdir, ':p')
+        let l:end = l:idx + l:valid_opts[l:opts[l:idx]]
+
         " Can be either '-R dir -as coqdir' or '-R dir coqdir'
-        if l:opts[l:idx + 2] ==# '-as'
+        if l:opts[l:end] ==# '-as' || get(l:opts, l:end + 1, '') ==# '-as'
           let l:end = l:idx + 3
-        else
-          let l:end = l:idx + 2
         endif
 
         let l:proj_args = add(l:proj_args, join(l:opts[l:idx : l:end], ' '))
+        let l:idx = l:end
       else
-        echohl WarningMsg | echom l:opts[l:idx + 1] . ' does not exist.' | echohl None
+        if !a:silent
+          echohl WarningMsg | echom l:opts[l:idx + 1] . ' does not exist.' | echohl None
+        endif
       endif
     endif
 
@@ -272,7 +275,7 @@ function! coqtail#FindCoqProj() abort
   let l:proj_args = []
   let l:proj_file = findfile(g:coqtail_project_name, '.;')
   if l:proj_file !=# ''
-    let l:proj_args = coqtail#ParseCoqProj(l:proj_file)
+    let l:proj_args = coqtail#ParseCoqProj(l:proj_file, 0)
   endif
 
   return [l:proj_file, l:proj_args]
