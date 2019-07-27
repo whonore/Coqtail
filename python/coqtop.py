@@ -360,8 +360,13 @@ class Coqtop(object):
             call = self.do_option(cmd, in_script, encoding, timeout)
         elif self.xml.is_query(cmd):
             call = self.query(cmd, in_script, encoding, timeout)
-        else:
+        elif in_script:
             call = self.advance(cmd, encoding, timeout)
+        else:
+            self.done_callback()
+            yield  # type: ignore # (see comment above start())
+            yield True, "Command only allowed in script.", None
+            return
 
         next(call)
         while True:
