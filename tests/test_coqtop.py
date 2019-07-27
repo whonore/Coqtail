@@ -130,13 +130,20 @@ def test_dispatch_not_in_script(coq):
     assert old_state == get_state(coq)
 
 
-def test_option_query_same_state_id(coq):
-    """Dispatch with a query or option command shouldn't change the state id."""
+def test_query_same_state_id(coq):
+    """Dispatch with a query command shouldn't change the state id."""
     old_id = coq.state_id
     call_and_wait(coq, coq.dispatch, "Print nat.")
     assert old_id == coq.state_id
+
+
+def test_option_different_state_id(coq):
+    """Dispatch with an option command should change the state id."""
+    if coq.xml.versions < (8, 5, 0):
+        pytest.skip("Only 8.5+ uses state ids")
+    old_id = coq.state_id
     call_and_wait(coq, coq.dispatch, "Test Silent.")
-    assert old_id == coq.state_id
+    assert old_id != coq.state_id
 
 
 @patch.object(Coqtop, "do_option")

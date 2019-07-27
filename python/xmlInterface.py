@@ -157,6 +157,9 @@ class XMLInterfaceBase(object):
             {}
         )  # type: Dict[Text, Callable[[Union[Ok, Err]], Union[Ok, Err]]]
 
+        # A command that can safely and quickly be executed just to get a new state id
+        self.noop = "Eval lazy in forall x, x."
+
     @property
     def launch(self):
         # type: () -> Tuple[Text, ...]

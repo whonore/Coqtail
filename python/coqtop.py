@@ -326,12 +326,18 @@ class Coqtop(object):
             ret = response.msg
 
         if isinstance(response, Ok):
-            # See comment in query()
+            # Hack to associate setting an option with a new state id by
+            # executing a noop so it works correctly with rewinding
             if in_script:
-                if self.xml.versions >= (8, 5, 0):
-                    self.states.append(self.state_id)
-                else:
-                    self.states.append(-1)
+                noop_call = self.advance(self.xml.noop, encoding)
+                next(noop_call)
+                while True:
+                    yield  # type: ignore # (see comment above start())
+                    noop_ret = noop_call.send(False)
+                    if noop_ret is not None:
+                        success, _, _ = noop_ret
+                        assert success
+                        break
             yield True, ret, None
         else:
             yield False, response.msg, response.loc
