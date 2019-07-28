@@ -298,9 +298,9 @@ class Coqtop(object):
         # type: (...) -> Generator[Tuple[bool, Text, Optional[Tuple[int, int]]], bool, None]
         """Set or get an option."""
         self.logger.debug("do_option: %s", cmd)
-        ty, opt = self.xml.parse_option(cmd)
+        vals, opt = self.xml.parse_option(cmd)
 
-        if ty == "Test":
+        if vals is None:
             call = self.call(self.xml.get_options(encoding=encoding), timeout=timeout)
             next(call)
             stopped = yield  # type: ignore # (see comment above start())
@@ -316,14 +316,16 @@ class Coqtop(object):
                 else:
                     ret = "Invalid option name"
         else:
-            val = ty == "Set"
-            call = self.call(
-                self.xml.set_options(opt, val, encoding=encoding), timeout=timeout
-            )
-            next(call)
-            stopped = yield  # type: ignore # (see comment above start())
-            response = call.send(stopped)
-            ret = response.msg
+            for val in vals:
+                call = self.call(
+                    self.xml.set_options(opt, val, encoding=encoding), timeout=timeout
+                )
+                next(call)
+                stopped = yield  # type: ignore # (see comment above start())
+                response = call.send(stopped)
+                ret = response.msg
+                if isinstance(response, Ok):
+                    break
 
         if isinstance(response, Ok):
             # Hack to associate setting an option with a new state id by

@@ -443,13 +443,13 @@ class XMLInterfaceBase(object):
 
     @abstractmethod
     def set_options(self, option, val, encoding="utf-8"):
-        # type: (Text, bool, str) -> Tuple[Text, Optional[bytes]]
+        # type: (Text, Union[bool, int, Text, Tuple[None, str]], str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to set one of Coqtop's options."""
 
     # Helpers #
     def is_option(self, cmd):
         # type: (Text) -> bool
-        """Check if 'cmd' is trying to set/get/check an option."""
+        """Check if 'cmd' is trying to set/check an option."""
         # Starts with Set, Unset, Test
         # N.B. 'cmd' has been stripped of comments and leading whitespace so
         # just check for option commands at the start
@@ -463,18 +463,36 @@ class XMLInterfaceBase(object):
         return re.match(re_str, cmd.split()[0].rstrip(".")) is not None
 
     def parse_option(self, cmd):
-        # type: (Text) -> Tuple[Text, Text]
-        """Parse what option is being set/get/checked."""
+        # type: (Text) -> Tuple[Optional[Iterable[Union[bool, int, Text, Tuple[None, str]]]], Text]
+        """Parse what option is being set/checked."""
         # Assumes cmd is of the form 'Set|Unset|Test {option_name}'
-        allowed = ("Set", "Unset", "Test")
         opts = cmd.strip(".").split()
         ty = opts[0]
-        opt = " ".join(opts[1:])
 
-        if ty not in allowed:
-            raise unexpected(allowed, ty)
+        if ty == "Test":
+            vals = (
+                None
+            )  # type: Optional[Iterable[Union[bool, int, Text, Tuple[None, str]]]]
+        elif ty == "Set":
+            if opts[-1][0].isdigit():
+                val = int(opts[-1])  # type: Union[bool, int, Text]
+                opts = opts[:-1]
+            elif opts[-1][-1] == '"':
+                for idx, opt in enumerate(opts):
+                    if opt[0] == '"':
+                        val = " ".join(opts[idx:]).strip('"')
+                        opts = opts[:idx]
+            else:
+                val = True
+            vals = (val,)
+        elif ty == "Unset":
+            # Don't know if the option expects a bool, option int, or option
+            # str, so try all
+            vals = (False, (None, "int"), (None, "str"))
+        else:
+            raise unexpected(("Set", "Unset", "Test"), ty)
 
-        return ty, opt
+        return vals, " ".join(opts[1:])
 
 
 class XMLInterface84(XMLInterfaceBase):
@@ -486,7 +504,7 @@ class XMLInterface84(XMLInterfaceBase):
     Goals = namedtuple("Goals", ["fg", "bg"])
     Evar = namedtuple("Evar", ["info"])
 
-    OptionValue = namedtuple("OptionValue", ["val"])
+    OptionValue = namedtuple("OptionValue", ["val", "type"])
     OptionState = namedtuple("OptionState", ["sync", "depr", "name", "value"])
 
     Status = namedtuple(
@@ -546,7 +564,15 @@ class XMLInterface84(XMLInterfaceBase):
     def _to_option_value(self, xml):
         # type: (ET.Element) -> OptionValue
         """Expect: <option_value>bool | option int | string</option_value>"""
-        return self.OptionValue(self._to_py(xml[0]))
+        ty = xml.get("val", None)
+        if ty is not None:
+            if ty.startswith("int"):
+                ty = "int"
+            elif ty.startswith("str"):
+                ty = "str"
+            else:
+                ty = "bool"
+        return self.OptionValue(self._to_py(xml[0]), ty)
 
     def _of_option_value(self, val):
         # type: (OptionValue) -> ET.Element
@@ -555,12 +581,12 @@ class XMLInterface84(XMLInterfaceBase):
 
         if isinstance(opt, bool):
             opt_ty = "boolvalue"
-        elif isinstance(opt, self.Option) and isinstance(opt.val, int):
+        elif (isinstance(opt, self.Option) and isinstance(opt.val, int)) or opt is None:
             opt_ty = "intvalue"
         elif isinstance(opt, string_types):
             opt_ty = "stringvalue"
         else:
-            raise unexpected((bool, self.Option) + string_types, type(opt))
+            raise unexpected((bool, self.Option, None) + string_types, type(opt))
 
         return self._build_xml("option_value", opt_ty, opt)
 
@@ -756,21 +782,31 @@ class XMLInterface84(XMLInterfaceBase):
             res.val = opts
         return res
 
-    # TODO: allow non-boolean arguments
     def set_options(self, option, val, encoding="utf-8"):
-        # type: (Text, bool, str) -> Tuple[Text, Optional[bytes]]
+        # type: (Text, Union[bool, int, Text, Tuple[None, str]], str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to set one of Coqtop's options.
         Args:
           options: list (option_name * option_value) - The options to update and
                                                        the values to set them to
         """
+        if isinstance(val, int) and not isinstance(val, bool):
+            optval = self.Option(
+                val
+            )  # type: Optional[Union[bool, Text, XMLInterfaceBase.Option]]
+        elif isinstance(val, tuple):
+            optval = None
+        else:
+            optval = val
+
         # TODO: Coq source (toplevel/interface.mli) looks like the argument
         # should be a list like in version 8.5 and on, but it only seems to
         # work if it is a single element
         return (
             "SetOptions",
             self._make_call(
-                encoding, "setoptions", children=(option.split(), self.OptionValue(val))
+                encoding,
+                "setoptions",
+                children=(option.split(), self.OptionValue(optval, None)),
             ),
         )
 
@@ -785,7 +821,7 @@ class XMLInterface85(XMLInterfaceBase):
     Goals = namedtuple("Goals", ["fg", "bg", "shelved", "given_up"])
     Evar = namedtuple("Evar", ["info"])
 
-    OptionValue = namedtuple("OptionValue", ["val"])
+    OptionValue = namedtuple("OptionValue", ["val", "type"])
     OptionState = namedtuple("OptionState", ["sync", "depr", "name", "value"])
 
     StateId = namedtuple("StateId", ["id"])
@@ -861,7 +897,15 @@ class XMLInterface85(XMLInterfaceBase):
         """Expect:
         <option_value>bool | option int | string | option string</option_value>
         """
-        return self.OptionValue(self._to_py(xml[0]))
+        ty = xml.get("val", None)
+        if ty is not None:
+            if ty.startswith("int"):
+                ty = "int"
+            elif ty.startswith("str"):
+                ty = "str"
+            else:
+                ty = "bool"
+        return self.OptionValue(self._to_py(xml[0]), ty)
 
     def _of_option_value(self, val):
         # type: (OptionValue) -> ET.Element
@@ -873,14 +917,18 @@ class XMLInterface85(XMLInterfaceBase):
 
         if isinstance(opt, bool):
             opt_ty = "boolvalue"
-        elif isinstance(opt, self.Option) and isinstance(opt.val, int):
-            opt_ty = "intvalue"
         elif isinstance(opt, string_types):
             opt_ty = "stringvalue"
-        elif isinstance(opt, self.Option) and isinstance(opt.val, string_types):
+        elif (isinstance(opt, self.Option) and isinstance(opt.val, int)) or (
+            opt is None and val.type == "int"
+        ):
+            opt_ty = "intvalue"
+        elif (isinstance(opt, self.Option) and isinstance(opt.val, string_types)) or (
+            opt is None and val.type == "str"
+        ):
             opt_ty = "stringoptvalue"
         else:
-            raise unexpected((bool, self.Option) + string_types, type(opt))
+            raise unexpected((bool, self.Option, None) + string_types, type(opt))
 
         return self._build_xml("option_value", opt_ty, opt)
 
@@ -1083,14 +1131,23 @@ class XMLInterface85(XMLInterfaceBase):
             res.val = opts
         return res
 
-    # TODO: allow non-boolean arguments
     def set_options(self, option, val, encoding="utf-8"):
-        # type: (Text, bool, str) -> Tuple[Text, Optional[bytes]]
+        # type: (Text, Union[bool, int, Text, Tuple[None, str]], str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to set one of Coqtop's options.
         Args:
           options: list (option_name * option_value) - The options to update and
                                                        the values to set them to
         """
+        ty = None
+        if isinstance(val, int) and not isinstance(val, bool):
+            optval = self.Option(
+                val
+            )  # type: Optional[Union[bool, Text, XMLInterfaceBase.Option]]
+        elif isinstance(val, tuple):
+            optval, ty = val
+        else:
+            optval = val
+
         # extra '[]' needed so _build_xml treats it as one list instead
         # of several children to convert
         return (
@@ -1098,7 +1155,7 @@ class XMLInterface85(XMLInterfaceBase):
             self._make_call(
                 encoding,
                 "SetOptions",
-                children=[[(option.split(), self.OptionValue(val))]],
+                children=[[(option.split(), self.OptionValue(optval, ty))]],
             ),
         )
 

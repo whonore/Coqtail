@@ -181,7 +181,7 @@ class ToOfTests(object):
     def option_value_bool(self):
         true = self.true()
         return PyXML(
-            self.xi.OptionValue(true.py),
+            self.xi.OptionValue(true.py, "bool"),
             mkXML("option_value", attrs={"val": "boolvalue"}, children=[true]),
             True,
         )
@@ -194,7 +194,7 @@ class ToOfTests(object):
             True,
         )
         return PyXML(
-            self.xi.OptionValue(opt.py),
+            self.xi.OptionValue(opt.py, "int"),
             mkXML("option_value", attrs={"val": "intvalue"}, children=[opt]),
             True,
         )
@@ -202,7 +202,7 @@ class ToOfTests(object):
     def option_value_string(self):
         abc = self.abc()
         return PyXML(
-            self.xi.OptionValue(abc.py),
+            self.xi.OptionValue(abc.py, "str"),
             mkXML("option_value", attrs={"val": "stringvalue"}, children=[abc]),
             True,
         )
@@ -216,11 +216,28 @@ class ToOfTests(object):
         )
         if self.xi.versions >= (8, 5, 0):
             return PyXML(
-                self.xi.OptionValue(opt.py),
+                self.xi.OptionValue(opt.py, "str"),
                 mkXML("option_value", attrs={"val": "stringoptvalue"}, children=[opt]),
                 True,
             )
         return None
+
+    def option_value_int_none(self):
+        none = self.none()
+        return PyXML(
+            self.xi.OptionValue(None, "int"),
+            mkXML("option_value", attrs={"val": "intvalue"}, children=[none]),
+            True,
+        )
+
+    def option_value_str_none(self):
+        none = self.none()
+        if self.xi.versions >= (8, 5, 0):
+            return PyXML(
+                self.xi.OptionValue(None, "str"),
+                mkXML("option_value", attrs={"val": "stringoptvalue"}, children=[none]),
+                True,
+            )
 
     def option_state(self):
         true = self.true()
