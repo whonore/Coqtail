@@ -41,6 +41,10 @@ Py if not vim.eval('s:python_dir') in sys.path:
 \    sys.path.insert(0, vim.eval('s:python_dir'))
 Py from coqtail import Coqtail
 
+function! s:warn(msg) abort
+  echohl WarningMsg | echom a:msg | echohl None
+endfunction
+
 " Find the path corresponding to 'lib'. Used by includeexpr.
 function! coqtail#FindLib(lib) abort
   return b:coqtail_running
@@ -191,7 +195,7 @@ function! coqtail#GotoDef(target, bang) abort
   let l:bang = a:bang ? '!' : ''
   let l:loc = s:pyeval("Coqtail().find_def(vim.eval('a:target')) or []")()
   if l:loc == []
-    echohl WarningMsg | echom 'Cannot locate ' . a:target . '.' | echohl None
+    call s:warn('Cannot locate ' . a:target . '.')
     return
   endif
   let [l:path, l:searches] = l:loc
@@ -257,7 +261,7 @@ function! coqtail#ParseCoqProj(file, silent) abort
         let l:idx = l:end
       else
         if !a:silent
-          echohl WarningMsg | echom l:opts[l:idx + 1] . ' does not exist.' | echohl None
+          call s:warn(l:opts[l:idx + 1] . ' does not exist.')
         endif
       endif
     endif

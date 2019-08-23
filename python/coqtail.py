@@ -104,7 +104,7 @@ class Coqtail(object):
         """
         self.saved_sync = None
         self.endpoints = []  # type: List[Tuple[int, int]]
-        self.send_queue = deque([])  # type: Deque[Mapping[str, Tuple[int, int]]]
+        self.send_queue = deque()  # type: Deque[Mapping[str, Tuple[int, int]]]
         self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
         self.info_msg = []  # type: List[Text]
         self.goal_msg = []  # type: List[Text]

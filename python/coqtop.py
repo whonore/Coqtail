@@ -502,7 +502,6 @@ class Coqtop(object):
             raise CoqtopError("coqtop must not be None in capture_out()")
         if self.coqtop.stdout is None:
             raise CoqtopError("coqtop stdout must not be None in capture_out()")
-
         fd = self.coqtop.stdout.fileno()
 
         while not self.stopping:
@@ -518,7 +517,7 @@ class Coqtop(object):
         if self.coqtop is None:
             raise CoqtopError("coqtop must not be None in capture_err()")
         if self.coqtop.stderr is None:
-            raise CoqtopError("coqtop stdout must not be None in capture_err()")
+            raise CoqtopError("coqtop stderr must not be None in capture_err()")
         fd = self.coqtop.stderr.fileno()
 
         while not self.stopping:
