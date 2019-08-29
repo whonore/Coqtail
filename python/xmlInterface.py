@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import print_function
 
 # xml.dom.minidom only needed for pretty printing. No stubs for xml.dom.minidom
+import os
 import re
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
@@ -160,12 +161,11 @@ class XMLInterfaceBase(object):
         # A command that can safely and quickly be executed just to get a new state id
         self.noop = "Eval lazy in forall x, x."
 
-    @property
-    def launch(self):
-        # type: () -> Iterable[Tuple[Text, ...]]
+    def launch(self, coq_path):
+        # type: (str) -> Iterable[Tuple[Text, ...]]
         """The command to launch coqtop with the appropriate arguments."""
         return (
-            (self.coqtop + ext,) + tuple(self.launch_args)
+            (os.path.join(coq_path, self.coqtop) + ext,) + tuple(self.launch_args)
             for ext in ("", ".opt")
         )
 

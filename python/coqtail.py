@@ -125,8 +125,8 @@ class Coqtail(object):
         self.saved_sync = curr_sync
 
     # Coqtop Interface #
-    def start(self, version, *args):
-        # type: (Text, *Text) -> None
+    def start(self, version, coq_path, *args):
+        # type: (str, str, *str) -> None
         """Start a new Coqtop instance."""
         success = False
         errmsg = ["Failed to launch Coq"]
@@ -138,7 +138,9 @@ class Coqtail(object):
 
         try:
             self.coqtop = CT.Coqtop(version, set_done)
-            success = self.call_and_wait(self.coqtop.start, *args, timeout=self.timeout)
+            success = self.call_and_wait(
+                self.coqtop.start, coq_path, *args, timeout=self.timeout
+            )
         except ValueError as e:
             errmsg.append(str(e))
 

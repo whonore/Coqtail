@@ -84,15 +84,15 @@ class Coqtop(object):
     # Ideally the type would be Generator[None, bool, bool] and the final
     # 'yield's would be 'return's, but Python 2 doesn't support returning
     # values from generators.
-    def start(self, *args, **kwargs):
-        # type: (*str, **int) -> Generator[Optional[bool], bool, None]
+    def start(self, coq_path, *args, **kwargs):
+        # type: (str, *str, **int) -> Generator[Optional[bool], bool, None]
         """Launch the Coqtop process."""
         assert self.coqtop is None
 
         self.logger.debug("start")
         timeout = kwargs.get("timeout", None)
 
-        for launch in self.xml.launch:
+        for launch in self.xml.launch(coq_path):
             try:
                 self.coqtop = subprocess.Popen(
                     launch + args,
