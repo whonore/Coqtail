@@ -379,15 +379,18 @@ class XMLInterfaceBase(object):
                 res = self._to_response(xml)
             elif xml.tag in ("message", "feedback"):
                 # _to_py guaranteed to return Text for message or feedback
-                msgs.append(self._to_py(xml))  # type: ignore
+                msgs.append(self._to_py(xml).strip())  # type: ignore
             else:
                 raise unexpected(("value", "message", "feedback"), xml.tag)
 
         if res is not None:
-            # Use set() because error messages might have been duplicated by
-            # 'feedback' and 'value' tags
-            msgs.insert(0, res.msg)
-            res.msg = "\n\n".join(set(msg.strip() for msg in msgs if msg.strip() != ""))
+            # Error messages may be duplicated between the 'value' and
+            # 'feedback' tags.
+            # https://coq.discourse.group/t/avoiding-duplicate-error-messages-with-the-xml-protocol/411
+            msg = res.msg.strip()
+            if msg not in msgs:
+                msgs.insert(0, msg)
+            res.msg = "\n\n".join(msg for msg in msgs if msg != "")
 
         return res
 
