@@ -92,37 +92,45 @@ class Coqtop(object):
         self.logger.debug("start")
         timeout = kwargs.get("timeout", None)
 
-        try:
-            self.coqtop = subprocess.Popen(
-                self.xml.launch + args,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                bufsize=0,
-            )
+        for launch in self.xml.launch:
+            try:
+                self.coqtop = subprocess.Popen(
+                    launch + args,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    bufsize=0,
+                )
 
-            # Spawn threads to monitor Coqtop's stdout and stderr
-            for f in (self.capture_out, self.capture_err, self.capture_dead):
-                read_thread = threading.Thread(target=f)
-                read_thread.daemon = True
-                read_thread.start()
+                # Spawn threads to monitor Coqtop's stdout and stderr
+                for f in (self.capture_out, self.capture_err, self.capture_dead):
+                    read_thread = threading.Thread(target=f)
+                    read_thread.daemon = True
+                    read_thread.start()
 
-            # Initialize Coqtop
-            call = self.call(self.xml.init(), timeout=timeout)
-            next(call)
-            stopped = yield  # type: ignore # (see comment above start())
-            response = call.send(stopped)
+                # Initialize Coqtop
+                call = self.call(self.xml.init(), timeout=timeout)
+                next(call)
+                stopped = yield  # type: ignore # (see comment above start())
+                response = call.send(stopped)
 
-            if isinstance(response, Err):
-                yield False
+                if isinstance(response, Err):
+                    yield False
+                    return
+
+                self.root_state = response.val
+                self.state_id = response.val
+
+                yield True
                 return
+            except OSError:
+                continue
 
-            self.root_state = response.val
-            self.state_id = response.val
-
-            yield True
-        except OSError:
-            yield False
+        # Failed to launch Coqtop
+        self.coqtop = None
+        self.done_callback()
+        yield  # type: ignore # (see comment above start())
+        yield False
 
     def stop(self):
         # type: () -> None
