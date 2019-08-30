@@ -77,7 +77,7 @@ def call_and_wait(coq, func, *args, **kwargs):
 def coq():
     """Return a Coqtop for each version."""
     ct = Coqtop(VERSION, set_done)
-    if call_and_wait(ct, ct.start):
+    if call_and_wait(ct, ct.start, ""):
         yield ct
         ct.stop()
     else:
