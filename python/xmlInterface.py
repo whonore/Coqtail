@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import print_function
 
 # xml.dom.minidom only needed for pretty printing. No stubs for xml.dom.minidom
+import os
 import re
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
@@ -160,11 +161,13 @@ class XMLInterfaceBase(object):
         # A command that can safely and quickly be executed just to get a new state id
         self.noop = "Eval lazy in forall x, x."
 
-    @property
-    def launch(self):
-        # type: () -> Tuple[Text, ...]
+    def launch(self, coq_path):
+        # type: (str) -> Iterable[Tuple[Text, ...]]
         """The command to launch coqtop with the appropriate arguments."""
-        return (self.coqtop,) + tuple(self.launch_args)
+        return (
+            (os.path.join(coq_path, self.coqtop) + ext,) + tuple(self.launch_args)
+            for ext in ("", ".opt")
+        )
 
     # XML Parsing and Marshalling #
     def _to_unit(self, _xml):
@@ -1265,17 +1268,9 @@ class XMLInterface89(XMLInterface88):
         self.coqtop = "coqidetop"
         self.launch_args.remove("-ideslave")
 
-class XMLInterface810(XMLInterface87):
+
+class XMLInterface810(XMLInterface89):
     """The version 8.10.* XML interface."""
-
-    def __init__(self, versions):
-        # type: (Tuple[int, ...]) -> None
-        """Update launch arguments."""
-        super(XMLInterface810, self).__init__(versions)
-
-        # In coq 8.10 (built using dune), coqidetop does not seem to be present
-        self.coqtop = "coqidetop.opt"
-        self.launch_args.remove("-ideslave")
 
 
 def XMLInterface(version):

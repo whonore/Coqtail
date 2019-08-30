@@ -25,6 +25,11 @@ endif
 
 " Initialize global variables
 let s:counter = 0
+"
+" Default Coq path
+if !exists('g:coqtail_coq_path')
+  let g:coqtail_coq_path = ''
+endif
 
 " Default CoqProject file name
 if !exists('g:coqtail_project_name')
@@ -43,6 +48,10 @@ Py from coqtail import Coqtail
 
 function! s:warn(msg) abort
   echohl WarningMsg | echom a:msg | echohl None
+endfunction
+
+function! s:err(msg) abort
+  echohl ErrorMsg | echom a:msg | echohl None
 endfunction
 
 " Find the path corresponding to 'lib'. Used by includeexpr.
@@ -355,7 +364,9 @@ function! s:initCommands(supported) abort
     call s:cmdDef('CoqToggleDebug', 'CoqStart | CoqToggleDebug')
   else
     for l:cmd in keys(s:cmd_opts)
-      call s:cmdDef(l:cmd, 'echoerr "Coqtail does not support Coq version " . b:coqtail_version')
+      if l:cmd !=# 'CoqStart'
+        call s:cmdDef(l:cmd, 'call s:err("Coqtail does not support Coq version " . b:coqtail_version)')
+      endif
     endfor
   endif
 endfunction
@@ -410,11 +421,69 @@ function! s:cleanup() abort
   call s:initCommands(1)
 endfunction
 
+" Get the Coq version and determine if it is supported.
+function! s:checkVersion() abort
+  " Supported versions (-1 means any number)
+  let l:supported = [
+    \[8, 4, -1],
+    \[8, 5, -1],
+    \[8, 6, -1],
+    \[8, 7, -1],
+    \[8, 8, -1],
+    \[8, 9, -1],
+    \[8, 10, -1]
+  \]
+
+  " Check that Coq version is supported
+  " Assumes message is of the following form:
+  " The Coq Proof Assistant, version _._._ (_ _)
+  " The 2nd '._' is optional and the 2nd '.' can also be 'pl'. Other text, such
+  " as '+beta_' will be stripped and ignored by str2nr()
+  let l:coqtop = 'coqtop'
+  if b:coqtail_coq_path !=# ''
+    let l:coqtop = b:coqtail_coq_path . '/' . l:coqtop
+  endif
+  let l:version = system(l:coqtop . " --version | awk '/version/{printf \"%s\", $6}'")
+  let l:versions = map(split(l:version, '\v(\.|pl)'), 'str2nr(v:val)')
+
+  " Pad missing version numbers with 0
+  while len(l:versions) < 3
+    let l:versions = add(l:versions, 0)
+  endwhile
+
+  let l:found_sup = 0
+  for l:supp in l:supported
+    let l:is_sup = 1
+
+    for l:idx in range(3)
+      if l:supp[l:idx] != l:versions[l:idx] && l:supp[l:idx] != -1
+        let l:is_sup = 0
+        break
+      endif
+    endfor
+
+    if l:is_sup
+      let l:found_sup = 1
+      break
+    endif
+  endfor
+
+  return [l:version, l:found_sup]
+endfunction
+
 " Initialize Python interface, commands, autocmds, and goals and info panels.
 function! coqtail#Start(...) abort
   if b:coqtail_running
     echo 'Coq is already running.'
   else
+    " Check if version supported
+    let [b:coqtail_version, l:supported] = s:checkVersion()
+    if !l:supported
+      call s:initCommands(0)
+      CoqStop
+      return
+    endif
+
     let b:coqtail_running = 1
 
     " Check for a Coq project file
@@ -423,6 +492,7 @@ function! coqtail#Start(...) abort
     " Launch Coqtop
     try
       Py Coqtail().start(vim.eval('b:coqtail_version'),
+      \                  vim.eval('expand(b:coqtail_coq_path)'),
       \                  *vim.eval('map(copy(l:proj_args+a:000),'
       \                            '"expand(v:val)")'))
 
@@ -494,7 +564,7 @@ function! s:mappings() abort
 endfunction
 
 " Initialize buffer local variables, commands, and mappings.
-function! coqtail#Register(version, supported) abort
+function! coqtail#Register() abort
   " Initialize once
   if !exists('b:coqtail_running')
     let b:coqtail_running = 0
@@ -503,10 +573,12 @@ function! coqtail#Register(version, supported) abort
     let b:coqtail_errors = -1
     let b:coqtail_timeout = 0
     let b:coqtail_coqtop_done = 0
-    let b:coqtail_version = a:version
     let b:coqtail_log_name = ''
+    if !exists('b:coqtail_coq_path')
+      let b:coqtail_coq_path = g:coqtail_coq_path
+    endif
 
-    call s:initCommands(a:supported)
+    call s:initCommands(1)
     call s:mappings()
   endif
 endfunction
