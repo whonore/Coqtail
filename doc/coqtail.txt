@@ -132,6 +132,17 @@ Miscellaneous Commands						  *coqtail-misc*
 =============
 Configuration						 *coqtail-configuration*
 
+				         *g:coqtail_coq_path* *b:coqtail_coq_path*
+							      *coqtail-coq-path*
+g:coqtail_coq_path
+b:coqtail_coq_path	The path to search for the Coqtop binary. If
+			|b:coqtail_coq_path| is empty then $PATH is used.
+			|g:coqtail_coq_path| defaults to "" and
+			|b:coqtail_coq_path| defaults to |g:coqtail_coq_path|.
+			The global variable is checked only once when the .v
+			file is first loaded, but the buffer-local variable is
+			checked on every call to `:CoqStart`.
+
 					     *b:coqtail_timeout* *coqtail-timeout*
 b:coqtail_timeout	The time in seconds before a command sent to Coqtop
 			will be interrupted. Prevents vim from getting stuck if
