@@ -5,7 +5,8 @@ let s:supported = [
   \[8, 6, -1],
   \[8, 7, -1],
   \[8, 8, -1],
-  \[8, 9, -1]
+  \[8, 9, -1],
+  \[8, 10, -1]
 \]
 
 " Check that Coq version is supported

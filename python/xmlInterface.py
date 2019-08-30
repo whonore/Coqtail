@@ -1265,6 +1265,18 @@ class XMLInterface89(XMLInterface88):
         self.coqtop = "coqidetop"
         self.launch_args.remove("-ideslave")
 
+class XMLInterface810(XMLInterface87):
+    """The version 8.10.* XML interface."""
+
+    def __init__(self, versions):
+        # type: (Tuple[int, ...]) -> None
+        """Update launch arguments."""
+        super(XMLInterface810, self).__init__(versions)
+
+        # In coq 8.10 (built using dune), coqidetop does not seem to be present
+        self.coqtop = "coqidetop.opt"
+        self.launch_args.remove("-ideslave")
+
 
 def XMLInterface(version):
     # type: (Text) -> XMLInterfaceBase
@@ -1293,4 +1305,6 @@ def XMLInterface(version):
         return XMLInterface88(versions)
     elif (8, 9, 0) <= versions < (8, 10, 0):
         return XMLInterface89(versions)
+    elif (8, 10, 0) <= versions < (8, 11, 0):
+        return XMLInterface810(versions)
     raise ValueError("Unsupported version: {}".format(version))
