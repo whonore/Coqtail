@@ -533,12 +533,12 @@ function! s:mappings() abort
   inoremap <buffer> <silent> <Plug>CoqToLine <C-\><C-o>:CoqToLine<CR>
   inoremap <buffer> <silent> <Plug>CoqToTop <C-\><C-o>:CoqToTop<CR>
   inoremap <buffer> <silent> <Plug>CoqJumpToEnd <C-\><C-o>:CoqJumpToEnd<CR>
-  nnoremap <buffer> <silent> <Plug>CoqGotoDef :CoqGotoDef <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqSearch :Coq SearchAbout <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqCheck :Coq Check <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqAbout :Coq About <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqPrint :Coq Print <C-r>=expand(<SID>getCurWord())<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqLocate :Coq Locate <C-r>=expand(<SID>getCurWord())<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoDef :CoqGotoDef <C-r>=<SID>getCurWord()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqSearch :Coq SearchAbout <C-r>=<SID>getCurWord()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqCheck :Coq Check <C-r>=<SID>getCurWord()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqAbout :Coq About <C-r>=<SID>getCurWord()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqPrint :Coq Print <C-r>=<SID>getCurWord()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqLocate :Coq Locate <C-r>=<SID>getCurWord()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqToggleDebug :CoqToggleDebug<CR>
 
   " Use default mappings unless user opted out
