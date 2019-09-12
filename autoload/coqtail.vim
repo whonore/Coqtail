@@ -358,7 +358,7 @@ function! s:initCommands(supported) abort
     call s:cmdDef('CoqToLine', 'CoqStart | <count>CoqToLine')
     call s:cmdDef('CoqToTop', 'CoqStart | CoqToTop')
     call s:cmdDef('CoqJumpToEnd', 'CoqStart | CoqJumpToEnd')
-    call s:cmdDef('CoqGotoDef', 'CoqStart | <bang>CoqGotoDef <args>')
+    call s:cmdDef('CoqGotoDef', 'CoqStart | CoqGotoDef<bang> <args>')
     call s:cmdDef('Coq', 'CoqStart | Coq <args>')
     call s:cmdDef('CoqMakeMatch', 'CoqStart | CoqMakeMatch <args>')
     call s:cmdDef('CoqToggleDebug', 'CoqStart | CoqToggleDebug')
