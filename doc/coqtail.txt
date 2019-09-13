@@ -161,12 +161,8 @@ G[			Scroll the goal panel to the end of the previous goal.
 ======================
 Miscellaneous Commands						  *coqtail-misc*
 
-					 *<leader>cm* *i_<leader>cm* *:CoqMakeMatch*
-							    *coqtail-make-match*
-:CoqMakeMatch {arg}
-<leader>cm		Insert a "match" template for a given Inductive type.
-			The first version uses {arg}, while the second prompts
-			for an Inductive type.
+					      *:CoqMakeMatch* *coqtail-make-match*
+:CoqMakeMatch {arg}	Insert a "match" template for a given Inductive type.
 
 =============
 Configuration						 *coqtail-configuration*
