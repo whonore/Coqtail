@@ -29,6 +29,7 @@ let s:no_panel = 0
 let s:main_panel = 1
 let s:goal_panel = 2
 let s:info_panel = 3
+let s:goal_lines = 5
 
 " Default Coq path
 if !exists('g:coqtail_coq_path')
@@ -262,10 +263,13 @@ function! coqtail#GotoGoal(ngoal, start) abort
   let l:ngoal =
   \  a:ngoal == -1 ? s:goalNext() : a:ngoal == -2 ? s:goalPrev() : a:ngoal
 
-  let l:line = a:start ? s:goalStart(l:ngoal) : s:goalEnd(l:ngoal)
+  let l:sline = s:goalStart(l:ngoal)
+  let l:eline = s:goalEnd(l:ngoal)
+  let l:line = a:start ? l:sline : l:eline
   if l:line != 0
     if a:start
-      let l:line += 2
+      let l:off = 1 + get(g:, 'coqtail_goal_lines', s:goal_lines)
+      let l:line = min([l:line + l:off, l:eline])
     endif
     execute 'normal! ' . l:line . 'zb'
   endif
