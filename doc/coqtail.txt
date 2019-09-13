@@ -11,9 +11,10 @@ the |arglist| or |buffer-list|.
 1. Starting and Stopping Coqtail	|coqtail-start-stop|
 2. Movement Commands			|coqtail-movement|
 3. Coq Queries				|coqtail-queries|
-4. Miscellaneous Commands		|coqtail-misc|
-5. Configuration			|coqtail-configuration|
-6. Debugging				|coqtail-debug|
+4. Goal Focusing			|coqtail-goal-focus|
+5. Miscellaneous Commands		|coqtail-misc|
+6. Configuration			|coqtail-configuration|
+7. Debugging				|coqtail-debug|
 
 =============================
 Starting and Stopping Coqtail				    *coqtail-start-stop*
@@ -119,6 +120,44 @@ Coq Queries						       *coqtail-queries*
 			uses {arg}, while the second uses the term under the
 			cursor. Write the response to the Info panel.
 
+=============
+Goal Focusing						    *coqtail-goal-focus*
+
+						      *<leader>cgg* *:CoqGotoGoal*
+						       *coqtail-goto-goal-start*
+:[count]CoqGotoGoal
+<count><leader>cgg	Scroll the goal panel to the start of goal [count]
+			defaulting to the first goal. Use |g:coqtail_goal_lines|
+			to decide which line to put at the bottom of the
+			panel.
+
+						     *<leader>cGG* *:CoqGotoGoal!*
+							 *coqtail-goto-goal-end*
+:[count]CoqGotoGoal!
+<count><leader>cGG	Same as `:CoqGotoGoal` but put the last line of the
+			goal at the bottom of the panel.
+
+							   *g]* *:CoqGotoGoalNext*
+						  *coqtail-goto-goal-next-start*
+:CoqGotoGoalNext
+g]			Scroll the goal panel to the start of the next goal.
+
+							  *G]* *:CoqGotoGoalNext!*
+						    *coqtail-goto-goal-next-end*
+:CoqGotoGoalNext!
+G]			Scroll the goal panel to the end of the next goal.
+
+							   *g[* *:CoqGotoGoalPrev*
+						  *coqtail-goto-goal-prev-start*
+:CoqGotoGoalPrev
+g[			Scroll the goal panel to the start of the previous
+			goal.
+
+							  *G[* *:CoqGotoGoalPrev!*
+						    *coqtail-goto-goal-prev-end*
+:CoqGotoGoalPrev!
+G[			Scroll the goal panel to the end of the previous goal.
+
 ======================
 Miscellaneous Commands						  *coqtail-misc*
 
@@ -142,6 +181,10 @@ b:coqtail_coq_path	The path to search for the Coqtop binary. If
 			The global variable is checked only once when the .v
 			file is first loaded, but the buffer-local variable is
 			checked on every call to `:CoqStart`.
+
+				       *g:coqtail_goal-lines* *coqtail-goal-lines*
+g:coqtail_goal_lines	The number of lines from the start of a goal to
+			display. Used by `:CoqGotoGoal`. Defaults to 5.
 
 					     *b:coqtail_timeout* *coqtail-timeout*
 b:coqtail_timeout	The time in seconds before a command sent to Coqtop
