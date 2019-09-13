@@ -234,6 +234,22 @@ function! s:goalEnd(ngoal) abort
   return l:end != 0 ? l:end - 2 : line('$')
 endfunction
 
+" Determine the next goal's index.
+function! s:goalNext() abort
+  let l:goal = search('\m^=\+ (\d', 'nWbc')
+  if l:goal == 0
+    return 1
+  else
+    return matchstr(getline(l:goal), '\d\+') + 1
+  endif
+endfunction
+
+" Determine the previous goal's index.
+function! s:goalPrev() abort
+  let l:next = s:goalNext()
+  return l:next != 1 ? l:next - 2 : 0
+endfunction
+
 " Place either the start or end of the nth goal at the bottom of the window.
 function! coqtail#GotoGoal(ngoal, start) abort
   let l:panel = s:switchPanel(s:goal_panel)
@@ -242,7 +258,11 @@ function! coqtail#GotoGoal(ngoal, start) abort
     return 0
   endif
 
-  let l:line = a:start ? s:goalStart(a:ngoal) : s:goalEnd(a:ngoal)
+  " ngoal = -1: next goal, ngoal = -2: previous goal
+  let l:ngoal =
+  \  a:ngoal == -1 ? s:goalNext() : a:ngoal == -2 ? s:goalPrev() : a:ngoal
+
+  let l:line = a:start ? s:goalStart(l:ngoal) : s:goalEnd(l:ngoal)
   if l:line != 0
     if a:start
       let l:line += 2
@@ -414,6 +434,8 @@ let s:cmd_opts = {
   \'CoqGotoDef': '-bang -nargs=1',
   \'Coq': '-nargs=+ -complete=custom,s:queryComplete',
   \'CoqGotoGoal': '-bang -count=1',
+  \'CoqGotoGoalNext': '-bang',
+  \'CoqGotoGoalPrev': '-bang',
   \'CoqMakeMatch': '-nargs=1',
   \'CoqToggleDebug': ''
 \}
@@ -434,6 +456,8 @@ function! s:initCommands(supported) abort
     call s:cmdDef('CoqGotoDef', 'CoqStart | CoqGotoDef<bang> <args>')
     call s:cmdDef('Coq', 'CoqStart | Coq <args>')
     call s:cmdDef('CoqGotoGoal', 'CoqStart | <count>CoqGotoGoal<bang>')
+    call s:cmdDef('CoqGotoGoalNext', 'CoqStart | CoqGotoGoalNext<bang>')
+    call s:cmdDef('CoqGotoGoalPrev', 'CoqStart | CoqGotoGoalPrev<bang>')
     call s:cmdDef('CoqMakeMatch', 'CoqStart | CoqMakeMatch <args>')
     call s:cmdDef('CoqToggleDebug', 'CoqStart | CoqToggleDebug')
   else
@@ -457,6 +481,8 @@ function! s:prepare() abort
   call s:cmdDef('CoqGotoDef', 'call coqtail#GotoDef(<f-args>, <bang>0)')
   call s:cmdDef('Coq', 'Py Coqtail().query(<f-args>)')
   call s:cmdDef('CoqGotoGoal', 'call coqtail#GotoGoal(<count>, <bang>1)')
+  call s:cmdDef('CoqGotoGoalNext', 'call coqtail#GotoGoal(-1, <bang>1)')
+  call s:cmdDef('CoqGotoGoalPrev', 'call coqtail#GotoGoal(-2, <bang>1)')
   call s:cmdDef('CoqMakeMatch', 'Py Coqtail().make_match(<f-args>)')
   call s:cmdDef('CoqToggleDebug', 'Py Coqtail().toggle_debug()')
 
@@ -616,6 +642,10 @@ function! s:mappings() abort
   nnoremap <buffer> <silent> <Plug>CoqLocate :Coq Locate <C-r>=<SID>getCurWord()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalStart :<C-U>execute v:count1 'CoqGotoGoal'<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalEnd :<C-U>execute v:count1 'CoqGotoGoal!'<CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoGoalNextStart :CoqGotoGoalNext<CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoGoalNextEnd :CoqGotoGoalNext!<CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoGoalPrevStart :CoqGotoGoalPrev<CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoGoalPrevEnd :CoqGotoGoalPrev!<CR>
   nnoremap <buffer> <silent> <Plug>CoqToggleDebug :CoqToggleDebug<CR>
 
   " Use default mappings unless user opted out
@@ -629,13 +659,20 @@ function! s:mappings() abort
     \['JumpToEnd', 'G', 'ni'], ['GotoDef', 'g', 'n'], ['Search', 's', 'n'],
     \['Check', 'h', 'n'], ['About', 'a', 'n'], ['Print', 'p', 'n'],
     \['Locate', 'f', 'n'], ['GotoGoalStart', 'gg', 'ni'],
-    \['GotoGoalEnd', 'ge', 'ni'], ['ToggleDebug', 'd', 'n']
+    \['GotoGoalEnd', 'GG', 'ni'], ['GotoGoalNextStart', '!g]', 'n'],
+    \['GotoGoalNextEnd', '!G]', 'n'], ['GotoGoalPrevStart', '!g[', 'n'],
+    \['GotoGoalPrevEnd', '!G[', 'n'], ['ToggleDebug', 'd', 'n']
   \]
 
   for [l:cmd, l:key, l:types] in l:maps
     for l:type in split(l:types, '\zs')
       if !hasmapto('<Plug>Coq' . l:cmd, l:type)
-        execute l:type . 'map <buffer> <leader>c' . l:key . ' <Plug>Coq' . l:cmd
+        let l:prefix = '<leader>c'
+        if l:key[0] ==# '!'
+          let l:key = l:key[1:]
+          let l:prefix = ''
+        endif
+        execute l:type . 'map <buffer> ' . l:prefix . l:key . ' <Plug>Coq' . l:cmd
       endif
     endfor
   endfor
