@@ -25,7 +25,11 @@ endif
 
 " Initialize global variables
 let s:counter = 0
-"
+let s:no_panel = 0
+let s:main_panel = 1
+let s:goal_panel = 2
+let s:info_panel = 3
+
 " Default Coq path
 if !exists('g:coqtail_coq_path')
   let g:coqtail_coq_path = ''
@@ -98,6 +102,40 @@ function! coqtail#InitPanels() abort
 
   Py Coqtail().splash(vim.eval('b:coqtail_version'))
   let s:counter += 1
+endfunction
+
+" Detect what panel is focused.
+function! s:checkPanel() abort
+  if exists('b:coqtail_panel_bufs')
+    return s:main_panel
+  elseif exists('b:coqtail_coq_buf') && &filetype ==# 'coq-goals'
+    return s:goal_panel
+  elseif exists('b:coqtail_coq_buf') && &filetype ==# 'coq-infos'
+    return s:info_panel
+  else
+    return s:no_panel
+  endif
+endfunction
+
+" Attempt to switch to a panel.
+function! s:switchPanel(panel) abort
+  let l:cur_panel = s:checkPanel()
+  if l:cur_panel == s:main_panel && a:panel != s:main_panel
+    " Main -> Goal/Info
+    let l:name = a:panel == s:goal_panel ? 'goal' : 'info'
+    execute bufwinnr(b:coqtail_panel_bufs[l:name]) . 'wincmd w'
+  elseif l:cur_panel == s:goal_panel || l:cur_panel == s:info_panel
+    if a:panel == s:main_panel
+      " Goal/Info -> Main
+      execute bufwinnr(b:coqtail_coq_buf) . 'wincmd w'
+    elseif s:switchPanel(s:main_panel) != s:no_panel
+      " Goal/Info -> Goal/Info
+      return s:switchPanel(a:panel)
+    else
+      return s:no_panel
+    endif
+  endif
+  return l:cur_panel
 endfunction
 
 " Reopen goals and info panels and re-highlight.
@@ -179,6 +217,40 @@ function! coqtail#ScrollPanel() abort
   if line('w0') != 1 && l:disph < l:winh
     normal! Gz-
   endif
+endfunction
+
+" Find the start of the nth goal.
+function! s:goalStart(ngoal) abort
+  return search('\m^=\+ (' . a:ngoal . ' /', 'nw')
+endfunction
+
+" Find the end of the nth goal.
+function! s:goalEnd(ngoal) abort
+  if s:goalStart(a:ngoal) == 0
+    return 0
+  endif
+
+  let l:end = s:goalStart(a:ngoal + 1)
+  return l:end != 0 ? l:end - 2 : line('$')
+endfunction
+
+" Place either the start or end of the nth goal at the bottom of the window.
+function! coqtail#GotoGoal(ngoal, start) abort
+  let l:panel = s:switchPanel(s:goal_panel)
+  if l:panel == s:no_panel
+    " Failed to switch to goal panel
+    return 0
+  endif
+
+  let l:line = a:start ? s:goalStart(a:ngoal) : s:goalEnd(a:ngoal)
+  if l:line != 0
+    if a:start
+      let l:line += 2
+    endif
+    execute 'normal! ' . l:line . 'zb'
+  endif
+
+  call s:switchPanel(l:panel)
 endfunction
 
 " Remove entries in the quickfix list with the same position.
@@ -341,6 +413,7 @@ let s:cmd_opts = {
   \'CoqJumpToEnd': '',
   \'CoqGotoDef': '-bang -nargs=1',
   \'Coq': '-nargs=+ -complete=custom,s:queryComplete',
+  \'CoqGotoGoal': '-bang -count=1',
   \'CoqMakeMatch': '-nargs=1',
   \'CoqToggleDebug': ''
 \}
@@ -360,6 +433,7 @@ function! s:initCommands(supported) abort
     call s:cmdDef('CoqJumpToEnd', 'CoqStart | CoqJumpToEnd')
     call s:cmdDef('CoqGotoDef', 'CoqStart | CoqGotoDef<bang> <args>')
     call s:cmdDef('Coq', 'CoqStart | Coq <args>')
+    call s:cmdDef('CoqGotoGoal', 'CoqStart | <count>CoqGotoGoal<bang>')
     call s:cmdDef('CoqMakeMatch', 'CoqStart | CoqMakeMatch <args>')
     call s:cmdDef('CoqToggleDebug', 'CoqStart | CoqToggleDebug')
   else
@@ -382,6 +456,7 @@ function! s:prepare() abort
   call s:cmdDef('CoqJumpToEnd', 'Py Coqtail().jump_to_end()')
   call s:cmdDef('CoqGotoDef', 'call coqtail#GotoDef(<f-args>, <bang>0)')
   call s:cmdDef('Coq', 'Py Coqtail().query(<f-args>)')
+  call s:cmdDef('CoqGotoGoal', 'call coqtail#GotoGoal(<count>, <bang>1)')
   call s:cmdDef('CoqMakeMatch', 'Py Coqtail().make_match(<f-args>)')
   call s:cmdDef('CoqToggleDebug', 'Py Coqtail().toggle_debug()')
 
@@ -539,6 +614,8 @@ function! s:mappings() abort
   nnoremap <buffer> <silent> <Plug>CoqAbout :Coq About <C-r>=<SID>getCurWord()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqPrint :Coq Print <C-r>=<SID>getCurWord()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqLocate :Coq Locate <C-r>=<SID>getCurWord()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoGoalStart :<C-U>execute v:count1 'CoqGotoGoal'<CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoGoalEnd :<C-U>execute v:count1 'CoqGotoGoal!'<CR>
   nnoremap <buffer> <silent> <Plug>CoqToggleDebug :CoqToggleDebug<CR>
 
   " Use default mappings unless user opted out
@@ -551,7 +628,8 @@ function! s:mappings() abort
     \['Undo', 'k', 'ni'], ['ToLine', 'l', 'ni'], ['ToTop', 'T', 'ni'],
     \['JumpToEnd', 'G', 'ni'], ['GotoDef', 'g', 'n'], ['Search', 's', 'n'],
     \['Check', 'h', 'n'], ['About', 'a', 'n'], ['Print', 'p', 'n'],
-    \['Locate', 'f', 'n'], ['ToggleDebug', 'd', 'n']
+    \['Locate', 'f', 'n'], ['GotoGoalStart', 'gg', 'ni'],
+    \['GotoGoalEnd', 'ge', 'ni'], ['ToggleDebug', 'd', 'n']
   \]
 
   for [l:cmd, l:key, l:types] in l:maps
