@@ -24,11 +24,14 @@ else
 endif
 
 " Initialize global variables
+" Used to give unique names to goal and info panels.
 let s:counter = 0
+" Panel identifiers.
 let s:no_panel = 0
 let s:main_panel = 1
 let s:goal_panel = 2
 let s:info_panel = 3
+" Default number of lines of a goal to show.
 let s:goal_lines = 5
 
 " Default Coq path
@@ -51,10 +54,12 @@ Py if not vim.eval('s:python_dir') in sys.path:
 \    sys.path.insert(0, vim.eval('s:python_dir'))
 Py from coqtail import Coqtail
 
+" Print a message with warning highlighting.
 function! s:warn(msg) abort
   echohl WarningMsg | echom a:msg | echohl None
 endfunction
 
+" Print a message with error highlighting.
 function! s:err(msg) abort
   echohl ErrorMsg | echom a:msg | echohl None
 endfunction
