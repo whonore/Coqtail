@@ -7,7 +7,7 @@ if exists('g:coqtail_sourced')
 endif
 let g:coqtail_sourced = 1
 
-" Check python version
+" Check Python version
 if has('python3')
   command! -nargs=1 Py py3 <args>
   function! s:pyeval(expr) abort
@@ -19,7 +19,7 @@ elseif has('python')
     return function('pyeval', [a:expr])
   endfunction
 else
-  echoerr 'Coqtail requires python support.'
+  echoerr 'Coqtail requires Python support.'
   finish
 endif
 
@@ -47,7 +47,7 @@ endif
 " Load vimbufsync if not already done
 call vimbufsync#init()
 
-" Add python directory to path so python functions can be called
+" Add python directory to path so Python functions can be called
 let s:python_dir = expand('<sfile>:p:h:h') . '/python'
 Py import sys, vim
 Py if not vim.eval('s:python_dir') in sys.path:
@@ -449,52 +449,38 @@ let s:cmd_opts = {
   \'CoqToggleDebug': ''
 \}
 function! s:cmdDef(name, act) abort
-  execute printf('command! -buffer -bar %s %s %s', s:cmd_opts[a:name], a:name, a:act)
+  " Start Coqtail first if needed
+  let l:act = a:name !=# 'CoqStart' && a:name !=# 'CoqStop'
+  \ ? printf('if b:coqtail_running || coqtail#Start() | %s | endif', a:act)
+  \ : a:act
+  execute printf('command! -buffer -bar %s %s %s', s:cmd_opts[a:name], a:name, l:act)
 endfunction
 
-" Define CoqStart and define all other commands to first call it.
-function! s:initCommands(supported) abort
-  if a:supported
-    call s:cmdDef('CoqStart', 'call coqtail#Start(<f-args>)')
-    call s:cmdDef('CoqStop', '')
-    call s:cmdDef('CoqNext', 'CoqStart | <count>CoqNext')
-    call s:cmdDef('CoqUndo', 'CoqStart | <count>CoqUndo')
-    call s:cmdDef('CoqToLine', 'CoqStart | <count>CoqToLine')
-    call s:cmdDef('CoqToTop', 'CoqStart | CoqToTop')
-    call s:cmdDef('CoqJumpToEnd', 'CoqStart | CoqJumpToEnd')
-    call s:cmdDef('CoqGotoDef', 'CoqStart | CoqGotoDef<bang> <args>')
-    call s:cmdDef('Coq', 'CoqStart | Coq <args>')
-    call s:cmdDef('CoqGotoGoal', 'CoqStart | <count>CoqGotoGoal<bang>')
-    call s:cmdDef('CoqGotoGoalNext', 'CoqStart | CoqGotoGoalNext<bang>')
-    call s:cmdDef('CoqGotoGoalPrev', 'CoqStart | CoqGotoGoalPrev<bang>')
-    call s:cmdDef('CoqMakeMatch', 'CoqStart | CoqMakeMatch <args>')
-    call s:cmdDef('CoqToggleDebug', 'CoqStart | CoqToggleDebug')
-  else
-    for l:cmd in keys(s:cmd_opts)
-      if l:cmd !=# 'CoqStart'
-        call s:cmdDef(l:cmd, 'call s:err("Coqtail does not support Coq version " . b:coqtail_version)')
-      endif
-    endfor
-  endif
+" Execute a Python command. Used to chain Py with '|'.
+function! s:Py(func) abort
+  execute 'Py ' . a:func
 endfunction
 
-" Initialize commands, panels, and autocommands.
-function! s:prepare() abort
-  " Commands
+" Define Coqtail commands.
+function! s:commands() abort
+  call s:cmdDef('CoqStart', 'call coqtail#Start(<f-args>)')
   call s:cmdDef('CoqStop', 'call coqtail#Stop()')
-  call s:cmdDef('CoqNext', 'Py Coqtail().step(<count>)')
-  call s:cmdDef('CoqUndo', 'Py Coqtail().rewind(<count>)')
-  call s:cmdDef('CoqToLine', 'Py Coqtail().to_line(<count>)')
-  call s:cmdDef('CoqToTop', 'Py Coqtail().to_top()')
-  call s:cmdDef('CoqJumpToEnd', 'Py Coqtail().jump_to_end()')
+  call s:cmdDef('CoqNext', 'call s:Py("Coqtail().step(<count>)")')
+  call s:cmdDef('CoqUndo', 'call s:Py("Coqtail().rewind(<count>)")')
+  call s:cmdDef('CoqToLine', 'call s:Py("Coqtail().to_line(<count>)")')
+  call s:cmdDef('CoqToTop', 'call s:Py("Coqtail().to_top()")')
+  call s:cmdDef('CoqJumpToEnd', 'call s:Py("Coqtail().jump_to_end()")')
   call s:cmdDef('CoqGotoDef', 'call coqtail#GotoDef(<f-args>, <bang>0)')
-  call s:cmdDef('Coq', 'Py Coqtail().query(<f-args>)')
+  call s:cmdDef('Coq', 'call s:Py("Coqtail().query(<f-args>)")')
   call s:cmdDef('CoqGotoGoal', 'call coqtail#GotoGoal(<count>, <bang>1)')
   call s:cmdDef('CoqGotoGoalNext', 'call coqtail#GotoGoal(-1, <bang>1)')
   call s:cmdDef('CoqGotoGoalPrev', 'call coqtail#GotoGoal(-2, <bang>1)')
-  call s:cmdDef('CoqMakeMatch', 'Py Coqtail().make_match(<f-args>)')
-  call s:cmdDef('CoqToggleDebug', 'Py Coqtail().toggle_debug()')
+  call s:cmdDef('CoqMakeMatch', 'call s:Py("Coqtail().make_match(<f-args>)")')
+  call s:cmdDef('CoqToggleDebug', 'call s:Py("Coqtail().toggle_debug()")')
+endfunction
 
+" Initialize panels and autocommands.
+function! s:prepare() abort
   " Initialize goals and info panels
   call coqtail#InitPanels()
   call coqtail#OpenPanels()
@@ -527,8 +513,6 @@ function! s:cleanup() abort
     autocmd! coqtail#Autocmds * <buffer>
   catch
   endtry
-
-  call s:initCommands(1)
 endfunction
 
 " Get the Coq version and determine if it is supported.
@@ -589,9 +573,8 @@ function! coqtail#Start(...) abort
     " Check if version supported
     let [b:coqtail_version, l:supported] = s:checkVersion()
     if !l:supported
-      call s:initCommands(0)
-      CoqStop
-      return
+      call s:err('Coqtail does not support Coq version ' . b:coqtail_version)
+      return 0
     endif
 
     let b:coqtail_running = 1
@@ -608,10 +591,13 @@ function! coqtail#Start(...) abort
 
       call s:prepare()
     catch /Failed to launch Coq/
-      echoerr v:exception
+      call s:err(v:exception)
       call coqtail#Stop()
+      return 0
     endtry
   endif
+
+  return 1
 endfunction
 
 " Stop the Coqtop interface and clean up goal and info buffers.
@@ -702,7 +688,7 @@ function! coqtail#Register() abort
       let b:coqtail_coq_path = g:coqtail_coq_path
     endif
 
-    call s:initCommands(1)
+    call s:commands()
     call s:mappings()
   endif
 endfunction

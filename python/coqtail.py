@@ -141,7 +141,7 @@ class Coqtail(object):
             success = self.call_and_wait(
                 self.coqtop.start, coq_path, *args, timeout=self.timeout
             )
-        except ValueError as e:
+        except (ValueError, CT.CoqtopError) as e:
             errmsg.append(str(e))
 
         if not success:
