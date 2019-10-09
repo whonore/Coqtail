@@ -19,7 +19,7 @@ It supports:
 As a [vim package](https://vimhelp.org/repeat.txt.html#packages):
 
 ```sh
-mkdir ~/.vim/pack/coq/start
+mkdir -p ~/.vim/pack/coq/start
 git clone https://github.com/let-def/vimbufsync.git ~/.vim/pack/coq/start/vimbufsync
 git clone https://github.com/whonore/coqtail.git ~/.vim/pack/coq/start/coqtail
 vim +helptags\ .vim/pack/coq/start/coqtail/doc +q
@@ -50,6 +50,7 @@ Plug 'whonore/coqtail' (in .vimrc)
 
 Coqtail requires:
 - Vim compiled with either `+python` or `+python3`
+- Vim configuration options `filetype plugin indent on` and `syntax on` (e.g. in `.vimrc`)
 - [vimbufsync](https://github.com/let-def/vimbufsync)
 - [Coq 8.4](https://coq.inria.fr/coq-84),
   [8.5](https://coq.inria.fr/coq-85),
