@@ -471,7 +471,8 @@ function! s:commands() abort
   call s:cmdDef('CoqToTop', 'call s:Py("Coqtail().to_top()")')
   call s:cmdDef('CoqJumpToEnd', 'call s:Py("Coqtail().jump_to_end()")')
   call s:cmdDef('CoqGotoDef', 'call coqtail#GotoDef(<f-args>, <bang>0)')
-  call s:cmdDef('Coq', 'call s:Py("Coqtail().query(<f-args>)")')
+  " N.B. Must use " to properly quote f-args
+  call s:cmdDef('Coq', "call s:Py('Coqtail().query(<f-args>)')")
   call s:cmdDef('CoqGotoGoal', 'call coqtail#GotoGoal(<count>, <bang>1)')
   call s:cmdDef('CoqGotoGoalNext', 'call coqtail#GotoGoal(-1, <bang>1)')
   call s:cmdDef('CoqGotoGoalPrev', 'call coqtail#GotoGoal(-2, <bang>1)')
