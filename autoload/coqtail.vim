@@ -457,27 +457,28 @@ function! s:cmdDef(name, act) abort
 endfunction
 
 " Execute a Python command. Used to chain Py with '|'.
-function! s:Py(func) abort
-  execute 'Py ' . a:func
+function! s:Py(...) abort
+  " Convert Vim single-quote '' escape to Python \'.
+  let l:args = substitute(string(a:000[1:]), "''", "\\\\'", 'g')
+  execute printf('Py Coqtail().%s(*%s)', a:1, l:args)
 endfunction
 
 " Define Coqtail commands.
 function! s:commands() abort
   call s:cmdDef('CoqStart', 'call coqtail#Start(<f-args>)')
   call s:cmdDef('CoqStop', 'call coqtail#Stop()')
-  call s:cmdDef('CoqNext', 'call s:Py("Coqtail().step(<count>)")')
-  call s:cmdDef('CoqUndo', 'call s:Py("Coqtail().rewind(<count>)")')
-  call s:cmdDef('CoqToLine', 'call s:Py("Coqtail().to_line(<count>)")')
-  call s:cmdDef('CoqToTop', 'call s:Py("Coqtail().to_top()")')
-  call s:cmdDef('CoqJumpToEnd', 'call s:Py("Coqtail().jump_to_end()")')
+  call s:cmdDef('CoqNext', 'call s:Py("step", <count>)')
+  call s:cmdDef('CoqUndo', 'call s:Py("rewind", <count>)')
+  call s:cmdDef('CoqToLine', 'call s:Py("to_line", <count>)')
+  call s:cmdDef('CoqToTop', 'call s:Py("to_top")')
+  call s:cmdDef('CoqJumpToEnd', 'call s:Py("jump_to_end")')
   call s:cmdDef('CoqGotoDef', 'call coqtail#GotoDef(<f-args>, <bang>0)')
-  " N.B. Must use " to properly quote f-args
-  call s:cmdDef('Coq', "call s:Py('Coqtail().query(<f-args>)')")
+  call s:cmdDef('Coq', 'call s:Py("query", <f-args>)')
   call s:cmdDef('CoqGotoGoal', 'call coqtail#GotoGoal(<count>, <bang>1)')
   call s:cmdDef('CoqGotoGoalNext', 'call coqtail#GotoGoal(-1, <bang>1)')
   call s:cmdDef('CoqGotoGoalPrev', 'call coqtail#GotoGoal(-2, <bang>1)')
-  call s:cmdDef('CoqMakeMatch', 'call s:Py("Coqtail().make_match(<f-args>)")')
-  call s:cmdDef('CoqToggleDebug', 'call s:Py("Coqtail().toggle_debug()")')
+  call s:cmdDef('CoqMakeMatch', 'call s:Py("make_match", <f-args>)')
+  call s:cmdDef('CoqToggleDebug', 'call s:Py("toggle_debug")')
 endfunction
 
 " Initialize panels and autocommands.
