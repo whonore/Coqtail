@@ -359,6 +359,7 @@ function! coqtail#ParseCoqProj(file, silent) abort
 
       " Ignore directories that don't exist
       if finddir(l:absdir, l:file_dir) !=# ''
+        let l:absdir = substitute(l:absdir, ' ', '<SPACE>', 'g')
         let l:opts[l:idx + 1] = fnamemodify(l:absdir, ':p')
         let l:end = l:idx + l:valid_opts[l:opts[l:idx]]
 
@@ -379,7 +380,7 @@ function! coqtail#ParseCoqProj(file, silent) abort
     let l:idx += 1
   endwhile
 
-  return split(join(l:proj_args))
+  return map(split(join(l:proj_args)), 'substitute(v:val, "<SPACE>", " ", "g")')
 endfunction
 
 " Search for a CoqProject file using 'g:coqtail_project_name' starting in the
