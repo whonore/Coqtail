@@ -384,8 +384,8 @@ function! coqtail#ParseCoqProj(file, silent) abort
 
       " Ignore directories that don't exist
       if finddir(l:absdir, l:file_dir) !=# ''
-        let l:absdir = substitute(l:absdir, ' ', s:space, 'g')
-        let l:opts[l:idx + 1] = fnamemodify(l:absdir, ':p')
+        let l:absdir = fnamemodify(l:absdir, ':p')
+        let l:opts[l:idx + 1] = substitute(l:absdir, ' ', s:space, 'g')
         let l:end = l:idx + l:valid_opts[l:opts[l:idx]]
 
         " Can be either '-R dir -as coqdir' or '-R dir coqdir'

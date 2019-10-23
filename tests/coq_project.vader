@@ -118,3 +118,23 @@ Execute (alternate-I):
   call writefile(['-include . -I . -as top'], f)
   let args = coqtail#ParseCoqProj(f, 1)
   AssertEqual ['-include', d . '/', '-I', d . '/', '-as', 'top'], args
+
+Execute (expand-space):
+  let d = tempname()
+  let sd = 'space subdir'
+  let dsd = join([d, sd], '/')
+  call mkdir(dsd, 'p')
+  let f = join([dsd, '1'], '/')
+  call writefile(['-R . top'], f)
+  let args = coqtail#ParseCoqProj(f, 1)
+  AssertEqual ['-R', dsd . '/', 'top'], args
+
+Execute (quote-space):
+  let d = tempname()
+  let sd = 'space subdir'
+  let dsd = join([d, sd], '/')
+  call mkdir(dsd, 'p')
+  let f = join([dsd, '1'], '/')
+  call writefile(['-R "' . dsd . '" top'], f)
+  let args = coqtail#ParseCoqProj(f, 1)
+  AssertEqual ['-R', dsd . '/', 'top'], args
