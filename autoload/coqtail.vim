@@ -33,6 +33,8 @@ let s:goal_panel = 2
 let s:info_panel = 3
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
+" String to escape quotes.
+let s:space = '<SPACE>'
 
 " Default Coq path
 if !exists('g:coqtail_coq_path')
@@ -337,6 +339,26 @@ function! coqtail#GotoDef(target, bang) abort
   endif
 endfunction
 
+" Replace spaces between quotes in 'text' with 'esc'.
+function! s:escapeSpaces(text, esc) abort
+  let l:escaped = []
+  let l:prev_end = 0
+
+  while l:prev_end != -1
+    let [l:match, l:start, l:end] = matchstrpos(a:text, '"[^"]*"', l:prev_end)
+
+    " Add text before quotes
+    let l:escaped = add(l:escaped, a:text[l:prev_end : max([l:start - 1, -1])])
+    if l:start != -1
+      " Add text inside quotes
+      let l:escaped = add(l:escaped, substitute(l:match[1:-2], ' ', a:esc, 'g'))
+    endif
+    let l:prev_end = l:end
+  endwhile
+
+  return join(l:escaped, '')
+endfunction
+
 " Read a CoqProject file and parse it into options that can be passed to
 " Coqtop.
 function! coqtail#ParseCoqProj(file, silent) abort
@@ -345,8 +367,11 @@ function! coqtail#ParseCoqProj(file, silent) abort
   " TODO: recognize more options
   let l:valid_opts = {'-R': 2, '-Q': 2, '-I': 1, '-include': 1}
 
-  " Remove any excess whitespace
-  let l:opts = filter(split(join(readfile(a:file)), ' '), 'v:val !=# ""')
+  " Escape quoted spaces and remove excess whitespace
+  let l:opts = map(filter(
+  \   split(s:escapeSpaces(join(readfile(a:file)), s:space)),
+  \   'v:val !=# ""'),
+  \ 'substitute(v:val, s:space, " ", "g")')
   let l:idx = 0
 
   while l:idx < len(l:opts)
@@ -359,7 +384,8 @@ function! coqtail#ParseCoqProj(file, silent) abort
 
       " Ignore directories that don't exist
       if finddir(l:absdir, l:file_dir) !=# ''
-        let l:opts[l:idx + 1] = fnamemodify(l:absdir, ':p')
+        let l:absdir = fnamemodify(l:absdir, ':p')
+        let l:opts[l:idx + 1] = substitute(l:absdir, ' ', s:space, 'g')
         let l:end = l:idx + l:valid_opts[l:opts[l:idx]]
 
         " Can be either '-R dir -as coqdir' or '-R dir coqdir'
@@ -379,7 +405,7 @@ function! coqtail#ParseCoqProj(file, silent) abort
     let l:idx += 1
   endwhile
 
-  return split(join(l:proj_args))
+  return map(split(join(l:proj_args)), 'substitute(v:val, s:space, " ", "g")')
 endfunction
 
 " Search for a CoqProject file using 'g:coqtail_project_name' starting in the
