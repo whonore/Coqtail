@@ -1273,6 +1273,9 @@ class XMLInterface810(XMLInterface89):
     """The version 8.10.* XML interface."""
 
 
+XMLInterfaceLatest = XMLInterface810
+
+
 def XMLInterface(version):
     # type: (Text) -> XMLInterfaceBase
     """Return the appropriate XMLInterface class for the given version."""
@@ -1302,4 +1305,5 @@ def XMLInterface(version):
         return XMLInterface89(versions)
     elif (8, 10, 0) <= versions < (8, 11, 0):
         return XMLInterface810(versions)
-    raise ValueError("Unsupported version: {}".format(version))
+    else:
+        return XMLInterfaceLatest(versions)

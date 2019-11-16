@@ -16,6 +16,8 @@ matrix:
       env: TOXENV=pytest-coq89-py27
     - python: '2.7'
       env: TOXENV=pytest-coq810-py27
+    - python: '2.7'
+      env: TOXENV=pytest-coqmaster-py27
     - python: '3.6'
       env: TOXENV=pytest-coq84-py36
     - python: '3.6'
@@ -30,6 +32,8 @@ matrix:
       env: TOXENV=pytest-coq89-py36
     - python: '3.6'
       env: TOXENV=pytest-coq810-py36
+    - python: '3.6'
+      env: TOXENV=pytest-coqmaster-py36
     - env: TOXENV=vim
 
 install:

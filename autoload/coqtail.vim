@@ -24,6 +24,17 @@ else
 endif
 
 " Initialize global variables
+" Supported Coq versions (-1 means any number).
+let s:supported = [
+  \[8, 4, -1],
+  \[8, 5, -1],
+  \[8, 6, -1],
+  \[8, 7, -1],
+  \[8, 8, -1],
+  \[8, 9, -1],
+  \[8, 10, -1]
+\]
+let s:latest_supported = join(s:supported[-1][:1], '.')
 " Used to give unique names to goal and info panels.
 let s:counter = 0
 " Panel identifiers.
@@ -35,6 +46,11 @@ let s:info_panel = 3
 let s:goal_lines = 5
 " String to escape quotes.
 let s:space = '<SPACE>'
+" Warning/error messages.
+let s:unsupported_msg = '
+\Coqtail does not officially support your version of Coq (%s).
+\ Continuing with the interface for the latest supported version (' .
+\ s:latest_supported . ').'
 
 " Default Coq path
 if !exists('g:coqtail_coq_path')
@@ -545,17 +561,6 @@ endfunction
 
 " Get the Coq version and determine if it is supported.
 function! s:checkVersion() abort
-  " Supported versions (-1 means any number)
-  let l:supported = [
-    \[8, 4, -1],
-    \[8, 5, -1],
-    \[8, 6, -1],
-    \[8, 7, -1],
-    \[8, 8, -1],
-    \[8, 9, -1],
-    \[8, 10, -1]
-  \]
-
   " Check that Coq version is supported
   " Assumes message is of the following form:
   " The Coq Proof Assistant, version _._._ (_ _)
@@ -574,7 +579,7 @@ function! s:checkVersion() abort
   endwhile
 
   let l:found_sup = 0
-  for l:supp in l:supported
+  for l:supp in s:supported
     let l:is_sup = 1
 
     for l:idx in range(3)
@@ -601,8 +606,7 @@ function! coqtail#Start(...) abort
     " Check if version supported
     let [b:coqtail_version, l:supported] = s:checkVersion()
     if !l:supported
-      call s:err('Coqtail does not support Coq version ' . b:coqtail_version)
-      return 0
+      call s:warn(printf(s:unsupported_msg, b:coqtail_version))
     endif
 
     let b:coqtail_running = 1
