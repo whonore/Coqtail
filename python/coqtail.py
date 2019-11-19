@@ -728,7 +728,10 @@ class Coqtail(object):
     def encoding(self):
         # type: () -> str
         """Get the encoding or default to utf-8."""
-        return vim.options["encoding"].decode("utf-8") or "utf-8"
+        encoding = vim.options.get("encoding", "utf-8")
+        if hasattr(encoding, 'decode'):
+            return encoding.decode("utf-8")
+        return encoding
 
     @property
     def timeout(self):
