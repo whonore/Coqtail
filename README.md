@@ -106,7 +106,7 @@ You can tell it to search instead in a specific directory by setting
 Coqtail also comes with an ftdetect script for Coq, as well as modified
 versions of Vincent Aravantinos'
 [syntax](http://www.vim.org/scripts/script.php?script_id=2063) and
-[index](http://www.vim.org/scripts/script.php?script_id=2079) scripts for Coq.
+[indent](http://www.vim.org/scripts/script.php?script_id=2079) scripts for Coq.
 These scripts are used by default but can be disabled by setting
 `g:coqtail_nosyntax = 1` and `g:coqtail_noindent = 1` respectively.
 
