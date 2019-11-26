@@ -22,9 +22,10 @@ matrix:
 
 install:
   - if [[ $TOXENV =~ py27 ]]; then PY=27; else PY=37; fi
-  - nix-env -j auto -iA nixpkgs.python${PY}Packages.pip
-  - ~/.nix-profile/bin/python -m pip install --user tox
+  - nix-env -j auto -iA nixpkgs.python${PY}Packages.pip nixpkgs.python${PY}Packages.python
+  - python -m pip install --user tox
 
 script:
-  - ~/.nix-profile/bin/python --version
-  - ~/.nix-profile/bin/python -m tox
+  - which python
+  - python --version
+  - python -m tox
