@@ -1,45 +1,29 @@
-language: python
+language: nix
 
 matrix:
   include:
-    - python: '2.7'
-      env: TOXENV=pytest-coq84-py27
-    - python: '2.7'
-      env: TOXENV=pytest-coq85-py27
-    - python: '2.7'
-      env: TOXENV=pytest-coq86-py27
-    - python: '2.7'
-      env: TOXENV=pytest-coq87-py27
-    - python: '2.7'
-      env: TOXENV=pytest-coq88-py27
-    - python: '2.7'
-      env: TOXENV=pytest-coq89-py27
-    - python: '2.7'
-      env: TOXENV=pytest-coq810-py27
-    - python: '2.7'
-      env: TOXENV=pytest-coqmaster-py27
-    - python: '3.6'
-      env: TOXENV=pytest-coq84-py36
-    - python: '3.6'
-      env: TOXENV=pytest-coq85-py36
-    - python: '3.6'
-      env: TOXENV=pytest-coq86-py36
-    - python: '3.6'
-      env: TOXENV=pytest-coq87-py36
-    - python: '3.6'
-      env: TOXENV=pytest-coq88-py36
-    - python: '3.6'
-      env: TOXENV=pytest-coq89-py36
-    - python: '3.6'
-      env: TOXENV=pytest-coq810-py36
-    - python: '3.6'
-      env: TOXENV=pytest-coqmaster-py36
+    - env: TOXENV=pytest-coq84-py27
+    - env: TOXENV=pytest-coq85-py27
+    - env: TOXENV=pytest-coq86-py27
+    - env: TOXENV=pytest-coq87-py27
+    - env: TOXENV=pytest-coq88-py27
+    - env: TOXENV=pytest-coq89-py27
+    - env: TOXENV=pytest-coq810-py27
+    - env: TOXENV=pytest-coqmaster-py27
+    - env: TOXENV=pytest-coq84-py36
+    - env: TOXENV=pytest-coq85-py36
+    - env: TOXENV=pytest-coq86-py36
+    - env: TOXENV=pytest-coq87-py36
+    - env: TOXENV=pytest-coq88-py36
+    - env: TOXENV=pytest-coq89-py36
+    - env: TOXENV=pytest-coq810-py36
+    - env: TOXENV=pytest-coqmaster-py36
     - env: TOXENV=vim
 
 install:
-  - bash ci/install-nix.sh
-  - pip install tox
+  - if [[ $TOXENV =~ py27 ]]; then nix-env -A python27Packages.pip; else nix-env -A python37Packages.pip; fi
+  - python -m pip install tox
 
 script:
-  - . /home/"${USER}"/.nix-profile/etc/profile.d/nix.sh
+  - which python
   - tox
