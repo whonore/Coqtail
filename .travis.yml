@@ -21,8 +21,7 @@ matrix:
     - env: TOXENV=vim
 
 install:
-  - if [[ $TOXENV =~ py27 ]]; then PY=27; else PY=37; fi
-  - nix-env -j auto -iA nixpkgs.python$PYPackages.pip
+  - if [[ $TOXENV =~ py27 ]]; then PY=27; else PY=37; fi; nix-env -j auto -iA nixpkgs.python$PYPackages.pip
   - python -m pip install --user tox
 
 script:
