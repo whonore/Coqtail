@@ -23,6 +23,8 @@ matrix:
 install:
   - if [[ $TOXENV =~ py27 ]]; then PY=27; else PY=36; fi
   - nix-env -j auto -iA nixpkgs.python${PY}Full nixpkgs.python${PY}Packages.virtualenv nixpkgs.python${PY}Packages.pip
+  - python -m virtualenv venv
+  - source venv/bin/activate
   - python -m pip install --user tox
 
 script:
