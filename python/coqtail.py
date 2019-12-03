@@ -10,6 +10,9 @@ import re
 import sys
 from collections import deque
 
+# For ensure_str
+import six
+
 # Mypy doesn't know where to find these modules
 import vim  # type: ignore
 import vimbufsync  # type: ignore
@@ -728,7 +731,8 @@ class Coqtail(object):
     def encoding(self):
         # type: () -> str
         """Get the encoding or default to utf-8."""
-        return vim.options["encoding"].decode("utf-8") or "utf-8"
+        encoding = vim.options["encoding"]
+        return six.ensure_str(encoding)
 
     @property
     def timeout(self):
