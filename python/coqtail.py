@@ -731,7 +731,7 @@ class Coqtail(object):
     def encoding(self):
         # type: () -> str
         """Get the encoding or default to utf-8."""
-        encoding = vim.options.get("encoding", "utf-8")
+        encoding = vim.options["encoding"]
         return six.ensure_str(encoding)
 
     @property
