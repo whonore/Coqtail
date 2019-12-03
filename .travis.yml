@@ -25,7 +25,7 @@ install:
   - nix-env -j auto -iA nixpkgs.python${PY}Full nixpkgs.python${PY}Packages.virtualenv nixpkgs.python${PY}Packages.pip
   - virtualenv venv
   - source venv/bin/activate
-  - python -m pip install --user tox
+  - python -m pip install tox
 
 script:
   - which python
