@@ -50,6 +50,15 @@ let s:unsupported_msg =
   \ 'Coqtail does not officially support your version of Coq (%s). ' .
   \ 'Continuing with the interface for the latest supported version (' .
   \ s:latest_supported . ').'
+" Server port and channel options.
+let s:port = -1
+let s:chanopts = {'mode': 'json'}
+" Highlighting groups.
+let s:hlgroups = [
+  \ ['coqtail_checked', 'CoqtailChecked'],
+  \ ['coqtail_sent', 'CoqtailSent'],
+  \ ['coqtail_errors', 'CoqtailErrors']
+\]
 
 " Default Coq path.
 if !exists('g:coqtail_coq_path')
@@ -69,7 +78,7 @@ let s:python_dir = expand('<sfile>:p:h:h') . '/python'
 Py import shlex, sys, vim
 Py if not vim.eval('s:python_dir') in sys.path:
   \    sys.path.insert(0, vim.eval('s:python_dir'))
-Py from coqtail import Coqtail
+Py from coqtail import Coqtail, start_server
 
 " Print a message with warning highlighting.
 function! s:warn(msg) abort
@@ -83,9 +92,11 @@ endfunction
 
 " Find the path corresponding to 'lib'. Used by includeexpr.
 function! coqtail#FindLib(lib) abort
-  return b:coqtail_running
-    \ ? s:pyeval("Coqtail().find_lib(vim.eval('a:lib')) or vim.eval('a:lib')")()
-    \ : a:lib
+  if !s:coqtailRunning()
+    return a:lib
+  endif
+  let [l:ok, l:lib] = s:callCoqtail('find_lib', 'sync', {'lib': a:lib})
+  return (l:ok && l:lib != v:null) ? l:lib : a:lib
 endfunction
 
 " Open and initialize goal/info panel.
@@ -123,7 +134,10 @@ function! coqtail#InitPanels() abort
   call cursor('.', l:curpos)
   let b:coqtail_panel_bufs = {'goal': l:goal_buf, 'info': l:info_buf}
 
-  Py Coqtail().splash(vim.eval('b:coqtail_version'))
+  call s:callCoqtail('splash', 'sync', {
+    \ 'version': b:coqtail_version,
+    \ 'width': winwidth(winnr()) / 2,
+    \ 'height': winheight(winnr()) / 2})
   let s:counter += 1
 endfunction
 
@@ -181,19 +195,53 @@ function! coqtail#OpenPanels() abort
   " Switch back to main panel
   execute l:coq_win . 'wincmd w'
 
-  Py Coqtail().reset_color()
-  Py Coqtail().show_goal()
-  Py Coqtail().show_info()
+  call s:callCoqtail('refresh', 'sync', {})
 endfunction
 
 " Clear Coqtop highlighting.
 function! coqtail#ClearHighlight() abort
-  for l:id in ['b:coqtail_checked', 'b:coqtail_sent', 'b:coqtail_errors']
-    if eval(l:id) != -1
-      call matchdelete(eval(l:id))
-      execute 'let ' . l:id . ' = - 1'
+  for [l:var, l:_] in s:hlgroups
+    if get(b:, l:var, -1) != -1
+      call matchdelete(b:[l:var])
+      let b:[l:var] = -1
     endif
   endfor
+endfunction
+
+" Refresh the highlighting and goal and info panels.
+function! coqtail#Refresh(buf, highlights, panels) abort
+  if a:buf != bufnr('%')
+    return
+  endif
+
+  " Update highlighting
+  call coqtail#ClearHighlight()
+  for [l:var, l:grp] in s:hlgroups
+    let l:hl = a:highlights[l:var]
+    if l:hl != v:null
+      let b:[l:var] = matchadd(l:grp, l:hl)
+    endif
+  endfor
+
+  " Update goal and info panels
+  for [l:name, l:panel] in [['goal', s:goal_panel], ['info', s:info_panel]]
+    " Switch windows and save the view
+    if s:switchPanel(l:panel) == s:no_panel
+      continue
+    endif
+    let l:view = winsaveview()
+
+    " Update buffer text
+    %d
+    call append(0, a:panels[l:name])
+
+    " Restore the view and switch to original window
+    call winrestview(l:view)
+    call coqtail#ScrollPanel()
+  endfor
+
+  call s:switchPanel(s:main_panel)
+  redraw
 endfunction
 
 " Close goal and info panels and clear highlighting.
@@ -318,12 +366,8 @@ endfunction
 
 " Get a list of possible locations of the definition of 'target'.
 function! s:findDef(target) abort
-  if !b:coqtail_running
-    return v:null
-  endif
-
-  let l:loc = s:pyeval("Coqtail().find_def(vim.eval('a:target')) or []")()
-  return l:loc == [] ? v:null : l:loc
+  let [l:ok, l:loc] = s:callCoqtail('find_def', 'sync', {'target': a:target})
+  return (!l:ok || type(l:loc) != v:t_list) ? v:null : l:loc
 endfunction
 
 " Populate the quickfix list with possible locations of the definition of
@@ -331,7 +375,7 @@ endfunction
 function! coqtail#GotoDef(target, bang) abort
   let l:bang = a:bang ? '!' : ''
   let l:loc = s:findDef(a:target)
-  if type(l:loc) != type([])
+  if type(l:loc) != v:t_list
     call s:warn('Cannot locate ' . a:target . '.')
     return
   endif
@@ -367,7 +411,7 @@ endfunction
 " Create a list of tags for 'target'.
 function! coqtail#GetTags(target, flags, info) abort
   let l:loc = s:findDef(a:target)
-  if type(l:loc) != type([])
+  if type(l:loc) != v:t_list
     return v:null
   endif
   let [l:path, l:searches] = l:loc
@@ -495,33 +539,26 @@ let s:cmd_opts = {
 function! s:cmdDef(name, act) abort
   " Start Coqtail first if needed
   let l:act = a:name !=# 'CoqStart' && a:name !=# 'CoqStop'
-    \ ? printf('if b:coqtail_running || coqtail#Start() | %s | endif', a:act)
+    \ ? printf('if s:coqtailRunning() || coqtail#Start() | %s | endif', a:act)
     \ : a:act
   execute printf('command! -buffer -bar %s %s %s', s:cmd_opts[a:name], a:name, l:act)
-endfunction
-
-" Execute a Python command. Used to chain Py with '|'.
-function! s:Py(...) abort
-  " Convert Vim single-quote '' escape to Python \'.
-  let l:args = substitute(string(a:000[1:]), "''", "\\\\'", 'g')
-  execute printf('Py Coqtail().%s(*%s)', a:1, l:args)
 endfunction
 
 " Define Coqtail commands.
 function! s:commands() abort
   call s:cmdDef('CoqStart', 'call coqtail#Start(<f-args>)')
   call s:cmdDef('CoqStop', 'call coqtail#Stop()')
-  call s:cmdDef('CoqNext', 'call s:Py("step", <count>)')
-  call s:cmdDef('CoqUndo', 'call s:Py("rewind", <count>)')
-  call s:cmdDef('CoqToLine', 'call s:Py("to_line", <count>)')
-  call s:cmdDef('CoqToTop', 'call s:Py("to_top")')
-  call s:cmdDef('CoqJumpToEnd', 'call s:Py("jump_to_end")')
+  call s:cmdDef('CoqNext', 'call s:callCoqtail("step", "", {"steps": <count>})')
+  call s:cmdDef('CoqUndo', 'call s:callCoqtail("rewind", "", {"steps": <count>})')
+  call s:cmdDef('CoqToLine', 'call coqtail#ToLine(<count>)')
+  call s:cmdDef('CoqToTop', 'call s:callCoqtail("to_top", "", {})')
+  call s:cmdDef('CoqJumpToEnd', 'call coqtail#JumpToEnd()')
   call s:cmdDef('CoqGotoDef', 'call coqtail#GotoDef(<f-args>, <bang>0)')
-  call s:cmdDef('Coq', 'call s:Py("query", <f-args>)')
+  call s:cmdDef('Coq', 'call s:callCoqtail("query", "", {"args": [<f-args>]})')
   call s:cmdDef('CoqGotoGoal', 'call coqtail#GotoGoal(<count>, <bang>1)')
   call s:cmdDef('CoqGotoGoalNext', 'call coqtail#GotoGoal(-1, <bang>1)')
   call s:cmdDef('CoqGotoGoalPrev', 'call coqtail#GotoGoal(-2, <bang>1)')
-  call s:cmdDef('CoqToggleDebug', 'call s:Py("toggle_debug")')
+  call s:cmdDef('CoqToggleDebug', 'call s:callCoqtail("toggle_debug", "", {})')
 endfunction
 
 " Initialize panels and autocommands.
@@ -535,7 +572,7 @@ function! s:prepare() abort
   " panels as needed
   augroup coqtail#Autocmds
     autocmd! * <buffer>
-    autocmd InsertEnter <buffer> Py Coqtail().sync()
+    autocmd InsertEnter <buffer> call s:callCoqtail('sync', '', {})
     autocmd BufWinLeave <buffer> call coqtail#HidePanels()
     autocmd BufWinEnter <buffer> call coqtail#OpenPanels()
     autocmd QuitPre <buffer> call coqtail#Stop()
@@ -600,9 +637,45 @@ function! s:checkVersion() abort
   return [l:version, l:found_sup]
 endfunction
 
+" Check if the channel with Coqtail is open.
+function! s:coqtailRunning() abort
+  try
+    return ch_status(b:chan) ==# 'open'
+  catch
+    return 0
+  endtry
+endfunction
+
+" Send a request to Coqtail.
+function! s:callCoqtail(cmd, cb, args) abort
+  if !s:coqtailRunning()
+    return [0, -1]
+  endif
+
+  " TODO async: block concurrent calls
+  if b:coqtail_waiting
+    call s:warn('waiting')
+  endif
+
+  if a:cb !=# 'sync'
+    " Async
+    let b:coqtail_waiting = 1
+    let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#DefaultCB'}
+    return [1, ch_sendexpr(b:chan, [bufnr('%'), a:cmd, a:args], l:opts)]
+  else
+    " Sync
+    let l:res = ch_evalexpr(b:chan, [bufnr('%'), a:cmd, a:args])
+    return [l:res.buf == bufnr('%'), l:res.ret]
+  endif
+endfunction
+
 " Initialize Python interface, commands, autocmds, and goals and info panels.
 function! coqtail#Start(...) abort
-  if b:coqtail_running
+  if s:port == -1
+    let s:port = s:pyeval('start_server()')()
+  endif
+
+  if s:coqtailRunning()
     echo 'Coq is already running.'
   else
     " Check if version supported
@@ -611,42 +684,68 @@ function! coqtail#Start(...) abort
       call s:warn(printf(s:unsupported_msg, b:coqtail_version))
     endif
 
-    let b:coqtail_running = 1
+    " Open channel with Coqtail server
+    let b:chan = ch_open('localhost:' . s:port, s:chanopts)
 
     " Check for a Coq project file
     let [b:coqtail_project_file, l:proj_args] = coqtail#FindCoqProj()
 
     " Launch Coqtop
-    try
-      Py Coqtail().start(vim.eval('b:coqtail_version'),
-        \                vim.eval('expand(b:coqtail_coq_path)'),
-        \                *vim.eval('map(copy(l:proj_args+a:000),'
-        \                          '"expand(v:val)")'))
-
-      call s:prepare()
-    catch /Failed to launch Coq/
-      call s:err(v:exception)
-      call coqtail#Stop()
-      return 0
-    endtry
+    let [l:ok, l:_] = s:callCoqtail('start', 'coqtail#StartCB', {
+      \ 'version': b:coqtail_version,
+      \ 'coq_path': expand(b:coqtail_coq_path),
+      \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
+    if !l:ok
+      call s:err('Failed to launch Coq')
+    endif
   endif
+endfunction
 
-  return 1
+function! coqtail#StartCB(chan, msg) abort
+  if a:msg.ret == v:null
+    call s:prepare()
+  else
+    call s:err(a:msg.ret)
+    call coqtail#Stop()
+  endif
+  let b:coqtail_waiting = 0
 endfunction
 
 " Stop the Coqtop interface and clean up goal and info buffers.
 function! coqtail#Stop() abort
-  if b:coqtail_running
-    let b:coqtail_running = 0
+  call s:callCoqtail('stop', 'coqtail#StopCB', {})
+endfunction
 
-    " Stop Coqtop
-    try
-      Py Coqtail().stop()
-    catch
-    endtry
+function! coqtail#StopCB(chan, msg) abort
+  call s:cleanup()
+  let b:chan = 0
+  let b:coqtail_waiting = 0
+endfunction
 
-    call s:cleanup()
+" Advance/rewind Coq to the specified position.
+function! coqtail#ToLine(line) abort
+  " If no line was given then use the cursor's position,
+  " otherwise use the last column in the line
+  " TODO async: fix on multi-byte characters
+  call s:callCoqtail('to_line', '', {
+    \ 'line': (a:line == 0 ? line('.') : a:line) - 1,
+    \ 'col': (a:line == 0 ? col('.') : len(getline(a:line))) - 1})
+endfunction
+
+" Move the cursor to the end of the region checked by Coq.
+function! coqtail#JumpToEnd() abort
+  let [l:ok, l:pos] = s:callCoqtail('endpoint', 'sync', {})
+  if l:ok
+    call cursor(l:pos)
   endif
+endfunction
+
+" Print any error messages and clear coqtail_waiting.
+function! coqtail#DefaultCB(chan, msg) abort
+  if a:msg.ret != v:null
+    call s:err(a:msg.ret)
+  endif
+  let b:coqtail_waiting = 0
 endfunction
 
 " Define <Plug> and default mappings for Coqtail commands.
@@ -722,13 +821,13 @@ endfunction
 " Initialize buffer local variables, commands, and mappings.
 function! coqtail#Register() abort
   " Initialize once
-  if !exists('b:coqtail_running')
-    let b:coqtail_running = 0
-    let b:coqtail_checked = -1
-    let b:coqtail_sent = -1
-    let b:coqtail_errors = -1
+  if !exists('b:chan')
+    let b:chan = 0
+    for [l:var, l:_] in s:hlgroups
+      let b:[l:var] = -1
+    endfor
     let b:coqtail_timeout = 0
-    let b:coqtail_coqtop_done = 0
+    let b:coqtail_waiting = 0
     let b:coqtail_log_name = ''
     if !exists('b:coqtail_coq_path')
       let b:coqtail_coq_path = g:coqtail_coq_path
