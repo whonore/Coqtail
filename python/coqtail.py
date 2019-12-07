@@ -277,37 +277,6 @@ class Coqtail(object):
 
         vim.current.window.cursor = (line + 1, col)
 
-    def make_match(self, ty):
-        # type: (Text) -> None
-        """Create a "match" statement template for the given inductive type."""
-        assert self.coqtop is not None
-
-        try:
-            success, msg = self.call_and_wait(
-                self.coqtop.mk_cases, ty, encoding=self.encoding
-            )
-        except CT.CoqtopError as e:
-            fail(e)
-            return
-
-        match = ["match _ with"]
-        if success:
-            for con in msg:
-                match.append("| {} => _".format(" ".join(con)))
-            match.append("end")
-
-            # Decide whether to insert here or on new line
-            if vim.current.line.strip() == "":
-                mode = "i"
-            else:
-                mode = "o"
-
-            # Insert text and indent
-            vim.command("normal {}{}".format(mode, "\n".join(match)))
-            vim.command("normal ={}k".format(len(match) - 1))
-        else:
-            print("Cannot make cases for {}".format(ty), file=sys.stderr)
-
     # Helpers #
     def send_until_fail(self):
         # type: () -> Optional[Tuple[int, int]]

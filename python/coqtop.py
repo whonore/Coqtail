@@ -282,20 +282,6 @@ class Coqtop(object):
         else:
             yield False, "", None
 
-    def mk_cases(self, ty, encoding="utf-8", timeout=None):
-        # type: (Text, str, Optional[int]) -> Generator[Tuple[bool, Text], bool, None]
-        """Return cases for each constructor of 'ty'."""
-        self.logger.debug("mk_cases: %s", ty)
-        call = self.call(self.xml.mk_cases(ty, encoding=encoding), timeout=timeout)
-        next(call)
-        stopped = yield  # type: ignore[misc] # (see comment above start())
-        response = call.send(stopped)
-
-        if isinstance(response, Ok):
-            yield True, response.val
-        else:
-            yield False, response.msg
-
     def do_option(
         self,
         cmd,  # type: Text

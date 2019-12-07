@@ -438,11 +438,6 @@ class XMLInterfaceBase(object):
         """Create an XML string to check Coqtop's status."""
 
     @abstractmethod
-    def mk_cases(self, ty, encoding="utf-8"):
-        # type: (Text, str) -> Tuple[Text, Optional[bytes]]
-        """Create an XML string to construct a match statement for ty."""
-
-    @abstractmethod
     def get_options(self, encoding="utf-8"):
         # type: (str) -> Tuple[Text, Optional[bytes]]
         """Create an XML string to check the state of Coqtop's options."""
@@ -755,14 +750,6 @@ class XMLInterface84(XMLInterfaceBase):
           _: unit - Empty arg
         """
         return ("Status", self._make_call(encoding, "status", children=()))
-
-    def mk_cases(self, ty, encoding="utf-8"):
-        # type: (Text, str) -> Tuple[Text, Optional[bytes]]
-        """Create an XML string to construct a match statement for ty.
-        Args:
-          ty: string - The inductive type to make cases for
-        """
-        return ("MkCases", self._make_call(encoding, "mkcases", arg=ty))
 
     def get_options(self, encoding="utf-8"):
         # type: (str) -> Tuple[Text, Optional[bytes]]
@@ -1104,14 +1091,6 @@ class XMLInterface85(XMLInterfaceBase):
           force: bool - Force all pending evaluations
         """
         return ("Status", self._make_call(encoding, "Status", children=True))
-
-    def mk_cases(self, ty, encoding="utf-8"):
-        # type: (Text, str) -> Tuple[Text, Optional[bytes]]
-        """Create an XML string to construct a match statement for ty.
-        Args:
-          ty: string - The inductive type to make cases for
-        """
-        return ("MkCases", self._make_call(encoding, "MkCases", children=ty))
 
     def get_options(self, encoding="utf-8"):
         # type: (str) -> Tuple[Text, Optional[bytes]]

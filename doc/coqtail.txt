@@ -12,9 +12,8 @@ the |arglist| or |buffer-list|.
 2. Movement Commands			|coqtail-movement|
 3. Coq Queries				|coqtail-queries|
 4. Goal Focusing			|coqtail-goal-focus|
-5. Miscellaneous Commands		|coqtail-misc|
-6. Configuration			|coqtail-configuration|
-7. Debugging				|coqtail-debug|
+5. Configuration			|coqtail-configuration|
+6. Debugging				|coqtail-debug|
 
 =============================
 Starting and Stopping Coqtail				    *coqtail-start-stop*
@@ -159,12 +158,6 @@ g[			Scroll the goal panel to the start of the previous
 						    *coqtail-goto-goal-prev-end*
 :CoqGotoGoalPrev!
 G[			Scroll the goal panel to the end of the previous goal.
-
-======================
-Miscellaneous Commands						  *coqtail-misc*
-
-					      *:CoqMakeMatch* *coqtail-make-match*
-:CoqMakeMatch {arg}	Insert a "match" template for a given Inductive type.
 
 =============
 Configuration						 *coqtail-configuration*

@@ -490,7 +490,6 @@ let s:cmd_opts = {
   \ 'CoqGotoGoal': '-bang -count=1',
   \ 'CoqGotoGoalNext': '-bang',
   \ 'CoqGotoGoalPrev': '-bang',
-  \ 'CoqMakeMatch': '-nargs=1',
   \ 'CoqToggleDebug': ''
 \}
 function! s:cmdDef(name, act) abort
@@ -522,7 +521,6 @@ function! s:commands() abort
   call s:cmdDef('CoqGotoGoal', 'call coqtail#GotoGoal(<count>, <bang>1)')
   call s:cmdDef('CoqGotoGoalNext', 'call coqtail#GotoGoal(-1, <bang>1)')
   call s:cmdDef('CoqGotoGoalPrev', 'call coqtail#GotoGoal(-2, <bang>1)')
-  call s:cmdDef('CoqMakeMatch', 'call s:Py("make_match", <f-args>)')
   call s:cmdDef('CoqToggleDebug', 'call s:Py("toggle_debug")')
 endfunction
 
