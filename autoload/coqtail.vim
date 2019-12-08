@@ -205,8 +205,15 @@ function! coqtail#ClearHighlight() abort
   endfor
 endfunction
 
+" Replace the contents of 'buf' with 'txt'.
+" TODO async: restore view
+function! s:replacePanel(buf, txt) abort
+  call deletebufline(a:buf, 1, '$')
+  call setbufline(a:buf, 1, a:txt)
+endfunction
+
 " Refresh the highlighting and goal and info panels.
-function! coqtail#Refresh(buf, highlights, panels) abort
+function! coqtail#Refresh(buf, force, highlights, panels) abort
   if a:buf != bufnr('%')
     return
   endif
@@ -221,24 +228,28 @@ function! coqtail#Refresh(buf, highlights, panels) abort
   endfor
 
   " Update goal and info panels
-  for [l:name, l:panel] in [['goal', s:goal_panel], ['info', s:info_panel]]
-    " Switch windows and save the view
-    if s:switchPanel(l:panel) == s:no_panel
-      continue
-    endif
-    let l:view = winsaveview()
+  for [l:name, l:buf] in items(b:coqtail_panel_bufs)
+    call s:replacePanel(l:buf, a:panels[l:name])
 
-    " Update buffer text
-    %d
-    call append(0, a:panels[l:name])
+    " Switch windows and save the view
+    " if s:switchPanel(l:panel) == s:no_panel
+    "   continue
+    " endif
+    " let l:view = winsaveview()
+
+    " " Update buffer text
+    " %delete
+    " call append(0, a:panels[l:name])
 
     " Restore the view and switch to original window
-    call winrestview(l:view)
-    call coqtail#ScrollPanel()
+    " call winrestview(l:view)
+    " call coqtail#ScrollPanel()
   endfor
+  " call s:switchPanel(s:main_panel)
 
-  call s:switchPanel(s:main_panel)
-  redraw
+  if a:force
+    redraw
+  endif
 endfunction
 
 " Close goal and info panels and clear highlighting.

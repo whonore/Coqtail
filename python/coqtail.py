@@ -9,6 +9,7 @@ from __future__ import print_function
 import json
 import re
 import threading
+import time
 from collections import deque
 from itertools import islice
 
@@ -296,7 +297,7 @@ class Coqtail(object):
                     sline, scol = _pos_from_offset(col, message, loc_s)
                     eline, ecol = _pos_from_offset(col, message, loc_e)
                     self.error_at = ((line + sline, scol), (line + eline, ecol))
-            self.refresh(goals=False)
+            self.refresh(goals=False, force=False)
 
         # Clear info if no messages
         if no_msgs:
@@ -419,8 +420,8 @@ class Coqtail(object):
         return bmatch.group(1) if bmatch is not None else None
 
     # Goals and Infos #
-    def refresh(self, goals=True):
-        # type: (bool) -> None
+    def refresh(self, goals=True, force=True):
+        # type: (bool, bool) -> None
         """Refresh the goal and info panels."""
         if goals:
             newgoals, newinfo = self.get_goals()
@@ -430,7 +431,7 @@ class Coqtail(object):
                 self.set_goal(self.pp_goals(newgoals))
             else:
                 self.set_goal("")
-        self.handler.refresh()
+        self.handler.refresh(force=force)
 
     def get_goals(self):
         # type: () -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
@@ -673,6 +674,9 @@ class ThreadedTCPServer(ThreadingMixIn, TCPServer):
 class CoqtailHandler(StreamRequestHandler):
     """Forward messages between Vim and Coqtail."""
 
+    # Redraw rate in seconds
+    refresh_rate = 0.1
+
     def parse_msg(self):
         # type: () -> Any
         """Parse messages sent over a Vim channel."""
@@ -712,10 +716,18 @@ class CoqtailHandler(StreamRequestHandler):
                 "find_lib": self.coq.find_lib,
                 "refresh": self.coq.refresh,
             }.get(func, None)
+            self.refresh_time = time.time()
+
+            # if func == 'to_line':
+            #     start = time.time()
 
             ret = handler(**args) if handler is not None else None  # type: ignore
             msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
             self.wfile.write(json.dumps(msg).encode("utf-8"))
+
+            # if func == 'to_line':
+            #     stop = time.time()
+            #     print('done to_line', round(stop - start, 2))
 
             if func == "stop":
                 break
@@ -749,10 +761,14 @@ class CoqtailHandler(StreamRequestHandler):
         else:
             return self.vimcall("setbufvar", self.bnum, var, val)
 
-    def refresh(self):
-        # type: () -> None
+    def refresh(self, force=True):
+        # type: (bool) -> None
         """Refresh the highlighting and goal and info panels."""
-        self.vimcall("coqtail#Refresh", self.bnum, self.coq.highlights, self.coq.panels)
+        if not force:
+            cur_time = time.time()
+            force = cur_time - self.refresh_time > self.refresh_rate
+            self.refresh_time = cur_time
+        self.vimcall("coqtail#Refresh", self.bnum, force, self.coq.highlights, self.coq.panels)
 
 
 serv = None
