@@ -10,9 +10,9 @@ import json
 import re
 import threading
 from collections import deque
+from itertools import islice
 
-# Mypy doesn't know where to find this
-import vimbufsync  # type: ignore[import]
+from six.moves import zip_longest
 from six.moves.socketserver import StreamRequestHandler, TCPServer, ThreadingMixIn
 
 import coqtop as CT
@@ -24,6 +24,7 @@ try:
         Deque,
         Dict,
         List,
+        Iterator,
         Optional,
         Mapping,
         Sequence,
@@ -32,8 +33,6 @@ try:
     )
 except ImportError:
     pass
-
-vimbufsync.check_version("0.1.0", who="coqtail")
 
 
 # Error Messages #
@@ -72,7 +71,8 @@ class Coqtail(object):
         # type: () -> None
         """Reset variables to initial state.
 
-        saved_sync - The last vimbufsync BufferRevision object
+        oldchange - The previous number of changes to the buffer
+        oldbuf - The buffer corresponding to oldchange
         endpoints - A stack of the end positions of the sentences sent to Coqtop
                     (grows to the right)
         send_queue - A queue of the sentences to send to Coqtop
@@ -80,7 +80,8 @@ class Coqtail(object):
         info_msg - The text to display in the info panel
         goal_msg - The text to display in the goal panel
         """
-        self.saved_sync = None
+        self.oldchange = 0
+        self.oldbuf = []  # type: List[Text]
         self.endpoints = []  # type: List[Tuple[int, int]]
         self.send_queue = deque()  # type: Deque[Mapping[str, Tuple[int, int]]]
         self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
@@ -88,22 +89,33 @@ class Coqtail(object):
         self.goal_msg = []  # type: List[Text]
 
     def sync(self):
-        # type: () -> None
+        # type: () -> Optional[str]
         """Check if the buffer has been updated and rewind Coqtop if so."""
-        return  # TODO async: figure out how to make sync work
-        curr_sync = vimbufsync.sync()
+        err = None
+        newchange = self.changedtick
+        if newchange != self.oldchange:
+            newbuf = self.buffer
 
-        if self.saved_sync is None or curr_sync.buf() != self.saved_sync.buf():
-            self._reset()
-        else:
-            line, col = self.saved_sync.pos()
-            self.rewind_to(line - 1, col)
+            if self.endpoints != []:
+                eline, ecol = self.endpoints[-1]
+                linediff = _find_diff(self.oldbuf, newbuf, eline + 1)
+                if linediff is not None:
+                    coldiff = _find_diff(
+                        self.oldbuf[linediff],
+                        newbuf[linediff],
+                        ecol if linediff == eline else None,
+                    )
+                    assert coldiff is not None
+                    err = self.rewind_to(linediff, coldiff)
 
-        self.saved_sync = curr_sync
+            self.oldchange = newchange
+            self.oldbuf = newbuf
+
+        return err
 
     # Coqtop Interface #
     def start(self, version, coq_path, args):
-        # type: (str, str, Sequence[str]) -> Optional[str]
+        # type: (str, str, List[str]) -> Optional[str]
         """Start a new Coqtop instance."""
         success = False
         errmsg = ["Failed to launch Coq"]
@@ -138,7 +150,7 @@ class Coqtail(object):
         unmatched = None
         for _ in range(steps):
             try:
-                to_send = _get_message_range(self.handler.buffer, (line, col))
+                to_send = _get_message_range(self.buffer, (line, col))
             except UnmatchedError as e:
                 unmatched = e
                 break
@@ -192,7 +204,7 @@ class Coqtail(object):
             unmatched = None
             while True:
                 try:
-                    to_send = _get_message_range(self.handler.buffer, (eline, ecol))
+                    to_send = _get_message_range(self.buffer, (eline, ecol))
                 except UnmatchedError as e:
                     # Only report unmatched if it occurs after the desired position
                     if e.range[0] <= (line, col):
@@ -221,7 +233,7 @@ class Coqtail(object):
         return self.rewind_to(0, 1)
 
     def query(self, args):
-        # type: (Sequence[Text]) -> Optional[str]
+        # type: (List[Text]) -> Optional[str]
         """Forward Coq query to Coqtop interface."""
         success, msg = self.do_query(" ".join(args))
 
@@ -252,7 +264,7 @@ class Coqtail(object):
         no_msgs = True
         while self.send_queue:
             to_send = self.send_queue.popleft()
-            message = _between(self.handler.buffer, to_send["start"], to_send["stop"])
+            message = _between(self.buffer, to_send["start"], to_send["stop"])
             no_comments, com_pos = _strip_comments(message)
 
             try:
@@ -368,7 +380,7 @@ class Coqtail(object):
         # If 'qual_comps' starts with Top or 'tgt_type' is Variable then
         # 'qual_tgt' is defined in the current file
         if qual_comps[0] == "Top" or tgt_type == "Variable":
-            return self.handler.filename, base_name
+            return self.filename, base_name
 
         # Find the longest prefix of 'qual_tgt' that matches a logical path in
         # 'path_map'
@@ -624,6 +636,12 @@ class Coqtail(object):
         return self.handler.vimvar("coqtail_timeout")  # type: ignore[no-any-return]
 
     @property
+    def changedtick(self):
+        # type: () -> int
+        """The value of changedtick for this buffer."""
+        return self.handler.vimvar("changedtick")  # type: ignore
+
+    @property
     def log(self):
         # type: () -> Text
         """The name of this buffer's debug log."""
@@ -634,6 +652,18 @@ class Coqtail(object):
         # type: (Text) -> None
         """The name of this buffer's debug log."""
         self.handler.vimvar("coqtail_log_name", log)
+
+    @property
+    def filename(self):
+        # type: () -> str
+        """The absolute path of this buffer's current Coq file."""
+        return self.handler.vimcall("expand", "#{}:p".format(self.handler.bnum))  # type: ignore
+
+    @property
+    def buffer(self):
+        # type: () -> List[Text]
+        """The contents of this buffer."""
+        return self.handler.vimcall("getbufline", self.handler.bnum, 1, "$")  # type: ignore
 
 
 class ThreadedTCPServer(ThreadingMixIn, TCPServer):
@@ -723,18 +753,6 @@ class CoqtailHandler(StreamRequestHandler):
         # type: () -> None
         """Refresh the highlighting and goal and info panels."""
         self.vimcall("coqtail#Refresh", self.bnum, self.coq.highlights, self.coq.panels)
-
-    @property
-    def filename(self):
-        # type: () -> str
-        """The absolute path of this buffer's current Coq file."""
-        return self.vimcall("expand", "#{}:p".format(self.bnum))  # type: ignore
-
-    @property
-    def buffer(self):
-        # type: () -> Sequence[str]
-        """The contents of this buffer."""
-        return self.vimcall("getbufline", self.bnum, 1, "$")  # type: ignore
 
 
 serv = None
@@ -853,7 +871,7 @@ def _pos_from_offset(col, msg, offset):
 
 
 def _between(buf, start, end):
-    # type: (Sequence[str], Tuple[int, int], Tuple[int, int]) -> Text
+    # type: (List[Text], Tuple[int, int], Tuple[int, int]) -> Text
     """Return the text between a given start and end point."""
     sline, scol = start
     eline, ecol = end
@@ -868,14 +886,14 @@ def _between(buf, start, end):
 
 
 def _get_message_range(lines, after):
-    # type: (Sequence[str], Tuple[int, int]) -> Mapping[str, Tuple[int, int]]
+    # type: (List[Text], Tuple[int, int]) -> Mapping[str, Tuple[int, int]]
     """Return the next sentence to send after a given point."""
     end_pos = _find_next_sentence(lines, *after)
     return {"start": after, "stop": end_pos}
 
 
 def _find_next_sentence(lines, sline, scol):
-    # type: (Sequence[str], int, int) -> Tuple[int, int]
+    # type: (List[Text], int, int) -> Tuple[int, int]
     """Find the next sentence to send to Coq."""
     bullets = ("{", "}", "-", "+", "*")
 
@@ -943,7 +961,7 @@ def _find_next_sentence(lines, sline, scol):
 
 
 def _find_dot_after(lines, sline, scol):
-    # type: (Sequence[str], int, int) -> Tuple[int, int]
+    # type: (List[Text], int, int) -> Tuple[int, int]
     """Find the next '.' after a given point."""
     max_line = len(lines)
 
@@ -988,19 +1006,19 @@ def _find_dot_after(lines, sline, scol):
 
 
 def _skip_str(lines, sline, scol):
-    # type: (Sequence[str], int, int) -> Optional[Tuple[int, int]]
+    # type: (List[Text], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in " "."""
     return _skip_block(lines, sline, scol, '"')
 
 
 def _skip_comment(lines, sline, scol):
-    # type: (Sequence[str], int, int) -> Optional[Tuple[int, int]]
+    # type: (List[Text], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in (* *)."""
     return _skip_block(lines, sline, scol, "*)", "(*")
 
 
 def _skip_block(lines, sline, scol, estr, sstr=None):
-    # type: (Sequence[str], int, int, str, Optional[str]) -> Optional[Tuple[int, int]]
+    # type: (List[Text], int, int, str, Optional[str]) -> Optional[Tuple[int, int]]
     """A generic function to skip the next block contained in sstr estr."""
     nesting = 1
     max_line = len(lines)
@@ -1122,3 +1140,12 @@ def _strip_comments(msg):
                 com_pos[-1][1] = off - com_pos[-1][0]
 
     return " ".join(nocom), com_pos
+
+
+def _find_diff(x, y, stop=None):
+    # type: (Sequence[Any], Sequence[Any], Optional[int]) -> Optional[int]
+    """Locate the first differing element in 'x' and 'y' up to 'stop'."""
+    seq = enumerate(zip_longest(x, y))  # type: Iterator[Tuple[int, Any]]
+    if stop is not None:
+        seq = islice(seq, stop)
+    return next((i for i, vs in seq if vs[0] != vs[1]), None)

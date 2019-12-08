@@ -70,9 +70,6 @@ if !exists('g:coqtail_project_name')
   let g:coqtail_project_name = '_CoqProject'
 endif
 
-" Load vimbufsync if not already done.
-call vimbufsync#init()
-
 " Add python directory to path so Python functions can be called.
 let s:python_dir = expand('<sfile>:p:h:h') . '/python'
 Py import shlex, sys, vim
@@ -572,7 +569,7 @@ function! s:prepare() abort
   " panels as needed
   augroup coqtail#Autocmds
     autocmd! * <buffer>
-    autocmd InsertEnter <buffer> call s:callCoqtail('sync', '', {})
+    autocmd InsertEnter <buffer> call s:callCoqtail('sync', 'sync', {})
     autocmd BufWinLeave <buffer> call coqtail#HidePanels()
     autocmd BufWinEnter <buffer> call coqtail#OpenPanels()
     autocmd QuitPre <buffer> call coqtail#Stop()
