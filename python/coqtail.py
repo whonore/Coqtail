@@ -106,8 +106,8 @@ class Coqtail(object):
                         newbuf[linediff],
                         ecol if linediff == eline else None,
                     )
-                    assert coldiff is not None
-                    err = self.rewind_to(linediff, coldiff)
+                    if coldiff is not None:
+                        err = self.rewind_to(linediff, coldiff)
 
             self.oldchange = newchange
             self.oldbuf = newbuf
