@@ -57,7 +57,7 @@ let s:chanopts = {'mode': 'json'}
 let s:hlgroups = [
   \ ['coqtail_checked', 'CoqtailChecked'],
   \ ['coqtail_sent', 'CoqtailSent'],
-  \ ['coqtail_errors', 'CoqtailErrors']
+  \ ['coqtail_errors', 'CoqtailError']
 \]
 
 " Default Coq path.

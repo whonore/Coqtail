@@ -189,6 +189,7 @@ class Coqtail(object):
             return unexpected(success, "rewind()")
 
         self.endpoints = self.endpoints[: -(steps + extra_steps)]
+        self.error_at = None
         self.refresh()
         return None
 
@@ -265,6 +266,7 @@ class Coqtail(object):
 
         failed_at = None
         no_msgs = True
+        self.error_at = None
         while self.send_queue:
             self.refresh(goals=False, force=False)
             to_send = self.send_queue.popleft()
@@ -569,7 +571,6 @@ class Coqtail(object):
             matches["coqtail_errors"] = _make_matcher(
                 (sline + 1, scol), (eline + 1, ecol)
             )
-            self.error_at = None
 
         return matches
 
