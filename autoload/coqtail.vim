@@ -660,20 +660,18 @@ function! s:callCoqtail(cmd, cb, args) abort
     return [0, -1]
   endif
 
-  " TODO async: block concurrent calls
-  if b:coqtail_waiting
-    call s:warn('waiting')
-  endif
-
+  let l:args = [bufnr('%'), a:cmd, a:args]
   if a:cb !=# 'sync'
     " Async
     let b:coqtail_waiting = 1
     let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#DefaultCB'}
-    return [1, ch_sendexpr(b:chan, [bufnr('%'), a:cmd, a:args], l:opts)]
+    return [1, ch_sendexpr(b:chan, l:args, l:opts)]
   else
     " Sync
-    let l:res = ch_evalexpr(b:chan, [bufnr('%'), a:cmd, a:args])
-    return [l:res.buf == bufnr('%'), l:res.ret]
+    let l:res = ch_evalexpr(b:chan, l:args)
+    return type(l:res) == v:t_dict
+      \? [l:res.buf == bufnr('%'), l:res.ret]
+      \: [0, -1]
   endif
 endfunction
 
@@ -705,8 +703,10 @@ function! coqtail#Start(...) abort
       \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
     if !l:ok
       call s:err('Failed to launch Coq')
+      return 0
     endif
   endif
+  return 1
 endfunction
 
 function! coqtail#StartCB(chan, msg) abort

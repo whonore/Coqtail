@@ -10,10 +10,11 @@ import json
 import re
 import threading
 import time
-from collections import deque
+from collections import defaultdict as ddict, deque
 from itertools import islice
 
 from six.moves import zip_longest
+from six.moves.queue import Empty, Queue
 from six.moves.socketserver import StreamRequestHandler, TCPServer, ThreadingMixIn
 
 import coqtop as CT
@@ -22,6 +23,7 @@ import coqtop as CT
 try:
     from typing import (
         Any,
+        DefaultDict,
         Deque,
         Dict,
         List,
@@ -264,6 +266,7 @@ class Coqtail(object):
         failed_at = None
         no_msgs = True
         while self.send_queue:
+            self.refresh(goals=False, force=False)
             to_send = self.send_queue.popleft()
             message = _between(self.buffer, to_send["start"], to_send["stop"])
             no_comments, com_pos = _strip_comments(message)
@@ -297,7 +300,6 @@ class Coqtail(object):
                     sline, scol = _pos_from_offset(col, message, loc_s)
                     eline, ecol = _pos_from_offset(col, message, loc_e)
                     self.error_at = ((line + sline, scol), (line + eline, ecol))
-            self.refresh(goals=False, force=False)
 
         # Clear info if no messages
         if no_msgs:
@@ -677,28 +679,61 @@ class CoqtailHandler(StreamRequestHandler):
     # Redraw rate in seconds
     refresh_rate = 0.1
 
-    def parse_msg(self):
-        # type: () -> Any
+    # How often to check for a closed channel
+    check_close_rate = 1
+
+    # Is the channel open
+    closed = False
+
+    def parse_msgs(self):
+        # type: () -> None
         """Parse messages sent over a Vim channel."""
-        msg = self.rfile.readline().decode("utf-8")
-        # Check if channel closed
-        if msg == "":
-            raise EOFError
-        return json.loads(msg)
+        while not self.closed:
+            try:
+                msg = self.rfile.readline().decode("utf-8")
+            except ValueError:
+                msg = ""
+            # Check if channel closed
+            if msg == "":
+                self.closed = True
+                break
+
+            msg_id, data = json.loads(msg)
+            if msg_id >= 0:
+                bnum, func, args = data
+                self.reqs.put((msg_id, bnum, func, args))
+            else:
+                self.resps[-msg_id].put((msg_id, data))
+
+    def get_msg(self, msg_id=None):
+        # type: (Optional[int]) -> Sequence[Any]
+        """Check for any pending messages from Vim."""
+        queue = self.reqs if msg_id is None else self.resps[msg_id]
+        while not self.closed:
+            try:
+                return queue.get(timeout=self.check_close_rate)  # type: ignore
+            except Empty:
+                pass
+        raise EOFError
 
     def handle(self):
         # type: () -> None
         """Forward requests from Vim to the appropriate Coqtail function."""
         self.coq = Coqtail(self)
-        while True:
+        self.closed = False
+        self.reqs = Queue()  # type: Queue[Tuple[int, int, str, Mapping[str, Any]]]
+        self.resps = ddict(Queue)  # type: DefaultDict[int, Queue[Tuple[int, Any]]]
+
+        read_thread = threading.Thread(target=self.parse_msgs)
+        read_thread.daemon = True
+        read_thread.start()
+
+        while not self.closed:
             try:
-                self.msg_id, cmd = self.parse_msg()
-                assert self.msg_id >= 0
-                self.bnum, func, args = cmd
+                self.msg_id, self.bnum, func, args = self.get_msg()
+                self.refresh_time = 0.0
             except EOFError:
                 break
-            except ValueError:
-                continue
 
             handler = {
                 "start": self.coq.start,
@@ -716,12 +751,14 @@ class CoqtailHandler(StreamRequestHandler):
                 "find_lib": self.coq.find_lib,
                 "refresh": self.coq.refresh,
             }.get(func, None)
-            self.refresh_time = time.time()
 
             # if func == 'to_line':
             #     start = time.time()
 
-            ret = handler(**args) if handler is not None else None  # type: ignore
+            try:
+                ret = handler(**args) if handler is not None else None  # type: ignore
+            except EOFError:
+                break
             msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
             self.wfile.write(json.dumps(msg).encode("utf-8"))
 
@@ -736,12 +773,10 @@ class CoqtailHandler(StreamRequestHandler):
         # type: (List[Any]) -> Any
         """Send Vim a request."""
         self.wfile.write(json.dumps(expr + [-self.msg_id]).encode("utf-8"))
-        try:
-            msg_id, res = self.parse_msg()
-            assert msg_id == -self.msg_id
-            return res
-        except (EOFError, ValueError):
-            return None
+
+        msg_id, res = self.get_msg(self.msg_id)
+        assert msg_id == -self.msg_id
+        return res
 
     def vimexpr(self, expr):
         # type: (str) -> Any
@@ -768,7 +803,9 @@ class CoqtailHandler(StreamRequestHandler):
             cur_time = time.time()
             force = cur_time - self.refresh_time > self.refresh_rate
             self.refresh_time = cur_time
-        self.vimcall("coqtail#Refresh", self.bnum, force, self.coq.highlights, self.coq.panels)
+        self.vimcall(
+            "coqtail#Refresh", self.bnum, force, self.coq.highlights, self.coq.panels
+        )
 
 
 serv = None
