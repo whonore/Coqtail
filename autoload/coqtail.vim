@@ -570,7 +570,8 @@ function! s:checkVersion() abort
   if b:coqtail_coq_path !=# ''
     let l:coqtop = b:coqtail_coq_path . '/' . l:coqtop
   endif
-  let l:version = system(l:coqtop . " --version | awk '/version/{printf \"%s\", $6}'")
+  let l:version_raw = split(system(l:coqtop . ' --version'))
+  let l:version = l:version_raw[index(l:version_raw, 'version') + 1]
   let l:versions = map(split(l:version, '\v(\.|pl)'), 'str2nr(v:val)')
 
   " Pad missing version numbers with 0
