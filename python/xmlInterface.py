@@ -1273,7 +1273,11 @@ class XMLInterface810(XMLInterface89):
     """The version 8.10.* XML interface."""
 
 
-XMLInterfaceLatest = XMLInterface810
+class XMLInterface811(XMLInterface810):
+    """The version 8.11.* XML interface."""
+
+
+XMLInterfaceLatest = XMLInterface811
 
 
 def XMLInterface(version):
@@ -1305,5 +1309,7 @@ def XMLInterface(version):
         return XMLInterface89(versions)
     elif (8, 10, 0) <= versions < (8, 11, 0):
         return XMLInterface810(versions)
+    elif (8, 11, 0) <= versions < (8, 12, 0):
+        return XMLInterface811(versions)
     else:
         return XMLInterfaceLatest(versions)

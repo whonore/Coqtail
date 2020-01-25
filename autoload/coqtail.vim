@@ -32,7 +32,8 @@ let s:supported = [
   \[8, 7, -1],
   \[8, 8, -1],
   \[8, 9, -1],
-  \[8, 10, -1]
+  \[8, 10, -1],
+  \[8, 11, -1]
 \]
 let s:latest_supported = join(s:supported[-1][:1], '.')
 " Used to give unique names to goal and info panels.
