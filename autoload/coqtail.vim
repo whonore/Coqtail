@@ -11,12 +11,12 @@ let g:coqtail_sourced = 1
 if has('python3')
   command! -nargs=1 Py py3 <args>
   function! s:pyeval(expr) abort
-    return function('py3eval', [a:expr])
+    return py3eval(a:expr)
   endfunction
 elseif has('python')
   command! -nargs=1 Py py <args>
   function! s:pyeval(expr) abort
-    return function('pyeval', [a:expr])
+    return pyeval(a:expr)
   endfunction
 else
   echoerr 'Coqtail requires Python support.'
@@ -437,7 +437,7 @@ function! coqtail#ParseCoqProj(file, silent) abort
   let l:dir_opts = {'-R': 2, '-Q': 2, '-I': 1, '-include': 1}
 
   let l:txt = join(readfile(a:file))
-  let l:raw_args = s:pyeval(printf('shlex.split(r%s)', string(l:txt)))()
+  let l:raw_args = s:pyeval(printf('shlex.split(r%s)', string(l:txt)))
 
   let l:proj_args = []
   let l:idx = 0
@@ -677,7 +677,7 @@ endfunction
 " Initialize Python interface, commands, autocmds, and goals and info panels.
 function! coqtail#Start(...) abort
   if s:port == -1
-    let s:port = s:pyeval('start_server()')()
+    let s:port = s:pyeval('start_server()')
   endif
 
   if s:coqtailRunning()
