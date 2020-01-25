@@ -678,7 +678,7 @@ class CoqtailHandler(StreamRequestHandler):
     """Forward messages between Vim and Coqtail."""
 
     # Redraw rate in seconds
-    refresh_rate = 0.1
+    refresh_rate = 0.05
 
     # How often to check for a closed channel
     check_close_rate = 1
@@ -804,9 +804,10 @@ class CoqtailHandler(StreamRequestHandler):
             cur_time = time.time()
             force = cur_time - self.refresh_time > self.refresh_rate
             self.refresh_time = cur_time
-        self.vimcall(
-            "coqtail#Refresh", self.bnum, force, self.coq.highlights, self.coq.panels
-        )
+        if force:
+            self.vimcall(
+                "coqtail#Refresh", self.bnum, self.coq.highlights, self.coq.panels
+            )
 
 
 serv = None
