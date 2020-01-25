@@ -39,10 +39,10 @@ let s:latest_supported = join(s:supported[-1][:1], '.')
 " Used to give unique names to goal and info panels.
 let s:counter = 0
 " Panel identifiers.
-let s:no_panel = 0
-let s:main_panel = 1
-let s:goal_panel = 2
-let s:info_panel = 3
+let s:no_panel = ''
+let s:main_panel = 'main'
+let s:goal_panel = 'goal'
+let s:info_panel = 'info'
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
 " Warning/error messages.
@@ -97,7 +97,7 @@ function! coqtail#FindLib(lib) abort
 endfunction
 
 " Open and initialize goal/info panel.
-function! s:initPanel(name, coq_buf) abort
+function! s:initPanel(name) abort
   let l:name_lower = substitute(a:name, '\u', '\l\0', '')
 
   execute 'hide edit ' . a:name . s:counter
@@ -107,7 +107,6 @@ function! s:initPanel(name, coq_buf) abort
   setlocal bufhidden=hide
   setlocal nocursorline
   setlocal wrap
-  let b:coqtail_coq_buf = a:coq_buf  " Assumes buffer number won't change
 
   augroup coqtail#PanelCmd
     autocmd! * <buffer>
@@ -123,13 +122,20 @@ function! coqtail#InitPanels() abort
   let l:curpos = getcurpos()[2]
 
   " Add panels
-  let l:goal_buf = s:initPanel('Goals', l:coq_buf)
-  let l:info_buf = s:initPanel('Infos', l:coq_buf)
+  let l:goal_buf = s:initPanel('Goals')
+  let l:info_buf = s:initPanel('Infos')
 
   " Switch back to main panel
   execute 'hide edit #' . l:coq_buf
   call cursor('.', l:curpos)
-  let b:coqtail_panel_bufs = {'goal': l:goal_buf, 'info': l:info_buf}
+  let l:coqtail_panel_bufs = {
+    \s:main_panel: l:coq_buf,
+    \s:goal_panel: l:goal_buf,
+    \s:info_panel: l:info_buf
+  \}
+  for l:buf in values(l:coqtail_panel_bufs)
+    call setbufvar(l:buf, 'coqtail_panel_bufs', l:coqtail_panel_bufs)
+  endfor
 
   call s:callCoqtail('splash', 'sync', {
     \ 'version': b:coqtail_version,
@@ -140,51 +146,40 @@ endfunction
 
 " Detect what panel is focused.
 function! s:checkPanel() abort
-  if exists('b:coqtail_panel_bufs')
-    return s:main_panel
-  elseif exists('b:coqtail_coq_buf') && &filetype ==# 'coq-goals'
-    return s:goal_panel
-  elseif exists('b:coqtail_coq_buf') && &filetype ==# 'coq-infos'
-    return s:info_panel
-  else
+  if !exists('b:coqtail_panel_bufs')
     return s:no_panel
-  endif
+  end
+
+  for l:panel in [s:main_panel, s:goal_panel, s:info_panel]
+    if b:coqtail_panel_bufs[l:panel] == bufnr('%')
+      return l:panel
+    end
+  endfor
 endfunction
 
 " Attempt to switch to a panel.
 function! s:switchPanel(panel) abort
   let l:cur_panel = s:checkPanel()
-  if l:cur_panel == s:main_panel && a:panel != s:main_panel
-    " Main -> Goal/Info
-    let l:name = a:panel == s:goal_panel ? 'goal' : 'info'
-    execute bufwinnr(b:coqtail_panel_bufs[l:name]) . 'wincmd w'
-  elseif l:cur_panel == s:goal_panel || l:cur_panel == s:info_panel
-    if a:panel == s:main_panel
-      " Goal/Info -> Main
-      execute bufwinnr(b:coqtail_coq_buf) . 'wincmd w'
-    elseif s:switchPanel(s:main_panel) != s:no_panel
-      " Goal/Info -> Goal/Info
-      return s:switchPanel(a:panel)
-    else
-      return s:no_panel
-    endif
-  endif
+  if a:panel != l:cur_panel && a:panel != s:no_panel
+    execute bufwinnr(b:coqtail_panel_bufs[a:panel]) . 'wincmd w'
+  end
   return l:cur_panel
 endfunction
 
 " Reopen goals and info panels and re-highlight.
+" TODO async: only open panels that need to be opened
 function! coqtail#OpenPanels() abort
   " Do nothing if windows already open
-  for l:buf in values(b:coqtail_panel_bufs)
-    if bufwinnr(l:buf) != -1
+  for [l:panel, l:buf] in items(b:coqtail_panel_bufs)
+    if bufwinnr(l:buf) != -1 && l:panel != s:main_panel
       return
     endif
   endfor
 
   " Need to save in local vars because will be changing buffers
   let l:coq_win = winnr()
-  let l:goal_buf = b:coqtail_panel_bufs.goal
-  let l:info_buf = b:coqtail_panel_bufs.info
+  let l:goal_buf = b:coqtail_panel_bufs[s:goal_panel]
+  let l:info_buf = b:coqtail_panel_bufs[s:info_panel]
 
   execute 'rightbelow vertical sbuffer ' . l:goal_buf
   execute 'rightbelow sbuffer ' . l:info_buf
@@ -241,8 +236,8 @@ function! coqtail#Refresh(buf, highlights, panels) abort
   endfor
 
   " Update goal and info panels
-  for [l:name, l:buf] in items(b:coqtail_panel_bufs)
-    call s:replacePanel(l:buf, a:panels[l:name])
+  for [l:panel, l:txt] in items(a:panels)
+    call s:replacePanel(b:coqtail_panel_bufs[l:panel], l:txt)
   endfor
   execute l:win . 'wincmd w'
 
@@ -254,14 +249,19 @@ function! coqtail#HidePanels() abort
   " If changing files from goal or info buffer
   " N.B. Switching files from anywhere other than the 3 main windows may
   " cause unexpected behaviors
-  if exists('b:coqtail_coq_buf')
+  if !exists('b:coqtail_panel_bufs')
+    return
+  end
+
+  let l:panel = s:checkPanel()
+  if l:panel == s:goal_panel || l:panel == s:info_panel
     " Do nothing if main window isn't up yet
-    if bufwinnr(b:coqtail_coq_buf) == -1
+    if bufwinnr(b:coqtail_panel_bufs[s:main_panel]) == -1
       return
     endif
 
     " Switch to main panel and hide as usual
-    execute bufwinnr(b:coqtail_coq_buf) . 'wincmd w'
+    execute bufwinnr(b:coqtail_panel_bufs[s:main_panel]) . 'wincmd w'
     call coqtail#HidePanels()
     close!
     return
@@ -269,9 +269,9 @@ function! coqtail#HidePanels() abort
 
   " Hide other panels
   let l:coq_buf = bufnr('%')
-  for l:buf in values(b:coqtail_panel_bufs)
+  for [l:panel, l:buf] in items(b:coqtail_panel_bufs)
     let l:win = bufwinnr(l:buf)
-    if l:win != -1
+    if l:win != -1 && l:panel != s:main_panel
       execute l:win . 'wincmd w'
       close!
     endif
@@ -588,8 +588,10 @@ endfunction
 function! s:cleanup() abort
   " Clean up goal and info buffers
   try
-    for l:buf in values(b:coqtail_panel_bufs)
-      execute 'bdelete' . l:buf
+    for [l:panel, l:buf] in items(b:coqtail_panel_bufs)
+      if l:panel != s:main_panel
+        execute 'bdelete' . l:buf
+      end
     endfor
     unlet b:coqtail_panel_bufs
   catch

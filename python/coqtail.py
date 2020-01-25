@@ -431,7 +431,7 @@ class Coqtail(object):
                 self.set_goal(self.pp_goals(newgoals))
             else:
                 self.set_goal("")
-        self.handler.refresh(force=force)
+        self.handler.refresh(goals=goals, force=force)
 
     def get_goals(self):
         # type: () -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
@@ -570,11 +570,13 @@ class Coqtail(object):
 
         return matches
 
-    @property
-    def panels(self):
-        # type: () -> Mapping[str, List[Text]]
+    def panels(self, goals=True):
+        # type: (bool) -> Mapping[str, List[Text]]
         """The goal and info panel content."""
-        return {"goal": self.goal_msg, "info": self.info_msg}
+        panels = {"info": self.info_msg}
+        if goals:
+            panels["goal"] = self.goal_msg
+        return panels
 
     def splash(self, version, width, height):
         # type: (Text, int, int) -> None
@@ -793,8 +795,8 @@ class CoqtailHandler(StreamRequestHandler):
         else:
             return self.vimcall("setbufvar", self.bnum, var, val)
 
-    def refresh(self, force=True):
-        # type: (bool) -> None
+    def refresh(self, goals=True, force=True):
+        # type: (bool, bool) -> None
         """Refresh the highlighting and goal and info panels."""
         if not force:
             cur_time = time.time()
@@ -802,7 +804,10 @@ class CoqtailHandler(StreamRequestHandler):
             self.refresh_time = cur_time
         if force:
             self.vimcall(
-                "coqtail#Refresh", self.bnum, self.coq.highlights, self.coq.panels
+                "coqtail#Refresh",
+                self.bnum,
+                self.coq.highlights,
+                self.coq.panels(goals),
             )
 
 
