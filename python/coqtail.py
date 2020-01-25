@@ -237,16 +237,12 @@ class Coqtail(object):
         return self.rewind_to(0, 1)
 
     def query(self, args):
-        # type: (List[Text]) -> Optional[str]
+        # type: (List[Text]) -> None
         """Forward Coq query to Coqtop interface."""
-        success, msg = self.do_query(" ".join(args))
-
-        if not success:
-            return unexpected(success, "query()")
+        _, msg = self.do_query(" ".join(args))
 
         self.set_info(msg)
         self.refresh(goals=False)
-        return None
 
     def endpoint(self):
         # type: () -> Tuple[int, int]
