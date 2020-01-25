@@ -12,7 +12,7 @@ or [ProofGeneral](https://proofgeneral.github.io/).
 It supports:
 - [Coq 8.4 - 8.11](https://coq.inria.fr/download)
 - Having multiple Coq buffers open
-- Python 2 and 3
+- Python 2<sup>[1](#python2)</sup> and 3
 
 ## Installation and Requirements
 
@@ -49,7 +49,7 @@ Plug 'whonore/coqtail' (in .vimrc)
 ```
 
 Coqtail requires:
-- Vim compiled with either `+python` or `+python3`
+- Vim compiled with either `+python`<sup>[1](#python2)</sup> or `+python3`
 - Vim configuration options `filetype plugin indent on` and `syntax on` (e.g. in `.vimrc`)
 - [vimbufsync](https://github.com/let-def/vimbufsync)
 - [Coq 8.4 - 8.11](https://coq.inria.fr/download)
@@ -115,3 +115,8 @@ These scripts are used by default but can be disabled by setting
 Parts of Coqtail were originally inspired by/adapted from
 [Coquille](https://github.com/the-lambda-church/coquille)
 (MIT License, Copyright (c) 2013, Thomas Refis).
+
+---
+
+#### <a name="python2">Python 2 Support</a>
+Because Python 2 has reached its [end-of-life](https://pythonclock.org/) and supporting it alongside Python 3 makes it difficult to improve and maintain the code, Coqtail will drop support for Python 2 in the near future. At that time a stable version will be tagged and all future versions will be Python 3-only.
