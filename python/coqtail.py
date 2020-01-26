@@ -100,13 +100,17 @@ class Coqtail(object):
                 eline, ecol = self.endpoints[-1]
                 linediff = _find_diff(self.oldbuf, newbuf, eline + 1)
                 if linediff is not None:
-                    coldiff = _find_diff(
-                        self.oldbuf[linediff],
-                        newbuf[linediff],
-                        ecol if linediff == eline else None,
-                    )
+                    try:
+                        coldiff = _find_diff(
+                            self.oldbuf[linediff],
+                            newbuf[linediff],
+                            ecol if linediff == eline else None,
+                        )
+                    except IndexError:
+                        linediff = len(newbuf) - 1
+                        coldiff = len(newbuf[-1])
                     if coldiff is not None:
-                        err = self.rewind_to(linediff, coldiff)
+                        err = self.rewind_to(linediff, coldiff + 1)
 
             self.oldchange = newchange
             self.oldbuf = newbuf
