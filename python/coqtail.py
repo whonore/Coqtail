@@ -699,12 +699,19 @@ class CoqtailHandler(StreamRequestHandler):
                 bnum, func, args = data
                 self.reqs.put((msg_id, bnum, func, args))
             else:
-                self.resps[-msg_id].put((msg_id, data))
+                # N.B. Accessing self.resps concurrently creates a race condition
+                # where defaultdict could construct a Queue twice
+                with self.resp_lk:
+                    self.resps[-msg_id].put((msg_id, data))
 
     def get_msg(self, msg_id=None):
         # type: (Optional[int]) -> Sequence[Any]
         """Check for any pending messages from Vim."""
-        queue = self.reqs if msg_id is None else self.resps[msg_id]
+        if msg_id is None:
+            queue = self.reqs  # type: Queue[Any]
+        else:
+            with self.resp_lk:
+                queue = self.resps[msg_id]
         while not self.closed:
             try:
                 return queue.get(timeout=self.check_close_rate)  # type: ignore
@@ -719,6 +726,7 @@ class CoqtailHandler(StreamRequestHandler):
         self.closed = False
         self.reqs = Queue()  # type: Queue[Tuple[int, int, str, Mapping[str, Any]]]
         self.resps = ddict(Queue)  # type: DefaultDict[int, Queue[Tuple[int, Any]]]
+        self.resp_lk = threading.Lock()
 
         read_thread = threading.Thread(target=self.parse_msgs)
         read_thread.daemon = True
