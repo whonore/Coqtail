@@ -65,15 +65,10 @@ class Coqtail(object):
 
     def __init__(self, handler):
         # type: (CoqtailHandler) -> None
-        """Initialize variables."""
-        self.coqtop = None  # type: Optional[CT.Coqtop]
-        self.handler = handler
-        self._reset()
+        """Initialize variables.
 
-    def _reset(self):
-        # type: () -> None
-        """Reset variables to initial state.
-
+        coqtop - The Coqtop interface
+        handler - The Vim interface
         oldchange - The previous number of changes to the buffer
         oldbuf - The buffer corresponding to oldchange
         endpoints - A stack of the end positions of the sentences sent to Coqtop
@@ -83,6 +78,8 @@ class Coqtail(object):
         info_msg - The text to display in the info panel
         goal_msg - The text to display in the goal panel
         """
+        self.coqtop = None  # type: Optional[CT.Coqtop]
+        self.handler = handler
         self.oldchange = 0
         self.oldbuf = []  # type: List[Text]
         self.endpoints = []  # type: List[Tuple[int, int]]
