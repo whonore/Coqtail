@@ -829,6 +829,8 @@ def start_server():
     # N.B. port = 0 chooses any arbitrary open one
     global serv
     serv = ThreadedTCPServer(("localhost", 0), CoqtailHandler)
+    # Mypy isn't aware of this attribute on ThreadingMixin
+    serv.daemon_threads = True  # type: ignore
     _, port = serv.server_address
 
     serv_thread = threading.Thread(target=serv.serve_forever)
@@ -838,7 +840,6 @@ def start_server():
     return port
 
 
-# TODO async: call this to shutdown cleanly
 def stop_server():
     # type: () -> None
     """Stop the TCP server."""

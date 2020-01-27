@@ -85,7 +85,7 @@ let s:python_dir = expand('<sfile>:p:h:h') . '/python'
 Py import shlex, sys, vim
 Py if not vim.eval('s:python_dir') in sys.path:
   \    sys.path.insert(0, vim.eval('s:python_dir'))
-Py from coqtail import Coqtail, start_server
+Py from coqtail import Coqtail, start_server, stop_server
 
 " Print a message with warning highlighting.
 function! s:warn(msg) abort
@@ -567,7 +567,7 @@ function! s:cleanup() abort
   call s:clearHighlighting()
 
   " Close the channel
-  let b:chan = 0
+  let b:coqtail_chan = 0
 endfunction
 
 " Get the Coq version and determine if it is supported.
@@ -614,7 +614,7 @@ endfunction
 " TODO async: main-panel only
 function! s:coqtailRunning() abort
   try
-    return ch_status(b:chan) ==# 'open'
+    return ch_status(b:coqtail_chan) ==# 'open'
   catch
     return 0
   endtry
@@ -631,10 +631,10 @@ function! s:callCoqtail(cmd, cb, args) abort
   if a:cb !=# 'sync'
     " Async
     let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#DefaultCB'}
-    return [1, ch_sendexpr(b:chan, l:args, l:opts)]
+    return [1, ch_sendexpr(b:coqtail_chan, l:args, l:opts)]
   else
     " Sync
-    let l:res = ch_evalexpr(b:chan, l:args)
+    let l:res = ch_evalexpr(b:coqtail_chan, l:args)
     return type(l:res) == v:t_dict
       \ ? [l:res.buf == bufnr('%'), l:res.ret]
       \ : [0, -1]
@@ -645,6 +645,7 @@ endfunction
 function! coqtail#Start(...) abort
   if s:port == -1
     let s:port = s:pyeval('start_server()')
+    autocmd VimLeavePre * call s:pyeval('stop_server()') | let s:port = -1
   endif
 
   if s:coqtailRunning()
@@ -657,7 +658,7 @@ function! coqtail#Start(...) abort
     endif
 
     " Open channel with Coqtail server
-    let b:chan = ch_open('localhost:' . s:port, s:chanopts)
+    let b:coqtail_chan = ch_open('localhost:' . s:port, s:chanopts)
 
     " Check for a Coq project file
     let [b:coqtail_project_file, l:proj_args] = coqtail#FindCoqProj()
@@ -672,7 +673,7 @@ function! coqtail#Start(...) abort
       \ 'coq_path': expand(b:coqtail_coq_path),
       \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
     if !l:ok || l:msg != v:null
-      let l:msg = l:msg != v:null : l:msg ? 'Failed to launch Coq.'
+      let l:msg = l:ok && l:msg != v:null ? l:msg : 'Failed to launch Coq.'
       call s:err(l:msg)
       call coqtail#Stop()
       return 0
@@ -694,7 +695,6 @@ function! coqtail#Start(...) abort
       autocmd InsertEnter <buffer> call s:callCoqtail('sync', 'sync', {})
       autocmd BufWinLeave <buffer> call s:hidePanels()
       autocmd BufWinEnter <buffer> call s:openPanels(0, 1)
-      " TODO async: call stop_server
       autocmd QuitPre <buffer> call coqtail#Stop()
     augroup end
   endif
@@ -851,8 +851,8 @@ endfunction
 " Initialize buffer local variables, commands, and mappings.
 function! coqtail#Register() abort
   " Initialize once
-  if !exists('b:chan')
-    let b:chan = 0
+  if !exists('b:coqtail_chan')
+    let b:coqtail_chan = 0
     for [l:var, l:_] in s:hlgroups
       let b:[l:var] = -1
     endfor
