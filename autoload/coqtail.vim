@@ -72,6 +72,14 @@ if !exists('g:coqtail_project_name')
   let g:coqtail_project_name = '_CoqProject'
 endif
 
+" Default panel layout.
+if !exists('g:coqtail_panel_layout')
+  let g:coqtail_panel_layout = {
+    \ s:goal_panel: [[s:info_panel, 'above'], [s:main_panel, 'right']],
+    \ s:info_panel: [[s:goal_panel, 'below'], [s:main_panel, 'right']]
+  \}
+endif
+
 " Add python directory to path so Python functions can be called.
 let s:python_dir = expand('<sfile>:p:h:h') . '/python'
 Py import shlex, sys, vim
@@ -111,12 +119,8 @@ function! s:initPanel(name) abort
   setlocal nocursorline
   setlocal wrap
 
-  augroup coqtail#PanelCmd
-    autocmd! * <buffer>
-    " TODO async: allow closing panel
-    autocmd BufWinLeave <buffer> call s:hidePanels()
-  augroup END
-
+  let b:coqtail_panel_open = 1
+  let b:coqtail_panel_size = [-1, -1]
   return bufnr('%')
 endfunction
 
@@ -167,25 +171,63 @@ function! s:switchPanel(panel) abort
   return l:cur_panel
 endfunction
 
-" Re-open auxiliary panels.
-" TODO async: remember open panels and positions
-function! coqtail#OpenPanels() abort
-  " Do nothing if windows already open
-  for [l:panel, l:buf] in items(b:coqtail_panel_bufs)
-    if bufwinnr(l:buf) != -1 && l:panel != s:main_panel
-      return
+" Open an auxiliary panel.
+function! s:openPanel(panel, force) abort
+  let l:from = s:checkPanel()
+  if l:from == s:no_panel
+    return 0
+  endif
+
+  " Re-open only if not already open, it was open before, or 'force' is true
+  let l:opened = 0
+  let l:buf = b:coqtail_panel_bufs[a:panel]
+  if bufwinnr(l:buf) == -1 && (a:force || getbufvar(l:buf, 'coqtail_panel_open'))
+    " Arrange relative to the first open panel
+    for [l:relative, l:dir] in g:coqtail_panel_layout[a:panel]
+      if s:switchPanel(l:relative) != s:no_panel
+        let l:dir = l:dir ==# 'above' ? 'leftabove'
+          \ : l:dir ==# 'below' ? 'rightbelow'
+          \ : l:dir ==# 'left' ? 'vertical leftabove'
+          \ : l:dir ==# 'right' ? 'vertical rightbelow' : ''
+        if l:dir !=# ''
+          execute printf('silent %s sbuffer %d', l:dir, l:buf)
+          let b:coqtail_panel_open = 1
+          let l:opened = l:buf
+          break
+        endif
+      endif
+    endfor
+  endif
+
+  call s:switchPanel(l:from)
+  return l:opened
+endfunction
+
+" Open auxiliary panels.
+function! s:openPanels(force, refresh) abort
+  " Open
+  let l:opened = []
+  for l:panel in s:aux_panels
+    if s:openPanel(l:panel, a:force)
+      let l:opened = add(l:opened, l:panel)
     endif
   endfor
 
-  " Need to save in local vars because will be changing buffers
-  let l:goal_buf = b:coqtail_panel_bufs[s:goal_panel]
-  let l:info_buf = b:coqtail_panel_bufs[s:info_panel]
+  " Resize
+  for l:panel in l:opened
+    let l:buf = b:coqtail_panel_bufs[l:panel]
+    let l:win = bufwinnr(l:buf)
+    let l:size = getbufvar(l:buf, 'coqtail_panel_size')
+    if l:size != [-1, -1]
+      execute printf('vertical %dresize %d', l:win, l:size[0])
+      execute printf('%dresize %d', l:win, l:size[1])
+    endif
+  endfor
 
-  execute 'rightbelow vertical sbuffer ' . l:goal_buf
-  execute 'rightbelow sbuffer ' . l:info_buf
-
-  " Switch back to main panel
-  call s:switchPanel(s:main_panel)
+  " Refresh
+  if a:refresh
+    call s:callCoqtail('refresh', 'sync', {})
+  endif
 endfunction
 
 " Clear Coqtop highlighting.
@@ -243,21 +285,26 @@ endfunction
 
 " Close auxiliary panels and clear highlighting.
 function! s:hidePanels() abort
-  let l:cur_panel = s:checkPanel()
-  if l:cur_panel == s:no_panel
+  if s:switchPanel(s:main_panel) == s:no_panel
     return
   endif
 
-  if l:cur_panel == s:main_panel
-    call s:clearHighlighting()
-  endif
+  call s:clearHighlighting()
 
   " Hide other panels
-  for [l:panel, l:buf] in items(b:coqtail_panel_bufs)
+  let l:toclose = []
+  for l:panel in s:aux_panels
+    let l:buf = b:coqtail_panel_bufs[l:panel]
     let l:win = bufwinnr(l:buf)
-    if l:panel != l:cur_panel && l:win != -1
-      execute l:win . 'close!'
+    call setbufvar(l:buf, 'coqtail_panel_open', l:win != -1)
+    call setbufvar(l:buf, 'coqtail_panel_size', [winwidth(l:win), winheight(l:win)])
+    if l:win != -1
+      let l:toclose = add(l:toclose, l:buf)
     endif
+  endfor
+
+  for l:buf in l:toclose
+    execute bufwinnr(l:buf) . 'close!'
   endfor
 endfunction
 
@@ -328,6 +375,7 @@ function! coqtail#GotoGoal(ngoal, start) abort
   endif
 
   call s:switchPanel(l:panel)
+  return 1
 endfunction
 
 " Remove entries in the quickfix list with the same position.
@@ -515,6 +563,9 @@ function! s:cleanup() abort
   " Clean up autocmds
   silent! autocmd! coqtail#Autocmds * <buffer>
 
+  " Clear highlighting
+  call s:clearHighlighting()
+
   " Close the channel
   let b:chan = 0
 endfunction
@@ -613,7 +664,7 @@ function! coqtail#Start(...) abort
 
     " Prepare auxiliary panels
     call s:initPanels()
-    call coqtail#OpenPanels()
+    call s:openPanels(0, 0)
 
     " Launch Coqtop
     let [l:ok, l:msg] = s:callCoqtail('start', 'sync', {
@@ -642,7 +693,7 @@ function! coqtail#Start(...) abort
       autocmd! * <buffer>
       autocmd InsertEnter <buffer> call s:callCoqtail('sync', 'sync', {})
       autocmd BufWinLeave <buffer> call s:hidePanels()
-      autocmd BufWinEnter <buffer> call coqtail#OpenPanels() | call s:callCoqtail('refresh', 'sync', {})
+      autocmd BufWinEnter <buffer> call s:openPanels(0, 1)
       " TODO async: call stop_server
       autocmd QuitPre <buffer> call coqtail#Stop()
     augroup end
