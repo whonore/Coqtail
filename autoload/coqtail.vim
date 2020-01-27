@@ -744,6 +744,7 @@ let s:cmd_opts = {
   \ 'CoqJumpToEnd': '',
   \ 'CoqGotoDef': '-bang -nargs=1',
   \ 'Coq': '-nargs=+ -complete=custom,s:queryComplete',
+  \ 'CoqRestorePanels': '',
   \ 'CoqGotoGoal': '-bang -count=1',
   \ 'CoqGotoGoalNext': '-bang',
   \ 'CoqGotoGoalPrev': '-bang',
@@ -768,6 +769,7 @@ function! s:commands() abort
   call s:cmdDef('CoqJumpToEnd', 'call coqtail#JumpToEnd()')
   call s:cmdDef('CoqGotoDef', 'call coqtail#GotoDef(<f-args>, <bang>0)')
   call s:cmdDef('Coq', 'call s:callCoqtail("query", "", {"args": [<f-args>]})')
+  call s:cmdDef('CoqRestorePanels', 'call s:openPanels(1, 1)')
   call s:cmdDef('CoqGotoGoal', 'call coqtail#GotoGoal(<count>, <bang>1)')
   call s:cmdDef('CoqGotoGoalNext', 'call coqtail#GotoGoal(-1, <bang>1)')
   call s:cmdDef('CoqGotoGoalPrev', 'call coqtail#GotoGoal(-2, <bang>1)')
@@ -794,6 +796,7 @@ function! s:mappings() abort
   nnoremap <buffer> <silent> <Plug>CoqAbout :Coq About <C-r>=<SID>getCurWord()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqPrint :Coq Print <C-r>=<SID>getCurWord()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqLocate :Coq Locate <C-r>=<SID>getCurWord()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqRestorePanels :CoqRestorePanels<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalStart :<C-U>execute v:count1 'CoqGotoGoal'<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalEnd :<C-U>execute v:count1 'CoqGotoGoal!'<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalNextStart :CoqGotoGoalNext<CR>
@@ -821,6 +824,7 @@ function! s:mappings() abort
     \ ['About', 'a', 'n'],
     \ ['Print', 'p', 'n'],
     \ ['Locate', 'f', 'n'],
+    \ ['RestorePanels', 'r', 'ni'],
     \ ['GotoGoalStart', 'gg', 'ni'],
     \ ['GotoGoalEnd', 'GG', 'ni'],
     \ ['GotoGoalNextStart', '!g]', 'n'],

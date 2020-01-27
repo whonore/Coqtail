@@ -80,7 +80,8 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | `Coq Print <arg>` | `<leader>cp` | Show the definition of `<arg>`. |
 | `Coq Locate <arg>` | `<leader>cf` | Show where `<arg>` is defined. |
 | `Coq Search <args>` | `<leader>cs` | Show theorems about `<args>`. |
-| **Goal Focusing** | |
+| **Panel Management** | |
+| `CoqRestorePanels` | `<leader>cr` | Re-open the goal and info panels. |
 | `{n}CoqGotoGoal` | `<leader>cgg` | Scroll the goal panel to the start of the `n`th goal (defaults to 1). Number of lines shown is controlled by `g:coqtail_goal_lines`. |
 | `{n}CoqGotoGoal!` | `<leader>cGG` | Scroll the goal panel to the end of the `n`th goal. |
 | `CoqGotoGoalNext` | `g]` | Scroll the goal panel to the start of the next goal. |

@@ -11,7 +11,7 @@ the |arglist| or |buffer-list|.
 1. Starting and Stopping Coqtail	|coqtail-start-stop|
 2. Movement Commands			|coqtail-movement|
 3. Coq Queries				|coqtail-queries|
-4. Goal Focusing			|coqtail-goal-focus|
+4. Panel Management			|coqtail-panels|
 5. Configuration			|coqtail-configuration|
 6. Debugging				|coqtail-debug|
 
@@ -121,13 +121,18 @@ Coq Queries						       *coqtail-queries*
 			uses {arg}, while the second uses the term under the
 			cursor. Write the response to the Info panel.
 
-=============
-Goal Focusing						    *coqtail-goal-focus*
+================
+Panel Management						*coqtail-panels*
+
+						  *<leader>cr* *:CoqRestorePanels*
+							*coqtail-restore-panels*
+:CoqRestorePanels
+<leader>cr		Re-open the Goal and Info panels.
 
 						      *<leader>cgg* *:CoqGotoGoal*
 						       *coqtail-goto-goal-start*
 :[count]CoqGotoGoal
-<count><leader>cgg	Scroll the goal panel to the start of goal [count]
+<count><leader>cgg	Scroll the Goal panel to the start of goal [count]
 			defaulting to the first goal. Use |g:coqtail_goal_lines|
 			to decide which line to put at the bottom of the
 			panel.
@@ -141,23 +146,23 @@ Goal Focusing						    *coqtail-goal-focus*
 							   *g]* *:CoqGotoGoalNext*
 						  *coqtail-goto-goal-next-start*
 :CoqGotoGoalNext
-g]			Scroll the goal panel to the start of the next goal.
+g]			Scroll the Goal panel to the start of the next goal.
 
 							  *G]* *:CoqGotoGoalNext!*
 						    *coqtail-goto-goal-next-end*
 :CoqGotoGoalNext!
-G]			Scroll the goal panel to the end of the next goal.
+G]			Scroll the Goal panel to the end of the next goal.
 
 							   *g[* *:CoqGotoGoalPrev*
 						  *coqtail-goto-goal-prev-start*
 :CoqGotoGoalPrev
-g[			Scroll the goal panel to the start of the previous
+g[			Scroll the Goal panel to the start of the previous
 			goal.
 
 							  *G[* *:CoqGotoGoalPrev!*
 						    *coqtail-goto-goal-prev-end*
 :CoqGotoGoalPrev!
-G[			Scroll the goal panel to the end of the previous goal.
+G[			Scroll the Goal panel to the end of the previous goal.
 
 =============
 Configuration						 *coqtail-configuration*
@@ -240,7 +245,7 @@ Debugging							 *coqtail-debug*
 :CoqToggleDebug
 <leader>cd		Enable or disable logging of debugging statements to a
 			file. Enabling creates a temporary file and displays
-			the name in the info panel. The name is also stored in
+			the name in the Info panel. The name is also stored in
 			|b:coqtail_log_name|. Disabling and enabling again
 			creates a new log file. Disabled initially.
 
