@@ -662,7 +662,6 @@ function! s:callCoqtail(cmd, cb, args) abort
   let l:args = [bufnr('%'), a:cmd, a:args]
   if a:cb !=# 'sync'
     " Async
-    let b:coqtail_waiting = 1
     let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#DefaultCB'}
     return [1, ch_sendexpr(b:chan, l:args, l:opts)]
   else
@@ -681,7 +680,7 @@ function! coqtail#Start(...) abort
   endif
 
   if s:coqtailRunning()
-    echo 'Coq is already running.'
+    call s:warn('Coq is already running.')
   else
     " Check if version supported
     let [b:coqtail_version, l:supported] = s:checkVersion()
@@ -696,37 +695,30 @@ function! coqtail#Start(...) abort
     let [b:coqtail_project_file, l:proj_args] = coqtail#FindCoqProj()
 
     " Launch Coqtop
-    let [l:ok, l:_] = s:callCoqtail('start', 'coqtail#StartCB', {
+    let [l:ok, l:msg] = s:callCoqtail('start', 'sync', {
       \ 'version': b:coqtail_version,
       \ 'coq_path': expand(b:coqtail_coq_path),
       \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
     if !l:ok
-      call s:err('Failed to launch Coq')
+      call s:err('Failed to launch Coq.')
       return 0
+    elseif l:msg != v:null
+      call s:err(l:msg)
+      call coqtail#Stop()
+      return 0
+    else
+      call s:prepare()
     endif
   endif
-  return 1
-endfunction
 
-function! coqtail#StartCB(chan, msg) abort
-  if a:msg.ret == v:null
-    call s:prepare()
-  else
-    call s:err(a:msg.ret)
-    call coqtail#Stop()
-  endif
-  let b:coqtail_waiting = 0
+  return 1
 endfunction
 
 " Stop the Coqtop interface and clean up goal and info buffers.
 function! coqtail#Stop() abort
-  call s:callCoqtail('stop', 'coqtail#StopCB', {})
-endfunction
-
-function! coqtail#StopCB(chan, msg) abort
+  call s:callCoqtail('stop', 'sync', {})
   call s:cleanup()
   let b:chan = 0
-  let b:coqtail_waiting = 0
 endfunction
 
 " Advance/rewind Coq to the specified position.
@@ -747,12 +739,11 @@ function! coqtail#JumpToEnd() abort
   endif
 endfunction
 
-" Print any error messages and clear coqtail_waiting.
+" Print any error messages.
 function! coqtail#DefaultCB(chan, msg) abort
   if a:msg.ret != v:null
     call s:err(a:msg.ret)
   endif
-  let b:coqtail_waiting = 0
 endfunction
 
 " Define <Plug> and default mappings for Coqtail commands.
@@ -834,7 +825,6 @@ function! coqtail#Register() abort
       let b:[l:var] = -1
     endfor
     let b:coqtail_timeout = 0
-    let b:coqtail_waiting = 0
     let b:coqtail_log_name = ''
     if !exists('b:coqtail_coq_path')
       let b:coqtail_coq_path = g:coqtail_coq_path
