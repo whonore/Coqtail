@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
-"""Classes and functions for managing goal and info panels and Coqtop interfaces."""
+"""Classes and functions for managing auxiliary panels and Coqtop interfaces."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -61,7 +61,7 @@ class NoDotError(Exception):
 
 # Coqtail Server #
 class Coqtail(object):
-    """Manage Coqtop interfaces and goal and info buffers for each Coq file."""
+    """Manage Coqtop interfaces and auxiliary buffers for each Coq file."""
 
     def __init__(self, handler):
         # type: (CoqtailHandler) -> None
@@ -423,7 +423,7 @@ class Coqtail(object):
     # Goals and Infos #
     def refresh(self, goals=True, force=True):
         # type: (bool, bool) -> None
-        """Refresh the goal and info panels."""
+        """Refresh the auxiliary panels."""
         if goals:
             newgoals, newinfo = self.get_goals()
             if newinfo != "":
@@ -544,7 +544,7 @@ class Coqtail(object):
         matches = {
             "coqtail_checked": None,
             "coqtail_sent": None,
-            "coqtail_errors": None,
+            "coqtail_error": None,
         }  # type: Dict[str, Optional[str]]
 
         if self.endpoints != []:
@@ -565,7 +565,7 @@ class Coqtail(object):
 
         if self.error_at is not None:
             (sline, scol), (eline, ecol) = self.error_at
-            matches["coqtail_errors"] = _make_matcher(
+            matches["coqtail_error"] = _make_matcher(
                 (sline + 1, scol), (eline + 1, ecol)
             )
 
@@ -573,7 +573,7 @@ class Coqtail(object):
 
     def panels(self, goals=True):
         # type: (bool) -> Mapping[str, List[Text]]
-        """The goal and info panel content."""
+        """The auxiliary panel content."""
         panels = {"info": self.info_msg}
         if goals:
             panels["goal"] = self.goal_msg
@@ -806,7 +806,7 @@ class CoqtailHandler(StreamRequestHandler):
 
     def refresh(self, goals=True, force=True):
         # type: (bool, bool) -> None
-        """Refresh the highlighting and goal and info panels."""
+        """Refresh the highlighting and auxiliary panels."""
         if not force:
             cur_time = time.time()
             force = cur_time - self.refresh_time > self.refresh_rate
