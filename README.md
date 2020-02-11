@@ -11,8 +11,9 @@ or [ProofGeneral](https://proofgeneral.github.io/).
 
 It supports:
 - [Coq 8.4 - 8.11](https://coq.inria.fr/download)
-- Having multiple Coq buffers open
 - Python 2<sup>[1](#python2)</sup> and 3
+- Vim 7.4 - 8.2
+- Multiple Coq sessions in different buffers
 
 ## Installation and Requirements
 
@@ -47,10 +48,9 @@ Plug 'whonore/Coqtail' | Plug 'let-def/vimbufsync' (add this line in .vimrc)
 vim +PlugInstall +qa
 ```
 
-Coqtail requires:
+Requirements:
 - Vim compiled with either `+python`<sup>[1](#python2)</sup> or `+python3`
-- Vim configuration options `filetype plugin indent on` and `syntax on` (e.g. in `.vimrc`)
-- [vimbufsync](https://github.com/let-def/vimbufsync)
+- For syntax highlighting, Vim configuration options `filetype plugin indent on` and `syntax on` (e.g. in `.vimrc`)
 - [Coq 8.4 - 8.11](https://coq.inria.fr/download)
 
 Newer versions of Coq have not yet been tested, but should still work as long as
@@ -90,11 +90,14 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | `CoqGotoGoalPrev` | `g[` | Scroll the goal panel to the start of the previous goal. |
 | `CoqGotoGoalPrev!` | `G[` | Scroll the goal panel to the end of the previous goal. |
 
+
+## Configuration
+
 The mappings shown above are set by default, but you can disable them all and
-define your own by setting `g:coqtail_nomap = 1` in your .vimrc.
-Alternatively, you can choose to only remap specific commands and the defaults
-will still be used for the rest.
-For example, set `map <leader>ci <Plug>CoqInterrupt` in your .vimrc to not
+define your own by setting `g:coqtail_nomap = 1` in your `.vimrc`.
+Alternatively, you can remap specific commands and the defaults will still be
+used for the rest.
+For example, set `map <leader>ci <Plug>CoqInterrupt` in your `.vimrc` to not
 hijack `CTRL-C`.
 
 By default Coqtail will use the `coqtop` or `coqtop.opt` on your `PATH`.
