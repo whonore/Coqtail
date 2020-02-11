@@ -768,19 +768,12 @@ class CoqtailHandler(StreamRequestHandler):
                 "refresh": self.coq.refresh,
             }.get(func, None)
 
-            # if func == 'to_line':
-            #     start = time.time()
-
             try:
                 ret = handler(**args) if handler is not None else None  # type: ignore
             except EOFError:
                 break
             msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
             self.wfile.write(json.dumps(msg).encode("utf-8"))
-
-            # if func == 'to_line':
-            #     stop = time.time()
-            #     print('done to_line', round(stop - start, 2))
 
             try:
                 del self.resps[self.msg_id]
