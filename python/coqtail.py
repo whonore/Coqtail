@@ -782,6 +782,11 @@ class CoqtailHandler(StreamRequestHandler):
             #     stop = time.time()
             #     print('done to_line', round(stop - start, 2))
 
+            try:
+                del self.resps[self.msg_id]
+            except KeyError:
+                pass
+
             if func == "stop":
                 break
 
