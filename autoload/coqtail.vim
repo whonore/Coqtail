@@ -737,6 +737,7 @@ endfunction
 let s:cmd_opts = {
   \ 'CoqStart': '-nargs=* -complete=file',
   \ 'CoqStop': '',
+  \ 'CoqInterrupt': '',
   \ 'CoqNext': '-count=1',
   \ 'CoqUndo': '-count=1',
   \ 'CoqToLine': '-count=0',
@@ -752,7 +753,7 @@ let s:cmd_opts = {
 \}
 function! s:cmdDef(name, act) abort
   " Start Coqtail first if needed
-  let l:act = a:name !=# 'CoqStart' && a:name !=# 'CoqStop'
+  let l:act = a:name !~# '\(Start\|Stop\|Interrupt\)$'
     \ ? printf('if s:coqtailRunning() || coqtail#Start() | %s | endif', a:act)
     \ : a:act
   execute printf('command! -buffer -bar %s %s %s', s:cmd_opts[a:name], a:name, l:act)
@@ -762,6 +763,7 @@ endfunction
 function! s:commands() abort
   call s:cmdDef('CoqStart', 'call coqtail#Start(<f-args>)')
   call s:cmdDef('CoqStop', 'call coqtail#Stop()')
+  call s:cmdDef('CoqInterrupt', 'call s:callCoqtail("interrupt", "", {})')
   call s:cmdDef('CoqNext', 'call s:callCoqtail("step", "", {"steps": <count>})')
   call s:cmdDef('CoqUndo', 'call s:callCoqtail("rewind", "", {"steps": <count>})')
   call s:cmdDef('CoqToLine', 'call coqtail#ToLine(<count>)')
@@ -780,6 +782,7 @@ endfunction
 function! s:mappings() abort
   nnoremap <buffer> <silent> <Plug>CoqStart :CoqStart<CR>
   nnoremap <buffer> <silent> <Plug>CoqStop :CoqStop<CR>
+  nnoremap <buffer> <silent> <Plug>CoqInterrupt :CoqInterrupt<CR>
   nnoremap <buffer> <silent> <Plug>CoqNext :<C-U>execute v:count1 'CoqNext'<CR>
   nnoremap <buffer> <silent> <Plug>CoqUndo :<C-U>execute v:count1 'CoqUndo'<CR>
   nnoremap <buffer> <silent> <Plug>CoqToLine :<C-U>execute v:count 'CoqToLine'<CR>
@@ -813,6 +816,7 @@ function! s:mappings() abort
   let l:maps = [
     \ ['Start', 'c', 'n'],
     \ ['Stop', 'q', 'n'],
+    \ ['Interrupt', '!<C-c>', 'n'],
     \ ['Next', 'j', 'ni'],
     \ ['Undo', 'k', 'ni'],
     \ ['ToLine', 'l', 'ni'],

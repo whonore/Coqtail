@@ -685,6 +685,9 @@ class CoqtailHandler(StreamRequestHandler):
     # Is the channel open
     closed = False
 
+    # Is a request currently being handled
+    working = False
+
     def parse_msgs(self):
         # type: () -> None
         """Parse messages sent over a Vim channel."""
@@ -701,7 +704,10 @@ class CoqtailHandler(StreamRequestHandler):
             msg_id, data = json.loads(msg)
             if msg_id >= 0:
                 bnum, func, args = data
-                self.reqs.put((msg_id, bnum, func, args))
+                if func == "interrupt":
+                    self.interrupt()
+                else:
+                    self.reqs.put((msg_id, bnum, func, args))
             else:
                 # N.B. Accessing self.resps concurrently creates a race condition
                 # where defaultdict could construct a Queue twice
@@ -738,8 +744,10 @@ class CoqtailHandler(StreamRequestHandler):
 
         while not self.closed:
             try:
+                self.working = False
                 self.msg_id, self.bnum, func, args = self.get_msg()
                 self.refresh_time = 0.0
+                self.working = True
             except EOFError:
                 break
 
@@ -818,6 +826,18 @@ class CoqtailHandler(StreamRequestHandler):
                 self.coq.highlights,
                 self.coq.panels(goals),
             )
+
+    def interrupt(self):
+        # type: () -> None
+        """Interrupt Coqtop and clear the request queue."""
+        if self.coq.coqtop is not None and self.working:
+            self.working = False
+            while not self.reqs.empty():
+                try:
+                    self.reqs.get_nowait()
+                except Empty:
+                    break
+            self.coq.coqtop.interrupt()
 
 
 serv = None

@@ -66,6 +66,7 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | **Starting and Stopping** | |
 | `CoqStart` | `<leader>cc` | Launch Coqtail for the current buffer. |
 | `CoqStop` | `<leader>cq` | Quit Coqtail for the current buffer. |
+| `CoqInterrupt` | `CTRL-C` | Send SIGINT to `coqtop`. |
 | **Movement** | |
 | `{n}CoqNext` | `<leader>cj` | Check the next `n` (1 by default) sentences with Coq. |
 | `{n}CoqUndo` | `<leader>ck` | Step back `n` (1 by default) sentences. |
@@ -93,6 +94,8 @@ The mappings shown above are set by default, but you can disable them all and
 define your own by setting `g:coqtail_nomap = 1` in your .vimrc.
 Alternatively, you can choose to only remap specific commands and the defaults
 will still be used for the rest.
+For example, set `map <leader>ci <Plug>CoqInterrupt` in your .vimrc to not
+hijack `CTRL-C`.
 
 By default Coqtail will use the `coqtop` or `coqtop.opt` on your `PATH`.
 You can tell it to search instead in a specific directory by setting

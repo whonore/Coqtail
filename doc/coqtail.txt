@@ -29,6 +29,10 @@ Starting and Stopping Coqtail				    *coqtail-start-stop*
 <leader>cq		Stop the plugin. Stop Coqtop and close the Goal and
 			Info panels.
 
+					*CTRL-C* *:CoqInterrupt* *coqtail-interrupt*
+:CoqInterrupt	or
+CTRL-C			Send SIGINT to Coqtop and clear any pending commands.
+
 =================
 Movement Commands					      *coqtail-movement*
 
