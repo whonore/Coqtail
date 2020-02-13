@@ -43,7 +43,10 @@ endfunction
 call s:CoqtailHighlight()
 " N.B. Setting a colorscheme usually calls 'syntax reset' so have to set
 " Coqtail highlighting colors again
-autocmd ColorScheme * call s:CoqtailHighlight()
+augroup coqtail#Highlight
+  autocmd!
+  autocmd ColorScheme * call s:CoqtailHighlight()
+augroup end
 
 " Only load this syntax file when user didn't opt out
 if exists('g:coqtail_nosyntax') && g:coqtail_nosyntax
