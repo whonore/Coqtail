@@ -83,14 +83,14 @@ if v:version >= 508 || !exists('b:did_coq_goals_syntax_inits')
 
   " WORK LEFT
   HiLink coqNumberGoals               Todo
-  HiLink coqNumberUnfocused           Todo
+  HiLink coqNumberUnfocused  coqNumberGoals
+  HiLink coqNumberSelved coqNumberUnfocused
   HiLink coqNumberAdmitted            Error
-  HiLink coqNumberShelved             Todo
-  HiLink coqGoalLine                  Todo
 
   " GOAL IDENTIFIER
-  HiLink coqGoalNumber                Underlined
-  HiLink coqNextGoal                  Underlined
+  HiLink coqGoalNumber   coqNumberUnfocused
+  HiLink coqNextGoal     coqNumberUnfocused
+  HiLink coqGoalLine     coqGoalNumber
 
   " USUAL VIM HIGHLIGHTINGS
   " Comments

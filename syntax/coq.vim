@@ -27,17 +27,23 @@
 " TODO: mark bad constructions (eg. Section ended but not opened)
 
 function! s:CoqtailHighlight() abort
+  hi def link CoqtailError Error
   " Use user-defined colors if they exist
   if exists('*g:CoqtailHighlight')
-    call g:CoqtailHighlight()
-  elseif &t_Co > 16
-    hi def CoqtailChecked ctermbg=17 guibg=LightGreen
-    hi def CoqtailSent ctermbg=60 guibg=LimeGreen
-  else
-    hi def CoqtailChecked ctermbg=4 guibg=LightGreen
-    hi def CoqtailSent ctermbg=7 guibg=LimeGreen
+    return g:CoqtailHighlight()
   endif
-  hi def link CoqtailError Error
+  execute 'hi def CoqtailSent ctermbg=' . (&t_Co > 16 ? 60 : 7) . ' guibg=LimeGreen'
+  if &background ==? 'light'
+    execute 'hi def CoqtailChecked ctermbg=' . (&t_Co > 16 ? 17 : 4) . ' guibg=LightGreen'
+    hi def coqNumberGoals term=underline ctermfg=Blue gui=underline guifg=Blue
+    hi def coqNumberUnfocused ctermfg=Blue guifg=Blue
+    hi def coqGoalLine ctermfg=Blue gui=strikethrough guisp=Blue guifg=bg
+  else
+    execute 'hi def CoqtailChecked ctermbg=' . (&t_Co > 16 ? 17 : 4) . ' guibg=DarkGreen'
+    hi def coqNumberGoals term=underline ctermfg=Yellow gui=underline guifg=Yellow
+    hi def coqNumberUnfocused ctermfg=Yellow guifg=Yellow
+    hi def coqGoalLine ctermfg=Yellow gui=strikethrough guisp=Yellow guifg=bg
+  endif
 endfunction
 
 call s:CoqtailHighlight()
