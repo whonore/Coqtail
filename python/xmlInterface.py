@@ -1277,7 +1277,38 @@ class XMLInterface811(XMLInterface810):
     """The version 8.11.* XML interface."""
 
 
-XMLInterfaceLatest = XMLInterface811
+class XMLInterface812(XMLInterface811):
+    """The version 8.12.* XML interface."""
+
+    OptionState = namedtuple("OptionState", ["sync", "depr", "value"])
+
+    def __init__(self, versions):
+        # type: (Tuple[int, ...]) -> None
+        """Update conversion maps with new types."""
+        super(XMLInterface811, self).__init__(versions)
+
+        self._standardize_funcs.update(
+            {"GetOptions": self._standardize_get_options,}
+        )
+
+    def _standardize_get_options(self, res):
+        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+        """Standardize the info returned by 'GetOptions'.
+        Return:
+          opts: list (string * string * ?) - Triples of all option names,
+                                             descriptions, and current values
+        """
+        if isinstance(res, Ok):
+            raw_opts = res.val  # type: List[Tuple[Text, XMLInterface812.OptionState]]
+            opts = [
+                (" ".join(name), " ".join(name), state.value.val)
+                for name, state in raw_opts
+            ]  # type: List[Tuple[Text, Text, Any]]
+            res.val = opts
+        return res
+
+
+XMLInterfaceLatest = XMLInterface812
 
 
 def XMLInterface(version):

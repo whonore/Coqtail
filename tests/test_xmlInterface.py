@@ -243,11 +243,18 @@ class ToOfTests(object):
         true = self.true()
         abc = self.abc()
         opt = self.option_value_bool()
-        return PyXML(
-            self.xi.OptionState(true.py, true.py, abc.py, opt.py),
-            mkXML("option_state", children=[true, true, abc, opt]),
-            False,
-        )
+        if self.xi.versions < (8, 12, 0):
+            return PyXML(
+                self.xi.OptionState(true.py, true.py, abc.py, opt.py),
+                mkXML("option_state", children=[true, true, abc, opt]),
+                False,
+            )
+        else:
+            return PyXML(
+                self.xi.OptionState(true.py, true.py, opt.py),
+                mkXML("option_state", children=[true, true, opt]),
+                False,
+            )
 
     def status(self):
         one = self.one()
