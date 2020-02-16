@@ -14,8 +14,8 @@ from collections import deque
 import six
 
 # Mypy doesn't know where to find these modules
-import vim  # type: ignore
-import vimbufsync  # type: ignore
+import vim  # type: ignore[import]
+import vimbufsync  # type: ignore[import]
 
 import coqtop as CT
 
@@ -732,14 +732,14 @@ class Coqtail(object):
         # type: () -> str
         """Get the encoding or default to utf-8."""
         encoding = vim.options["encoding"]
-        return six.ensure_str(encoding)
+        return six.ensure_str(encoding)  # type: ignore[no-untyped-call, no-any-return]
 
     @property
     def timeout(self):
         # type: () -> int
         """Get the value of coq_timeout for this buffer."""
         # Mypy doesn't know type of vim variables
-        return vim.current.buffer.vars["coqtail_timeout"]  # type: ignore
+        return vim.current.buffer.vars["coqtail_timeout"]  # type: ignore[no-any-return]
 
     @property
     def coqtop_done(self):
@@ -758,7 +758,7 @@ class Coqtail(object):
         # type: () -> Text
         """Get the name of this buffer's debug log."""
         # Mypy doesn't know type of vim variables
-        return vim.current.buffer.vars["coqtail_log_name"]  # type: ignore
+        return vim.current.buffer.vars["coqtail_log_name"]  # type: ignore[no-any-return]
 
     @log.setter
     def log(self, log):
@@ -770,7 +770,7 @@ class Coqtail(object):
     def filename(self):
         # type: () -> Text
         """Get the absolute path of this buffer's current Coq file."""
-        return vim.eval("expand('%:p')")  # type: ignore
+        return vim.eval("expand('%:p')")  # type: ignore[no-any-return]
 
     @staticmethod
     def panel(name):

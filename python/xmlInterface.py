@@ -14,7 +14,7 @@ import re
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from xml.dom.minidom import parseString  # type: ignore
+from xml.dom.minidom import parseString  # type: ignore[import]
 
 from six import add_metaclass, string_types
 
@@ -84,11 +84,11 @@ def prettyxml(xml):
     """Pretty print XML for debugging."""
     xml = _unescape(xml)
     # No stubs for xml.dom.minidom
-    return parseString(xml).toprettyxml()  # type: ignore
+    return parseString(xml).toprettyxml()  # type: ignore[no-any-return]
 
 
 # Mypy doesn't know the type of add_metaclass since it comes from the local six.py
-@add_metaclass(ABCMeta)  # type: ignore
+@add_metaclass(ABCMeta)  # type: ignore[no-untyped-call]
 class XMLInterfaceBase(object):
     """Provide methods and types common to all XML interface versions."""
 
@@ -213,7 +213,7 @@ class XMLInterfaceBase(object):
         """Expect: <string>str</string>"""
         # In Python 2 itertext returns Generator[Any, None, None] instead
         # of Generator[str, None, None]
-        return "".join(xml.itertext())  # type: ignore
+        return "".join(xml.itertext())  # type: ignore[no-any-return]
 
     def _of_string(self, val):
         # type: (Text) -> ET.Element
@@ -337,7 +337,7 @@ class XMLInterfaceBase(object):
         """Create a <call> node."""
         elt = self._build_xml("call", val=cmd, children=children, text=arg, attrs=attrs)
         # In Python 3 tostring returns Any instead of bytes
-        return ET.tostring(elt, encoding)  # type: ignore
+        return ET.tostring(elt, encoding)  # type: ignore[no-any-return]
 
     def _to_response(self, xml):
         # type: (ET.Element) -> Union[Ok, Err]
@@ -382,7 +382,7 @@ class XMLInterfaceBase(object):
                 res = self._to_response(xml)
             elif xml.tag in ("message", "feedback"):
                 # _to_py guaranteed to return Text for message or feedback
-                msgs.append(self._to_py(xml).strip())  # type: ignore
+                msgs.append(self._to_py(xml).strip())  # type: ignore[attr-defined]
             else:
                 raise unexpected(("value", "message", "feedback"), xml.tag)
 
@@ -617,7 +617,7 @@ class XMLInterface84(XMLInterfaceBase):
         # type: (ET.Element) -> Text
         """Expect: <message>message_level string</message>"""
         # xml[1] is a string
-        return self._to_py(xml[1])  # type: ignore
+        return self._to_py(xml[1])  # type: ignore[return-value]
 
     def _to_feedback(self, xml):
         # type: (ET.Element) -> Text
@@ -629,7 +629,7 @@ class XMLInterface84(XMLInterfaceBase):
 
         if content.get("val") == "errormsg":
             # content[1] is a string
-            return self._to_py(content[1])  # type: ignore
+            return self._to_py(content[1])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
             return ""
@@ -969,7 +969,7 @@ class XMLInterface85(XMLInterfaceBase):
         # type: (ET.Element) -> Text
         """Expect: <message>message_level string</message>"""
         # xml[1] is a string
-        return self._to_py(xml[1])  # type: ignore
+        return self._to_py(xml[1])  # type: ignore[return-value]
 
     def _to_feedback(self, xml):
         # type: (ET.Element) -> Text
@@ -981,7 +981,7 @@ class XMLInterface85(XMLInterfaceBase):
 
         if content.get("val") == "errormsg":
             # content[1] is a string
-            return self._to_py(content[1])  # type: ignore
+            return self._to_py(content[1])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
             return ""
@@ -1190,7 +1190,7 @@ class XMLInterface86(XMLInterface85):
         """Expect: <message>message_level (option ?) richpp</message>"""
         # TODO: see if option or message_level are useful
         # xml[2] is a string
-        return self._to_py(xml[2])  # type: ignore
+        return self._to_py(xml[2])  # type: ignore[return-value]
 
     # Overrides _to_feedback() from 8.5
     def _to_feedback(self, xml):
@@ -1203,7 +1203,7 @@ class XMLInterface86(XMLInterface85):
 
         if content.get("val") == "message":
             # content[0] is a string
-            return self._to_py(content[0])  # type: ignore
+            return self._to_py(content[0])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
             return ""

@@ -58,7 +58,7 @@ class Coqtop(object):
         out_q - A thread-safe queue of data read from Coqtop
         xml - The XML interface for the given version
         """
-        self.coqtop = None  # type: Optional[subprocess.Popen]
+        self.coqtop = None  # type: Optional[subprocess.Popen[bytes]]
         self.done_callback = done_callback
         self.states = []  # type: List[int]
         self.state_id = -1
@@ -111,7 +111,7 @@ class Coqtop(object):
                 # Initialize Coqtop
                 call = self.call(self.xml.init(), timeout=timeout)
                 next(call)
-                stopped = yield  # type: ignore # (see comment above start())
+                stopped = yield  # type: ignore[misc] # (see comment above start())
                 response = call.send(stopped)
 
                 if isinstance(response, Err):
@@ -129,7 +129,7 @@ class Coqtop(object):
         # Failed to launch Coqtop
         self.coqtop = None
         self.done_callback()
-        yield  # type: ignore # (see comment above start())
+        yield  # type: ignore[misc] # (see comment above start())
         yield False
 
     def stop(self):
@@ -172,7 +172,7 @@ class Coqtop(object):
             self.xml.add(cmd, self.state_id, encoding=encoding), timeout=timeout
         )
         next(call)
-        stopped = yield  # type: ignore # (see comment above start())
+        stopped = yield  # type: ignore[misc] # (see comment above start())
         response = call.send(stopped)
 
         if isinstance(response, Err):
@@ -183,7 +183,7 @@ class Coqtop(object):
         # to be evaluated
         call = self.call(self.xml.status(encoding=encoding), timeout=timeout)
         next(call)
-        stopped = yield  # type: ignore # (see comment above start())
+        stopped = yield  # type: ignore[misc] # (see comment above start())
         status = call.send(stopped)
 
         # Combine messages
@@ -197,7 +197,7 @@ class Coqtop(object):
             # Reset state id to before the error
             call = self.call(self.xml.edit_at(self.state_id, 1))
             next(call)
-            yield  # type: ignore # (see comment above start())
+            yield  # type: ignore[misc] # (see comment above start())
             call.send(False)
             yield False, msgs, status.loc
             return
@@ -229,7 +229,7 @@ class Coqtop(object):
 
         call = self.call(self.xml.edit_at(self.state_id, steps))
         next(call)
-        stopped = yield  # type: ignore # (see comment above start())
+        stopped = yield  # type: ignore[misc] # (see comment above start())
         response = call.send(stopped)
 
         if isinstance(response, Ok):
@@ -251,7 +251,7 @@ class Coqtop(object):
             self.xml.query(cmd, self.state_id, encoding=encoding), timeout=timeout
         )
         next(call)
-        stopped = yield  # type: ignore # (see comment above start())
+        stopped = yield  # type: ignore[misc] # (see comment above start())
         response = call.send(stopped)
 
         if isinstance(response, Ok):
@@ -274,7 +274,7 @@ class Coqtop(object):
         self.logger.debug("goals")
         call = self.call(self.xml.goal(), timeout=timeout)
         next(call)
-        stopped = yield  # type: ignore # (see comment above start())
+        stopped = yield  # type: ignore[misc] # (see comment above start())
         response = call.send(stopped)
 
         if isinstance(response, Ok):
@@ -288,7 +288,7 @@ class Coqtop(object):
         self.logger.debug("mk_cases: %s", ty)
         call = self.call(self.xml.mk_cases(ty, encoding=encoding), timeout=timeout)
         next(call)
-        stopped = yield  # type: ignore # (see comment above start())
+        stopped = yield  # type: ignore[misc] # (see comment above start())
         response = call.send(stopped)
 
         if isinstance(response, Ok):
@@ -311,7 +311,7 @@ class Coqtop(object):
         if vals is None:
             call = self.call(self.xml.get_options(encoding=encoding), timeout=timeout)
             next(call)
-            stopped = yield  # type: ignore # (see comment above start())
+            stopped = yield  # type: ignore[misc] # (see comment above start())
             response = call.send(stopped)
 
             if isinstance(response, Ok):
@@ -329,7 +329,7 @@ class Coqtop(object):
                     self.xml.set_options(opt, val, encoding=encoding), timeout=timeout
                 )
                 next(call)
-                stopped = yield  # type: ignore # (see comment above start())
+                stopped = yield  # type: ignore[misc] # (see comment above start())
                 response = call.send(stopped)
                 ret = response.msg
                 if isinstance(response, Ok):
@@ -342,7 +342,7 @@ class Coqtop(object):
                 noop_call = self.advance(self.xml.noop, encoding)
                 next(noop_call)
                 while True:
-                    yield  # type: ignore # (see comment above start())
+                    yield  # type: ignore[misc] # (see comment above start())
                     noop_ret = noop_call.send(False)
                     if noop_ret is not None:
                         success, _, _ = noop_ret
@@ -364,7 +364,7 @@ class Coqtop(object):
         regular command.
         """
         # Make sure 'cmd' is a string format that supports unicode
-        cmd = ensure_text(cmd, encoding)  # type: ignore
+        cmd = ensure_text(cmd, encoding)  # type: ignore[no-untyped-call]
 
         if self.xml.is_option(cmd):
             call = self.do_option(cmd, in_script, encoding, timeout)
@@ -374,13 +374,13 @@ class Coqtop(object):
             call = self.advance(cmd, encoding, timeout)
         else:
             self.done_callback()
-            yield  # type: ignore # (see comment above start())
+            yield  # type: ignore[misc] # (see comment above start())
             yield True, "Command only allowed in script.", None
             return
 
         next(call)
         while True:
-            stopped = yield  # type: ignore # (see comment above start())
+            stopped = yield  # type: ignore[misc] # (see comment above start())
             ret = call.send(stopped)
             if ret is not None:
                 yield ret
@@ -409,7 +409,7 @@ class Coqtop(object):
         # does not depend on the value it is passed since it is None
         if msg is None:
             self.done_callback()
-            yield  # type: ignore # (see comment above start())
+            yield  # type: ignore[misc] # (see comment above start())
             yield self.xml.standardize(cmd, Ok(None))
             return
 
@@ -439,7 +439,7 @@ class Coqtop(object):
         # Start threads and yield back to caller to wait for Coqtop to finish
         timeout_thread.start()
         answer_thread.start()
-        stopped = yield  # type: ignore # (see comment above start())
+        stopped = yield  # type: ignore[misc] # (see comment above start())
 
         # Notify timeout_thread that a response is received and wait for
         # threads to finish
@@ -579,14 +579,12 @@ class Coqtop(object):
             pre = "coqtop_{}_".format(datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
             fmt = logging.Formatter("%(asctime)s: %(message)s")
             # Python 2 says _TemporaryFileWrapper is incompatible with IO[Text]
-            self.log = NamedTemporaryFile(  # type: ignore
-                mode="w", prefix=pre, delete=False
-            )
+            self.log = NamedTemporaryFile(mode="w", prefix=pre, delete=False)  # type: ignore[assignment]
             self.handler = logging.StreamHandler(self.log)
             self.handler.setFormatter(fmt)
             self.logger.addHandler(self.handler)
             self.logger.setLevel(logging.DEBUG)
-            return self.log.name  # type: ignore # (see above)
+            return self.log.name  # type: ignore[no-any-return, attr-defined] # (see above)
         else:
             # Clean up old logging
             self.log.close()
