@@ -80,6 +80,14 @@ if !exists('g:coqtail_panel_layout')
   \}
 endif
 
+" Default panel scroll options.
+if !exists('g:coqtail_panel_scroll')
+  let g:coqtail_panel_scroll = {
+    \ s:goal_panel: 0,
+    \ s:info_panel: 1
+  \}
+endif
+
 " Add python directory to path so Python functions can be called.
 let s:python_dir = expand('<sfile>:p:h:h') . '/python'
 Py import shlex, sys, vim
@@ -240,18 +248,24 @@ function! s:clearHighlighting() abort
   endfor
 endfunction
 
-" Replace the contents of 'buf' with 'txt'.
+" Replace the contents of 'panel' with 'txt'.
 " TODO async: allow different restore behaviors
-function! s:replacePanel(buf, txt) abort
-  " Switch windows and save the view
+function! s:replacePanel(panel, txt) abort
+  if s:switchPanel(a:panel) == s:no_panel
+    return
+  endif
+
+  " Save the view
   let l:view = winsaveview()
 
   " Update buffer text
   silent %delete _
   call append(0, a:txt)
 
-  " Restore the view and switch to original window
-  call winrestview(l:view)
+  " Restore the view
+  if !g:coqtail_panel_scroll[a:panel]
+    call winrestview(l:view)
+  endif
   call s:scrollPanel()
 endfunction
 
@@ -274,9 +288,7 @@ function! coqtail#Refresh(buf, highlights, panels) abort
 
   " Update panels
   for [l:panel, l:txt] in items(a:panels)
-    if s:switchPanel(l:panel) != s:no_panel
-      call s:replacePanel(b:coqtail_panel_bufs[l:panel], l:txt)
-    endif
+    call s:replacePanel(l:panel, l:txt)
   endfor
   call win_gotoid(l:win)
 
