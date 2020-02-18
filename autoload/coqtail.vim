@@ -777,7 +777,7 @@ endfunction
 function! s:commands() abort
   call s:cmdDef('CoqStart', 'call coqtail#Start(<f-args>)')
   call s:cmdDef('CoqStop', 'call coqtail#Stop()')
-  call s:cmdDef('CoqInterrupt', 'call s:callCoqtail("interrupt", "", {})')
+  call s:cmdDef('CoqInterrupt', 'call s:callCoqtail("interrupt", "sync", {})')
   call s:cmdDef('CoqNext', 'call s:callCoqtail("step", "", {"steps": <count>})')
   call s:cmdDef('CoqUndo', 'call s:callCoqtail("rewind", "", {"steps": <count>})')
   call s:cmdDef('CoqToLine', 'call coqtail#ToLine(<count>)')
