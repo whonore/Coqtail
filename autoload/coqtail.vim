@@ -642,6 +642,7 @@ function! s:callCoqtail(cmd, cb, args) abort
   let l:args = [bufnr('%'), a:cmd, a:args]
   if a:cb !=# 'sync'
     " Async
+    setlocal nomodifiable
     let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#DefaultCB'}
     return [1, ch_sendexpr(b:coqtail_chan, l:args, l:opts)]
   else
@@ -740,6 +741,7 @@ endfunction
 
 " Print any error messages.
 function! coqtail#DefaultCB(chan, msg) abort
+  setlocal modifiable
   if a:msg.ret != v:null
     call s:err(a:msg.ret)
   endif
