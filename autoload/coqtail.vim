@@ -654,6 +654,14 @@ function! s:callCoqtail(cmd, cb, args) abort
   endif
 endfunction
 
+" Print any error messages.
+function! coqtail#DefaultCB(chan, msg) abort
+  setlocal modifiable
+  if a:msg.ret != v:null
+    call s:err(a:msg.ret)
+  endif
+endfunction
+
 " Initialize Python interface, commands, autocmds, and auxiliary panels.
 function! coqtail#Start(...) abort
   if s:port == -1
@@ -736,14 +744,6 @@ function! coqtail#JumpToEnd() abort
   let [l:ok, l:pos] = s:callCoqtail('endpoint', 'sync', {})
   if l:ok
     call cursor(l:pos)
-  endif
-endfunction
-
-" Print any error messages.
-function! coqtail#DefaultCB(chan, msg) abort
-  setlocal modifiable
-  if a:msg.ret != v:null
-    call s:err(a:msg.ret)
   endif
 endfunction
 
