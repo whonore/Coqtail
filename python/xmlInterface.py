@@ -1285,7 +1285,7 @@ class XMLInterface812(XMLInterface811):
     def __init__(self, versions):
         # type: (Tuple[int, ...]) -> None
         """Update conversion maps with new types."""
-        super(XMLInterface811, self).__init__(versions)
+        super(XMLInterface812, self).__init__(versions)
 
         self._standardize_funcs.update(
             {"GetOptions": self._standardize_get_options,}
