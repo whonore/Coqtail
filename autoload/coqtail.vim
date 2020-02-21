@@ -639,6 +639,13 @@ function! s:callCoqtail(cmd, cb, args) abort
     return [0, -1]
   endif
 
+  let l:opts = {
+    \ 'encoding': &encoding,
+    \ 'timeout': b:coqtail_timeout,
+    \ 'filename': expand('%:p')
+  \}
+
+  let a:args.opts = l:opts
   let l:args = [bufnr('%'), a:cmd, a:args]
   if a:cb !=# 'sync'
     " Async

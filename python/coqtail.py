@@ -88,8 +88,8 @@ class Coqtail(object):
         self.info_msg = []  # type: List[Text]
         self.goal_msg = []  # type: List[Text]
 
-    def sync(self):
-        # type: () -> Optional[str]
+    def sync(self, opts):
+        # type: (Mapping[str, Any]) -> Optional[str]
         """Check if the buffer has been updated and rewind Coqtop if so."""
         err = None
         newchange = self.changedtick
@@ -110,7 +110,7 @@ class Coqtail(object):
                         linediff = len(newbuf) - 1
                         coldiff = len(newbuf[-1])
                     if coldiff is not None:
-                        err = self.rewind_to(linediff, coldiff + 1)
+                        err = self.rewind_to(linediff, coldiff + 1, opts=opts)
 
             self.oldchange = newchange
             self.oldbuf = newbuf
@@ -118,15 +118,15 @@ class Coqtail(object):
         return err
 
     # Coqtop Interface #
-    def start(self, version, coq_path, args):
-        # type: (str, str, List[str]) -> Optional[str]
+    def start(self, version, coq_path, args, opts):
+        # type: (str, str, List[str], Mapping[str, Any]) -> Optional[str]
         """Start a new Coqtop instance."""
         success = False
         errmsg = ["Failed to launch Coq"]
 
         try:
             self.coqtop = CT.Coqtop(version)
-            success = self.coqtop.start(coq_path, *args, timeout=self.timeout)
+            success = self.coqtop.start(coq_path, *args, timeout=opts["timeout"])
         except (ValueError, CT.CoqtopError) as e:
             errmsg.append(str(e))
 
@@ -134,16 +134,16 @@ class Coqtail(object):
             return ". ".join(errmsg)
         return None
 
-    def stop(self):
-        # type: () -> None
+    def stop(self, opts):
+        # type: (Mapping[str, Any]) -> None
         """Stop Coqtop."""
         if self.coqtop is not None:
             self.coqtop.stop()
 
-    def step(self, steps=1):
-        # type: (int) -> Optional[str]
+    def step(self, steps, opts):
+        # type: (int, Mapping[str, Any]) -> Optional[str]
         """Advance Coq by 'steps' sentences."""
-        self.sync()
+        self.sync(opts=opts)
 
         if steps < 1:
             return None
@@ -164,17 +164,17 @@ class Coqtail(object):
             col += 1
             self.send_queue.append(to_send)
 
-        failed_at, err = self.send_until_fail()
+        failed_at, err = self.send_until_fail(opts=opts)
         if unmatched is not None and failed_at is None:
             # Only report unmatched if no other errors occured first
             self.set_info(str(unmatched), False)
             self.error_at = unmatched.range
-            self.refresh(goals=False)
+            self.refresh(goals=False, opts=opts)
 
         return err
 
-    def rewind(self, steps=1):
-        # type: (int) -> Optional[str]
+    def rewind(self, steps, opts):
+        # type: (int, Mapping[str, Any]) -> Optional[str]
         """Rewind Coq by 'steps' sentences."""
         assert self.coqtop is not None
 
@@ -191,20 +191,20 @@ class Coqtail(object):
 
         self.endpoints = self.endpoints[: -(steps + extra_steps)]
         self.error_at = None
-        self.refresh()
+        self.refresh(opts=opts)
         return None
 
-    def to_line(self, line, col):
-        # type: (int, int) -> Optional[str]
+    def to_line(self, line, col, opts):
+        # type: (int, int, Mapping[str, Any]) -> Optional[str]
         """Advance/rewind Coq to the specified position."""
-        self.sync()
+        self.sync(opts=opts)
 
         # Get the location of the last '.'
         eline, ecol = self.endpoints[-1] if self.endpoints != [] else (0, 0)
 
         # Check if should rewind or advance
         if (line, col) < (eline, ecol):
-            return self.rewind_to(line, col + 2)
+            return self.rewind_to(line, col + 2, opts=opts)
         else:
             unmatched = None
             while True:
@@ -223,30 +223,30 @@ class Coqtail(object):
                 ecol += 1
                 self.send_queue.append(to_send)
 
-            failed_at, err = self.send_until_fail()
+            failed_at, err = self.send_until_fail(opts=opts)
             if unmatched is not None and failed_at is None:
                 # Only report unmatched if no other errors occured first
                 self.set_info(str(unmatched), False)
                 self.error_at = unmatched.range
-                self.refresh(goals=False)
+                self.refresh(goals=False, opts=opts)
 
             return err
 
-    def to_top(self):
-        # type: () -> Optional[str]
+    def to_top(self, opts):
+        # type: (Mapping[str, Any]) -> Optional[str]
         """Rewind to the beginning of the file."""
-        return self.rewind_to(0, 1)
+        return self.rewind_to(0, 1, opts=opts)
 
-    def query(self, args):
-        # type: (List[Text]) -> None
+    def query(self, args, opts):
+        # type: (List[Text], Mapping[str, Any]) -> None
         """Forward Coq query to Coqtop interface."""
-        _, msg = self.do_query(" ".join(args))
+        _, msg = self.do_query(" ".join(args), opts=opts)
 
         self.set_info(msg)
-        self.refresh(goals=False)
+        self.refresh(goals=False, opts=opts)
 
-    def endpoint(self):
-        # type: () -> Tuple[int, int]
+    def endpoint(self, opts):
+        # type: (Mapping[str, Any]) -> Tuple[int, int]
         """Return the end of the Coq checked section."""
         # Get the location of the last '.'
         if self.endpoints != []:
@@ -256,8 +256,8 @@ class Coqtail(object):
         return (line + 1, col)
 
     # Helpers #
-    def send_until_fail(self):
-        # type: () -> Tuple[Optional[Tuple[int, int]], Optional[str]]
+    def send_until_fail(self, opts):
+        # type: (Mapping[str, Any]) -> Tuple[Optional[Tuple[int, int]], Optional[str]]
         """Send all sentences in 'send_queue' until an error is encountered."""
         assert self.coqtop is not None
 
@@ -265,14 +265,14 @@ class Coqtail(object):
         no_msgs = True
         self.error_at = None
         while self.send_queue:
-            self.refresh(goals=False, force=False)
+            self.refresh(goals=False, force=False, opts=opts)
             to_send = self.send_queue.popleft()
             message = _between(self.buffer, to_send["start"], to_send["stop"])
             no_comments, com_pos = _strip_comments(message)
 
             try:
                 success, msg, err_loc = self.coqtop.dispatch(
-                    no_comments, encoding=self.encoding, timeout=self.timeout,
+                    no_comments, encoding=opts["encoding"], timeout=opts["timeout"],
                 )
             except CT.CoqtopError as e:
                 return None, str(e)
@@ -303,18 +303,18 @@ class Coqtail(object):
         # Clear info if no messages
         if no_msgs:
             self.set_info("")
-        self.refresh()
+        self.refresh(opts=opts)
         return failed_at, None
 
-    def rewind_to(self, line, col):
-        # type: (int, int) -> Optional[str]
+    def rewind_to(self, line, col, opts):
+        # type: (int, int, Mapping[str, Any]) -> Optional[str]
         """Rewind to a specific location."""
         # Count the number of endpoints after the specified location
         steps_too_far = sum(pos >= (line, col) for pos in self.endpoints)
-        return self.rewind(steps_too_far)
+        return self.rewind(steps_too_far, opts=opts)
 
-    def do_query(self, query):
-        # type: (Text) -> Tuple[bool, Text]
+    def do_query(self, query, opts):
+        # type: (Text, Mapping[str, Any]) -> Tuple[bool, Text]
         """Execute a query and return the reply."""
         assert self.coqtop is not None
 
@@ -324,17 +324,20 @@ class Coqtail(object):
 
         try:
             success, msg, _ = self.coqtop.dispatch(
-                query, in_script=False, encoding=self.encoding, timeout=self.timeout,
+                query,
+                in_script=False,
+                encoding=opts["encoding"],
+                timeout=opts["timeout"],
             )
         except CT.CoqtopError as e:
             return False, str(e)
 
         return success, msg
 
-    def qual_name(self, target):
-        # type: (Text) -> Optional[Tuple[Text, Text]]
+    def qual_name(self, target, opts):
+        # type: (Text, Mapping[str, Any]) -> Optional[Tuple[Text, Text]]
         """Find the fully qualified name of 'target' using 'Locate'."""
-        success, locate = self.do_query("Locate {}.".format(target))
+        success, locate = self.do_query("Locate {}.".format(target), opts=opts)
         if not success:
             return None
 
@@ -351,7 +354,7 @@ class Coqtail(object):
             alias = re.search(r"\(alias of (.*)\)", match)
             if alias is not None:
                 # Found an alias, search again using that
-                return self.qual_name(alias.group(1))
+                return self.qual_name(alias.group(1), opts=opts)
 
             info = match.split()
             # Special case for Module Type
@@ -363,18 +366,18 @@ class Coqtail(object):
 
         return qual_tgt, tgt_type
 
-    def find_lib(self, lib):
-        # type: (Text) -> Optional[Text]
+    def find_lib(self, lib, opts):
+        # type: (Text, Mapping[str, Any]) -> Optional[Text]
         """Find the path to the .v file corresponding to the libary 'lib'."""
-        success, locate = self.do_query("Locate Library {}.".format(lib))
+        success, locate = self.do_query("Locate Library {}.".format(lib), opts=opts)
         if not success:
             return None
 
         path = re.search(r"file\s+(.*)\.vo", locate)
         return path.group(1) if path is not None else None
 
-    def find_qual(self, qual_tgt, tgt_type):
-        # type: (Text, Text) -> Optional[Tuple[Text, Text]]
+    def find_qual(self, qual_tgt, tgt_type, opts):
+        # type: (Text, Text, Mapping[str, Any]) -> Optional[Tuple[Text, Text]]
         """Find the Coq file containing the qualified name 'qual_tgt'."""
         qual_comps = qual_tgt.split(".")
         base_name = qual_comps[-1]
@@ -382,38 +385,38 @@ class Coqtail(object):
         # If 'qual_comps' starts with Top or 'tgt_type' is Variable then
         # 'qual_tgt' is defined in the current file
         if qual_comps[0] == "Top" or tgt_type == "Variable":
-            return self.filename, base_name
+            return opts["filename"], base_name
 
         # Find the longest prefix of 'qual_tgt' that matches a logical path in
         # 'path_map'
         for end in range(-1, -len(qual_comps), -1):
-            path = self.find_lib(".".join(qual_comps[:end]))
+            path = self.find_lib(".".join(qual_comps[:end]), opts=opts)
             if path is not None:
                 return path + ".v", base_name
 
         return None
 
-    def find_def(self, target):
-        # type: (Text) -> Optional[Tuple[Text, List[Text]]]
+    def find_def(self, target, opts):
+        # type: (Text, Mapping[str, Any]) -> Optional[Tuple[Text, List[Text]]]
         """Create patterns to jump to the definition of 'target'."""
         # Get the fully qualified version of 'target'
-        qual = self.qual_name(target)
+        qual = self.qual_name(target, opts=opts)
         if qual is None:
             return None
         qual_tgt, tgt_type = qual
 
         # Find what file the definition is in and what type it is
-        tgt = self.find_qual(qual_tgt, tgt_type)
+        tgt = self.find_qual(qual_tgt, tgt_type, opts=opts)
         if tgt is None:
             return None
         tgt_file, tgt_name = tgt
 
         return tgt_file, get_searches(tgt_type, tgt_name)
 
-    def next_bullet(self):
-        # type: () -> Optional[Text]
+    def next_bullet(self, opts):
+        # type: (Mapping[str, Any]) -> Optional[Text]
         """Check the bullet expected for the next subgoal."""
-        success, show = self.do_query("Show.")
+        success, show = self.do_query("Show.", opts=opts)
         if not success:
             return None
 
@@ -421,26 +424,26 @@ class Coqtail(object):
         return bmatch.group(1) if bmatch is not None else None
 
     # Goals and Infos #
-    def refresh(self, goals=True, force=True):
-        # type: (bool, bool) -> None
+    def refresh(self, opts, goals=True, force=True):
+        # type: (Mapping[str, Any], bool, bool) -> None
         """Refresh the auxiliary panels."""
         if goals:
-            newgoals, newinfo = self.get_goals()
+            newgoals, newinfo = self.get_goals(opts=opts)
             if newinfo != "":
                 self.set_info(newinfo, False)
             if newgoals is not None:
-                self.set_goal(self.pp_goals(newgoals))
+                self.set_goal(self.pp_goals(newgoals, opts=opts))
             else:
                 self.set_goal("")
         self.handler.refresh(goals=goals, force=force)
 
-    def get_goals(self):
-        # type: () -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
+    def get_goals(self, opts):
+        # type: (Mapping[str, Any]) -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
         """Get the current goals."""
         assert self.coqtop is not None
 
         try:
-            success, msg, goals = self.coqtop.goals(timeout=self.timeout)
+            success, msg, goals = self.coqtop.goals(timeout=opts["timeout"])
         except CT.CoqtopError as e:
             return None, str(e)
 
@@ -449,8 +452,8 @@ class Coqtail(object):
 
         return goals, msg
 
-    def pp_goals(self, goals):
-        # type: (Tuple[List[Any], List[Any], List[Any], List[Any]]) -> Text
+    def pp_goals(self, goals, opts):
+        # type: (Tuple[List[Any], List[Any], List[Any], List[Any]], Mapping[str, Any]) -> Text
         """Pretty print the goals."""
         fg, bg, shelved, given_up = goals
         bg_joined = [pre + post for pre, post in bg]
@@ -492,7 +495,7 @@ class Coqtail(object):
                     break
 
             if next_goal is not None:
-                bullet = self.next_bullet()
+                bullet = self.next_bullet(opts=opts)
                 bullet_info = ""
                 if bullet is not None:
                     if bullet == "}":
@@ -579,8 +582,8 @@ class Coqtail(object):
             panels["goal"] = self.goal_msg
         return panels
 
-    def splash(self, version, width, height):
-        # type: (Text, int, int) -> None
+    def splash(self, version, width, height, opts):
+        # type: (Text, int, int, Mapping[str, Any]) -> None
         """Display the logo in the info panel."""
         msg = [
             u"~~~~~~~~~~~~~~~~~~~~~~~",
@@ -608,8 +611,8 @@ class Coqtail(object):
 
         self.info_msg = top_pad + msg
 
-    def toggle_debug(self):
-        # type: () -> None
+    def toggle_debug(self, opts):
+        # type: (Mapping[str, Any]) -> None
         """Enable or disable logging of debug messages."""
         assert self.coqtop is not None
 
@@ -622,22 +625,9 @@ class Coqtail(object):
             self.log = log
 
         self.set_info(msg)
-        self.refresh(goals=False)
+        self.refresh(goals=False, opts=opts)
 
     # Vim Helpers #
-    @property
-    def encoding(self):
-        # type: () -> str
-        """Vim's encoding."""
-        # TODO async: need ensure_str?
-        return self.handler.vimexpr("&encoding")  # type: ignore[no-any-return]
-
-    @property
-    def timeout(self):
-        # type: () -> int
-        """The value of coq_timeout for this buffer."""
-        return self.handler.vimvar("coqtail_timeout")  # type: ignore[no-any-return]
-
     @property
     def changedtick(self):
         # type: () -> int
@@ -655,12 +645,6 @@ class Coqtail(object):
         # type: (Text) -> None
         """The name of this buffer's debug log."""
         self.handler.vimvar("coqtail_log_name", log)
-
-    @property
-    def filename(self):
-        # type: () -> str
-        """The absolute path of this buffer's current Coq file."""
-        return self.handler.vimcall("expand", "#{}:p".format(self.handler.bnum))  # type: ignore
 
     @property
     def buffer(self):
@@ -791,11 +775,6 @@ class CoqtailHandler(StreamRequestHandler):
         msg_id, res = self.get_msg(self.msg_id)
         assert msg_id == -self.msg_id
         return res
-
-    def vimexpr(self, expr):
-        # type: (str) -> Any
-        """Request Vim to evaluate an expression."""
-        return self.vimeval(["expr", expr])
 
     def vimcall(self, expr, *args):
         # type: (str, *Any) -> Any
