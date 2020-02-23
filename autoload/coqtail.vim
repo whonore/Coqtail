@@ -784,7 +784,10 @@ endfunction
 function! coqtail#Start(...) abort
   if s:port == -1
     let s:port = s:pyeval('CoqtailServer.start_server()')
-    autocmd VimLeavePre * call s:pyeval('CoqtailServer.stop_server()') | let s:port = -1
+    augroup coqtail#StopServer
+      autocmd! *
+      autocmd VimLeavePre * call s:pyeval('CoqtailServer.stop_server()') | let s:port = -1
+    augroup end
   endif
 
   if s:coqtailRunning()
