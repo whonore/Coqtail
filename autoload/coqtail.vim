@@ -23,6 +23,123 @@ else
   finish
 endif
 
+" Add python directory to path so Python functions can be called.
+let s:python_dir = expand('<sfile>:p:h:h') . '/python'
+Py import shlex, sys, vim
+Py if not vim.eval('s:python_dir') in sys.path:
+  \    sys.path.insert(0, vim.eval('s:python_dir'))
+Py from coqtail import ChannelManager, Coqtail, CoqtailServer
+
+" Vim compatibility.
+let s:t_dict = type({})
+let s:t_list = type([])
+let s:has_channel = has('channel') && has('patch-8.0.0001')
+if s:has_channel
+  function! s:ch_open(address, options) abort
+    return ch_open(a:address, a:options)
+  endfunction
+
+  function! s:ch_close(handle) abort
+    return ch_close(a:handle)
+  endfunction
+
+  function! s:ch_status(handle) abort
+    return ch_status(a:handle)
+  endfunction
+
+  function! s:ch_sendexpr(handle, expr, options) abort
+    return ch_sendexpr(a:handle, a:expr, a:options)
+  endfunction
+
+  function! s:ch_evalexpr(handle, expr) abort
+    return ch_evalexpr(a:handle, a:expr)
+  endfunction
+else
+  " Rate in ms to check if Coqtail is done computing.
+  let s:poll_rate = 10
+
+  function! s:ch_open(address, options) abort
+    return s:pyeval(printf('ChannelManager.open("%s")', a:address))
+  endfunction
+
+  function! s:ch_close(handle) abort
+    return s:pyeval(printf('ChannelManager.close(%d)', a:handle))
+  endfunction
+
+  function! s:ch_status(handle) abort
+    return s:pyeval(printf('ChannelManager.status(%d)', a:handle))
+  endfunction
+
+  function! s:ch_sendexpr(handle, expr, options) abort
+    echoerr 'Calling ch_sendexpr in synchronous mode.'
+  endfunction
+
+  " Temporarily disable CTRL-C by remapping it to a no-op.
+  function! s:disable_int() abort
+    nnoremap <buffer> <C-c> <NOP>
+  endfunction
+
+  " Unmap CTRL-C.
+  function! s:enable_int() abort
+    silent! nunmap <buffer> <C-c>
+  endfunction
+
+  " Restore CTRL-C mapping.
+  function! s:restore_int() abort
+    if s:int_map ==# ''
+      silent! nunmap <buffer> <C-c>
+    else
+      execute 'nmap <buffer> <C-c> ' . s:int_map
+    endif
+  endfunction
+
+  " Send a command to Coqtail and wait for the response.
+  function! s:send_wait(handle, expr, reply) abort
+    let l:returns = a:expr[1] !=# 'interrupt'
+    call s:pyeval(printf(
+      \ 'ChannelManager.send(%d, %s, reply=bool(%s), returns=bool(%s))',
+      \ a:handle,
+      \ json_encode(a:expr),
+      \ a:reply,
+      \ l:returns
+    \))
+
+    " Continually check if Coqtail is done computing
+    while l:returns
+      let l:res = json_decode(s:pyeval(printf('ChannelManager.poll(%d)', a:handle)))
+      if type(l:res) == s:t_list
+        return l:res
+      endif
+
+      try
+        call s:enable_int()
+        execute printf('sleep %dm', s:poll_rate)
+        call s:disable_int()
+      catch /^Vim:Interrupt$/
+        " Handle interrupt
+        CoqInterrupt
+      endtry
+    endwhile
+  endfunction
+
+  " Send a command to execute and reply to any requests from Coqtail.
+  function! s:ch_evalexpr(handle, expr) abort
+    " Remember CTRL-C mapping and disable
+    let s:int_map = maparg('<C-c>', 'n')
+    call s:disable_int()
+    let l:res = s:send_wait(a:handle, a:expr, 0)
+
+    " Handle requests
+    while l:res[0] ==# 'call'
+      let l:repl = function(l:res[1], l:res[2])()
+      let l:res = s:send_wait(a:handle, l:repl, 1)
+    endwhile
+
+    call s:restore_int()
+    return l:res[1]
+  endfunction
+endif
+
 " Initialize global variables.
 " Supported Coq versions (-1 means any number).
 let s:supported = [
@@ -87,13 +204,6 @@ if !exists('g:coqtail_panel_scroll')
     \ s:info_panel: 1
   \}
 endif
-
-" Add python directory to path so Python functions can be called.
-let s:python_dir = expand('<sfile>:p:h:h') . '/python'
-Py import shlex, sys, vim
-Py if not vim.eval('s:python_dir') in sys.path:
-  \    sys.path.insert(0, vim.eval('s:python_dir'))
-Py from coqtail import Coqtail, start_server, stop_server
 
 " Print a message with warning highlighting.
 function! s:warn(msg) abort
@@ -410,7 +520,7 @@ endfunction
 " Get a list of possible locations of the definition of 'target'.
 function! s:findDef(target) abort
   let [l:ok, l:loc] = s:callCoqtail('find_def', 'sync', {'target': a:target})
-  return (!l:ok || type(l:loc) != v:t_list) ? v:null : l:loc
+  return (!l:ok || type(l:loc) != s:t_list) ? v:null : l:loc
 endfunction
 
 " Populate the quickfix list with possible locations of the definition of
@@ -418,7 +528,7 @@ endfunction
 function! coqtail#GotoDef(target, bang) abort
   let l:bang = a:bang ? '!' : ''
   let l:loc = s:findDef(a:target)
-  if type(l:loc) != v:t_list
+  if type(l:loc) != s:t_list
     call s:warn('Cannot locate ' . a:target . '.')
     return
   endif
@@ -454,7 +564,7 @@ endfunction
 " Create a list of tags for 'target'.
 function! coqtail#GetTags(target, flags, info) abort
   let l:loc = s:findDef(a:target)
-  if type(l:loc) != v:t_list
+  if type(l:loc) != s:t_list
     return v:null
   endif
   let [l:path, l:searches] = l:loc
@@ -579,6 +689,7 @@ function! s:cleanup() abort
   call s:clearHighlighting()
 
   " Close the channel
+  silent! call s:ch_close(b:coqtail_chan)
   let b:coqtail_chan = 0
 endfunction
 
@@ -626,7 +737,7 @@ endfunction
 " TODO async: main-panel only
 function! s:coqtailRunning() abort
   try
-    return ch_status(b:coqtail_chan) ==# 'open'
+    return s:ch_status(b:coqtail_chan) ==# 'open'
   catch
     return 0
   endtry
@@ -647,15 +758,15 @@ function! s:callCoqtail(cmd, cb, args) abort
 
   let a:args.opts = l:opts
   let l:args = [bufnr('%'), a:cmd, a:args]
-  if a:cb !=# 'sync'
+  if a:cb !=# 'sync' && s:has_channel
     " Async
     setlocal nomodifiable
     let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#DefaultCB'}
-    return [1, ch_sendexpr(b:coqtail_chan, l:args, l:opts)]
+    return [1, s:ch_sendexpr(b:coqtail_chan, l:args, l:opts)]
   else
     " Sync
-    let l:res = ch_evalexpr(b:coqtail_chan, l:args)
-    return type(l:res) == v:t_dict
+    let l:res = s:ch_evalexpr(b:coqtail_chan, l:args)
+    return type(l:res) == s:t_dict
       \ ? [l:res.buf == bufnr('%'), l:res.ret]
       \ : [0, -1]
   endif
@@ -672,8 +783,8 @@ endfunction
 " Initialize Python interface, commands, autocmds, and auxiliary panels.
 function! coqtail#Start(...) abort
   if s:port == -1
-    let s:port = s:pyeval('start_server()')
-    autocmd VimLeavePre * call s:pyeval('stop_server()') | let s:port = -1
+    let s:port = s:pyeval('CoqtailServer.start_server()')
+    autocmd VimLeavePre * call s:pyeval('CoqtailServer.stop_server()') | let s:port = -1
   endif
 
   if s:coqtailRunning()
@@ -686,7 +797,7 @@ function! coqtail#Start(...) abort
     endif
 
     " Open channel with Coqtail server
-    let b:coqtail_chan = ch_open('localhost:' . s:port, s:chanopts)
+    let b:coqtail_chan = s:ch_open('localhost:' . s:port, s:chanopts)
 
     " Check for a Coq project file
     let [b:coqtail_project_file, l:proj_args] = coqtail#FindCoqProj()

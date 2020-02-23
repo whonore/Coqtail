@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import json
 import re
+import socket
 import threading
 import time
 from collections import defaultdict as ddict, deque
@@ -817,34 +818,114 @@ class CoqtailHandler(StreamRequestHandler):
             self.coq.coqtop.interrupt()
 
 
-serv = None
+class CoqtailServer:
+    """A server through which Vim and Coqtail communicate."""
+
+    serv = None
+
+    @staticmethod
+    def start_server():
+        # type: () -> int
+        """Start the TCP server."""
+        # N.B. port = 0 chooses any arbitrary open one
+        CoqtailServer.serv = ThreadedTCPServer(("localhost", 0), CoqtailHandler)
+        # Mypy isn't aware of this attribute on ThreadingMixin
+        CoqtailServer.serv.daemon_threads = True  # type: ignore
+        _, port = CoqtailServer.serv.server_address
+
+        serv_thread = threading.Thread(target=CoqtailServer.serv.serve_forever)
+        serv_thread.daemon = True
+        serv_thread.start()
+
+        return port
+
+    @staticmethod
+    def stop_server():
+        # type: () -> None
+        """Stop the TCP server."""
+        if CoqtailServer.serv is not None:
+            CoqtailServer.serv.shutdown()
+            CoqtailServer.serv.server_close()
+            CoqtailServer.serv = None
 
 
-def start_server():
-    # type: () -> int
-    """Start the TCP server through which Vim and Coqtail communicate."""
-    # N.B. port = 0 chooses any arbitrary open one
-    global serv
-    serv = ThreadedTCPServer(("localhost", 0), CoqtailHandler)
-    # Mypy isn't aware of this attribute on ThreadingMixin
-    serv.daemon_threads = True  # type: ignore
-    _, port = serv.server_address
+class ChannelManager(object):
+    """Emulate Vim's ch_* functions with sockets."""
 
-    serv_thread = threading.Thread(target=serv.serve_forever)
-    serv_thread.daemon = True
-    serv_thread.start()
+    channels = {}  # type: Dict[int, socket.socket]
+    results = {}  # type: Dict[int, Optional[Text]]
+    next_id = 1
+    msg_id = 1
 
-    return port
+    @staticmethod
+    def open(address):
+        # type: (str) -> int
+        """Open a channel."""
+        ch_id = ChannelManager.next_id
+        ChannelManager.next_id += 1
 
+        host, port = address.split(":")
+        ChannelManager.channels[ch_id] = socket.create_connection((host, int(port)))
 
-def stop_server():
-    # type: () -> None
-    """Stop the TCP server."""
-    global serv
-    if serv is not None:
-        serv.shutdown()
-        serv.server_close()
-        serv = None
+        return ch_id
+
+    @staticmethod
+    def close(handle):
+        # type: (int) -> None
+        """Close a channel."""
+        try:
+            ChannelManager.channels[handle].close()
+            del ChannelManager.channels[handle]
+        except KeyError:
+            pass
+
+    @staticmethod
+    def status(handle):
+        # type: (int) -> str
+        """Check if a channel is open."""
+        return "open" if handle in ChannelManager.channels else "closed"
+
+    @staticmethod
+    def send(handle, expr, reply=False, returns=True):
+        # type: (int, str, bool, bool) -> bool
+        """Send a command request or reply on a channel."""
+        try:
+            ch = ChannelManager.channels[handle]
+        except KeyError:
+            return False
+
+        msg_id = ChannelManager.msg_id * (-1 if reply else 1)
+        ch.sendall((json.dumps([msg_id, expr]) + "\n").encode("utf-8"))
+
+        if returns:
+            ChannelManager.results[handle] = None
+            recv_thread = threading.Thread(target=ChannelManager._recv, args=(handle,))
+            recv_thread.daemon = True
+            recv_thread.start()
+        return True
+
+    @staticmethod
+    def poll(handle):
+        # type: (int) -> Optional[Text]
+        """Wait for a response on a channel."""
+        return ChannelManager.results[handle]
+
+    @staticmethod
+    def _recv(handle):
+        # type: (int) -> None
+        """Wait for a response on a channel."""
+        data = []
+        while True:
+            data.append(ChannelManager.channels[handle].recv(4096).decode("utf-8"))
+            try:
+                # N.B. Some older Vims can't convert expressions with None
+                # to Vim values so just return a string
+                res = "".join(data)
+                _ = json.loads(res)
+                ChannelManager.results[handle] = res
+                break
+            except json.JSONDecodeError:
+                pass
 
 
 # Searching for Coq Definitions #
