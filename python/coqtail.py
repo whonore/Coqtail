@@ -262,11 +262,12 @@ class Coqtail(object):
         """Send all sentences in 'send_queue' until an error is encountered."""
         assert self.coqtop is not None
 
+        scroll = len(self.send_queue) > 1
         failed_at = None
         no_msgs = True
         self.error_at = None
         while self.send_queue:
-            self.refresh(goals=False, force=False, opts=opts)
+            self.refresh(goals=False, force=False, scroll=scroll, opts=opts)
             to_send = self.send_queue.popleft()
             message = _between(self.buffer, to_send["start"], to_send["stop"])
             no_comments, com_pos = _strip_comments(message)
@@ -304,7 +305,7 @@ class Coqtail(object):
         # Clear info if no messages
         if no_msgs:
             self.set_info("")
-        self.refresh(opts=opts)
+        self.refresh(opts=opts, scroll=scroll)
         return failed_at, None
 
     def rewind_to(self, line, col, opts):
@@ -425,8 +426,8 @@ class Coqtail(object):
         return bmatch.group(1) if bmatch is not None else None
 
     # Goals and Infos #
-    def refresh(self, opts, goals=True, force=True):
-        # type: (Mapping[str, Any], bool, bool) -> None
+    def refresh(self, opts, goals=True, force=True, scroll=False):
+        # type: (Mapping[str, Any], bool, bool, bool) -> None
         """Refresh the auxiliary panels."""
         if goals:
             newgoals, newinfo = self.get_goals(opts=opts)
@@ -436,7 +437,7 @@ class Coqtail(object):
                 self.set_goal(self.pp_goals(newgoals, opts=opts))
             else:
                 self.set_goal("")
-        self.handler.refresh(goals=goals, force=force)
+        self.handler.refresh(goals=goals, force=force, scroll=scroll)
 
     def get_goals(self, opts):
         # type: (Mapping[str, Any]) -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
@@ -790,8 +791,8 @@ class CoqtailHandler(StreamRequestHandler):
         else:
             return self.vimcall("setbufvar", self.bnum, var, val)
 
-    def refresh(self, goals=True, force=True):
-        # type: (bool, bool) -> None
+    def refresh(self, goals=True, force=True, scroll=False):
+        # type: (bool, bool, bool) -> None
         """Refresh the highlighting and auxiliary panels."""
         if not force:
             cur_time = time.time()
@@ -803,6 +804,7 @@ class CoqtailHandler(StreamRequestHandler):
                 self.bnum,
                 self.coq.highlights,
                 self.coq.panels(goals),
+                scroll,
             )
 
     def interrupt(self):

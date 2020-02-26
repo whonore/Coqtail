@@ -360,7 +360,7 @@ endfunction
 
 " Replace the contents of 'panel' with 'txt'.
 " TODO async: allow different restore behaviors
-function! s:replacePanel(panel, txt) abort
+function! s:replacePanel(panel, txt, scroll) abort
   if s:switchPanel(a:panel) == s:no_panel
     return
   endif
@@ -373,7 +373,7 @@ function! s:replacePanel(panel, txt) abort
   call append(0, a:txt)
 
   " Restore the view
-  if !g:coqtail_panel_scroll[a:panel]
+  if !a:scroll || !g:coqtail_panel_scroll[a:panel]
     call winrestview(l:view)
   endif
   call s:scrollPanel()
@@ -381,7 +381,7 @@ endfunction
 
 " Refresh the highlighting and auxiliary panels.
 " TODO async: main-panel only
-function! coqtail#Refresh(buf, highlights, panels) abort
+function! coqtail#Refresh(buf, highlights, panels, scroll) abort
   if a:buf != bufnr('%')
     return
   endif
@@ -398,7 +398,7 @@ function! coqtail#Refresh(buf, highlights, panels) abort
 
   " Update panels
   for [l:panel, l:txt] in items(a:panels)
-    call s:replacePanel(l:panel, l:txt)
+    call s:replacePanel(l:panel, l:txt, a:scroll)
   endfor
   call win_gotoid(l:win)
 
