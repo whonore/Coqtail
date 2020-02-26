@@ -131,7 +131,7 @@ else
 
     " Handle requests
     while l:res[0] ==# 'call'
-      let l:repl = function(l:res[1], l:res[2])()
+      let l:repl = call(l:res[1], l:res[2])
       let l:res = s:send_wait(a:handle, l:repl, 1)
     endwhile
 
