@@ -322,9 +322,10 @@ endfunction
 function! s:findDef(target) abort
   if !b:coqtail_running
     return v:null
-  else
-    let l:loc = s:pyeval("Coqtail().find_def(vim.eval('a:target')) or []")()
-    return l:loc == [] ? v:null : l:loc
+  endif
+
+  let l:loc = s:pyeval("Coqtail().find_def(vim.eval('a:target')) or []")()
+  return l:loc == [] ? v:null : l:loc
 endfunction
 
 " Populate the quickfix list with possible locations of the definition of
@@ -332,7 +333,7 @@ endfunction
 function! coqtail#GotoDef(target, bang) abort
   let l:bang = a:bang ? '!' : ''
   let l:loc = s:findDef(a:target)
-  if l:loc is v:null
+  if type(l:loc) != type([])
     call s:warn('Cannot locate ' . a:target . '.')
     return
   endif
@@ -368,14 +369,15 @@ endfunction
 " Create a list of tags for 'target'.
 function! coqtail#GetTags(target, flags, info) abort
   let l:loc = s:findDef(a:target)
-  if l:loc is v:null
+  if type(l:loc) != type([])
     return v:null
   endif
   let [l:path, l:searches] = l:loc
 
   let l:tags = []
   for l:search in l:searches
-    let l:tags = add(l:tags, {'name': a:target, 'filename': l:path, 'cmd': '/\v' . l:search})
+    let l:tag = {'name': a:target, 'filename': l:path, 'cmd': '/\v' . l:search}
+    let l:tags = add(l:tags, l:tag)
   endfor
 
   return l:tags
