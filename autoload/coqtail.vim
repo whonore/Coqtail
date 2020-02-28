@@ -106,7 +106,7 @@ function! s:initPanel(name, coq_buf) abort
   augroup coqtail#PanelCmd
     autocmd! * <buffer>
     autocmd BufWinLeave <buffer> call coqtail#HidePanels()
-  augroup end
+  augroup END
 
   return bufnr('%')
 endfunction
@@ -539,7 +539,7 @@ function! s:prepare() abort
     autocmd BufWinLeave <buffer> call coqtail#HidePanels()
     autocmd BufWinEnter <buffer> call coqtail#OpenPanels()
     autocmd QuitPre <buffer> call coqtail#Stop()
-  augroup end
+  augroup END
 endfunction
 
 " Clean up commands, panels, and autocommands.
