@@ -35,3 +35,4 @@ if (exists('loaded_matchit') || exists('loaded_matchup')) && !exists('b:match_wo
   \ '\%(\<Section\>\|\<Module\>\):\<End\>',
   \ s:proof_start . ':' . s:proof_end
   \], ',')
+endif
