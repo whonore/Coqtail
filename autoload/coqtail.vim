@@ -784,7 +784,7 @@ function! coqtail#Start(...) abort
     augroup coqtail#StopServer
       autocmd! *
       autocmd VimLeavePre * call s:pyeval('CoqtailServer.stop_server()') | let s:port = -1
-    augroup end
+    augroup END
   endif
 
   if s:coqtailRunning()
@@ -835,7 +835,7 @@ function! coqtail#Start(...) abort
       autocmd BufWinLeave <buffer> call s:hidePanels()
       autocmd BufWinEnter <buffer> call s:openPanels(0, 1)
       autocmd QuitPre <buffer> call coqtail#Stop()
-    augroup end
+    augroup END
   endif
 
   return 1
