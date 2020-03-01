@@ -217,9 +217,6 @@ endfunction
 
 " Find the path corresponding to 'lib'. Used by includeexpr.
 function! coqtail#FindLib(lib) abort
-  if !s:coqtailRunning()
-    return a:lib
-  endif
   let [l:ok, l:lib] = s:callCoqtail('find_lib', 'sync', {'lib': a:lib})
   return (l:ok && l:lib != v:null) ? l:lib : a:lib
 endfunction
