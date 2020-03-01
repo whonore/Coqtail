@@ -318,12 +318,22 @@ function! s:uniqQFList() abort
   call setqflist(l:uniq)
 endfunction
 
+" Get a list of possible locations of the definition of 'target'.
+function! s:findDef(target) abort
+  if !b:coqtail_running
+    return v:null
+  endif
+
+  let l:loc = s:pyeval("Coqtail().find_def(vim.eval('a:target')) or []")()
+  return l:loc == [] ? v:null : l:loc
+endfunction
+
 " Populate the quickfix list with possible locations of the definition of
 " 'target'.
 function! coqtail#GotoDef(target, bang) abort
   let l:bang = a:bang ? '!' : ''
-  let l:loc = s:pyeval("Coqtail().find_def(vim.eval('a:target')) or []")()
-  if l:loc == []
+  let l:loc = s:findDef(a:target)
+  if type(l:loc) != type([])
     call s:warn('Cannot locate ' . a:target . '.')
     return
   endif
@@ -354,6 +364,23 @@ function! coqtail#GotoDef(target, bang) abort
       botright cwindow
     endtry
   endif
+endfunction
+
+" Create a list of tags for 'target'.
+function! coqtail#GetTags(target, flags, info) abort
+  let l:loc = s:findDef(a:target)
+  if type(l:loc) != type([])
+    return v:null
+  endif
+  let [l:path, l:searches] = l:loc
+
+  let l:tags = []
+  for l:search in l:searches
+    let l:tag = {'name': a:target, 'filename': l:path, 'cmd': '/\v' . l:search}
+    let l:tags = add(l:tags, l:tag)
+  endfor
+
+  return l:tags
 endfunction
 
 " Replace spaces between quotes in 'text' with 'esc'.

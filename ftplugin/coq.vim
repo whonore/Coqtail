@@ -16,6 +16,11 @@ setlocal includeexpr=coqtail#FindLib(v:fname)
 setlocal suffixesadd=.v
 setlocal include=\\<Require\\>\\(\\s*\\(Import\\\|Export\\)\\>\\)\\?
 
+" Tags
+if exists('+tagfunc')
+  setlocal tagfunc=coqtail#GetTags
+endif
+
 " matchit/matchup patterns
 if (exists('loaded_matchit') || exists('loaded_matchup')) && !exists('b:match_words')
   let b:match_ignorecase = 0
