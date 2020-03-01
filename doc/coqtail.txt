@@ -82,6 +82,8 @@ Movement Commands					      *coqtail-movement*
 			the first one. If jumping is impossible open the
 			|quickfix-window| instead. The first version uses
 			{arg}, while the second uses the term under the cursor.
+			If |'tagfunc'| is supported then the usual tag
+			commands will also work (|:tag|, |CTRL-]|, etc).
 
 ===========
 Coq Queries						       *coqtail-queries*
