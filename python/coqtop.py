@@ -478,9 +478,9 @@ class Coqtop(object):
 
         while True:
             data.append(self.out_q.get())
-            if not self.xml.worth_parsing(data[-1]):
-                continue
             xml = b"".join(data)
+            if not self.xml.worth_parsing(xml):
+                continue
             response = self.xml.raw_response(xml)
 
             if response is None:
