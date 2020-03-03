@@ -51,8 +51,8 @@ if s:has_channel
     return ch_sendexpr(a:handle, a:expr, a:options)
   endfunction
 
-  function! s:ch_evalexpr(handle, expr) abort
-    return ch_evalexpr(a:handle, a:expr)
+  function! s:ch_evalexpr(handle, expr, options) abort
+    return ch_evalexpr(a:handle, a:expr, a:options)
   endfunction
 else
   " Rate in ms to check if Coqtail is done computing.
@@ -123,7 +123,7 @@ else
   endfunction
 
   " Send a command to execute and reply to any requests from Coqtail.
-  function! s:ch_evalexpr(handle, expr) abort
+  function! s:ch_evalexpr(handle, expr, options) abort
     " Remember CTRL-C mapping and disable
     let s:int_map = maparg('<C-c>', 'n')
     call s:disable_int()
@@ -763,7 +763,9 @@ function! s:callCoqtail(cmd, cb, args) abort
     return [1, s:ch_sendexpr(b:coqtail_chan, l:args, l:opts)]
   else
     " Sync
-    let l:res = s:ch_evalexpr(b:coqtail_chan, l:args)
+    " Don't wait for interrupt to return
+    let l:opts = a:cmd ==# 'interrupt' ? {'timeout': 0} : {}
+    let l:res = s:ch_evalexpr(b:coqtail_chan, l:args, l:opts)
     return type(l:res) == s:t_dict
       \ ? [l:res.buf == bufnr('%'), l:res.ret]
       \ : [0, -1]
