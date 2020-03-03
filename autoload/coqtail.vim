@@ -757,6 +757,7 @@ function! s:callCoqtail(cmd, cb, args) abort
   let l:args = [bufnr('%'), a:cmd, a:args]
   if a:cb !=# 'sync' && s:has_channel
     " Async
+    let b:cmds_pending += 1
     setlocal nomodifiable
     let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#DefaultCB'}
     return [1, s:ch_sendexpr(b:coqtail_chan, l:args, l:opts)]
@@ -771,7 +772,10 @@ endfunction
 
 " Print any error messages.
 function! coqtail#DefaultCB(chan, msg) abort
-  setlocal modifiable
+  let b:cmds_pending -= 1
+  if b:cmds_pending == 0
+    setlocal modifiable
+  endif
   if a:msg.ret != v:null
     call s:err(a:msg.ret)
   endif
@@ -795,6 +799,7 @@ function! coqtail#Start(...) abort
     if !l:supported
       call s:warn(printf(s:unsupported_msg, b:coqtail_version))
     endif
+    let b:cmds_pending = 0
 
     " Open channel with Coqtail server
     let b:coqtail_chan = s:ch_open('localhost:' . s:port, s:chanopts)
