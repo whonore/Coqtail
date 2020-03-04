@@ -68,7 +68,7 @@ call vimbufsync#init()
 
 " Add python directory to path so Python functions can be called
 let s:python_dir = expand('<sfile>:p:h:h') . '/python'
-Py import sys, vim
+Py import shlex, sys, vim
 Py if not vim.eval('s:python_dir') in sys.path:
 \    sys.path.insert(0, vim.eval('s:python_dir'))
 Py from coqtail import Coqtail
@@ -383,73 +383,29 @@ function! coqtail#GetTags(target, flags, info) abort
   return l:tags
 endfunction
 
-" Replace spaces between quotes in 'text' with 'esc'.
-function! s:escapeSpaces(text, esc) abort
-  let l:escaped = []
-  let l:prev_end = 0
-
-  while l:prev_end != -1
-    let [l:match, l:start, l:end] = matchstrpos(a:text, '"[^"]*"', l:prev_end)
-
-    " Add text before quotes
-    let l:escaped = add(l:escaped, a:text[l:prev_end : max([l:start - 1, -1])])
-    if l:start != -1
-      " Add text inside quotes
-      let l:escaped = add(l:escaped, substitute(l:match[1:-2], ' ', a:esc, 'g'))
-    endif
-    let l:prev_end = l:end
-  endwhile
-
-  return join(l:escaped, '')
-endfunction
-
 " Read a CoqProject file and parse it into options that can be passed to
 " Coqtop.
 function! coqtail#ParseCoqProj(file, silent) abort
-  let l:proj_args = []
   let l:file_dir = fnamemodify(a:file, ':p:h')
   " TODO: recognize more options
-  let l:valid_opts = {'-R': 2, '-Q': 2, '-I': 1, '-include': 1}
+  let l:dir_opts = ['-R', '-Q', '-I', '-include']
 
-  " Escape quoted spaces and remove excess whitespace
-  let l:opts = map(filter(
-  \   split(s:escapeSpaces(join(readfile(a:file)), s:space)),
-  \   'v:val !=# ""'),
-  \ 'substitute(v:val, s:space, " ", "g")')
-  let l:idx = 0
+  let l:txt = join(readfile(a:file))
+  let l:proj_args = s:pyeval(printf('shlex.split(r%s)', string(l:txt)))()
 
-  while l:idx < len(l:opts)
-    if has_key(l:valid_opts, l:opts[l:idx])
-      let l:absdir = l:opts[l:idx + 1]
+  " Make all paths absolute
+  for l:idx in range(len(l:proj_args))
+    if index(l:dir_opts, l:proj_args[l:idx]) != -1
+      let l:absdir = l:proj_args[l:idx + 1]
       if l:absdir[0] !=# '/'
         " Join relative paths with 'l:file_dir'
         let l:absdir = join([l:file_dir, l:absdir], '/')
       endif
-
-      " Ignore directories that don't exist
-      if finddir(l:absdir, l:file_dir) !=# ''
-        let l:absdir = fnamemodify(l:absdir, ':p')
-        let l:opts[l:idx + 1] = substitute(l:absdir, ' ', s:space, 'g')
-        let l:end = l:idx + l:valid_opts[l:opts[l:idx]]
-
-        " Can be either '-R dir -as coqdir' or '-R dir coqdir'
-        if l:opts[l:end] ==# '-as' || get(l:opts, l:end + 1, '') ==# '-as'
-          let l:end = l:idx + 3
-        endif
-
-        let l:proj_args = add(l:proj_args, join(l:opts[l:idx : l:end], ' '))
-        let l:idx = l:end
-      else
-        if !a:silent
-          call s:warn(l:opts[l:idx + 1] . ' does not exist.')
-        endif
-      endif
+      let l:proj_args[l:idx + 1] = fnamemodify(l:absdir, ':p')
     endif
+  endfor
 
-    let l:idx += 1
-  endwhile
-
-  return map(split(join(l:proj_args)), 'substitute(v:val, s:space, " ", "g")')
+  return l:proj_args
 endfunction
 
 " Search for a CoqProject file using 'g:coqtail_project_name' starting in the

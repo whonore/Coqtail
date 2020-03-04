@@ -76,14 +76,6 @@ Execute (multi-option-same-line):
   let args = coqtail#ParseCoqProj(f, 1)
   AssertEqual ['-R', d . '/', 'top', '-Q', d . '/', 'top2'], args
 
-Execute (nonexist-subdir):
-  let f = tempname()
-  let d = fnamemodify(f, ':p:h')
-  let sd = 'nonexist-subdir'
-  call writefile(['-R ' . sd . ' top'], f)
-  let args = coqtail#ParseCoqProj(f, 1)
-  AssertEqual [], args
-
 Execute (extra-whitespace):
   let f = tempname()
   let d = fnamemodify(f, ':p:h')
@@ -97,13 +89,6 @@ Execute (alternate-R):
   call writefile(['-R . -as top'], f)
   let args = coqtail#ParseCoqProj(f, 1)
   AssertEqual ['-R', d . '/', '-as', 'top'], args
-
-Execute (ignore-unknown):
-  let f = tempname()
-  let d = fnamemodify(f, ':p:h')
-  call writefile(['-R . top', '-A fake', '-Q . top2'], f)
-  let args = coqtail#ParseCoqProj(f, 1)
-  AssertEqual ['-R', d . '/', 'top', '-Q', d . '/', 'top2'], args
 
 Execute (I):
   let f = tempname()
@@ -136,5 +121,34 @@ Execute (quote-space):
   call mkdir(dsd, 'p')
   let f = join([dsd, '1'], '/')
   call writefile(['-R "' . dsd . '" top'], f)
+  let args = coqtail#ParseCoqProj(f, 1)
+  AssertEqual ['-R', dsd . '/', 'top'], args
+
+Execute (quote-strip):
+  let d = tempname()
+  let sd = 'subdir'
+  let dsd = join([d, sd], '/')
+  call mkdir(dsd, 'p')
+  let f = join([dsd, '1'], '/')
+  call writefile(['-R "' . dsd . '" top'], f)
+  let args = coqtail#ParseCoqProj(f, 1)
+  AssertEqual ['-R', dsd . '/', 'top'], args
+
+Execute (quote-empty):
+  let f = tempname()
+  let d = fnamemodify(f, ':p:h')
+  call writefile(['-R . ""'], f)
+  let args = coqtail#ParseCoqProj(f, 1)
+  AssertEqual ['-R', d . '/', ''], args
+
+Execute (quote-escape):
+  let d = tempname()
+  let sd = 'quote"subdir'
+  let sdEsc = 'quote\"subdir'
+  let dsd = join([d, sd], '/')
+  let dsdEsc = join([d, sdEsc], '/')
+  call mkdir(dsd, 'p')
+  let f = join([dsd, '1'], '/')
+  call writefile(['-R "' . dsdEsc . '" top'], f)
   let args = coqtail#ParseCoqProj(f, 1)
   AssertEqual ['-R', dsd . '/', 'top'], args
