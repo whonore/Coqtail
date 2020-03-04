@@ -45,8 +45,6 @@ let s:goal_panel = 2
 let s:info_panel = 3
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
-" String to escape quotes.
-let s:space = '<SPACE>'
 " Warning/error messages.
 let s:unsupported_msg = '
 \Coqtail does not officially support your version of Coq (%s).
