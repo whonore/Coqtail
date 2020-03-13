@@ -152,3 +152,15 @@ Execute (quote-escape):
   call writefile(['-R "' . dsdEsc . '" top'], f)
   let args = coqtail#ParseCoqProj(f, 1)
   AssertEqual ['-R', dsd . '/', 'top'], args
+
+Execute (arg):
+  let f = tempname()
+  call writefile(['-arg -w -arg all'], f)
+  let args = coqtail#ParseCoqProj(f, 1)
+  AssertEqual ['-w', 'all'], args
+
+Execute (ignore-files):
+  let f = tempname()
+  call writefile(['-arg a', '-byte', 'A.v'], f)
+  let args = coqtail#ParseCoqProj(f, 1)
+  AssertEqual ['a'], args

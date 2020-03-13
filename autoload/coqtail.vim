@@ -385,23 +385,40 @@ endfunction
 " Coqtop.
 function! coqtail#ParseCoqProj(file, silent) abort
   let l:file_dir = fnamemodify(a:file, ':p:h')
-  " TODO: recognize more options
-  let l:dir_opts = ['-R', '-Q', '-I', '-include']
+  let l:dir_opts = {'-R': 2, '-Q': 2, '-I': 1, '-include': 1}
 
   let l:txt = join(readfile(a:file))
-  let l:proj_args = s:pyeval(printf('shlex.split(r%s)', string(l:txt)))()
+  let l:raw_args = s:pyeval(printf('shlex.split(r%s)', string(l:txt)))()
 
-  " Make all paths absolute
-  for l:idx in range(len(l:proj_args))
-    if index(l:dir_opts, l:proj_args[l:idx]) != -1
-      let l:absdir = l:proj_args[l:idx + 1]
+  let l:proj_args = []
+  let l:idx = 0
+  while l:idx < len(l:raw_args)
+    " Make paths absolute for -R, -Q, etc
+    if has_key(l:dir_opts, l:raw_args[l:idx])
+      let l:absdir = l:raw_args[l:idx + 1]
       if l:absdir[0] !=# '/'
         " Join relative paths with 'l:file_dir'
         let l:absdir = join([l:file_dir, l:absdir], '/')
       endif
-      let l:proj_args[l:idx + 1] = fnamemodify(l:absdir, ':p')
+      let l:raw_args[l:idx + 1] = fnamemodify(l:absdir, ':p')
+
+      " Can be '-R dir -as coqdir' in 8.4
+      let l:end = l:idx + l:dir_opts[l:raw_args[l:idx]]
+      if l:raw_args[l:end] ==# '-as' || get(l:raw_args, l:end + 1, '') ==# '-as'
+        let l:end = l:idx + 3
+      endif
+      let l:proj_args += l:raw_args[l:idx : l:end]
+      let l:idx = l:end
     endif
-  endfor
+
+    " Pass through options following -arg
+    if l:raw_args[l:idx] ==# '-arg'
+      let l:proj_args = add(l:proj_args, l:raw_args[l:idx + 1])
+      let l:idx += 1
+    endif
+
+    let l:idx += 1
+  endwhile
 
   return l:proj_args
 endfunction
