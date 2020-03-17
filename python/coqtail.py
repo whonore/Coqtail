@@ -16,7 +16,7 @@ from itertools import islice
 
 from six.moves import zip_longest
 from six.moves.queue import Empty, Queue
-from six.moves.socketserver import StreamRequestHandler, TCPServer, ThreadingMixIn
+from six.moves.socketserver import StreamRequestHandler, ThreadingTCPServer
 
 import coqtop as CT
 
@@ -655,10 +655,6 @@ class Coqtail(object):
         return self.handler.vimcall("getbufline", self.handler.bnum, 1, "$")  # type: ignore
 
 
-class ThreadedTCPServer(ThreadingMixIn, TCPServer):
-    """Create a thread for each client."""
-
-
 class CoqtailHandler(StreamRequestHandler):
     """Forward messages between Vim and Coqtail."""
 
@@ -830,9 +826,8 @@ class CoqtailServer:
         # type: () -> int
         """Start the TCP server."""
         # N.B. port = 0 chooses any arbitrary open one
-        CoqtailServer.serv = ThreadedTCPServer(("localhost", 0), CoqtailHandler)
-        # Mypy isn't aware of this attribute on ThreadingMixin
-        CoqtailServer.serv.daemon_threads = True  # type: ignore
+        CoqtailServer.serv = ThreadingTCPServer(("localhost", 0), CoqtailHandler)
+        CoqtailServer.serv.daemon_threads = True
         _, port = CoqtailServer.serv.server_address
 
         serv_thread = threading.Thread(target=CoqtailServer.serv.serve_forever)
