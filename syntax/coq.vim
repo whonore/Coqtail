@@ -52,16 +52,8 @@ if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight
 endif
 let b:coqtail_did_highlight = 1
 
-" Only load this syntax file when user didn't opt out
-if exists('g:coqtail_nosyntax') && g:coqtail_nosyntax
-  finish
-endif
-
-" For version 5.x: Clear all syntax items
-" For version 6.x: Quit when a syntax file was already loaded
-if v:version < 600
-  syntax clear
-elseif exists('b:current_syntax') && b:current_syntax ==# 'coq'
+" Only load this syntax file when no other was loaded and user didn't opt out.
+if exists('b:current_syntax') || get(g:, 'coqtail_nosyntax', 0)
   finish
 endif
 
@@ -377,72 +369,63 @@ syn sync minlines=50
 syn sync maxlines=500
 
 " Define the default highlighting.
-" For version 5.7 and earlier: only when not done already
-" For version 5.8 and later: only when an item doesn't have highlighting yet
-if v:version >= 508 || !exists('did_coq_syntax_inits')
-  if v:version < 508
-    let did_coq_syntax_inits = 1
-    command -nargs=+ HiLink hi link <args>
-  else
-    command -nargs=+ HiLink hi def link <args>
-  endif
+command -nargs=+ HiLink hi def link <args>
 
-  " PROOFS
-  HiLink coqTactic                    Keyword
-  HiLink coqLtac coqTactic
-  HiLink coqProofKwd coqTactic
-  HiLink coqProofPunctuation coqTactic
-  HiLink coqTacticKwd coqTactic
-  HiLink coqTacNotationKwd coqTactic
-  HiLink coqEvalFlag coqTactic
-  HiLink coqEqnKwd coqTactic
-  " Exception
-  HiLink coqProofDot coqVernacular
+" PROOFS
+HiLink coqTactic            Keyword
+HiLink coqLtac              coqTactic
+HiLink coqProofKwd          coqTactic
+HiLink coqProofPunctuation  coqTactic
+HiLink coqTacticKwd         coqTactic
+HiLink coqTacNotationKwd    coqTactic
+HiLink coqEvalFlag          coqTactic
+HiLink coqEqnKwd            coqTactic
+" Exception
+HiLink coqProofDot          coqVernacular
 
-  " PROOF DELIMITERS ("Proof", "Qed", "Defined", "Save")
-  HiLink coqProofDelim                Underlined
+" PROOF DELIMITERS ("Proof", "Qed", "Defined", "Save")
+HiLink coqProofDelim        Underlined
 
-  " TERMS AND TYPES
-  HiLink coqTerm                      Type
-  HiLink coqKwd             coqTerm
-  HiLink coqTermPunctuation coqTerm
+" TERMS AND TYPES
+HiLink coqTerm              Type
+HiLink coqKwd               coqTerm
+HiLink coqTermPunctuation   coqTerm
 
-  " VERNACULAR COMMANDS
-  HiLink coqVernacular                PreProc
-  HiLink coqVernacCmd         coqVernacular
-  HiLink coqVernacPunctuation coqVernacular
-  HiLink coqHint              coqVernacular
-  HiLink coqFeedback          coqVernacular
-  HiLink coqTopLevel          coqVernacular
+" VERNACULAR COMMANDS
+HiLink coqVernacular        PreProc
+HiLink coqVernacCmd         coqVernacular
+HiLink coqVernacPunctuation coqVernacular
+HiLink coqHint              coqVernacular
+HiLink coqFeedback          coqVernacular
+HiLink coqTopLevel          coqVernacular
 
-  " DEFINED OBJECTS
-  HiLink coqIdent                     Identifier
-  HiLink coqNotationString coqIdent
+" DEFINED OBJECTS
+HiLink coqIdent             Identifier
+HiLink coqNotationString    coqIdent
 
-  " CONSTRUCTORS AND FIELDS
-  HiLink coqConstructor               Keyword
-  HiLink coqField coqConstructor
+" CONSTRUCTORS AND FIELDS
+HiLink coqConstructor       Keyword
+HiLink coqField             coqConstructor
 
-  " NOTATION SPECIFIC ("at level", "format", etc)
-  HiLink coqNotationKwd               Special
-  HiLink coqEqnOptions                coqNotationKwd
+" NOTATION SPECIFIC ("at level", "format", etc)
+HiLink coqNotationKwd       Special
+HiLink coqEqnOptions        coqNotationKwd
 
-  " USUAL VIM HIGHLIGHTINGS
-  " Comments
-  HiLink coqComment                   Comment
-  HiLink coqProofComment coqComment
+" USUAL VIM HIGHLIGHTINGS
+" Comments
+HiLink coqComment           Comment
+HiLink coqProofComment      coqComment
 
-  " Todo
-  HiLink coqTodo                      Todo
+" Todo
+HiLink coqTodo              Todo
 
-  " Errors
-  HiLink coqError                     Error
-  HiLink coqProofAdmit  coqError
+" Errors
+HiLink coqError             Error
+HiLink coqProofAdmit        coqError
 
-  " Strings
-  HiLink coqString                    String
+" Strings
+HiLink coqString            String
 
-  delcommand HiLink
-endif
+delcommand HiLink
 
 let b:current_syntax = 'coq'

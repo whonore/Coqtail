@@ -9,7 +9,7 @@
 " Modified By: Wolf Honore
 
 " Only load this indent file when no other was loaded and user didn't opt out.
-if exists('b:did_indent') || (exists('g:coqtail_noindent') && g:coqtail_noindent)
+if exists('b:did_indent') || get(g:, 'coqtail_noindent')
   finish
 endif
 let b:did_indent = 1

@@ -6,18 +6,11 @@
 " License:     public domain
 " Modified By: Wolf Honore
 
-" Only load this syntax file when user didn't opt out
-if exists('g:coqtail_nosyntax') && g:coqtail_nosyntax
+" Only load this syntax file when no other was loaded and user didn't opt out.
+if exists('b:current_syntax') || get(g:, 'coqtail_nosyntax', 0)
   finish
 endif
 
-" For version 5.x: Clear all syntax items
-" For version 6.x: Quit when a syntax file was already loaded
-if v:version < 600
-  syntax clear
-elseif exists('b:current_syntax') && b:current_syntax ==# 'coq-goals'
-  finish
-endif
 
 " Keywords are alphanumeric, _, and '
 setlocal iskeyword=@,48-57,192-255,_,'
@@ -70,40 +63,31 @@ syn sync minlines=50
 syn sync maxlines=500
 
 " Define the default highlighting.
-" For version 5.7 and earlier: only when not done already
-" For version 5.8 and later: only when an item doesn't have highlighting yet
-if v:version >= 508 || !exists('b:did_coq_goals_syntax_inits')
-  if v:version < 508
-    let b:did_coq_goals_syntax_inits = 1
-    command -nargs=+ HiLink hi link <args>
-  else
-    command -nargs=+ HiLink hi def link <args>
-  endif
+command -nargs=+ HiLink hi def link <args>
 
-  " TERMS AND TYPES
-  HiLink coqTerm                      Type
-  HiLink coqKwd             coqTerm
-  HiLink coqTermPunctuation coqTerm
+" TERMS AND TYPES
+HiLink coqTerm              Type
+HiLink coqKwd               coqTerm
+HiLink coqTermPunctuation   coqTerm
 
-  " WORK LEFT
-  HiLink coqNumberGoals               Todo
-  HiLink coqNumberUnfocused           Todo
-  HiLink coqNumberAdmitted            Error
-  HiLink coqNumberShelved             Todo
-  HiLink coqGoalLine                  Todo
+" WORK LEFT
+HiLink coqNumberGoals       Todo
+HiLink coqNumberUnfocused   Todo
+HiLink coqNumberAdmitted    Error
+HiLink coqNumberShelved     Todo
+HiLink coqGoalLine          Todo
 
-  " GOAL IDENTIFIER
-  HiLink coqGoalNumber                Underlined
-  HiLink coqNextGoal                  Underlined
+" GOAL IDENTIFIER
+HiLink coqGoalNumber        Underlined
+HiLink coqNextGoal          Underlined
 
-  " USUAL VIM HIGHLIGHTINGS
-  " Comments
-  HiLink coqComment                   Comment
+" USUAL VIM HIGHLIGHTINGS
+" Comments
+HiLink coqComment           Comment
 
-  " Strings
-  HiLink coqString                    String
+" Strings
+HiLink coqString            String
 
-  delcommand HiLink
-endif
+delcommand HiLink
 
 let b:current_syntax = 'coq-goals'
