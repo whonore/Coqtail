@@ -19,6 +19,10 @@ elseif exists('b:current_syntax') && b:current_syntax ==# 'coq-goals'
   finish
 endif
 
+" Keywords are alphanumeric, _, and '
+setlocal iskeyword=@,48-57,192-255,_,'
+syn iskeyword clear
+
 " Coq is case sensitive.
 syn case match
 

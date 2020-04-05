@@ -6,10 +6,6 @@ let b:did_ftplugin = 1
 
 call coqtail#Register()
 
-" Treat ' as a part of keywords
-setlocal iskeyword+='
-" Remove ? added by Verilog syntax file
-setlocal iskeyword-=63
 
 " Follow imports
 setlocal includeexpr=coqtail#FindLib(v:fname)

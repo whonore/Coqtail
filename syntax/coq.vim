@@ -65,6 +65,12 @@ elseif exists('b:current_syntax') && b:current_syntax ==# 'coq'
   finish
 endif
 
+" N.B. Must be here and not in ftplugin. The Verilog syntax file resets it and
+" ftplugin is only sourced once so it is lost when a buffer is reloaded.
+" Keywords are alphanumeric, _, and '
+setlocal iskeyword=@,48-57,192-255,_,'
+syn iskeyword clear
+
 " Coq is case sensitive.
 syn case match
 
