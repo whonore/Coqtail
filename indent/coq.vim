@@ -22,14 +22,6 @@ setlocal nosmartindent
 setlocal shiftwidth=2
 setlocal tabstop=2
 
-" Comment handling
-if !exists('no_coq_comments')
-  if has('comments')
-    setlocal comments=srn:(*,mb:*,exn:*)
-    setlocal fo=cqt
-  endif
-endif
-
 " Only define the function once.
 if exists('*GetCoqIndent')
   finish
