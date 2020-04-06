@@ -57,6 +57,55 @@ if exists('b:current_syntax') || get(g:, 'coqtail_nosyntax', 0)
   finish
 endif
 
+" Helpers
+function! s:join(xs, sep) abort
+  return type(a:xs) == type([]) ? join(a:xs, a:sep) : a:xs
+endfunction
+
+function! s:match(group, pat, opts) abort
+  execute printf('syn match %s "%s" %s', a:group, s:join(a:pat, '\|'), a:opts)
+endfunction
+
+function! s:region(group, matchgrp, start, end, opts) abort
+  let [l:start, l:start_off] = type(a:start) == type([]) ? a:start : [a:start, '']
+  let [l:end, l:end_off] = type(a:end) == type([]) ? a:end : [a:end, '']
+  let l:grps = type(a:matchgrp) == type([]) ? a:matchgrp : [a:matchgrp, a:matchgrp]
+  let [l:sgrp, l:egrp] = map(l:grps, 'v:val !=# "" ? "matchgroup=" . v:val : ""')
+  execute printf('syn region %s %s start="%s"%s %s end="%s"%s %s',
+    \ a:group, l:sgrp, l:start, l:start_off, l:egrp, l:end, l:end_off, a:opts)
+endfunction
+
+" Regex Combinators.
+function! s:or(...) abort
+  return join(a:000, '\|')
+endfunction
+
+function! s:atom(x) abort
+  return printf('\<%s\>', a:x)
+endfunction
+
+function! s:atoms(...) abort
+  return join(map(copy(a:000), 's:atom(v:val)'), '\_s\+')
+endfunction
+
+function! s:group(x) abort
+  return printf('\%%(%s\)', a:x)
+endfunction
+
+function! s:optional(x) abort
+  return printf('%s\?', s:group(a:x))
+endfunction
+
+" Alpha, alphanum groups that include non-ascii characters.
+let s:alpha = '[:lower:][:upper:]'
+let s:alphanum = s:alpha . '[:digit:]'
+
+" Some common patterns.
+let s:ident = printf("[_%s][_'%s]*", s:alpha, s:alphanum)
+let s:spaces = '\_s\+'
+let s:dot = '\.\_s'
+let s:scope = s:optional('\<' . s:group(s:or('Global', 'Local')) . s:spaces)
+
 " N.B. Must be here and not in ftplugin. The Verilog syntax file resets it and
 " ftplugin is only sourced once so it is lost when a buffer is reloaded.
 " Keywords are alphanumeric, _, and '
@@ -66,12 +115,13 @@ syn iskeyword clear
 " Coq is case sensitive.
 syn case match
 
-syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqShow
+syn cluster coqVernac contains=coqLoad,coqCheckCompute,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqShow,coqHint
 
 " Various
 syn match   coqError             "\S\+"
 syn match   coqVernacPunctuation ":=\|\.\|:"
-syn match   coqIdent             contained "[_[:alpha:]][_'[:alnum:]]*"
+call s:match('coqIdent', s:ident, 'contained')
+" TODO: update these lists
 syn keyword coqTopLevel          Type Canonical Structure Cd Drop Existential
 "...
 syn keyword coqVernacCmd         Local Global Polymorphic Functional Scheme Back Combined
@@ -81,60 +131,172 @@ syn region coqPrint matchgroup=coqVernacCmd start="\<\%(Print\%(\_s\+Assumptions
 syn region coqPrintUniversesSubgraph matchgroup=coqVernacCmd start="\<Print\_s\+Universes\_s\+Subgraph\>" contains=coqIdent end="\.\_s"
 
 " Modules
-syn region coqModule contains=coqModule,coqSection,coqVernacPunctuation,coqModBinder,@coqVernac matchgroup=coqVernacCmd start="\<Module\%(\_s\+Type\)\?\_s\+\z([_[:alpha:]][_'[:alnum:]]*\)\%([^=]*\.\_s\)\@=" end="\<End\_s\+\z1\_s*\.\_s"
-syn region coqModule contains=coqVernacPunctuation,coqModBinder matchgroup=coqVernacCmd start="\<Module\%(\_s\+Type\)\?\_s\+\z([_[:alpha:]][_'[:alnum:]]*\)\%(.*:=\)\@=" end=":="me=e-2 nextgroup=coqModVal
-syn region coqModBinder contained contains=coqIdent matchgroup=coqVernacPunctuation start="(" end=")" keepend
-syn region coqModVal contains=coqIdent,coqTermPunctuation start=":=" end="\.\_s"
+" TODO: highlight module name as ident
+let s:mod_start = '\<Module\%(\_s\+Type\)\?\_s\+\z(' . s:ident . '\)'
+call s:region('coqModule', 'coqVernacCmd',
+  \ s:mod_start . '\%([^=]*\.\_s\)\@=',
+  \ '\<End\_s\+\z1\_s*' . s:dot,
+  \ 'contains=coqModule,coqSection,coqVernacPunctuation,coqModBinder,@coqVernac'
+\)
+call s:region('coqModule', 'coqVernacCmd',
+  \ s:mod_start . '\%(.*:=\)\@=',
+  \ [":=", 'me=e-2'],
+  \ 'contains=coqVernacPunctuation,coqModBinder nextgroup=coqModVal'
+\)
+call s:region('coqModBinder', 'coqVernacPunctuation',
+  \ '(', ')',
+  \ 'contains=coqIdent keepend contained'
+\)
+call s:region('coqModVal', 'coqVernacPunctuation',
+  \ ':=', s:dot,
+  \ 'contains=coqIdent,coqTermPunctuation'
+\)
 
 " Terms
 syn cluster coqTerm            contains=coqKwd,coqTermPunctuation,coqKwdMatch,coqKwdLet,coqKwdParen
-syn region coqKwdMatch         contained contains=@coqTerm matchgroup=coqKwd start="\<match\>" end="\<with\>"
-syn region coqKwdLet           contained contains=@coqTerm matchgroup=coqKwd start="\<let\>"   end=":="
-syn region coqKwdParen         contained contains=@coqTerm matchgroup=coqTermPunctuation start="(" end=")" keepend extend
+call s:region('coqKwdMatch', 'coqKwd',
+  \ s:atom('match'), s:atom('with'),
+  \ 'contains=@coqTerm contained'
+\)
+call s:region('coqKwdLet', ['coqKwd', 'coqVernacPunctuation'],
+  \ s:atom('let'), ':=',
+  \ 'contains=@coqTerm contained'
+\)
+call s:region('coqKwdParen', 'coqTermPunctuation',
+  \ '(', ')',
+  \ 'contains=@coqTerm contained keepend extend'
+\)
 syn keyword coqKwd             contained else end exists2 fix cofix forall fun if in struct then as return
 syn match   coqKwd             contained "\<where\>"
 syn match   coqKwd             contained "\<exists!\?"
 syn match   coqKwd             contained "|\|/\\\|\\/\|<->\|\~\|->\|=>\|{\|}\|&\|+\|-\|*\|=\|>\|<\|<="
 syn match coqTermPunctuation   contained ":=\|:>\|:\|;\|,\|||\|\[\|\]\|@\|?\|\<_\>\|<+"
 
+" Module Loading
+syn cluster coqLoad contains=coqImport,coqInclude,coqRequire,coqFrom
+call s:region('coqImport', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom(s:group(s:or('Export', 'Import'))), s:dot,
+  \ 'contains=coqIdent'
+\)
+call s:region('coqInclude', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('Include'), s:dot,
+  \ 'contains=coqIdent'
+\)
+call s:region('coqRequire', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('Require'), s:dot,
+  \ 'contains=coqIdent,coqImport keepend'
+\)
+call s:region('coqFrom', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('From'), s:dot,
+  \ 'contains=coqIdent,coqRequire keepend'
+\)
+
 " Various
-syn region coqRequire contains=coqString matchgroup=coqVernacCmd start="\<Require\>\%(\_s\+\%(Export\|Import\)\>\)\?" matchgroup=coqVernacPunctuation end="\.\_s"
-syn region coqRequire matchgroup=coqVernacCmd start="\<Import\>" matchgroup=coqVernacPunctuation end="\.\_s"
-syn region coqRequire matchgroup=coqVernacCmd start="\<Export\>" matchgroup=coqVernacPunctuation end="\.\_s"
-syn region coqRequire matchgroup=coqVernacCmd start="\<Include\>" matchgroup=coqVernacPunctuation end="\.\_s"
-syn region coqRequire contains=coqString,coqRequire matchgroup=coqVernacCmd start="\<From\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
-syn region coqCheckCompute contains=@coqTerm matchgroup=coqVernacCmd start="\<\%(Check\|Compute\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
-syn region coqOpaque  matchgroup=coqVernacCmd start="\<\%(Opaque\|Transparent\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
-syn region coqShow       matchgroup=coqVernacCmd start="\<Show\_s\+\%(\%(Implicits\|Script\|Tree\|Proof\|Conjectures\|Intros\?\|Existentials\)\>\)\?" end="\.\_s"
-syn region coqImplicitTypes matchgroup=coqVernacCmd start="\<Implicit Types\?" end="\.\_s"
-syn region coqGeneralizable matchgroup=coqVernacCmd start="\<Generalizable\_s\+\%(\%(All\|No\)\_s\+\)\?Variables\?" end="\.\_s"
+" TODO: include Print, Search, etc here?
+call s:region('coqCheckCompute', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom(s:group(s:or('Check', 'Compute'))), s:dot,
+  \ 'contains=@coqTerm'
+\)
+call s:region('coqOpaque', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom(s:group(s:or('Opaque', 'Transparent'))), s:dot,
+  \ ''
+\)
+" TODO: check this list
+let s:shows = s:optional(s:atom(s:group(s:or(
+  \ 'Implicits', 'Script', 'Tree', 'Proof', 'Conjectures', 'Intros\?', 'Existentials'
+\))))
+call s:region('coqShow', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('Show') . s:spaces . s:shows, s:dot,
+  \ ''
+\)
+call s:region('coqImplicitTypes', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atoms('Implicit', 'Types\?'), s:dot,
+  \ ''
+\)
+let s:generalize_opts = s:optional(s:atom(s:group(s:or('All', 'No'))) . s:spaces)
+call s:region('coqGeneralizable', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('Generalizable') . s:spaces . s:generalize_opts . s:atom('Variables\?'),
+  \ s:dot,
+  \ ''
+\)
 
 " Sections
-syn region coqSection contains=coqSection,@coqVernac matchgroup=coqVernacCmd start="\<Section\_s\+\z(\S\+\)\_s*\.\_s" end="\<End\_s\+\z1\_s*\.\_s"
+call s:region('coqSection', 'coqVernacCmd',
+  \ '\<Section\_s\+\z(' . s:ident . '\)\_s*' . s:dot,
+  \ '\<End\_s\+\z1\_s*' . s:dot,
+  \ 'contains=coqSection,@coqVernac'
+\)
 
 " Obligations
-syn region coqObligation contains=coqOblOf   matchgroup=coqVernacCmd start="\<\%(Obligations\)\|\%(Preterm\)\>" end="\.\_s" keepend
-syn region coqObligation contains=coqOblOf   matchgroup=coqProofAdmit start="\<Admit\_s\+Obligations\>" matchgroup=coqVernacCmd end="\.\_s" keepend
-syn region coqObligation contains=coqOblOf   matchgroup=coqVernacCmd start="\<Solve\_s\+Obligations\>" end="\.\_s" keepend
-syn region coqOblOf      contains=coqIdent,coqOblUsing matchgroup=coqVernacCmd start="\<of\>" end="\.\_s" keepend
-syn region coqOblOfDelim contains=coqIdent,coqOblUsing matchgroup=coqProofDelim start="\<of\>" matchgroup=coqProofDot end="\.\_s" keepend
-syn region coqObligation contains=coqOblUsing   matchgroup=coqVernacCmd start="\<Solve\_s\+All\_s\+Obligations\>" end="\.\_s" keepend
-syn region coqOblUsing   contains=coqLtac   matchgroup=coqVernacCmd start="\<using\>" end="\.\_s"
-syn region coqObligation contains=coqOblExpr matchgroup=coqVernacCmd start="\<Obligations\_s\+Tactic\>" end="\.\_s" keepend
-syn region coqOblExpr    contains=coqLtac   matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
+call s:region('coqObligation', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom(s:group(s:or('Obligations', 'Preterm'))), s:dot,
+  \ 'contains=coqOblOf keepend'
+\)
+call s:region('coqObligation', ['coqProofAdmit', 'coqVernacPunctuation'],
+  \ s:atoms('Admit', 'Obligations'), s:dot,
+  \ 'contains=coqOblOf keepend'
+\)
+call s:region('coqObligation', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atoms('Solve', 'Obligations'), s:dot,
+  \ 'contains=coqOblOf,coqOblWith keepend'
+\)
+call s:region('coqObligation', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atoms('Solve', 'All', 'Obligations'), s:dot,
+  \ 'contains=coqOblWith keepend'
+\)
+call s:region('coqOblOf', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('of'), s:dot,
+  \ 'contains=coqIdent,coqOblWith keepend'
+\)
+call s:region('coqOblOfDelim', 'coqProofDot',
+  \ s:atom('of'), s:dot,
+  \ 'contains=coqIdent,coqOblWith keepend'
+\)
+call s:region('coqOblWith', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('with'), s:dot,
+  \ 'contains=coqLtac,coqTactic'
+\)
+call s:region('coqObligation', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atoms('Obligation', 'Tactic'), s:dot,
+  \ 'contains=coqOblExpr keepend'
+\)
+call s:region('coqOblExpr', 'coqVernacPunctuation',
+  \ ':=', s:dot,
+  \ 'contains=coqLtac, coqTactic'
+\)
 
 " Scopes
-syn region coqBind    contains=coqScope matchgroup=coqVernacCmd start="\<Bind\|Delimit\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
-syn region coqDeclareScope contains=coqIdent matchgroup=coqVernacCmd start="\<Declare\_s\+Scope\>" end="\.\_s"
-syn region coqArgsScope contains=coqScope matchgroup=coqVernacCmd start="\<Arguments\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
-syn region coqOpen    contains=coqScope matchgroup=coqVernacCmd start="\<Open\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
-syn region coqClose   contains=coqScope matchgroup=coqVernacCmd start="\<Close\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
-syn region coqScope   contained matchgroup=coqVernacCmd start="\<Scope\>" end="\.\_s"
+" TODO: fix these rules
+call s:region('coqBind', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom(s:group(s:or('Bind', 'Delimit'))), s:dot,
+  \ 'contains=coqScope keepend'
+\)
+call s:region('coqArgsScope', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('Arguments'), s:dot,
+  \ 'contains=coqScope keepend'
+\)
+call s:region('coqOpen', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('Open'), s:dot,
+  \ 'contains=coqScope keepend'
+\)
+call s:region('coqClose', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('Close'), s:dot,
+  \ 'contains=coqScope keepend'
+\)
+call s:region('coqScope', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atom('Scope'), s:dot,
+  \ 'contained'
+\)
 
 " Hints
-syn region coqCreateHintDb matchgroup=coqVernacCmd start="\<Create\_s\+HintDb\>" contains=coqIdent end="\.\_s" keepend
-syn region coqHint contains=coqHintOption start="\<Hint\>" end="\.\_s" keepend
-syn region coqHintOption start="\<\%(Resolve\|Immediate\|Constructors\|Unfold\|Extern\)\>" end="\.\_s"
+" TODO: handle Hint Extern, Resolve ->, precedence, missing cases, etc
+let s:hints = s:group(s:or(
+  \ 'Resolve', 'Immediate', 'Constructors', 'Unfold', 'Extern'
+\))
+call s:region('coqHint', ['coqVernacCmd', 'coqVernacPunctuation'],
+  \ s:atoms('Hint', s:hints), s:dot,
+  \ 'contains=coqIdent'
+\)
 
 " Add
 syn region coqAdd       contains=coqAddOption,coqAddOption2 matchgroup=coqVernacCmd start="\<Add\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
@@ -414,7 +576,6 @@ HiLink coqTermPunctuation   coqTerm
 HiLink coqVernacular        PreProc
 HiLink coqVernacCmd         coqVernacular
 HiLink coqVernacPunctuation coqVernacular
-HiLink coqHint              coqVernacular
 HiLink coqFeedback          coqVernacular
 HiLink coqTopLevel          coqVernacular
 
