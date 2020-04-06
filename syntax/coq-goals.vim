@@ -11,7 +11,6 @@ if exists('b:current_syntax') || get(g:, 'coqtail_nosyntax', 0)
   finish
 endif
 
-
 " Keywords are alphanumeric, _, and '
 setlocal iskeyword=@,48-57,192-255,_,'
 syn iskeyword clear

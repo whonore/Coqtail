@@ -1,13 +1,13 @@
 " Author: Wolf Honore
 " Provides an interface to the Python functions in coqtail.py and manages windows.
 
-" Only source once
+" Only source once.
 if exists('g:coqtail_sourced')
   finish
 endif
 let g:coqtail_sourced = 1
 
-" Check Python version
+" Check Python version.
 if has('python3')
   command! -nargs=1 Py py3 <args>
   function! s:pyeval(expr) abort
@@ -23,17 +23,17 @@ else
   finish
 endif
 
-" Initialize global variables
+" Initialize global variables.
 " Supported Coq versions (-1 means any number).
 let s:supported = [
-  \[8, 4, -1],
-  \[8, 5, -1],
-  \[8, 6, -1],
-  \[8, 7, -1],
-  \[8, 8, -1],
-  \[8, 9, -1],
-  \[8, 10, -1],
-  \[8, 11, -1]
+  \ [8, 4, -1],
+  \ [8, 5, -1],
+  \ [8, 6, -1],
+  \ [8, 7, -1],
+  \ [8, 8, -1],
+  \ [8, 9, -1],
+  \ [8, 10, -1],
+  \ [8, 11, -1]
 \]
 let s:latest_supported = join(s:supported[-1][:1], '.')
 " Used to give unique names to goal and info panels.
@@ -46,29 +46,29 @@ let s:info_panel = 3
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
 " Warning/error messages.
-let s:unsupported_msg = '
-\Coqtail does not officially support your version of Coq (%s).
-\ Continuing with the interface for the latest supported version (' .
-\ s:latest_supported . ').'
+let s:unsupported_msg =
+  \ 'Coqtail does not officially support your version of Coq (%s).' .
+  \ 'Continuing with the interface for the latest supported version (' .
+  \ s:latest_supported . ').'
 
-" Default Coq path
+" Default Coq path.
 if !exists('g:coqtail_coq_path')
   let g:coqtail_coq_path = ''
 endif
 
-" Default CoqProject file name
+" Default CoqProject file name.
 if !exists('g:coqtail_project_name')
   let g:coqtail_project_name = '_CoqProject'
 endif
 
-" Load vimbufsync if not already done
+" Load vimbufsync if not already done.
 call vimbufsync#init()
 
-" Add python directory to path so Python functions can be called
+" Add python directory to path so Python functions can be called.
 let s:python_dir = expand('<sfile>:p:h:h') . '/python'
 Py import shlex, sys, vim
 Py if not vim.eval('s:python_dir') in sys.path:
-\    sys.path.insert(0, vim.eval('s:python_dir'))
+  \    sys.path.insert(0, vim.eval('s:python_dir'))
 Py from coqtail import Coqtail
 
 " Print a message with warning highlighting.
@@ -84,8 +84,8 @@ endfunction
 " Find the path corresponding to 'lib'. Used by includeexpr.
 function! coqtail#FindLib(lib) abort
   return b:coqtail_running
-  \ ? s:pyeval("Coqtail().find_lib(vim.eval('a:lib')) or vim.eval('a:lib')")()
-  \ : a:lib
+    \ ? s:pyeval("Coqtail().find_lib(vim.eval('a:lib')) or vim.eval('a:lib')")()
+    \ : a:lib
 endfunction
 
 " Open and initialize goal/info panel.
@@ -283,7 +283,7 @@ function! coqtail#GotoGoal(ngoal, start) abort
 
   " ngoal = -1: next goal, ngoal = -2: previous goal
   let l:ngoal =
-  \  a:ngoal == -1 ? s:goalNext() : a:ngoal == -2 ? s:goalPrev() : a:ngoal
+    \ a:ngoal == -1 ? s:goalNext() : a:ngoal == -2 ? s:goalPrev() : a:ngoal
 
   let l:sline = s:goalStart(l:ngoal)
   let l:eline = s:goalEnd(l:ngoal)
@@ -459,41 +459,45 @@ function! s:getCurWord() abort
 endfunction
 
 " List query options for use in Coq command completion.
+let s:queries = [
+  \ 'Search',
+  \ 'SearchAbout',
+  \ 'SearchPattern',
+  \ 'SearchRewrite',
+  \ 'SearchHead',
+  \ 'Check',
+  \ 'Print',
+  \ 'About',
+  \ 'Locate',
+  \ 'Show'
+\]
 function! s:queryComplete(arg, cmd, cursor) abort
-  let l:queries = [
-        \'Search', 'SearchAbout', 'SearchPattern', 'SearchRewrite',
-        \'SearchHead', 'Check', 'Print', 'About', 'Locate', 'Show'
-  \]
   " Only complete one command
-  if len(split(a:cmd)) <= 2
-    return join(l:queries, "\n")
-  else
-    return ''
-  endif
+  return len(split(a:cmd)) <= 2 ? join(s:queries, "\n") : ''
 endfunction
 
 " Define Coqtail commands with the correct options.
 let s:cmd_opts = {
-  \'CoqStart': '-nargs=* -complete=file',
-  \'CoqStop': '',
-  \'CoqNext': '-count=1',
-  \'CoqUndo': '-count=1',
-  \'CoqToLine': '-count=0',
-  \'CoqToTop': '',
-  \'CoqJumpToEnd': '',
-  \'CoqGotoDef': '-bang -nargs=1',
-  \'Coq': '-nargs=+ -complete=custom,s:queryComplete',
-  \'CoqGotoGoal': '-bang -count=1',
-  \'CoqGotoGoalNext': '-bang',
-  \'CoqGotoGoalPrev': '-bang',
-  \'CoqMakeMatch': '-nargs=1',
-  \'CoqToggleDebug': ''
+  \ 'CoqStart': '-nargs=* -complete=file',
+  \ 'CoqStop': '',
+  \ 'CoqNext': '-count=1',
+  \ 'CoqUndo': '-count=1',
+  \ 'CoqToLine': '-count=0',
+  \ 'CoqToTop': '',
+  \ 'CoqJumpToEnd': '',
+  \ 'CoqGotoDef': '-bang -nargs=1',
+  \ 'Coq': '-nargs=+ -complete=custom,s:queryComplete',
+  \ 'CoqGotoGoal': '-bang -count=1',
+  \ 'CoqGotoGoalNext': '-bang',
+  \ 'CoqGotoGoalPrev': '-bang',
+  \ 'CoqMakeMatch': '-nargs=1',
+  \ 'CoqToggleDebug': ''
 \}
 function! s:cmdDef(name, act) abort
   " Start Coqtail first if needed
   let l:act = a:name !=# 'CoqStart' && a:name !=# 'CoqStop'
-  \ ? printf('if b:coqtail_running || coqtail#Start() | %s | endif', a:act)
-  \ : a:act
+    \ ? printf('if b:coqtail_running || coqtail#Start() | %s | endif', a:act)
+    \ : a:act
   execute printf('command! -buffer -bar %s %s %s', s:cmd_opts[a:name], a:name, l:act)
 endfunction
 
@@ -617,9 +621,9 @@ function! coqtail#Start(...) abort
     " Launch Coqtop
     try
       Py Coqtail().start(vim.eval('b:coqtail_version'),
-      \                  vim.eval('expand(b:coqtail_coq_path)'),
-      \                  *vim.eval('map(copy(l:proj_args+a:000),'
-      \                            '"expand(v:val)")'))
+        \                vim.eval('expand(b:coqtail_coq_path)'),
+        \                *vim.eval('map(copy(l:proj_args+a:000),'
+        \                          '"expand(v:val)")'))
 
       call s:prepare()
     catch /Failed to launch Coq/
@@ -681,14 +685,26 @@ function! s:mappings() abort
   endif
 
   let l:maps = [
-    \['Start', 'c', 'n'], ['Stop', 'q', 'n'], ['Next', 'j', 'ni'],
-    \['Undo', 'k', 'ni'], ['ToLine', 'l', 'ni'], ['ToTop', 'T', 'ni'],
-    \['JumpToEnd', 'G', 'ni'], ['GotoDef', 'g', 'n'], ['Search', 's', 'n'],
-    \['Check', 'h', 'n'], ['About', 'a', 'n'], ['Print', 'p', 'n'],
-    \['Locate', 'f', 'n'], ['GotoGoalStart', 'gg', 'ni'],
-    \['GotoGoalEnd', 'GG', 'ni'], ['GotoGoalNextStart', '!g]', 'n'],
-    \['GotoGoalNextEnd', '!G]', 'n'], ['GotoGoalPrevStart', '!g[', 'n'],
-    \['GotoGoalPrevEnd', '!G[', 'n'], ['ToggleDebug', 'd', 'n']
+    \ ['Start', 'c', 'n'],
+    \ ['Stop', 'q', 'n'],
+    \ ['Next', 'j', 'ni'],
+    \ ['Undo', 'k', 'ni'],
+    \ ['ToLine', 'l', 'ni'],
+    \ ['ToTop', 'T', 'ni'],
+    \ ['JumpToEnd', 'G', 'ni'],
+    \ ['GotoDef', 'g', 'n'],
+    \ ['Search', 's', 'n'],
+    \ ['Check', 'h', 'n'],
+    \ ['About', 'a', 'n'],
+    \ ['Print', 'p', 'n'],
+    \ ['Locate', 'f', 'n'],
+    \ ['GotoGoalStart', 'gg', 'ni'],
+    \ ['GotoGoalEnd', 'GG', 'ni'],
+    \ ['GotoGoalNextStart', '!g]', 'n'],
+    \ ['GotoGoalNextEnd', '!G]', 'n'],
+    \ ['GotoGoalPrevStart', '!g[', 'n'],
+    \ ['GotoGoalPrevEnd', '!G[', 'n'],
+    \ ['ToggleDebug', 'd', 'n']
   \]
 
   for [l:cmd, l:key, l:types] in l:maps

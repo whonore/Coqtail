@@ -13,7 +13,6 @@ if exists('b:current_syntax') || get(g:, 'coqtail_nosyntax', 0)
   finish
 endif
 
-
 " Keywords are alphanumeric, _, and '
 setlocal iskeyword=@,48-57,192-255,_,'
 syn iskeyword clear
@@ -98,7 +97,7 @@ syn keyword coqScopeSpecification contained Delimiting key is Bound to class
 
 syn region coqNotationString contained start=+"+ skip=+""+ end=+"+ extend
 
-"Inductives and Constants
+" Inductives and Constants
 syn region coqInd            contains=coqIndBody start="\<\%(\%(Co\)\?Inductive\|Constant\)\>" end="^\S"me=e-1 end="^$" keepend
 syn region coqIndBody        contained contains=coqIdent,coqIndTerm,coqIndBinder matchgroup=coqVernacCmd start="\%(Co\)\?Inductive\|Constant" start="\<with\>" matchgroup=NONE end="^\S"me=e-1
 syn region coqIndBinder      contained contains=coqIndBinderTerm matchgroup=coqVernacPunctuation start="("  end=")" keepend

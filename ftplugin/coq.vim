@@ -1,4 +1,4 @@
-" Only source once
+" Only source once.
 if exists('b:did_ftplugin')
   finish
 endif
@@ -36,11 +36,11 @@ if (exists('loaded_matchit') || exists('loaded_matchup')) && !exists('b:match_wo
   let s:proof_start = '\%(' . join(map(s:proof_starts, '"\\<" . v:val . "\\>"'), '\|') . '\)'
   let s:proof_end = '\%(' . join(map(s:proof_ends, '"\\<" . v:val . "\\>"'), '\|') . '\)'
   let b:match_words = join([
-  \ '\<if\>:\<then\>:\<else\>',
-  \ '\<let\>:\<in\>',
-  \ '\<\%(lazy\)\?match\>:\<with\>:\<end\>',
-  \ '\%(\<Section\>\|\<Module\>\):\<End\>',
-  \ s:proof_start . ':' . s:proof_end
+    \ '\<if\>:\<then\>:\<else\>',
+    \ '\<let\>:\<in\>',
+    \ '\<\%(lazy\)\?match\>:\<with\>:\<end\>',
+    \ '\%(\<Section\>\|\<Module\>\):\<End\>',
+    \ s:proof_start . ':' . s:proof_end
   \], ',')
   let b:undo_ftplugin .= ' | unlet! b:match_ignorecase b:match_words'
 endif
