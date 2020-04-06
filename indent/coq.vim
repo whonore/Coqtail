@@ -22,6 +22,8 @@ setlocal nosmartindent
 setlocal shiftwidth=2
 setlocal tabstop=2
 
+let b:undo_indent = 'setl et< inde< indk< lisp< si< sw< ts<'
+
 " Only define the function once.
 if exists('*GetCoqIndent')
   finish
@@ -226,5 +228,3 @@ function! GetCoqIndent() abort
     return l:ind
   endif
 endfunction
-
-" vim:sw=2

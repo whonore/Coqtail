@@ -20,9 +20,12 @@ setlocal includeexpr=coqtail#FindLib(v:fname)
 setlocal suffixesadd=.v
 setlocal include=\\<Require\\>\\(\\s*\\(Import\\\|Export\\)\\>\\)\\?
 
+let b:undo_ftplugin = 'setl cms< com< fo< inex< sua< inc<'
+
 " Tags
 if exists('+tagfunc')
   setlocal tagfunc=coqtail#GetTags
+  let b:undo_ftplugin .= ' | setl tfu<'
 endif
 
 " matchit/matchup patterns
@@ -39,4 +42,5 @@ if (exists('loaded_matchit') || exists('loaded_matchup')) && !exists('b:match_wo
   \ '\%(\<Section\>\|\<Module\>\):\<End\>',
   \ s:proof_start . ':' . s:proof_end
   \], ',')
+  let b:undo_ftplugin .= ' | unlet! b:match_ignorecase b:match_words'
 endif
