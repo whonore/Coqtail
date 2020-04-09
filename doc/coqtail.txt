@@ -92,11 +92,11 @@ Coq Queries						       *coqtail-queries*
 :Coq {args}		Send an arbitrary query to Coqtop. Some of the common
 			queries are listed below.
 
-					       *<leader>cs* *coqtail-search-about*
-:Coq SearchAbout {arg}
-<leader>cs		Send the SearchAbout command to Coqtop. The first
-			version uses {arg}, while the second uses the term
-			under the cursor. Write the response to the Info panel.
+						     *<leader>cs* *coqtail-search*
+:Coq Search {arg}
+<leader>cs		Send the Search command to Coqtop. The first version
+			uses {arg}, while the second uses the term under the
+			cursor. Write the response to the Info panel.
 
 						      *<leader>ch* *coqtail-check*
 :Coq Check {arg}
