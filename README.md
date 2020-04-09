@@ -50,7 +50,7 @@ vim +PlugInstall +qa
 
 Requirements:
 - Vim compiled with either `+python`<sup>[1](#python2)</sup> or `+python3`
-- For syntax highlighting, Vim configuration options `filetype plugin indent on` and `syntax on` (e.g. in `.vimrc`)
+- Vim configuration options `filetype plugin on`, and optionally `filetype indent on` and `syntax on` (e.g. in `.vimrc`)
 - [Coq 8.4 - 8.11](https://coq.inria.fr/download)
 
 Newer versions of Coq have not yet been tested, but should still work as long as
