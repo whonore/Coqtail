@@ -47,7 +47,7 @@ let s:info_panel = 3
 let s:goal_lines = 5
 " Warning/error messages.
 let s:unsupported_msg =
-  \ 'Coqtail does not officially support your version of Coq (%s).' .
+  \ 'Coqtail does not officially support your version of Coq (%s). ' .
   \ 'Continuing with the interface for the latest supported version (' .
   \ s:latest_supported . ').'
 
