@@ -114,6 +114,12 @@ text with `%` using the
 [matchup](https://github.com/andymass/vim-matchup) or
 [matchit](http://ftp.vim.org/pub/vim/runtime/macros/matchit.txt) plugins.
 
+### Automatically closing blocks
+
+Coqtail defines patterns to enable automatic insertion of the appropriate
+`End` command for code blocks such as `Section`s, `Module`s, and `match`
+expressions with [endwise](https://github.com/tpope/vim-endwise).
+
 ## Thanks
 
 Parts of Coqtail were originally inspired by/adapted from

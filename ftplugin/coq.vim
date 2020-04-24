@@ -44,3 +44,15 @@ if (exists('loaded_matchit') || exists('loaded_matchup')) && !exists('b:match_wo
   \], ',')
   let b:undo_ftplugin .= ' | unlet! b:match_ignorecase b:match_words'
 endif
+
+" endwise
+if exists('g:loaded_endwise')
+  let b:endwise_addition = '\=submatch(0) =~ "match" ? "end." : "End " . submatch(0) . "."'
+  let b:endwise_words = 'Section,Module,\%(lazy\|multi\)\?match'
+  let s:section_pat = '\<\%(Section\|Module\)\_s\+\%(\<Type\>\_s\+\)\?\zs\S\+\ze\_s*\.'
+  let s:match_pat = '\<\%(lazy\|multi\)\?match\>'
+  let b:endwise_pattern = '\%(' . s:section_pat . '\|' . s:match_pat . '\)'
+  let b:endwise_syngroups = 'coqVernacCmd,coqKwd,coqLtac'
+  unlet! b:endwise_end_pattern
+  let b:undo_ftplugin .= ' | unlet! b:endwise_addition b:endwise_words b:endwise_pattern b:endwise_syngroups'
+endif
