@@ -29,7 +29,7 @@ if exists('+tagfunc')
 endif
 
 " matchit/matchup patterns
-if (exists('loaded_matchit') || exists('loaded_matchup')) && !exists('b:match_words')
+if (exists('g:loaded_matchit') || exists('g:loaded_matchup')) && !exists('b:match_words')
   let b:match_ignorecase = 0
   let s:proof_starts = ['Proof', 'Next\_s\+Obligation', 'Obligation\_s\+\d\+']
   let s:proof_ends = ['Qed', 'Defined', 'Admitted', 'Abort', 'Save']
@@ -38,7 +38,7 @@ if (exists('loaded_matchit') || exists('loaded_matchup')) && !exists('b:match_wo
   let b:match_words = join([
     \ '\<if\>:\<then\>:\<else\>',
     \ '\<let\>:\<in\>',
-    \ '\<\%(lazy\)\?match\>:\<with\>:\<end\>',
+    \ '\<\%(lazy\|multi\)\?match\>:\<with\>:\<end\>',
     \ '\%(\<Section\>\|\<Module\>\):\<End\>',
     \ s:proof_start . ':' . s:proof_end
   \], ',')
