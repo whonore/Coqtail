@@ -816,7 +816,7 @@ class CoqtailHandler(StreamRequestHandler):
             self.coq.coqtop.interrupt()
 
 
-class CoqtailServer:
+class CoqtailServer(object):
     """A server through which Vim and Coqtail communicate."""
 
     serv = None
@@ -921,7 +921,8 @@ class ChannelManager(object):
                 _ = json.loads(res)
                 ChannelManager.results[handle] = res
                 break
-            except json.JSONDecodeError:
+            # Python 2 doesn't have json.JSONDecodeError
+            except ValueError:
                 pass
 
 
