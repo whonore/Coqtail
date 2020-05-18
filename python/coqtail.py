@@ -944,9 +944,6 @@ def _find_next_sentence(lines, sline, scol):
                 raise UnmatchedError("(*", (line, col))
 
             sline, col = com_end
-        elif first_line.startswith("*)"):
-            # Unmatched end-comment
-            raise UnmatchedError("*)", (line, col))
         else:
             break
 
@@ -1001,10 +998,6 @@ def _find_dot_after(lines, sline, scol):
         com_pos = line.find("(*")
         com_end_pos = line.find("*)")
         str_pos = line.find('"')
-
-        if com_pos == -1 and com_end_pos != -1:
-            # Unmatched end-comment
-            raise UnmatchedError("*)", (sline, scol + com_end_pos))
 
         if dot_pos == -1 and com_pos == -1 and str_pos == -1:
             # Nothing on this line
@@ -1146,7 +1139,6 @@ def _strip_comments(msg):
     # N.B. Coqtop will ignore comments, but it makes it easier to inspect
     # commands in Coqtail (e.g. options in coqtop.do_option) if we remove
     # them.
-    # N.B. Assumes comments are properly matched.
     nocom = []
     com_pos = []  # Remember comment offset and length
     off = 0
@@ -1155,7 +1147,7 @@ def _strip_comments(msg):
     while msg != "":
         start = msg.find("(*")
         end = msg.find("*)")
-        if start == -1 and end == -1:
+        if start == -1 and (end == -1 or (end != -1 and nesting == 0)):
             # No comments left
             nocom.append(msg)
             break
