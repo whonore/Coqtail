@@ -638,6 +638,25 @@ Expect coq (indented-bullets-bracket-close-end-of-line-nested):
     - auto.
   Qed.
 
+Given coq (match-bullet):
+  Lemma p (b1 : bool) : True.
+  Proof.
+    destruct b1.
+    - auto.
+      - auto.
+  Qed.
+
+Do (indent-match-bullet):
+  5G$==
+
+Expect coq (indented-match-bullet):
+  Lemma p (b1 : bool) : True.
+  Proof.
+    destruct b1.
+    - auto.
+    - auto.
+  Qed.
+
 Given coq (empty-line-in-proof):
   Goal True.
   Proof.

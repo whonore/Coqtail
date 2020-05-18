@@ -9,14 +9,14 @@
 " Modified By: Wolf Honore
 
 " Only load this indent file when no other was loaded and user didn't opt out.
-if exists('b:did_indent') || get(g:, 'coqtail_noindent')
+if exists('b:did_indent') || get(g:, 'coqtail_noindent', 0)
   finish
 endif
 let b:did_indent = 1
 
-setlocal expandtab
 setlocal indentexpr=GetCoqIndent()
 setlocal indentkeys=o,O,0=.,0=end,0=End,0=in,0=\|,0=Qed,0=Defined,0=Abort,0=Admitted,0},0),0-,0+,0*
+setlocal expandtab
 setlocal nolisp
 setlocal nosmartindent
 setlocal shiftwidth=2
@@ -33,6 +33,8 @@ endif
 let s:vernac = '\C\<\%(Abort\|About\|Add\|Admitted\|Arguments\|Axiom\|Back\|Bind\|Canonical\|Cd\|Check\|Close\|Coercion\|CoFixpoint\|CoInductive\|Combined\|Conjecture\|Context\|Corollary\|Declare\|Defined\|Definition\|Delimit\|Derive\|Drop\|End\|Eval\|Example\|Existential\|Export\|Extract\|Extraction\|Fact\|Fixpoint\|Focus\|Function\|Functional\|Goal\|Hint\|Hypothes[ie]s\|Identity\|Implicit\|Import\|Inductive\|Infix\|Inspect\|Lemma\|Let\|Load\|Locate\|Ltac\|Module\|Mutual\|Notation\|Opaque\|Open\|Parameters\=\|Print\|Program\|Proof\|Proposition\|Pwd\|Qed\|Quit\|Record\|Recursive\|Remark\|Remove\|Require\|Reserved\|Reset\|Restart\|Restore\|Resume\|Save\|Scheme\|Search\%(About\|Pattern\|Rewrite\)\=\|Section\|Set\|Show\|Structure\|SubClass\|Suspend\|Tactic\|Test\|Theorem\|Time\|Transparent\|Undo\|Unfocus\|Unset\|Variables\?\|Whelp\|Write\)\>'
 let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\|clear\%(body\)\?\|cofix\|cbv\|compare\|compute\|congruence\|constructor\|contradiction\|cut\%(rewrite\)\?\|decide\|decompose\|dependent\|destruct\|discriminate\|do\|double\|eapply\|eassumption\|econstructor\|elim\%(type\)\?\|equality\|evar\|exact\|eexact\|exists\|f_equal\|fold\|functional\|generalize\|hnf\|idtac\|induction\|info\|injection\|instantiate\|intros\?\|intuition\|inversion\%(_clear\)\?\|lapply\|left\|move\|omega\|pattern\|pose\|proof\|quote\|red\|refine\|reflexivity\|rename\|repeat\|replace\|revert\|rewrite\|right\|ring\|set\|simple\?\|simplify_eqsplit\|split\|subst\|stepl\|stepr\|symmetry\|transitivity\|trivial\|try\|unfold\|vm_compute'
 let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.]\+\)\?\)\.\s*$'
+let s:bullet = '[-+*]\+'
+let s:bulletline = '^\s*' . s:bullet
 
 " Skipping pattern, for comments
 " (stolen from indent/ocaml.vim, thanks to the authors)
@@ -72,6 +74,40 @@ function! s:indent_of_previous_pair(pstart, pmid, pend, searchFirst) abort
     call search(a:pend, 'bW')
   endif
   return indent(searchpair(a:pstart, a:pmid, a:pend, 'bWn', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"'))
+endfunction
+
+function! s:indent_bullet(currentline) abort
+  let l:proof_start = search(s:proofstart, 'bWn')
+  if l:proof_start == 0
+    return -1
+  endif
+
+  call cursor(line('.'), 1)
+  let l:bullet = matchstr(a:currentline, s:bullet)
+  while 1
+    " Find previous bullet of the same length
+    let l:prev_bullet = search('\M^\s\*' . l:bullet . l:bullet[0] . '\@!', 'bW', l:proof_start)
+    " If no previous ones to match, fall through and indent using another rule
+    if l:prev_bullet == 0
+      return -1
+    endif
+
+    " Check for intervening unclosed '{' or '}'
+    let l:brack_open = search('{', 'W', v:lnum)
+    if l:brack_open == 0 || searchpair('{', '', '}', 'Wn', '', v:lnum) > 0
+      " No '{' or it is matched
+      call cursor(v:lnum, 1)
+      let l:brack_close = search('}', 'bW', l:prev_bullet)
+      if l:brack_close == 0 || searchpair('{', '', '}', 'bWn', '', l:prev_bullet) > 0
+        " No '}'
+        return indent(l:prev_bullet)
+      endif
+      " else '}', but no matching '{', look for another bullet
+    endif
+
+    " Restore position
+    call cursor(l:prev_bullet, 1)
+  endwhile
 endfunction
 
 " Main function
@@ -131,53 +167,18 @@ function! GetCoqIndent() abort
     return l:ind + &sw
 
   " bullet in proof
-  elseif l:currentline =~# '^\s*[-+*]' || l:previousline =~# '^\s*[-+*]'
-    let l:proof_start = search(s:proofstart, 'bWn')
-
-    if l:proof_start != 0
-      " In proof
-
-      if l:currentline =~# '^\s*[-+*]'
-        let l:bullet = matchstr(l:currentline, '[-+*]\+')
-
-        while 1
-          " Find previous bullet of the same length
-          let l:prev_bullet = search('\M^\s\*' . l:bullet . l:bullet[0] . '\@!', 'bW', l:proof_start)
-
-          " If no previous ones to match, fall through and indent using another rule
-          if l:prev_bullet != 0
-            " Check for intervening unclosed '{' or '}'
-            let l:brack_open = search('{', 'W', v:lnum)
-
-            if l:brack_open == 0 || searchpair('{', '', '}', 'Wn', '', v:lnum) > 0
-              " No '{' or it is matched
-              call cursor(v:lnum, 1)
-              let l:brack_close = search('}', 'bW', l:prev_bullet)
-
-              if l:brack_close == 0 || searchpair('{', '', '}', 'bWn', '', l:prev_bullet) > 0
-                " No '}'
-                return indent(l:prev_bullet)
-              endif
-              " else '}', but no matching '{', look for another bullet
-            endif
-
-            " Restore position
-            call cursor(l:prev_bullet, 1)
-          else
-            break
-          endif
-        endwhile
-      endif
-
-      " after a bullet in proof
-      if l:previousline =~# '^\s*[-+*]'
-        let l:bullet = matchstr(l:previousline, '[-+*]\+')
-
-        return l:ind + len(l:bullet) + 1
-      endif
+  elseif l:currentline =~# s:bulletline || l:previousline =~# s:bulletline
+    let l:ind_bullet =
+      \ l:currentline =~# s:bulletline ? s:indent_bullet(l:currentline) : -1
+    if l:ind_bullet != -1
+      return l:ind_bullet
+    " after a bullet in proof
+    elseif l:previousline =~# s:bulletline
+      let l:bullet = matchstr(l:previousline, s:bullet)
+      return l:ind + len(l:bullet) + 1
+    else
+      return l:ind
     endif
-
-    return l:ind
 
   " } at end of previous line
   " N.B. must come after the bullet cases
