@@ -54,6 +54,10 @@ tests = (
     ("dot3", ["A..."], (0, 3)),
     ("large space", ("A" + ("\n" * 5000) + ".").split("\n"), (5000, 0)),
     ("large comment", ("(*" + ("\n" * 5000) + "*) A.").split("\n"), (5000, 4)),
+    # Accept (tactic in *)
+    ("star paren ok", ["A *) ."], (0, 5)),
+    # or a bullet followed by a tactic notation that starts with ')'
+    ("star paren ok post comment", ["(* A *) *) ."], (0, 8)),
     # Valid tests, offset
     ("bullet }", ["{ A. }"], (0, 4), (0, 5)),
     ("bullet dot } 1", ["{ A. }."], (0, 4), (0, 5)),
@@ -77,9 +81,7 @@ tests = (
     ("dot2", ["A.."], (NoDotError, None)),
     ("unclosed comment pre", ["(* ."], (UnmatchedError, (0, 0))),
     ("unclosed comment", ["A (* ."], (UnmatchedError, (0, 2))),
-    ("unclosed comment post", ["A *) ."], (UnmatchedError, (0, 2))),
     ("unclosed comment nest pre", ["(* (* A *) ."], (UnmatchedError, (0, 0))),
-    ("unclosed comment nest post", ["(* A *) *) ."], (UnmatchedError, (0, 8))),
     ("unclosed string", ['A " .'], (UnmatchedError, (0, 2))),
     ("only white", [" "], (NoDotError, None)),
     ("empty", [""], (NoDotError, None)),
@@ -131,6 +133,8 @@ com_tests = (
         "\nabc (* c1 (*c2 \n\n(*c3\n*) (*c4*) *) *)def\n",
         ("\nabc  def\n", [[5, 33]]),
     ),
+    ("star paren", "abc *)", ("abc *)", [])),
+    ("star paren post comment", "(*abc*) *)", ("  *)", [[0, 7]])),
 )
 
 
