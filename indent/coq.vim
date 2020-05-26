@@ -35,6 +35,7 @@ let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\
 let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.]\+\)\?\)\.\s*$'
 let s:bullet = '[-+*]\+'
 let s:bulletline = '^\s*' . s:bullet
+let s:skip = 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"'
 
 " Skipping pattern, for comments
 " (stolen from indent/ocaml.vim, thanks to the authors)
@@ -73,7 +74,17 @@ function! s:indent_of_previous_pair(pstart, pmid, pend, searchFirst) abort
   if a:searchFirst
     call search(a:pend, 'bW')
   endif
-  return indent(searchpair(a:pstart, a:pmid, a:pend, 'bWn', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"'))
+  return indent(searchpair(a:pstart, a:pmid, a:pend, 'bWn', s:skip))
+endfunction
+
+" Search modulo strings and comments
+function! s:search_skip(pattern, flags, stopline) abort
+  while 1
+    let l:match = search(a:pattern, a:flags, a:stopline)
+    if l:match == 0 || !eval(s:skip)
+      return l:match
+    endif
+  endwhile
 endfunction
 
 function! s:indent_bullet(currentline) abort
@@ -93,12 +104,12 @@ function! s:indent_bullet(currentline) abort
     endif
 
     " Check for intervening unclosed '{' or '}'
-    let l:brack_open = search('{', 'W', v:lnum)
-    if l:brack_open == 0 || searchpair('{', '', '}', 'Wn', '', v:lnum) > 0
+    let l:brack_open = s:search_skip('{', 'W', v:lnum)
+    if l:brack_open == 0 || searchpair('{', '', '}', 'Wn', s:skip, v:lnum) > 0
       " No '{' or it is matched
       call cursor(v:lnum, 1)
-      let l:brack_close = search('}', 'bW', l:prev_bullet)
-      if l:brack_close == 0 || searchpair('{', '', '}', 'bWn', '', l:prev_bullet) > 0
+      let l:brack_close = s:search_skip('}', 'bW', l:prev_bullet)
+      if l:brack_close == 0 || searchpair('{', '', '}', 'bWn', s:skip, l:prev_bullet) > 0
         " No '}'
         return indent(l:prev_bullet)
       endif
