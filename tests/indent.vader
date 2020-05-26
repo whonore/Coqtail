@@ -638,6 +638,65 @@ Expect coq (indented-bullets-bracket-close-end-of-line-nested):
     - auto.
   Qed.
 
+Given coq (commented-bracket-open):
+  Goal (True /\ (True /\ True)) /\ True.
+  Proof.
+  split.
+  - split.
+  (* { *)
+  - auto.
+
+Do (indent-commented-bracket-open):
+  vip=
+
+Expect coq (indented-commented-bracket-open):
+  Goal (True /\ (True /\ True)) /\ True.
+  Proof.
+    split.
+    - split.
+      (* { *)
+    - auto.
+
+Given coq (commented-bracket-close):
+  Goal (True /\ (True /\ True)) /\ True.
+  Proof.
+  split.
+  - split.
+  (* } *)
+  - auto.
+
+Do (indent-commented-bracket-close):
+  vip=
+
+Expect coq (indented-commented-bracket-close):
+  Goal (True /\ (True /\ True)) /\ True.
+  Proof.
+    split.
+    - split.
+      (* } *)
+    - auto.
+
+Given coq (commented-bracket-match):
+  Goal (True /\ (True /\ True)) /\ True.
+  Proof.
+  split.
+  - split.
+  {
+  (* } *)
+  auto.
+
+Do (indent-commented-bracket-match):
+  vip=
+
+Expect coq (indented-commented-bracket-match):
+  Goal (True /\ (True /\ True)) /\ True.
+  Proof.
+    split.
+    - split.
+      {
+        (* } *)
+        auto.
+
 Given coq (match-bullet):
   Lemma p (b1 : bool) : True.
   Proof.
