@@ -716,6 +716,25 @@ Expect coq (indented-match-bullet):
     - auto.
   Qed.
 
+Given coq (indentkey-bullet):
+  Lemma p (b1 : bool) : True.
+  Proof.
+    destruct b1.
+    * auto.
+
+Do (indent-indentkey-bullet):
+  Go** auto.\<ESC>o*** auto.\<ESC>o** auto.\<ESC>o* auto.
+
+Expect coq (indented-indentkey-bullet):
+  Lemma p (b1 : bool) : True.
+  Proof.
+    destruct b1.
+    * auto.
+      ** auto.
+         *** auto.
+      ** auto.
+    * auto.
+
 Given coq (empty-line-in-proof):
   Goal True.
   Proof.

@@ -15,7 +15,7 @@ endif
 let b:did_indent = 1
 
 setlocal indentexpr=GetCoqIndent()
-setlocal indentkeys=o,O,0=.,0=end,0=End,0=in,0=\|,0=Qed,0=Defined,0=Abort,0=Admitted,0},0),0-,0+,0*
+setlocal indentkeys=o,O,.,0=end,0=End,0=in,0=\|,0=Qed,0=Defined,0=Abort,0=Admitted,0},0),0-,0+,0<*>,0--,0++,0<*><*>,0---,0+++,0<*><*><*>
 setlocal expandtab
 setlocal nolisp
 setlocal nosmartindent
