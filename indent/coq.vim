@@ -205,7 +205,11 @@ function! GetCoqIndent() abort
 
   " current line begins with 'End':
   elseif l:currentline =~# '^\s*End\>'
-    return l:ind - &sw
+    let l:matches = matchlist(l:currentline, 'End\_s\+\([^.[:space:]]\+\)')
+    if l:matches != []
+      let l:name = l:matches[1]
+      return s:indent_of_previous('\%(Section\|Module\)\_s\+' . l:name)
+    endif
 
   " previous line has the form '|...'
   elseif l:previousline =~# '{\@1<!|\%([^}]\%(\.\|end\)\@!\)*$'
@@ -234,9 +238,8 @@ function! GetCoqIndent() abort
   " unterminated 'let ... in'
   elseif l:previousline =~# '\<let\>\%(.\%(\<in\>\)\@!\)*$'
     return l:ind + &sw
+  endif
 
   " else
-  else
-    return l:ind
-  endif
+  return l:ind
 endfunction

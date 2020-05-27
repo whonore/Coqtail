@@ -176,7 +176,8 @@ Given coq (sections):
   Definition x := 1.
 
   Section S2.
-  Definition y := 2.
+  Definition y :=
+  2.
   End S2.
   Section S3.
   Definition z := 3.
@@ -192,7 +193,8 @@ Expect coq (indented-sections):
     Definition x := 1.
 
     Section S2.
-      Definition y := 2.
+      Definition y :=
+        2.
     End S2.
     Section S3.
       Definition z := 3.
@@ -222,7 +224,8 @@ Given coq (modules):
   Definition x := 1.
 
   Module M2.
-  Definition y := 2.
+  Definition y :=
+    2.
   End M2.
   Module M3.
   Definition z := 3.
@@ -238,7 +241,8 @@ Expect coq (indented-modules):
     Definition x := 1.
 
     Module M2.
-      Definition y := 2.
+      Definition y :=
+        2.
     End M2.
     Module M3.
       Definition z := 3.
