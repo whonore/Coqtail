@@ -29,6 +29,23 @@ Expect coq (indented-inductive-addline):
         ind
     | con2 : ind.
 
+Given coq (coinductive):
+  CoInductive ind :=
+  | con1 :
+  ind
+  | con2 : ind
+  | con3 : ind.
+
+Do (indent-coinductive):
+  vip=
+
+Expect coq (indented-coinductive):
+  CoInductive ind :=
+    | con1 :
+        ind
+    | con2 : ind
+    | con3 : ind.
+
 Given coq (match):
   Definition f (b : bool) :=
   match b with

@@ -151,7 +151,7 @@ function! GetCoqIndent() abort
 
   " current line begins with '|':
   elseif l:currentline =~# '^\s*|}\@!'
-    if l:previousline =~# '^\s*Inductive'
+    if l:previousline =~# '^\s*\%(Co\)\?Inductive'
       return l:ind + &sw
     elseif l:previousline =~# '^\s*match'
       return l:ind
