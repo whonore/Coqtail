@@ -89,6 +89,7 @@ function! s:search_skip(pattern, flags, stopline) abort
   endwhile
 endfunction
 
+" Indent matching bullets
 function! s:indent_bullet(currentline) abort
   let l:proof_start = search(s:proofstart, 'bWn')
   if l:proof_start == 0
@@ -227,7 +228,7 @@ function! GetCoqIndent() abort
 
   " back to normal indent after lines ending with '.'
   elseif l:previousline =~# '\.\s*$'
-    if synIDattr(synID(l:lnum, 1, 0), 'name') =~? '\cproof\|tactic'
+    if synIDattr(synID(l:lnum, 1, 0), 'name') =~? 'proof\|tactic'
       return l:ind
     else
       return s:indent_of_previous(s:vernac)
