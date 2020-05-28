@@ -47,7 +47,7 @@ endif
 
 " endwise
 if exists('g:loaded_endwise')
-  let b:endwise_addition = '\=submatch(0) =~ "match" ? "end." : "End " . submatch(0) . "."'
+  let b:endwise_addition = '\=submatch(0) =~# "match" ? "end." : "End " . submatch(0) . "."'
   let b:endwise_words = 'Section,Module,\%(lazy\|multi\)\?match'
   let s:section_pat = '\<\%(Section\|Module\)\_s\+\%(\<Type\>\_s\+\)\?\zs\S\+\ze\_s*\.'
   let s:match_pat = '\<\%(lazy\|multi\)\?match\>'
