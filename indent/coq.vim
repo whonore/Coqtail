@@ -74,7 +74,9 @@ function! s:indent_of_previous_pair(pstart, pmid, pend, searchFirst) abort
   if a:searchFirst
     call search(a:pend, 'bW')
   endif
-  return indent(searchpair(a:pstart, a:pmid, a:pend, 'bWn', s:skip))
+  " N.B. Match when cursor is inside the match. See ':h searchpair'.
+  let l:pend = len(a:pend) > 1 ? a:pend . '\zs' : a:pend
+  return indent(searchpair(a:pstart, a:pmid, l:pend, 'bWn', s:skip))
 endfunction
 
 " Search modulo strings and comments
