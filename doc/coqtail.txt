@@ -228,6 +228,10 @@ g:coqtail_match_shift	A multiple of 'shiftwidth' to indent lines in a match
 			2 (* g:coqtail_match_shift = 2 *)
 		    end
 <
+				 *g:coqtail_indent_on_dot* *coqtail-indent-on-dot*
+g:coqtail_indent_on_dot	If true then trigger auto-indentation when a '.' is
+			typed. Defaults to false.
+
 							  *g:CoqtailHighlight()*
 g:CoqtailHighlight()	Optional function to overwrite the default highlighting
 			for CoqtailChecked and CoqtailSent. E.g.  >
