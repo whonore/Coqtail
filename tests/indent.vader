@@ -102,6 +102,53 @@ Expect coq (indented-match-nested):
         end
     end.
 
+Given coq (match-consecutive):
+  Definition f (b : bool) :=
+      match b with
+      | _ => true
+      end.
+  Definition g (b : bool) :=
+    match b with
+    | _ => true
+
+Do (indent-match-consecutive):
+  Goend.
+
+Expect coq (indented-match-consecutive):
+  Definition f (b : bool) :=
+      match b with
+      | _ => true
+      end.
+  Definition g (b : bool) :=
+    match b with
+    | _ => true
+    end.
+
+Given coq (ltac-match):
+  Ltac x :=
+  match goal with
+  | |- _ =>
+  lazymatch goal with
+  | |- _ =>
+  multimatch goal with
+  | |- _ => idtac
+
+Do (indent-ltac-match):
+  vip=Goend\<Return>| |- _ => idtac\<Return>end\<Return>end.
+
+Expect coq (indented-ltac-match):
+  Ltac x :=
+    match goal with
+    | |- _ =>
+        lazymatch goal with
+        | |- _ =>
+            multimatch goal with
+            | |- _ => idtac
+            end
+        | |- _ => idtac
+        end
+    end.
+
 Given coq (proof-body):
   Lemma p : True.
   Proof.
