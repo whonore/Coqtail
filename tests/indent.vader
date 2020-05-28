@@ -126,6 +126,21 @@ Expect coq (indented-match-consecutive):
     | _ => true
     end.
 
+Given coq (match-not-first):
+  Definition f (b : bool) :=
+  let x := match b with
+  | _ => true
+  end.
+
+Do (indent-match-not-first):
+  =ip
+
+Expect coq (indented-match-not-first):
+  Definition f (b : bool) :=
+    let x := match b with
+             | _ => true
+             end.
+
 Given coq (ltac-match):
   Ltac x :=
   match goal with
@@ -152,6 +167,29 @@ Expect coq (indented-ltac-match):
         | |- _ => idtac
         end
     end.
+
+Given coq (match-in-inductive):
+  Inductive ind :=
+  | con1 :
+  match true with
+  | _ =>
+  True
+  end -> x
+  | con2 : let _ := match true with _ => true end in x
+  | con3 : x.
+
+Do (indent-match-in-inductive):
+  =ip
+
+Expect coq (indented-match-in-inductive):
+  Inductive ind :=
+    | con1 :
+        match true with
+        | _ =>
+            True
+        end -> x
+    | con2 : let _ := match true with _ => true end in x
+    | con3 : x.
 
 Given coq (proof-body):
   Lemma p : True.

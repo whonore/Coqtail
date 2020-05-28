@@ -36,6 +36,7 @@ let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.
 let s:bullet = '[-+*]\+'
 let s:bulletline = '^\s*' . s:bullet
 let s:match = '\<\%(lazy\|multi\)\?match\>'
+let s:inductive = '\%(Co\)\?Inductive'
 let s:skip = 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"'
 
 " Skipping pattern, for comments
@@ -71,10 +72,11 @@ function! s:indent_of_previous(patt) abort
 endfunction
 
 " Indent pairs
-function! s:indent_of_previous_pair(pstart, pmid, pend) abort
+function! s:indent_of_previous_pair(pstart, pmid, pend, usecol) abort
   " N.B. Match when cursor is inside the match. See ':h searchpair'.
   let l:pend = len(a:pend) > 1 ? a:pend . '\zs' : a:pend
-  return indent(searchpair(a:pstart, a:pmid, l:pend, 'bWn', s:skip))
+  let [l:line, l:col] = searchpairpos(a:pstart, a:pmid, l:pend, 'bWn', s:skip)
+  return a:usecol && l:line != 0 ? l:col - 1 : indent(l:line)
 endfunction
 
 " Search modulo strings and comments
@@ -142,33 +144,26 @@ function! GetCoqIndent() abort
 
   " current line begins with 'end':
   elseif l:currentline =~# '^\s*end\>'
-    return s:indent_of_previous_pair(s:match, '', '\<end\>')
+    return s:indent_of_previous_pair(s:match, '', '\<end\>', 1)
 
   " current line begins with 'in':
   elseif l:currentline =~# '^\s*\<in\>'
-    return s:indent_of_previous_pair('\<let\>', '', '\<in\>')
+    return s:indent_of_previous_pair('\<let\>', '', '\<in\>', 0)
 
   " current line begins with '|':
   elseif l:currentline =~# '^\s*|}\@!'
-    if l:previousline =~# '^\s*\%(Co\)\?Inductive'
-      return l:ind + &sw
-    elseif l:previousline =~# '^\s*' . s:match
-      return l:ind
-    elseif l:previousline =~# '^\s*end\>'
-      return s:indent_of_previous_pair(s:match, '', '\<end\>')
-    else
-      return s:indent_of_previous('^\s*|}\@!')
-    endif
+    let l:match = s:indent_of_previous_pair(s:match, '', '\<end\>', 1)
+    return l:match != -1 ? l:match : s:indent_of_previous('^\s*' . s:inductive) + &sw
 
   " current line begins with terminating '|}'
   elseif l:currentline =~# '^\s*|}'
-    return s:indent_of_previous_pair('{|', '', '|}')
+    return s:indent_of_previous_pair('{|', '', '|}', 0)
 
   " ending } or )
   elseif l:currentline =~# '^\s*}'
-    return s:indent_of_previous_pair('{', '', '}')
+    return s:indent_of_previous_pair('{', '', '}', 0)
   elseif l:currentline =~# '^\s*)'
-    return s:indent_of_previous_pair('(', '', ')')
+    return s:indent_of_previous_pair('(', '', ')', 0)
 
   " end of proof
   elseif l:currentline =~# '\<\%(Qed\|Defined\|Abort\|Admitted\)\>'
@@ -196,7 +191,7 @@ function! GetCoqIndent() abort
   " N.B. must come after the bullet cases
   elseif l:previousline =~# '}\s*$'
     call search('}', 'bW')
-    return s:indent_of_previous_pair('{', '', '}')
+    return s:indent_of_previous_pair('{', '', '}', 0)
 
   " previous line begins with 'Section/Module':
   elseif l:previousline =~# '^\s*\%(Section\|Module\)\>'
