@@ -151,7 +151,7 @@ function! GetCoqIndent() abort
     return s:indent_of_previous_pair('\<let\>', '', '\<in\>', 0)
 
   " current line begins with '|':
-  elseif l:currentline =~# '^\s*|}\@!'
+  elseif l:currentline =~# '^\s*|[|}]\@!'
     let l:match = s:indent_of_previous_pair(s:match, '', '\<end\>', 1)
     return l:match != -1 ? l:match : s:indent_of_previous('^\s*' . s:inductive) + &sw
 
@@ -209,7 +209,7 @@ function! GetCoqIndent() abort
     endif
 
   " previous line has the form '|...'
-  elseif l:previousline =~# '{\@1<!|\%([^}]\%(\.\|end\)\@!\)*$'
+  elseif l:previousline =~# '[{|]\@1<!|\%([^|}]\%(\.\|end\)\@!\)*$'
     return l:ind + get(g:, 'coqtail_match_shift', 2) * &sw
 
   " previous line has '{|' or '{' with no matching '|}' or '}'

@@ -191,6 +191,23 @@ Expect coq (indented-match-in-inductive):
     | con2 : let _ := match true with _ => true end in x
     | con3 : x.
 
+Given coq (match-ignore-double-pipe):
+  Inductive ind :=
+  | con1 :
+  true
+  || true
+  || true = true -> x.
+
+Do (indent-ignore-double-pipe):
+  =ip
+
+Expect coq (indented-ignore-double-pipe):
+  Inductive ind :=
+    | con1 :
+        true
+        || true
+        || true = true -> x.
+
 Given coq (proof-body):
   Lemma p : True.
   Proof.
