@@ -218,6 +218,16 @@ g:coqtail_nosyntax	If true then don't use the syntax script included with
 g:coqtail_noindent	If true then don't use the indent script included with
 			Coqtail.
 
+				     *g:coqtail_match_shift* *coqtail-match-shift*
+g:coqtail_match_shift	A multiple of 'shiftwidth' to indent lines in a match
+			branch. Defaults to 2. E.g. >
+		    match b with
+		    | true =>
+		      1 (* g:coqtail_match_shift = 1 *)
+		    | false =>
+			2 (* g:coqtail_match_shift = 2 *)
+		    end
+<
 							  *g:CoqtailHighlight()*
 g:CoqtailHighlight()	Optional function to overwrite the default highlighting
 			for CoqtailChecked and CoqtailSent. E.g.  >

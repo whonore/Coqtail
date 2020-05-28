@@ -215,7 +215,7 @@ function! GetCoqIndent() abort
 
   " previous line has the form '|...'
   elseif l:previousline =~# '{\@1<!|\%([^}]\%(\.\|end\)\@!\)*$'
-    return l:ind + &sw + &sw
+    return l:ind + get(g:, 'coqtail_match_shift', 2) * &sw
 
   " previous line has '{|' or '{' with no matching '|}' or '}'
   elseif l:previousline =~# '{|\?[^}]*\s*$'
