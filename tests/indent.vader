@@ -6,7 +6,7 @@ Given coq (inductive):
   | con3 : ind.
 
 Do (indent-inductive):
-  vip=
+  =ip
 
 Expect coq (indented-inductive):
   Inductive ind :=
@@ -21,13 +21,31 @@ Given coq (inductive-addline):
         ind
 
 Do (indent-inductive-addline):
-  Go| con2 : ind.
+  G
+  o| con2 : ind.
 
 Expect coq (indented-inductive-addline):
   Inductive ind :=
     | con1 :
         ind
     | con2 : ind.
+
+Given coq (coinductive):
+  CoInductive ind :=
+  | con1 :
+  ind
+  | con2 : ind
+  | con3 : ind.
+
+Do (indent-coinductive):
+  =ip
+
+Expect coq (indented-coinductive):
+  CoInductive ind :=
+    | con1 :
+        ind
+    | con2 : ind
+    | con3 : ind.
 
 Given coq (match):
   Definition f (b : bool) :=
@@ -38,7 +56,7 @@ Given coq (match):
   end.
 
 Do (indent-match):
-  vip=
+  =ip
 
 Expect coq (indented-match):
   Definition f (b : bool) :=
@@ -66,7 +84,7 @@ Given coq (match-nested):
   end.
 
 Do (indent-match-nested):
-  vip=
+  =ip
 
 Expect coq (indented-match-nested):
   Definition f (b : bool) (i : ind) :=
@@ -85,6 +103,111 @@ Expect coq (indented-match-nested):
         end
     end.
 
+Given coq (match-consecutive):
+  Definition f (b : bool) :=
+      match b with
+      | _ => true
+      end.
+  Definition g (b : bool) :=
+    match b with
+    | _ => true
+
+Do (indent-match-consecutive):
+  G
+  oend.
+
+Expect coq (indented-match-consecutive):
+  Definition f (b : bool) :=
+      match b with
+      | _ => true
+      end.
+  Definition g (b : bool) :=
+    match b with
+    | _ => true
+    end.
+
+Given coq (match-not-first):
+  Definition f (b : bool) :=
+  let x := match b with
+  | _ => true
+  end.
+
+Do (indent-match-not-first):
+  =ip
+
+Expect coq (indented-match-not-first):
+  Definition f (b : bool) :=
+    let x := match b with
+             | _ => true
+             end.
+
+Given coq (ltac-match):
+  Ltac x :=
+  match goal with
+  | |- _ =>
+  lazymatch goal with
+  | |- _ =>
+  multimatch goal with
+  | |- _ => idtac
+
+Do (indent-ltac-match):
+  =ip
+  G
+  oend\<Return>| |- _ => idtac\<Return>end\<Return>end.
+
+Expect coq (indented-ltac-match):
+  Ltac x :=
+    match goal with
+    | |- _ =>
+        lazymatch goal with
+        | |- _ =>
+            multimatch goal with
+            | |- _ => idtac
+            end
+        | |- _ => idtac
+        end
+    end.
+
+Given coq (match-in-inductive):
+  Inductive ind :=
+  | con1 :
+  match true with
+  | _ =>
+  True
+  end -> x
+  | con2 : let _ := match true with _ => true end in x
+  | con3 : x.
+
+Do (indent-match-in-inductive):
+  =ip
+
+Expect coq (indented-match-in-inductive):
+  Inductive ind :=
+    | con1 :
+        match true with
+        | _ =>
+            True
+        end -> x
+    | con2 : let _ := match true with _ => true end in x
+    | con3 : x.
+
+Given coq (match-ignore-double-pipe):
+  Inductive ind :=
+  | con1 :
+  true
+  || true
+  || true = true -> x.
+
+Do (indent-ignore-double-pipe):
+  =ip
+
+Expect coq (indented-ignore-double-pipe):
+  Inductive ind :=
+    | con1 :
+        true
+        || true
+        || true = true -> x.
+
 Given coq (proof-body):
   Lemma p : True.
   Proof.
@@ -92,7 +215,7 @@ Given coq (proof-body):
   Qed.
 
 Do (indent-proof-body):
-  vip=
+  =ip
 
 Expect coq (indented-proof-body):
   Lemma p : True.
@@ -116,7 +239,7 @@ Given coq (obligation-body):
   Defined.
 
 Do (indent-obligation-body):
-  vip=
+  =ip
 
 Expect coq (indented-obligation-body):
   Program Definition p (i : ind) : {i = i} + {i <> i} := _.
@@ -139,7 +262,7 @@ Given coq (proof-body-empty):
   Admitted.
 
 Do (indent-proof-body-empty):
-  vip=
+  =ip
 
 Expect coq (indented-proof-body-empty):
   Lemma p : True.
@@ -158,7 +281,7 @@ Given coq (obligation-body-empty):
   Admitted.
 
 Do (indent-obligation-body-empty):
-  vip=
+  =ip
 
 Expect coq (indented-obligation-body-empty):
   Program Definition p (i : ind) : {i = i} + {i <> i} := _.
@@ -185,8 +308,7 @@ Given coq (sections):
   End S1.
 
 Do (indent-sections):
-  gg
-  vG=
+  =G
 
 Expect coq (indented-sections):
   Section S1.
@@ -209,8 +331,7 @@ Given coq (empty-sections):
   End S2.
 
 Do (indent-empty-sections):
-  gg
-  vG=
+  =G
 
 Expect coq (indented-empty-sections):
   Section S1.
@@ -233,8 +354,7 @@ Given coq (modules):
   End M1.
 
 Do (indent-modules):
-  gg
-  vG=
+  =G
 
 Expect coq (indented-modules):
   Module M1.
@@ -257,8 +377,7 @@ Given coq (empty-modules):
   End M2.
 
 Do (indent-empty-modules):
-  gg
-  vG=
+  =G
 
 Expect coq (indented-empty-modules):
   Module M1.
@@ -275,8 +394,7 @@ Given coq (one-line-modules):
   Definition w := 4.
 
 Do (indent-one-line-modules):
-  gg
-  vG=
+  =G
 
 Expect coq (indented-one-line-modules):
   Module M4 := M1.
@@ -292,7 +410,7 @@ Given coq (record-same-line):
   }.
 
 Do (indent-record-same-line):
-  vip=
+  =ip
 
 Expect coq (indented-record-same-line):
   Record r := {
@@ -308,7 +426,7 @@ Given coq (record-new-line):
   }.
 
 Do (indent-record-new-line):
-  vip=
+  =ip
 
 Expect coq (indented-record-new-line):
   Record r :=
@@ -324,7 +442,7 @@ Given coq (record-constructor-same-line):
   |}.
 
 Do (indent-record-constructor-same-line):
-  vip=
+  =ip
 
 Expect coq (indented-record-constructor-same-line):
   Definition d : r := {|
@@ -340,7 +458,7 @@ Given coq (record-constructor-new-line):
   |}.
 
 Do (indent-record-constructor-new-line):
-  vip=
+  =ip
 
 Expect coq (indented-record-constructor-new-line):
   Definition d : r :=
@@ -361,7 +479,7 @@ Given coq (record-constructor-nested):
   |}.
 
 Do (indent-record-constructor-nested):
-  vip=
+  =ip
 
 Expect coq (indented-record-constructor-nested):
   Definition d : r :=
@@ -384,7 +502,7 @@ Expect coq (indented-record-constructor-nested):
 "   Definition z := 3.
 
 " Do (indent-comments):
-"   vip=
+"   =ip
 
 " Expect coq (indented-comments):
 "   Definition x := 1.
@@ -409,7 +527,7 @@ Given coq (single-bullets):
   Qed.
 
 Do (indent-single-bullets):
-  vip=
+  =ip
 
 Expect coq (indented-single-bullets):
   Lemma p (b1 b2 b3 : bool) : True.
@@ -440,7 +558,7 @@ Given coq (double-bullets):
   -- auto.
 
 Do (indent-double-bullets):
-  vip=
+  =ip
 
 Expect coq (indented-double-bullets):
   Lemma p (b1 b2 b3 : bool) : True.
@@ -476,7 +594,7 @@ Given coq (bullets-brackets):
   Qed.
 
 Do (indent-bullets-brackets):
-  vip=
+  =ip
 
 Expect coq (indented-bullets-brackets):
   Lemma p (b1 b2 b3 b4 b5 : bool) : True.
@@ -520,7 +638,7 @@ Given coq (bullets-brackets-nested):
   Qed.
 
 Do (indent-bullets-brackets-nested):
-  vip=
+  =ip
 
 Expect coq (indented-bullets-brackets-nested):
   Lemma p (b1 b2 b3 b4 b5 : bool) : True.
@@ -556,7 +674,7 @@ Given coq (bullet-different-order):
   Qed.
 
 Do (indent-bullet-different-order):
-  vip=
+  =ip
 
 Expect coq (indented-bullet-different-order):
   Lemma p (b1 b2 b3 : bool) : True.
@@ -579,7 +697,7 @@ Given coq (bracket-close-end-of-line):
   Qed.
 
 Do (indent-bracket-close-end-of-line):
-  vip=
+  =ip
 
 Expect coq (indented-bracket-close-end-of-line):
   Goal True /\ True.
@@ -601,7 +719,7 @@ Given coq (bracket-close-end-of-line-nested):
   Qed.
 
 Do (indent-bracket-close-end-of-line-nested):
-  vip=
+  =ip
 
 Expect coq (indented-bracket-close-end-of-line-nested):
   Goal (True /\ True) /\ True.
@@ -627,7 +745,7 @@ Given coq (bullets-bracket-close-end-of-line-nested):
   Qed.
 
 Do (indent-bullets-bracket-close-end-of-line-nested):
-  vip=
+  =ip
 
 Expect coq (indented-bullets-bracket-close-end-of-line-nested):
   Goal (True /\ (True /\ True)) /\ True.
@@ -651,7 +769,7 @@ Given coq (commented-bracket-open):
   - auto.
 
 Do (indent-commented-bracket-open):
-  vip=
+  =ip
 
 Expect coq (indented-commented-bracket-open):
   Goal (True /\ (True /\ True)) /\ True.
@@ -670,7 +788,7 @@ Given coq (commented-bracket-close):
   - auto.
 
 Do (indent-commented-bracket-close):
-  vip=
+  =ip
 
 Expect coq (indented-commented-bracket-close):
   Goal (True /\ (True /\ True)) /\ True.
@@ -690,7 +808,7 @@ Given coq (commented-bracket-match):
   auto.
 
 Do (indent-commented-bracket-match):
-  vip=
+  =ip
 
 Expect coq (indented-commented-bracket-match):
   Goal (True /\ (True /\ True)) /\ True.
@@ -710,7 +828,9 @@ Given coq (match-bullet):
   Qed.
 
 Do (indent-match-bullet):
-  5G$==
+  5G
+  $
+  ==
 
 Expect coq (indented-match-bullet):
   Lemma p (b1 : bool) : True.
@@ -727,7 +847,11 @@ Given coq (indentkey-bullet):
     * auto.
 
 Do (indent-indentkey-bullet):
-  Go** auto.\<ESC>o*** auto.\<ESC>o** auto.\<ESC>o* auto.
+  G
+  o** auto.\<ESC>
+  o*** auto.\<ESC>
+  o** auto.\<ESC>
+  o* auto.
 
 Expect coq (indented-indentkey-bullet):
   Lemma p (b1 : bool) : True.
@@ -752,8 +876,7 @@ Given coq (empty-line-in-proof):
   Qed.
 
 Do (indent-empty-line-in-proof):
-  gg
-  vG=
+  =G
 
 Expect coq (indented-empty-line-in-proof):
   Goal True.
@@ -776,8 +899,7 @@ Given coq (empty-line-between-definitions):
   Definition y := tt.
 
 Do (indent-empty-line-between-definitions):
-  gg
-  vG=
+  =G
 
 Expect coq (indented-line-between-definitions):
   Definition x :=
@@ -792,10 +914,10 @@ Given coq (trailing-whitespace-vernac):
   Require Import Nat.
 
 Do (indent-trailing-whitespace-vernac):
-  gg
   A \<ESC>
-  vip=
-  gg$x
+  =ip
+  $
+  x
 
 Expect coq (indented-trailing-whitespace-vernac):
   Require Import Init.
