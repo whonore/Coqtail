@@ -615,6 +615,51 @@ Expect coq (indented-bullets-brackets):
     - auto.
   Qed.
 
+Given coq (bullets-brackets2):
+  Goal True /\ True.
+  Proof.
+  split.
+  - assert True.
+  {
+  idtac.
+  - auto.
+  }
+  assert True.
+  {
+  idtac.
+  - auto.
+  }
+  +
+  {
+  - auto.
+  }
+  - auto.
+  Qed.
+
+Do (indent-bullets-brackets2):
+  =ip
+
+Expect coq (indented-bullets2):
+  Goal True /\ True.
+  Proof.
+    split.
+    - assert True.
+      {
+        idtac.
+        - auto.
+      }
+      assert True.
+      {
+        idtac.
+        - auto.
+      }
+      +
+        {
+          - auto.
+        }
+    - auto.
+  Qed.
+
 Given coq (bullets-brackets-nested):
   Lemma p (b1 b2 b3 b4 b5 : bool) : True.
   Proof.

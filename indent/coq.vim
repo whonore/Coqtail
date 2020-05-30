@@ -36,6 +36,7 @@ endif
 let s:vernac = '\C\<\%(Abort\|About\|Add\|Admitted\|Arguments\|Axiom\|Back\|Bind\|Canonical\|Cd\|Check\|Class\|Close\|Coercion\|CoFixpoint\|CoInductive\|Combined\|Conjecture\|Context\|Corollary\|Declare\|Defined\|Definition\|Delimit\|Derive\|Drop\|End\|Eval\|Example\|Existential\|Export\|Extract\|Extraction\|Fact\|Fixpoint\|Focus\|Function\|Functional\|Goal\|Hint\|Hypothes[ie]s\|Identity\|Implicit\|Import\|Inductive\|Infix\|Inspect\|Lemma\|Let\|Load\|Locate\|Ltac\|Module\|Mutual\|Notation\|Opaque\|Open\|Parameters\=\|Print\|Program\|Proof\|Proposition\|Pwd\|Qed\|Quit\|Record\|Recursive\|Remark\|Remove\|Require\|Reserved\|Reset\|Restart\|Restore\|Resume\|Save\|Scheme\|Search\%(About\|Pattern\|Rewrite\)\=\|Section\|Set\|Show\|Structure\|SubClass\|Suspend\|Tactic\|Test\|Theorem\|Time\|Transparent\|Undo\|Unfocus\|Unset\|Variables\?\|Whelp\|Write\)\>'
 let s:tactic = '\C\<\%(absurd\|apply\|assert\|assumption\|auto\|case_eq\|change\|clear\%(body\)\?\|cofix\|cbv\|compare\|compute\|congruence\|constructor\|contradiction\|cut\%(rewrite\)\?\|decide\|decompose\|dependent\|destruct\|discriminate\|do\|double\|eapply\|eassumption\|econstructor\|elim\%(type\)\?\|equality\|evar\|exact\|eexact\|exists\|f_equal\|fold\|functional\|generalize\|hnf\|idtac\|induction\|info\|injection\|instantiate\|intros\?\|intuition\|inversion\%(_clear\)\?\|lapply\|left\|move\|omega\|pattern\|pose\|proof\|quote\|red\|refine\|reflexivity\|rename\|repeat\|replace\|revert\|rewrite\|right\|ring\|set\|simple\?\|simplify_eqsplit\|split\|subst\|stepl\|stepr\|symmetry\|transitivity\|trivial\|try\|unfold\|vm_compute'
 let s:proofstart = '^\s*\%(Proof\|\%(Next Obligation\|Obligation \d\+\)\( of [^.]\+\)\?\)\.\s*$'
+let s:proofend = '\<\%(Qed\|Defined\|Abort\|Admitted\|Save\)\>'
 let s:bullet = '[-+*]\+'
 let s:bulletline = '^\s*' . s:bullet
 let s:match = '\<\%(lazy\|multi\)\?match\>'
@@ -92,6 +93,30 @@ function! s:search_skip(pattern, flags, stopline) abort
   endwhile
 endfunction
 
+" Check for intervening unclosed '{' or '}'
+function! s:find_unclosed_bracket(start, end) abort
+  while 1
+    let l:brack = s:search_skip('[{}]', 'W', v:lnum)
+    if l:brack == 0
+      " No brackets
+      break
+    endif
+
+    " Search for match
+    let [l:dir, l:stop] =
+      \ getline(l:brack)[col('.') - 1] ==# '{' ? ['', a:end] : ['b', a:start]
+    let l:matched = searchpair('{', '', '}', l:dir . 'Wn', s:skip, l:stop)
+    if l:matched == 0
+      " Unclosed bracket found
+      break
+    endif
+  endwhile
+
+  " Restore position
+  call cursor(a:start, 1)
+  return l:brack
+endfunction
+
 " Indent matching bullets
 function! s:indent_bullet(currentline) abort
   let l:proof_start = search(s:proofstart, 'bWn')
@@ -109,21 +134,12 @@ function! s:indent_bullet(currentline) abort
       return -1
     endif
 
-    " Check for intervening unclosed '{' or '}'
-    let l:brack_open = s:search_skip('{', 'W', v:lnum)
-    if l:brack_open == 0 || searchpair('{', '', '}', 'Wn', s:skip, v:lnum) > 0
-      " No '{' or it is matched
-      call cursor(v:lnum, 1)
-      let l:brack_close = s:search_skip('}', 'bW', l:prev_bullet)
-      if l:brack_close == 0 || searchpair('{', '', '}', 'bWn', s:skip, l:prev_bullet) > 0
-        " No '}'
-        return indent(l:prev_bullet)
-      endif
-      " else '}', but no matching '{', look for another bullet
+    if s:find_unclosed_bracket(l:prev_bullet, v:lnum)
+      " Bullets not in the same brackets, keep looking
+      continue
     endif
 
-    " Restore position
-    call cursor(l:prev_bullet, 1)
+    return indent(l:prev_bullet)
   endwhile
 endfunction
 
@@ -144,99 +160,114 @@ function! GetCoqIndent() abort
   " current line begins with '.':
   if l:currentline =~# '^\s*\.'
     return s:indent_of_previous(s:vernac)
+  endif
 
   " current line begins with 'end':
-  elseif l:currentline =~# '^\s*end\>'
+  if l:currentline =~# '^\s*end\>'
     return s:indent_of_previous_pair(s:match, '', '\<end\>', 1)
+  endif
 
   " current line begins with 'in':
-  elseif l:currentline =~# '^\s*\<in\>'
+  if l:currentline =~# '^\s*\<in\>'
     return s:indent_of_previous_pair('\<let\>', '', '\<in\>', 0)
+  endif
 
   " current line begins with '|':
-  elseif l:currentline =~# '^\s*|[|}]\@!'
+  if l:currentline =~# '^\s*|[|}]\@!'
     let l:match = s:indent_of_previous_pair(s:match, '', '\<end\>', 1)
     return l:match != -1 ? l:match : s:indent_of_previous('^\s*' . s:inductive) + &sw
+  endif
 
-  " current line begins with terminating '|}'
-  elseif l:currentline =~# '^\s*|}'
+  " current line begins with terminating '|}', '}', or ')'
+  if l:currentline =~# '^\s*|}'
     return s:indent_of_previous_pair('{|', '', '|}', 0)
-
-  " ending } or )
   elseif l:currentline =~# '^\s*}'
     return s:indent_of_previous_pair('{', '', '}', 0)
   elseif l:currentline =~# '^\s*)'
     return s:indent_of_previous_pair('(', '', ')', 0)
+  endif
 
   " end of proof
-  elseif l:currentline =~# '\<\%(Qed\|Defined\|Abort\|Admitted\)\>'
-    return s:indent_of_previous(s:vernac.'\&\%(\<\%(Qed\|Defined\|Abort\|Admitted\)\>\)\@!')
+  if l:currentline =~# s:proofend
+    return s:indent_of_previous(s:vernac . '\&\%(' . s:proofend . '\)\@!')
+  endif
 
   " start of proof
-  elseif l:previousline =~# s:proofstart
+  if l:previousline =~# s:proofstart
     return l:ind + &sw
+  endif
 
   " bullet in proof
-  elseif l:currentline =~# s:bulletline || l:previousline =~# s:bulletline
+  if l:currentline =~# s:bulletline || l:previousline =~# s:bulletline
     let l:ind_bullet =
       \ l:currentline =~# s:bulletline ? s:indent_bullet(l:currentline) : -1
     if l:ind_bullet != -1
       return l:ind_bullet
-    " after a bullet in proof
     elseif l:previousline =~# s:bulletline
+      " after bullet
       let l:bullet = matchstr(l:previousline, s:bullet)
       return l:ind + len(l:bullet) + 1
-    else
-      return l:ind
     endif
+    " fall through
+  endif
 
   " } at end of previous line
   " N.B. must come after the bullet cases
-  elseif l:previousline =~# '}\s*$'
+  if l:previousline =~# '}\s*$'
     call search('}', 'bW')
     return s:indent_of_previous_pair('{', '', '}', 0)
+  endif
 
   " previous line begins with 'Section/Module':
-  elseif l:previousline =~# '^\s*\%(Section\|Module\)\>'
+  if l:previousline =~# '^\s*\%(Section\|Module\)\>'
     " don't indent if Section/Module is empty or is defined on one line
     if l:currentline !~# '^\s*End\>' && l:previousline !~# ':=.*\.\s*$' && l:previousline !~# '\<End\>'
       return l:ind + &sw
     endif
+    " fall through
+  endif
 
   " current line begins with 'End':
-  elseif l:currentline =~# '^\s*End\>'
+  if l:currentline =~# '^\s*End\>'
     let l:matches = matchlist(l:currentline, 'End\_s\+\([^.[:space:]]\+\)')
     if l:matches != []
       let l:name = l:matches[1]
       return s:indent_of_previous('\%(Section\|Module\)\_s\+' . l:name)
     endif
+    " fall through
+  endif
 
   " previous line has the form '|...'
-  elseif l:previousline =~# '[{|]\@1<!|\%([^|}]\%(\.\|end\)\@!\)*$'
+  if l:previousline =~# '[{|]\@1<!|\%([^|}]\%(\.\|end\)\@!\)*$'
     return l:ind + get(g:, 'coqtail_match_shift', 2) * &sw
+  endif
 
   " previous line has '{|' or '{' with no matching '|}' or '}'
-  elseif l:previousline =~# '{|\?[^}]*\s*$'
+  if l:previousline =~# '{|\?[^}]*\s*$'
     return l:ind + &sw
+  endif
 
   " unterminated vernacular sentences
-  elseif l:previousline =~# s:vernac . '.*[^.[:space:]]\s*$' && l:previousline !~# '^\s*$'
+  if l:previousline =~# s:vernac . '.*[^.[:space:]]\s*$' && l:previousline !~# '^\s*$'
     return l:ind + &sw
+  endif
 
   " back to normal indent after lines ending with '.'
-  elseif l:previousline =~# '\.\s*$'
+  if l:previousline =~# '\.\s*$'
     if synIDattr(synID(l:lnum, 1, 0), 'name') =~? 'proof\|tactic'
       return l:ind
     else
       return s:indent_of_previous(s:vernac)
     endif
+  endif
 
   " previous line ends with 'with'
-  elseif l:previousline =~# '\<with\s*$'
+  if l:previousline =~# '\<with\s*$'
     return l:ind + &sw
+  endif
 
   " unterminated 'let ... in'
-  elseif l:previousline =~# '\<let\>\%(.\%(\<in\>\)\@!\)*$'
+  if l:previousline =~# '\<let\>\%(.\%(\<in\>\)\@!\)*$'
     return l:ind + &sw
   endif
 
