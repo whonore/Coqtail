@@ -124,14 +124,16 @@ function! s:indent_bullet(currentline) abort
     return -1
   endif
 
+  let l:pos = getcurpos()
   call cursor(line('.'), 1)
   let l:bullet = matchstr(a:currentline, s:bullet)
-  while 1
+  let l:ind = -1
+  while l:ind == -1
     " Find previous bullet of the same length
     let l:prev_bullet = search('\M^\s\*' . l:bullet . l:bullet[0] . '\@!', 'bW', l:proof_start)
     " If no previous ones to match, fall through and indent using another rule
     if l:prev_bullet == 0
-      return -1
+      break
     endif
 
     if s:find_unclosed_bracket(l:prev_bullet, v:lnum)
@@ -139,8 +141,12 @@ function! s:indent_bullet(currentline) abort
       continue
     endif
 
-    return indent(l:prev_bullet)
+    let l:ind = indent(l:prev_bullet)
   endwhile
+
+  " Restore position
+  call setpos('.', l:pos)
+  return l:ind
 endfunction
 
 " Main function
@@ -197,18 +203,19 @@ function! GetCoqIndent() abort
     return l:ind + &sw
   endif
 
-  " bullet in proof
-  if l:currentline =~# s:bulletline || l:previousline =~# s:bulletline
-    let l:ind_bullet =
-      \ l:currentline =~# s:bulletline ? s:indent_bullet(l:currentline) : -1
+  " bullet on current line
+  if l:currentline =~# s:bulletline
+    let l:ind_bullet = s:indent_bullet(l:currentline)
     if l:ind_bullet != -1
       return l:ind_bullet
-    elseif l:previousline =~# s:bulletline
-      " after bullet
-      let l:bullet = matchstr(l:previousline, s:bullet)
-      return l:ind + len(l:bullet) + 1
     endif
     " fall through
+  endif
+
+  " bullet on previous line
+  if l:previousline =~# s:bulletline
+    let l:bullet = matchstr(l:previousline, s:bullet)
+    return l:ind + len(l:bullet) + 1
   endif
 
   " } at end of previous line

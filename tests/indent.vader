@@ -622,11 +622,14 @@ Given coq (bullets-brackets2):
   - assert True.
   {
   idtac.
-  - auto.
+  + auto.
   }
   assert True.
   {
-  idtac.
+  - auto.
+  }
+  assert True.
+  { idtac.
   - auto.
   }
   +
@@ -646,11 +649,14 @@ Expect coq (indented-bullets2):
     - assert True.
       {
         idtac.
-        - auto.
+        + auto.
       }
       assert True.
       {
-        idtac.
+        - auto.
+      }
+      assert True.
+      { idtac.
         - auto.
       }
       +
