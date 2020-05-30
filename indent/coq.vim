@@ -245,7 +245,7 @@ function! GetCoqIndent() abort
   endif
 
   " previous line has the form '|...'
-  if l:previousline =~# '[{|]\@1<!|\%([^|}]\%(\.\|end\)\@!\)*$'
+  if l:previousline =~# '[{|]\@1<!|\%([^|}]\%(\.\|\<end\>\)\@!\)*$'
     return l:ind + get(g:, 'coqtail_match_shift', 2) * &sw
   endif
 
