@@ -96,7 +96,7 @@ endfunction
 " Check for intervening unclosed '{' or '}'
 function! s:find_unclosed_bracket(start, end) abort
   while 1
-    let l:brack = s:search_skip('[{}]', 'W', v:lnum)
+    let l:brack = s:search_skip('[{}]', 'W', a:end)
     if l:brack == 0
       " No brackets
       break
