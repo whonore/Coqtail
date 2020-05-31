@@ -191,7 +191,7 @@ Expect coq (indented-match-in-inductive):
     | con2 : let _ := match true with _ => true end in x
     | con3 : x.
 
-Given coq (match-ignore-double-pipe):
+Given coq (ignore-double-pipe):
   Inductive ind :=
   | con1 :
   true
@@ -207,6 +207,39 @@ Expect coq (indented-ignore-double-pipe):
         true
         || true
         || true = true -> x.
+
+Given coq (no-indent-after-end):
+  Inductive ind :=
+  | con1_end :
+  ind.
+  Definition x :=
+  let y :=
+  match true with
+  | _ => true end in
+  y.
+  Definition y :=
+  let z :=
+  match true with
+  | _ => trueend
+  z
+
+Do (indent-no-indent-after-end):
+  =ip
+
+Expect coq (indented-no-indent-after-end):
+  Inductive ind :=
+    | con1_end :
+        ind.
+  Definition x :=
+    let y :=
+      match true with
+      | _ => true end in
+      y.
+  Definition y :=
+    let z :=
+      match true with
+      | _ => trueend
+          z
 
 Given coq (proof-body):
   Lemma p : True.
@@ -612,6 +645,57 @@ Expect coq (indented-bullets-brackets):
           }
         * auto.
       + auto.
+    - auto.
+  Qed.
+
+Given coq (bullets-brackets2):
+  Goal True /\ True.
+  Proof.
+  split.
+  - assert True.
+  {
+  idtac.
+  + auto.
+  }
+  assert True.
+  {
+  - auto.
+  }
+  assert True.
+  { idtac.
+  - auto.
+  }
+  +
+  {
+  - auto.
+  }
+  - auto.
+  Qed.
+
+Do (indent-bullets-brackets2):
+  =ip
+
+Expect coq (indented-bullets2):
+  Goal True /\ True.
+  Proof.
+    split.
+    - assert True.
+      {
+        idtac.
+        + auto.
+      }
+      assert True.
+      {
+        - auto.
+      }
+      assert True.
+      { idtac.
+        - auto.
+      }
+      +
+        {
+          - auto.
+        }
     - auto.
   Qed.
 
