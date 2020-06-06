@@ -50,12 +50,13 @@ vim +PlugInstall +qa
 
 Requirements:
 - Vim compiled with either `+python`<sup>[1](#python2)</sup> or `+python3`
-- Vim configuration options `filetype plugin on`, and optionally `filetype indent on` and `syntax on` (e.g. in `.vimrc`)
+- Vim configuration options `filetype plugin on`, and optionally
+  `filetype indent on` and `syntax on` (e.g. in `.vimrc`)
 - [Coq 8.4 - 8.11](https://coq.inria.fr/download)
 
-Newer versions of Coq have not yet been tested, but should still work as long as
-there are no major changes made to the XML protocol Coqtail uses to communicate
-with `coqtop`.
+Newer versions of Coq have not yet been tested, but should still work as long
+as there are no major changes made to the XML protocol Coqtail uses to
+communicate with `coqtop`.
 
 ## Usage
 
@@ -90,7 +91,6 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | `CoqGotoGoalPrev` | `g[` | Scroll the goal panel to the start of the previous goal. |
 | `CoqGotoGoalPrev!` | `G[` | Scroll the goal panel to the end of the previous goal. |
 
-
 ## Configuration
 
 The mappings shown above are set by default, but you can disable them all and
@@ -102,8 +102,8 @@ hijack `CTRL-C`.
 
 By default Coqtail will use the `coqtop` or `coqtop.opt` on your `PATH`.
 You can tell it to search instead in a specific directory by setting
-`b:coqtail_coq_path` before calling `CoqStart`. To set this option globally use
-`g:coqtail_coq_path`.
+`b:coqtail_coq_path` before calling `CoqStart`.
+To set this option globally use `g:coqtail_coq_path`.
 
 Coqtail also comes with an ftdetect script for Coq, as well as modified
 versions of Vincent Aravantinos'
@@ -123,9 +123,9 @@ text with `%` using the
 
 ### Automatically closing blocks
 
-Coqtail defines patterns to enable automatic insertion of the appropriate
-`End` command for code blocks such as `Section`s, `Module`s, and `match`
-expressions with [endwise](https://github.com/tpope/vim-endwise).
+Coqtail defines patterns to enable automatic insertion of the appropriate `End`
+command for code blocks such as `Section`s, `Module`s, and `match` expressions
+with [endwise](https://github.com/tpope/vim-endwise).
 
 ## Thanks
 
@@ -136,4 +136,8 @@ Parts of Coqtail were originally inspired by/adapted from
 ---
 
 #### <a name="python2">Python 2 Support</a>
-Because Python 2 has reached its [end-of-life](https://pythonclock.org/) and supporting it alongside Python 3 makes it difficult to improve and maintain the code, Coqtail will drop support for Python 2 in the near future. At that time a stable version will be tagged and all future versions will be Python 3-only.
+Because Python 2 has reached its [end-of-life](https://pythonclock.org/) and
+supporting it alongside Python 3 makes it difficult to improve and maintain the
+code, Coqtail will drop support for Python 2 in the near future.
+At that time a stable version will be tagged and all future versions will be
+Python 3-only.
