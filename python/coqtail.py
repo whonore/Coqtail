@@ -82,7 +82,7 @@ class Coqtail(object):
         self.coqtop = None  # type: Optional[CT.Coqtop]
         self.handler = handler
         self.oldchange = 0
-        self.oldbuf = []  # type: List[Text]
+        self.oldbuf = []  # type: Sequence[Text]
         self.endpoints = []  # type: List[Tuple[int, int]]
         self.send_queue = deque()  # type: Deque[Mapping[str, Tuple[int, int]]]
         self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
@@ -153,9 +153,10 @@ class Coqtail(object):
         line, col = self.endpoints[-1] if self.endpoints != [] else (0, 0)
 
         unmatched = None
+        buffer = self.buffer
         for _ in range(steps):
             try:
-                to_send = _get_message_range(self.buffer, (line, col))
+                to_send = _get_message_range(buffer, (line, col))
             except UnmatchedError as e:
                 unmatched = e
                 break
@@ -165,7 +166,7 @@ class Coqtail(object):
             col += 1
             self.send_queue.append(to_send)
 
-        failed_at, err = self.send_until_fail(opts=opts)
+        failed_at, err = self.send_until_fail(buffer, opts=opts)
         if unmatched is not None and failed_at is None:
             # Only report unmatched if no other errors occured first
             self.set_info(str(unmatched), False)
@@ -208,9 +209,10 @@ class Coqtail(object):
             return self.rewind_to(line, col + 2, opts=opts)
         else:
             unmatched = None
+            buffer = self.buffer
             while True:
                 try:
-                    to_send = _get_message_range(self.buffer, (eline, ecol))
+                    to_send = _get_message_range(buffer, (eline, ecol))
                 except UnmatchedError as e:
                     # Only report unmatched if it occurs after the desired position
                     if e.range[0] <= (line, col):
@@ -224,7 +226,7 @@ class Coqtail(object):
                 ecol += 1
                 self.send_queue.append(to_send)
 
-            failed_at, err = self.send_until_fail(opts=opts)
+            failed_at, err = self.send_until_fail(buffer, opts=opts)
             if unmatched is not None and failed_at is None:
                 # Only report unmatched if no other errors occured first
                 self.set_info(str(unmatched), False)
@@ -257,8 +259,8 @@ class Coqtail(object):
         return (line + 1, col)
 
     # Helpers #
-    def send_until_fail(self, opts):
-        # type: (Mapping[str, Any]) -> Tuple[Optional[Tuple[int, int]], Optional[str]]
+    def send_until_fail(self, buffer, opts):
+        # type: (Sequence[Text], Mapping[str, Any]) -> Tuple[Optional[Tuple[int, int]], Optional[str]]
         """Send all sentences in 'send_queue' until an error is encountered."""
         assert self.coqtop is not None
 
@@ -269,7 +271,7 @@ class Coqtail(object):
         while self.send_queue:
             self.refresh(goals=False, force=False, scroll=scroll, opts=opts)
             to_send = self.send_queue.popleft()
-            message = _between(self.buffer, to_send["start"], to_send["stop"])
+            message = _between(buffer, to_send["start"], to_send["stop"])
             no_comments, com_pos = _strip_comments(message)
 
             try:
@@ -650,7 +652,7 @@ class Coqtail(object):
 
     @property
     def buffer(self):
-        # type: () -> List[Text]
+        # type: () -> Sequence[Text]
         """The contents of this buffer."""
         return self.handler.vimcall("getbufline", self.handler.bnum, 1, "$")  # type: ignore
 
@@ -754,6 +756,7 @@ class CoqtailHandler(StreamRequestHandler):
                 ret = handler(**args) if handler is not None else None  # type: ignore
             except EOFError:
                 break
+
             msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
             self.wfile.write(json.dumps(msg).encode("utf-8"))
 
@@ -851,6 +854,7 @@ class ChannelManager(object):
 
     channels = {}  # type: Dict[int, socket.socket]
     results = {}  # type: Dict[int, Optional[Text]]
+    sessions = {}  # type: Dict[int, int]
     next_id = 1
     msg_id = 1
 
@@ -863,6 +867,7 @@ class ChannelManager(object):
 
         host, port = address.split(":")
         ChannelManager.channels[ch_id] = socket.create_connection((host, int(port)))
+        ChannelManager.sessions[ch_id] = -1
 
         return ch_id
 
@@ -873,6 +878,8 @@ class ChannelManager(object):
         try:
             ChannelManager.channels[handle].close()
             del ChannelManager.channels[handle]
+            del ChannelManager.results[handle]
+            del ChannelManager.sessions[handle]
         except KeyError:
             pass
 
@@ -883,15 +890,25 @@ class ChannelManager(object):
         return "open" if handle in ChannelManager.channels else "closed"
 
     @staticmethod
-    def send(handle, expr, reply=False, returns=True):
-        # type: (int, str, bool, bool) -> bool
+    def send(handle, session, expr, reply=None, returns=True):
+        # type: (int, Optional[int], str, Optional[int], bool) -> bool
         """Send a command request or reply on a channel."""
         try:
             ch = ChannelManager.channels[handle]
         except KeyError:
             return False
 
-        msg_id = ChannelManager.msg_id * (-1 if reply else 1)
+        if reply is None and session is not None:
+            if ChannelManager.sessions[handle] == session:
+                return True
+            else:
+                ChannelManager.sessions[handle] = session
+
+        if reply is None:
+            msg_id = ChannelManager.msg_id
+            ChannelManager.msg_id += 1
+        else:
+            msg_id = reply
         ch.sendall((json.dumps([msg_id, expr]) + "\n").encode("utf-8"))
 
         if returns:
@@ -913,8 +930,8 @@ class ChannelManager(object):
         """Wait for a response on a channel."""
         data = []
         while True:
-            data.append(ChannelManager.channels[handle].recv(4096).decode("utf-8"))
             try:
+                data.append(ChannelManager.channels[handle].recv(4096).decode("utf-8"))
                 # N.B. Some older Vims can't convert expressions with None
                 # to Vim values so just return a string
                 res = "".join(data)
@@ -924,6 +941,8 @@ class ChannelManager(object):
             # Python 2 doesn't have json.JSONDecodeError
             except ValueError:
                 pass
+            except KeyError:
+                break
 
 
 # Searching for Coq Definitions #
@@ -1013,7 +1032,7 @@ def _pos_from_offset(col, msg, offset):
 
 
 def _between(buf, start, end):
-    # type: (List[Text], Tuple[int, int], Tuple[int, int]) -> Text
+    # type: (Sequence[Text], Tuple[int, int], Tuple[int, int]) -> Text
     """Return the text between a given start and end point."""
     sline, scol = start
     eline, ecol = end
@@ -1028,14 +1047,14 @@ def _between(buf, start, end):
 
 
 def _get_message_range(lines, after):
-    # type: (List[Text], Tuple[int, int]) -> Mapping[str, Tuple[int, int]]
+    # type: (Sequence[Text], Tuple[int, int]) -> Mapping[str, Tuple[int, int]]
     """Return the next sentence to send after a given point."""
     end_pos = _find_next_sentence(lines, *after)
     return {"start": after, "stop": end_pos}
 
 
 def _find_next_sentence(lines, sline, scol):
-    # type: (List[Text], int, int) -> Tuple[int, int]
+    # type: (Sequence[Text], int, int) -> Tuple[int, int]
     """Find the next sentence to send to Coq."""
     bullets = ("{", "}", "-", "+", "*")
 
@@ -1103,7 +1122,7 @@ def _find_next_sentence(lines, sline, scol):
 
 
 def _find_dot_after(lines, sline, scol):
-    # type: (List[Text], int, int) -> Tuple[int, int]
+    # type: (Sequence[Text], int, int) -> Tuple[int, int]
     """Find the next '.' after a given point."""
     max_line = len(lines)
 
@@ -1148,19 +1167,19 @@ def _find_dot_after(lines, sline, scol):
 
 
 def _skip_str(lines, sline, scol):
-    # type: (List[Text], int, int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[Text], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in " "."""
     return _skip_block(lines, sline, scol, '"')
 
 
 def _skip_comment(lines, sline, scol):
-    # type: (List[Text], int, int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[Text], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in (* *)."""
     return _skip_block(lines, sline, scol, "*)", "(*")
 
 
 def _skip_block(lines, sline, scol, estr, sstr=None):
-    # type: (List[Text], int, int, str, Optional[str]) -> Optional[Tuple[int, int]]
+    # type: (Sequence[Text], int, int, str, Optional[str]) -> Optional[Tuple[int, int]]
     """A generic function to skip the next block contained in sstr estr."""
     nesting = 1
     max_line = len(lines)

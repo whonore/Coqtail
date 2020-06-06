@@ -58,6 +58,9 @@ else
   " Rate in ms to check if Coqtail is done computing.
   let s:poll_rate = 10
 
+  " Unique session ID
+  let s:session = 0
+
   function! s:ch_open(address, options) abort
     return s:pyeval(printf('ChannelManager.open("%s")', a:address))
   endfunction
@@ -74,33 +77,15 @@ else
     echoerr 'Calling ch_sendexpr in synchronous mode.'
   endfunction
 
-  " Temporarily disable CTRL-C by remapping it to a no-op.
-  function! s:disable_int() abort
-    nnoremap <buffer> <C-c> <NOP>
-  endfunction
-
-  " Unmap CTRL-C.
-  function! s:enable_int() abort
-    silent! nunmap <buffer> <C-c>
-  endfunction
-
-  " Restore CTRL-C mapping.
-  function! s:restore_int() abort
-    if s:int_map ==# ''
-      silent! nunmap <buffer> <C-c>
-    else
-      execute 'nmap <buffer> <C-c> ' . s:int_map
-    endif
-  endfunction
-
   " Send a command to Coqtail and wait for the response.
-  function! s:send_wait(handle, expr, reply) abort
+  function! s:send_wait(handle, session, expr, reply) abort
     let l:returns = a:expr[1] !=# 'interrupt'
     call s:pyeval(printf(
-      \ 'ChannelManager.send(%d, %s, reply=bool(%s), returns=bool(%s))',
+      \ 'ChannelManager.send(%d, %s, %s, reply=%s, returns=bool(%s))',
       \ a:handle,
+      \ a:expr[1] !=# 'interrupt' ? a:session : 'None',
       \ json_encode(a:expr),
-      \ a:reply,
+      \ a:reply != 0 ? a:reply : 'None',
       \ l:returns
     \))
 
@@ -111,32 +96,42 @@ else
         return l:res
       endif
 
-      try
-        call s:enable_int()
-        execute printf('sleep %dm', s:poll_rate)
-        call s:disable_int()
-      catch /^Vim:Interrupt$/
-        " Handle interrupt
-        CoqInterrupt
-      endtry
+      execute printf('sleep %dm', s:poll_rate)
     endwhile
+
+    return v:null
   endfunction
 
   " Send a command to execute and reply to any requests from Coqtail.
   function! s:ch_evalexpr(handle, expr, options) abort
-    " Remember CTRL-C mapping and disable
-    let s:int_map = maparg('<C-c>', 'n')
-    call s:disable_int()
-    let l:res = s:send_wait(a:handle, a:expr, 0)
+    let s:session += 1
+    let l:session = s:session
+    let l:res = v:null
+    let l:did_int = 0
 
-    " Handle requests
-    while l:res[0] ==# 'call'
-      let l:repl = call(l:res[1], l:res[2])
-      let l:res = s:send_wait(a:handle, l:repl, 1)
+    " Retry until Coqtop responds
+    while 1
+      try
+        let l:res = s:send_wait(a:handle, l:session, a:expr, 0)
+
+        " Handle requests
+        while type(l:res) == s:t_list && l:res[0] ==# 'call'
+          let l:val = call(l:res[1], l:res[2])
+          let l:res = s:send_wait(a:handle, l:session, l:val, l:res[-1])
+        endwhile
+      catch /^Vim:Interrupt$/
+        " Interrupt Coqtop and retry
+        if l:did_int
+          call s:err("Coqtail is stuck. Try restarting to fix.")
+          return v:null
+        endif
+        let l:did_int = 1
+        call s:send_wait(a:handle, l:session, [a:expr[0], 'interrupt', {}], 0)
+        continue
+      endtry
+
+      return type(l:res) == s:t_list ? l:res[1] : v:null
     endwhile
-
-    call s:restore_int()
-    return l:res[1]
   endfunction
 endif
 
@@ -747,14 +742,13 @@ function! s:callCoqtail(cmd, cb, args) abort
     return [0, -1]
   endif
 
-  let l:opts = {
+  let a:args.opts = {
     \ 'encoding': &encoding,
     \ 'timeout': b:coqtail_timeout,
     \ 'filename': expand('%:p')
   \}
-
-  let a:args.opts = l:opts
   let l:args = [bufnr('%'), a:cmd, a:args]
+
   if a:cb !=# 'sync' && s:has_channel
     " Async
     let b:cmds_pending += 1
