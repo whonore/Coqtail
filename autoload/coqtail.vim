@@ -942,7 +942,7 @@ function! s:mappings() abort
   nnoremap <buffer> <silent> <Plug>CoqToggleDebug :CoqToggleDebug<CR>
 
   " Use default mappings unless user opted out
-  if exists('g:coqtail_nomap') && g:coqtail_nomap
+  if get(g:, 'coqtail_nomap', 0)
     return
   endif
 

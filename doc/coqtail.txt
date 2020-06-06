@@ -175,31 +175,34 @@ Configuration						 *coqtail-configuration*
 							      *coqtail-coq-path*
 g:coqtail_coq_path
 b:coqtail_coq_path	The path to search for the Coqtop binary. If
-			|b:coqtail_coq_path| is empty then $PATH is used.
-			|g:coqtail_coq_path| defaults to "" and
-			|b:coqtail_coq_path| defaults to |g:coqtail_coq_path|.
-			The global variable is checked only once when the .v
-			file is first loaded, but the buffer-local variable is
-			checked on every call to `:CoqStart`.
+			empty then $PATH is used. The global variable is
+			checked only when the .v file is first loaded, but the
+			buffer-local variable is checked on every call to
+			`:CoqStart`.
+
+			Default: ''
 
 				       *g:coqtail_goal-lines* *coqtail-goal-lines*
 g:coqtail_goal_lines	The number of lines from the start of a goal to
-			display. Used by `:CoqGotoGoal`. Defaults to 5.
+			display. Used by `:CoqGotoGoal`.
+
+			Default: 5.
 
 					     *b:coqtail_timeout* *coqtail-timeout*
-b:coqtail_timeout	The time in seconds before a command sent to Coqtop
-			will be interrupted. Prevents vim from getting stuck if
-			Coqtop goes into an infinite loop. A value of 0
-			disables the timeout. Defaults to 0. Coq can also be
-			interrupted with CTRL-C.
+b:coqtail_timeout	The time in seconds before sending interrupting an
+			interrupt to Coqtop after issuing a command. A value of
+			0 disables the timeout. Coqtail can also be manually
+			interrupted with `:CoqInterrupt`.
+
+			Default: 0
 
 				       *g:coqtail_project_name* *coq-project-file*
-g:coqtail_project_name	The name of the Coq project file. Set to "_CoqProject"
-			by default. When it is started, Coqtail searches for
-			a file with this name starting from the current
-			directory up to the root directory. If one is found it
-			is parsed and the options are passed to Coqtop during
-			`:CoqStart`.
+g:coqtail_project_name	The name of the Coq project file to search for
+			beginning from the current directory up to the root.
+			If found, the project file options are parsed and
+			passed to Coqtop by `:CoqStart`.
+
+			Default: '_CoqProject'
 
 							*b:coqtail_project_file*
 b:coqtail_project_file	The path to the Coq project file. Set automatically if
@@ -207,22 +210,28 @@ b:coqtail_project_file	The path to the Coq project file. Set automatically if
 
 					    *g:coqtail_nomap* *coqtail-no-mapping*
 g:coqtail_nomap		If true then don't set any default mappings for
-			Coqtail	commands. Only specific mappings can also be
+			Coqtail	commands. Specific mappings can also be
 			overwritten by defining new mappings for the desired
 			commands. The defaults will continue to be used for the
 			rest.
+
+			Default: 0
 
 					  *g:coqtail_nosyntax* *coqtail-no-syntax*
 g:coqtail_nosyntax	If true then don't use the syntax script included with
 			Coqtail.
 
+			Default: 0
+
 					  *g:coqtail_noindent* *coqtail-no-indent*
 g:coqtail_noindent	If true then don't use the indent script included with
 			Coqtail.
 
+			Default: 0
+
 				     *g:coqtail_match_shift* *coqtail-match-shift*
 g:coqtail_match_shift	A multiple of 'shiftwidth' to indent lines in a match
-			branch. Defaults to 2. E.g. >
+			branch. E.g. >
 		    match b with
 		    | true =>
 		      1 (* g:coqtail_match_shift = 1 *)
@@ -230,12 +239,16 @@ g:coqtail_match_shift	A multiple of 'shiftwidth' to indent lines in a match
 			2 (* g:coqtail_match_shift = 2 *)
 		    end
 <
+			Default: 2
+
 				 *g:coqtail_indent_on_dot* *coqtail-indent-on-dot*
 g:coqtail_indent_on_dot	If true then trigger auto-indentation when a '.' is
-			typed. Defaults to false.
+			typed.
+
+			Default: 0
 
 							  *g:CoqtailHighlight()*
-g:CoqtailHighlight()	Optional function to overwrite the default highlighting
+g:CoqtailHighlight()	Optional function to override the default highlighting
 			for CoqtailChecked and CoqtailSent. E.g.  >
 		    function! g:CoqtailHighlight()
 		      hi def CoqtailChecked ctermbg=19
@@ -256,6 +269,7 @@ Debugging							 *coqtail-debug*
 					   *b:coqtail_log_name* *coqtail-log-name*
 b:coqtail_log_name	The name of the debugging log file. Set automatically
 			by enabling/disabling debugging with `:CoqToggleDebug`.
-			Defaults to ''.
+
+			Default: ''.
 
  vim:tw=78:ts=8:ft=help:norl:noet
