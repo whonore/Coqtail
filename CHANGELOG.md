@@ -5,17 +5,13 @@
 ## [1.0.0]
 
 ### Added
-- Use `+chnnel` feature (Vim >=8.0 only) to enable non-blocking communication
+- Use `+channel` feature (Vim >=8.0 only) to enable non-blocking communication
   with Coq.
 - Use a synchronous fallback for Vim 7.4.
 - `CoqInterrupt` command that forwards `SIGINT` to the Coq process.
 - `CoqRestorePanel` command that re-opens the Goal and Info panels in their
   original positions.
 - Changelog, begin using semantic (more or less) versioning.
-
-### Changed
-- No longer crash if Goal or Info panels are closed.
-- Clean up and refactor Vim and Python scripts.
 
 ### Removed
 - Dependency on `vim` Python module.
@@ -26,20 +22,21 @@
   like it to be re-added.
 
 ### Fixed
+- No longer crash if Goal or Info panels are closed.
 
 ## [pre-1.0]
 
 ### Added
-- Support Vim >=7.4.
-- Support Python 2 and 3.
-- Support Coq 8.4-8.11.
 - Interactive Coq proofs similar to CoqIDE/Proof General.
-- Support multiple open Coq buffers simultaneously.
+- Support for Vim >=7.4.
+- Support for Python 2 and 3.
+- Support for Coq 8.4-8.11.
+- Support simultaneous Coq sessions in different buffers.
 - Locate and parse _CoqProject files.
 - Coq syntax highlighting.
 - Coq automatic indentation.
-- Jumping to definitions.
-- Following imports for autocompletion.
+- Allow jumping to definitions.
+- Allow following imports for autocompletion.
 - Support for `:tag` commands (only with `+tagfunc`).
 - Interoperability with [matchup] and [endwise].
 

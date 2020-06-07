@@ -110,7 +110,7 @@ versions of Vincent Aravantinos'
 These scripts are used by default but can be disabled by setting
 `g:coqtail_nosyntax = 1` and `g:coqtail_noindent = 1` respectively.
 
-See `:help coqtail-configuration` for other configuration variables.
+See `:help coqtail-configuration` for more configuration variables.
 
 ## Vim Plugin Interoperability
 
