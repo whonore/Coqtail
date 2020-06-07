@@ -21,7 +21,6 @@ As a
 [vim package](https://vimhelp.org/repeat.txt.html#packages):
 ```sh
 mkdir -p ~/.vim/pack/coq/start
-git clone https://github.com/let-def/vimbufsync.git ~/.vim/pack/coq/start/vimbufsync
 git clone https://github.com/whonore/Coqtail.git ~/.vim/pack/coq/start/Coqtail
 vim +helptags\ ~/.vim/pack/coq/start/Coqtail/doc +q
 ```
@@ -29,7 +28,6 @@ vim +helptags\ ~/.vim/pack/coq/start/Coqtail/doc +q
 Using
 [pathogen](https://github.com/tpope/vim-pathogen):
 ```sh
-git clone https://github.com/let-def/vimbufsync.git ~/.vim/bundle/vimbufsync
 git clone https://github.com/whonore/Coqtail.git ~/.vim/bundle/Coqtail
 vim +Helptags +q
 ```
@@ -37,14 +35,14 @@ vim +Helptags +q
 Using
 [Vundle](https://github.com/VundleVim/Vundle.vim):
 ```sh
-Plugin 'whonore/Coqtail' | Plugin 'let-def/vimbufsync' (add this line in .vimrc)
+Plugin 'whonore/Coqtail' (add this line in .vimrc)
 vim +PluginInstall +qa
 ```
 
 Using
 [VimPlug](https://github.com/junegunn/vim-plug):
 ```sh
-Plug 'whonore/Coqtail' | Plug 'let-def/vimbufsync' (add this line in .vimrc)
+Plug 'whonore/Coqtail' (add this line in .vimrc)
 vim +PlugInstall +qa
 ```
 

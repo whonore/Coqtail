@@ -20,7 +20,6 @@ import pytest
 
 # Mock vim modules
 sys.modules["vim"] = Mock()
-sys.modules["vimbufsync"] = Mock()
 from coqtail import _get_message_range, _strip_comments, NoDotError, UnmatchedError
 
 # Test Values #
