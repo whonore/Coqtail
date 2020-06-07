@@ -12,8 +12,9 @@ or [ProofGeneral](https://proofgeneral.github.io/).
 It supports:
 - [Coq 8.4 - 8.11](https://coq.inria.fr/download)
 - Python 2<sup>[1](#python2)</sup> and 3
-- Vim 7.4 - 8.2
-- Multiple Coq sessions in different buffers
+- Vim >=7.4 (Neovim coming soon)
+- Simultaneous Coq sessions in different buffers
+- Non-blocking communication between Vim and Coq (Vim >=8.0 only)
 
 ## Installation and Requirements
 
@@ -63,16 +64,16 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | Command | Mapping | Description |
 |---|---|---|
 | **Starting and Stopping** | |
-| `CoqStart` | `<leader>cc` | Launch Coqtail for the current buffer. |
-| `CoqStop` | `<leader>cq` | Quit Coqtail for the current buffer. |
+| `CoqStart` | `<leader>cc` | Launch Coqtail in the current buffer. |
+| `CoqStop` | `<leader>cq` | Quit Coqtail in the current buffer. |
 | `CoqInterrupt` | `CTRL-C` | Send SIGINT to `coqtop`. |
 | **Movement** | |
-| `{n}CoqNext` | `<leader>cj` | Check the next `n` (1 by default) sentences with Coq. |
+| `{n}CoqNext` | `<leader>cj` | Send the next `n` (1 by default) sentences to Coq. |
 | `{n}CoqUndo` | `<leader>ck` | Step back `n` (1 by default) sentences. |
-| `{n}CoqToLine` | `<leader>cl` | Check/rewind all sentences up to line `n` (cursor position by default). `n` can also be `$` to check the entire buffer.|
-| `CoqToTop` | `<leader>cT` | Rewind to the beginning of the file. Similar to `1CoqToLine`, but `CoqToLine` only rewinds to the end of the line. |
+| `{n}CoqToLine` | `<leader>cl` | Send/rewind all sentences up to line `n` (cursor position by default). `n` can also be `$` to check the entire buffer. |
+| `CoqToTop` | `<leader>cT` | Rewind to the beginning of the file. |
 | `CoqJumpToEnd` | `<leader>cG` | Move the cursor to the end of the checked region. |
-| `CoqGotoDef[!] <arg>` | `<leader>cg` | Populate the quickfix list with possible locations of the definition of `<arg>` and try to jump to the first one. If your Vim supports `'tagfunc'` you can just use `CTRL-]`, `:tag`, and friends instead. |
+| `CoqGotoDef[!] <arg>` | `<leader>cg` | Populate the quickfix list with possible locations of the definition of `<arg>` and try to jump to the first one. If your Vim supports `'tagfunc'` you can also use `CTRL-]`, `:tag`, and friends. |
 | **Queries** | |
 | `Coq <args>` | | Send arbitrary queries to Coq (e.g. `Check`, `About`, `Print`, etc.). |
 | `Coq Check <arg>` | `<leader>ch` | Show the type of `<arg>` (the mapping will use the term under the cursor). |
@@ -81,24 +82,23 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | `Coq Locate <arg>` | `<leader>cf` | Show where `<arg>` is defined. |
 | `Coq Search <args>` | `<leader>cs` | Show theorems about `<args>`. |
 | **Panel Management** | |
-| `CoqRestorePanels` | `<leader>cr` | Re-open the goal and info panels. |
-| `{n}CoqGotoGoal` | `<leader>cgg` | Scroll the goal panel to the start of the `n`th goal (defaults to 1). Number of lines shown is controlled by `g:coqtail_goal_lines`. |
-| `{n}CoqGotoGoal!` | `<leader>cGG` | Scroll the goal panel to the end of the `n`th goal. |
-| `CoqGotoGoalNext` | `g]` | Scroll the goal panel to the start of the next goal. |
-| `CoqGotoGoalNext!` | `G]` | Scroll the goal panel to the end of the next goal. |
-| `CoqGotoGoalPrev` | `g[` | Scroll the goal panel to the start of the previous goal. |
-| `CoqGotoGoalPrev!` | `G[` | Scroll the goal panel to the end of the previous goal. |
+| `CoqRestorePanels` | `<leader>cr` | Re-open the Goal and Info panels. |
+| `{n}CoqGotoGoal` | `<leader>cgg` | Scroll the Goal panel to the start of the `n`th goal (defaults to 1). Number of lines shown is controlled by `g:coqtail_goal_lines`. |
+| `{n}CoqGotoGoal!` | `<leader>cGG` | Scroll the Goal panel to the end of the `n`th goal. |
+| `CoqGotoGoalNext` | `g]` | Scroll the Goal panel to the start of the next goal. |
+| `CoqGotoGoalNext!` | `G]` | Scroll the Goal panel to the end of the next goal. |
+| `CoqGotoGoalPrev` | `g[` | Scroll the Goal panel to the start of the previous goal. |
+| `CoqGotoGoalPrev!` | `G[` | Scroll the Goal panel to the end of the previous goal. |
 
 ## Configuration
 
-The mappings shown above are set by default, but you can disable them all and
-define your own by setting `g:coqtail_nomap = 1` in your `.vimrc`.
-Alternatively, you can remap specific commands and the defaults will still be
-used for the rest.
+The mappings above are set by default, but you can disable them all and define
+your own by setting `g:coqtail_nomap = 1` in your `.vimrc`.
+Alternatively, you can keep the defaults but remap specific commands.
 For example, set `map <leader>ci <Plug>CoqInterrupt` in your `.vimrc` to not
 hijack `CTRL-C`.
 
-By default Coqtail will use the `coqtop` or `coqtop.opt` on your `PATH`.
+By default Coqtail will use the `coqtop/coqidetop` or `coqtop.opt` on your `PATH`.
 You can tell it to search instead in a specific directory by setting
 `b:coqtail_coq_path` before calling `CoqStart`.
 To set this option globally use `g:coqtail_coq_path`.
@@ -110,7 +110,9 @@ versions of Vincent Aravantinos'
 These scripts are used by default but can be disabled by setting
 `g:coqtail_nosyntax = 1` and `g:coqtail_noindent = 1` respectively.
 
-## Interoperability
+See `:help coqtail-configuration` for other configuration variables.
+
+## Vim Plugin Interoperability
 
 ### Jumping between matches
 
