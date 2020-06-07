@@ -17,14 +17,16 @@ elseif has('python')
   function! coqtail#compat#pyeval(expr) abort
     return pyeval(a:expr)
   endfunction
-else
-  echoerr 'Coqtail requires Python support.'
-  finish
 endif
 
 function! coqtail#compat#init(python_dir) abort
+  if !exists('*coqtail#compat#pyeval')
+    return 0
+  endif
+
   " Add python directory to path so Python functions can be called.
   Py import sys, vim
   Py if not vim.eval('a:python_dir') in sys.path:
     \    sys.path.insert(0, vim.eval('a:python_dir'))
+  return 1
 endfunction

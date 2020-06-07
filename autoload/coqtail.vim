@@ -8,7 +8,10 @@ endif
 let g:loaded_coqtail = 1
 
 let s:python_dir = expand('<sfile>:p:h:h') . '/python'
-call coqtail#compat#init(s:python_dir)
+if !coqtail#compat#init(s:python_dir)
+  echoerr 'Coqtail requires Python support.'
+  finish
+endif
 
 Py from coqtail import ChannelManager, Coqtail, CoqtailServer
 
