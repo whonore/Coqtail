@@ -49,10 +49,6 @@ class Err(object):
         self.loc = loc
 
 
-# The error in case of a user interrupt
-STOPPED_ERR = Err("Coq interrupted.")
-
-
 # The error in case of a timeout
 TIMEOUT_ERR = Err(
     "Coq timed out. You can change the timeout with <leader>ct and try again."

@@ -18,7 +18,7 @@ from tempfile import NamedTemporaryFile
 from six import ensure_text
 from six.moves.queue import Empty, Queue
 
-from xmlInterface import Err, Ok, STOPPED_ERR, TIMEOUT_ERR, XMLInterface, prettyxml
+from xmlInterface import Err, Ok, TIMEOUT_ERR, XMLInterface, prettyxml
 
 # For Mypy
 try:
@@ -362,7 +362,6 @@ class Coqtop(object):
         # Start threads and wait for Coqtop to finish
         timeout_thread.start()
         answer_thread.start()
-        stopped = False
 
         # Notify timeout_thread that a response is received and wait for
         # threads to finish
@@ -372,11 +371,8 @@ class Coqtop(object):
 
         # Check for user interrupt or timeout
         response = res_ref.val
-        if isinstance(response, Err):
-            if stopped:
-                response = STOPPED_ERR
-            elif timed_out.is_set():
-                response = TIMEOUT_ERR
+        if isinstance(response, Err) and timed_out.is_set():
+            response = TIMEOUT_ERR
 
         return self.xml.standardize(cmd, response)
 
