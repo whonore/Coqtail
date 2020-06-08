@@ -221,7 +221,6 @@ function! coqtail#panels#hide() abort
 endfunction
 
 " Refresh the highlighting and auxiliary panels.
-" TODO async: main-panel only
 function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
   if a:buf != bufnr('%')
     return

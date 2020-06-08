@@ -193,7 +193,6 @@ function! s:querycomplete(arg, cmd, cursor) abort
 endfunction
 
 " Clean up commands, panels, and autocommands.
-" TODO async: main-panel only
 function! s:cleanup() abort
   " Clean up auxiliary panels
   call coqtail#panels#cleanup()
@@ -247,7 +246,6 @@ function! s:coqversion() abort
 endfunction
 
 " Check if the channel with Coqtail is open.
-" TODO async: main-panel only
 function! s:running() abort
   try
     let l:ok = b:coqtail_chan.status() ==# 'open'
@@ -259,7 +257,6 @@ function! s:running() abort
 endfunction
 
 " Send a request to Coqtail.
-" TODO async: main-panel only
 function! s:call(cmd, cb, args) abort
   if !s:running()
     return [0, -1]
