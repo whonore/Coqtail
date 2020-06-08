@@ -322,7 +322,7 @@ function! coqtail#start(...) abort
     let b:cmds_pending = 0
 
     " Open channel with Coqtail server
-    let b:coqtail_chan = coqtail#channel#new(g:coqtail#compat#has_channel)
+    let b:coqtail_chan = coqtail#channel#new()
     call b:coqtail_chan.open('localhost:' . s:port, s:chanopts)
 
     " Check for a Coq project file
