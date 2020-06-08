@@ -116,7 +116,7 @@ endfunction
 " Get a list of possible locations of the definition of 'target'.
 function! s:finddef(target) abort
   let [l:ok, l:loc] = s:call('find_def', 'sync', {'target': a:target})
-  return (!l:ok || type(l:loc) != g:coqtail#comapt#t_list) ? v:null : l:loc
+  return (!l:ok || type(l:loc) != g:coqtail#compat#t_list) ? v:null : l:loc
 endfunction
 
 " Populate the quickfix list with possible locations of the definition of
@@ -146,7 +146,7 @@ function! coqtail#gotodef(target, bang) abort
 
   if l:found_match
     " Filter duplicate matches
-    call coqtail#util#dedup_qfList()
+    call coqtail#util#dedup_qflist()
 
     " Jump to first if possible, otherwise open list
     try
@@ -453,12 +453,12 @@ function! s:mappings() abort
   inoremap <buffer> <silent> <Plug>CoqToLine <C-\><C-o>:CoqToLine<CR>
   inoremap <buffer> <silent> <Plug>CoqToTop <C-\><C-o>:CoqToTop<CR>
   inoremap <buffer> <silent> <Plug>CoqJumpToEnd <C-\><C-o>:CoqJumpToEnd<CR>
-  nnoremap <buffer> <silent> <Plug>CoqGotoDef :CoqGotoDef <C-r>=<SID>getCurWord()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqSearch :Coq Search <C-r>=<SID>getCurWord()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqCheck :Coq Check <C-r>=<SID>getCurWord()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqAbout :Coq About <C-r>=<SID>getCurWord()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqPrint :Coq Print <C-r>=<SID>getCurWord()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqLocate :Coq Locate <C-r>=<SID>getCurWord()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoDef :CoqGotoDef <C-r>=coqtail#util#getcurword()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqSearch :Coq Search <C-r>=coqtail#util#getcurword()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqCheck :Coq Check <C-r>=coqtail#util#getcurword()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqAbout :Coq About <C-r>=coqtail#util#getcurword()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqPrint :Coq Print <C-r>=coqtail#util#getcurword()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqLocate :Coq Locate <C-r>=coqtail#util#getcurword()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqRestorePanels :CoqRestorePanels<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalStart :<C-U>execute v:count1 'CoqGotoGoal'<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalEnd :<C-U>execute v:count1 'CoqGotoGoal!'<CR>
