@@ -14,7 +14,7 @@
 - Changelog, begin using semantic (more or less) versioning.
 
 ### Removed
-- Dependency on `vim` Python module.
+- Dependency on `vim` module in Python code.
 - Dependency on [vimbufsync].
 - `CoqMakeMatch` command.
   It wasn't well thought out and didn't seem very useful.
