@@ -799,7 +799,7 @@ class CoqtailHandler(StreamRequestHandler):
             self.refresh_time = cur_time
         if force:
             self.vimcall(
-                "coqtail#Refresh",
+                "coqtail#panels#refresh",
                 self.bnum,
                 self.coq.highlights,
                 self.coq.panels(goals),

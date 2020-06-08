@@ -28,15 +28,6 @@ let s:supported = [
   \ [8, 11, -1]
 \]
 let s:latest_supported = join(s:supported[-1][:1], '.')
-" Unique suffix for auxiliary panel names.
-let s:counter = 0
-" Panel identifiers.
-let s:no_panel = ''
-let s:main_panel = 'main'
-let s:goal_panel = 'goal'
-let s:info_panel = 'info'
-let s:aux_panels = [s:goal_panel, s:info_panel]
-let s:panels = [s:main_panel] + s:aux_panels
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
 " Warning/error messages.
@@ -47,12 +38,6 @@ let s:unsupported_msg =
 " Server port and channel options.
 let s:port = -1
 let s:chanopts = {'mode': 'json'}
-" Highlighting groups.
-let s:hlgroups = [
-  \ ['coqtail_checked', 'CoqtailChecked'],
-  \ ['coqtail_sent', 'CoqtailSent'],
-  \ ['coqtail_error', 'CoqtailError']
-\]
 
 " Default Coq path.
 if !exists('g:coqtail_coq_path')
@@ -64,244 +49,10 @@ if !exists('g:coqtail_project_name')
   let g:coqtail_project_name = '_CoqProject'
 endif
 
-" Default panel layout.
-if !exists('g:coqtail_panel_layout')
-  let g:coqtail_panel_layout = {
-    \ s:goal_panel: [[s:info_panel, 'above'], [s:main_panel, 'right']],
-    \ s:info_panel: [[s:goal_panel, 'below'], [s:main_panel, 'right']]
-  \}
-endif
-
-" Default panel scroll options.
-if !exists('g:coqtail_panel_scroll')
-  let g:coqtail_panel_scroll = {
-    \ s:goal_panel: 0,
-    \ s:info_panel: 1
-  \}
-endif
-
 " Find the path corresponding to 'lib'. Used by includeexpr.
 function! coqtail#FindLib(lib) abort
   let [l:ok, l:lib] = s:callCoqtail('find_lib', 'sync', {'lib': a:lib})
   return (l:ok && l:lib != v:null) ? l:lib : a:lib
-endfunction
-
-" Open and initialize goal/info panel.
-function! s:initPanel(name) abort
-  let l:name = a:name . 's'
-  let l:bufname = substitute(a:name, '\l', '\u\0', '')
-
-  execute 'silent hide edit ' . l:bufname . s:counter
-  setlocal buftype=nofile
-  execute 'setlocal filetype=coq-' . l:name
-  setlocal noswapfile
-  setlocal bufhidden=hide
-  setlocal nocursorline
-  setlocal wrap
-
-  let b:coqtail_panel_open = 1
-  let b:coqtail_panel_size = [-1, -1]
-  return bufnr('%')
-endfunction
-
-" Create buffers for the auxiliary panels.
-function! s:initPanels() abort
-  let l:main_buf = bufnr('%')
-  let l:curpos = getcurpos()[1:]
-  let l:coqtail_panel_bufs = {s:main_panel: l:main_buf}
-
-  " Add panels
-  for l:panel in s:aux_panels
-    let l:coqtail_panel_bufs[l:panel] = s:initPanel(l:panel)
-  endfor
-  for l:buf in values(l:coqtail_panel_bufs)
-    call setbufvar(l:buf, 'coqtail_panel_bufs', l:coqtail_panel_bufs)
-  endfor
-
-  " Switch back to main panel
-  execute 'silent buffer ' . l:main_buf
-  call cursor(l:curpos)
-
-  let s:counter += 1
-endfunction
-
-" Detect what panel is focused.
-function! s:checkPanel() abort
-  if !exists('b:coqtail_panel_bufs')
-    return s:no_panel
-  endif
-
-  for [l:panel, l:buf] in items(b:coqtail_panel_bufs)
-    if l:buf == bufnr('%')
-      return l:panel
-    endif
-  endfor
-endfunction
-
-" Attempt to switch to a panel.
-function! s:switchPanel(panel) abort
-  let l:cur_panel = s:checkPanel()
-
-  if a:panel != l:cur_panel && a:panel != s:no_panel
-    if !win_gotoid(win_getid(bufwinnr(b:coqtail_panel_bufs[a:panel])))
-      return s:no_panel
-    endif
-  endif
-
-  return l:cur_panel
-endfunction
-
-" Open an auxiliary panel.
-function! s:openPanel(panel, force) abort
-  let l:from = s:checkPanel()
-  if l:from == s:no_panel
-    return 0
-  endif
-
-  " Re-open only if not already open, it was open before, or 'force' is true
-  let l:opened = 0
-  let l:buf = b:coqtail_panel_bufs[a:panel]
-  if bufwinnr(l:buf) == -1 && (a:force || getbufvar(l:buf, 'coqtail_panel_open'))
-    " Arrange relative to the first open panel
-    for [l:relative, l:dir] in g:coqtail_panel_layout[a:panel]
-      if s:switchPanel(l:relative) != s:no_panel
-        let l:dir = l:dir ==# 'above' ? 'leftabove'
-          \ : l:dir ==# 'below' ? 'rightbelow'
-          \ : l:dir ==# 'left' ? 'vertical leftabove'
-          \ : l:dir ==# 'right' ? 'vertical rightbelow' : ''
-        if l:dir !=# ''
-          execute printf('silent %s sbuffer %d', l:dir, l:buf)
-          let b:coqtail_panel_open = 1
-          let l:opened = l:buf
-          break
-        endif
-      endif
-    endfor
-  endif
-
-  call s:switchPanel(l:from)
-  return l:opened
-endfunction
-
-" Open auxiliary panels.
-function! s:openPanels(force, refresh) abort
-  " Open
-  let l:opened = []
-  for l:panel in s:aux_panels
-    if s:openPanel(l:panel, a:force)
-      let l:opened = add(l:opened, l:panel)
-    endif
-  endfor
-
-  " Resize
-  for l:panel in l:opened
-    let l:buf = b:coqtail_panel_bufs[l:panel]
-    let l:win = bufwinnr(l:buf)
-    let l:size = getbufvar(l:buf, 'coqtail_panel_size')
-    if l:size != [-1, -1]
-      execute printf('vertical %dresize %d', l:win, l:size[0])
-      execute printf('%dresize %d', l:win, l:size[1])
-    endif
-  endfor
-
-  " Refresh
-  if a:refresh
-    call s:callCoqtail('refresh', 'sync', {})
-  endif
-endfunction
-
-" Clear Coqtop highlighting.
-function! s:clearHighlighting() abort
-  for [l:var, l:_] in s:hlgroups
-    if get(b:, l:var, -1) != -1
-      call matchdelete(b:[l:var])
-      let b:[l:var] = -1
-    endif
-  endfor
-endfunction
-
-" Replace the contents of 'panel' with 'txt'.
-" TODO async: allow different restore behaviors
-function! s:replacePanel(panel, txt, scroll) abort
-  if s:switchPanel(a:panel) == s:no_panel
-    return
-  endif
-
-  " Save the view
-  let l:view = winsaveview()
-
-  " Update buffer text
-  silent %delete _
-  call append(0, a:txt)
-
-  " Restore the view
-  if !a:scroll || !g:coqtail_panel_scroll[a:panel]
-    call winrestview(l:view)
-  endif
-  call s:scrollPanel()
-endfunction
-
-" Refresh the highlighting and auxiliary panels.
-" TODO async: main-panel only
-function! coqtail#Refresh(buf, highlights, panels, scroll) abort
-  if a:buf != bufnr('%')
-    return
-  endif
-  let l:win = win_getid()
-
-  " Update highlighting
-  call s:clearHighlighting()
-  for [l:var, l:grp] in s:hlgroups
-    let l:hl = a:highlights[l:var]
-    if l:hl != v:null
-      let b:[l:var] = matchadd(l:grp, l:hl)
-    endif
-  endfor
-
-  " Update panels
-  for [l:panel, l:txt] in items(a:panels)
-    call s:replacePanel(l:panel, l:txt, a:scroll)
-  endfor
-  call win_gotoid(l:win)
-
-  redraw
-endfunction
-
-" Close auxiliary panels and clear highlighting.
-function! s:hidePanels() abort
-  if s:switchPanel(s:main_panel) == s:no_panel
-    return
-  endif
-
-  call s:clearHighlighting()
-
-  " Hide other panels
-  let l:toclose = []
-  for l:panel in s:aux_panels
-    let l:buf = b:coqtail_panel_bufs[l:panel]
-    let l:win = bufwinnr(l:buf)
-    call setbufvar(l:buf, 'coqtail_panel_open', l:win != -1)
-    call setbufvar(l:buf, 'coqtail_panel_size', [winwidth(l:win), winheight(l:win)])
-    if l:win != -1
-      let l:toclose = add(l:toclose, l:buf)
-    endif
-  endfor
-
-  for l:buf in l:toclose
-    execute bufwinnr(l:buf) . 'close!'
-  endfor
-endfunction
-
-" Scroll a panel up so text doesn't go off the top of the screen.
-function! s:scrollPanel() abort
-  " Check if scrolling is necessary
-  let l:winh = winheight(0)
-  let l:disph = line('w$') - line('w0') + 1
-
-  " Scroll
-  if line('w0') != 1 && l:disph < l:winh
-    normal! Gz-
-  endif
 endfunction
 
 " Find the start of the nth goal.
@@ -337,8 +88,8 @@ endfunction
 
 " Place either the start or end of the nth goal at the bottom of the window.
 function! coqtail#GotoGoal(ngoal, start) abort
-  let l:panel = s:switchPanel(s:goal_panel)
-  if l:panel == s:no_panel
+  let l:panel = coqtail#panels#switch(g:coqtail#panels#goal)
+  if l:panel == g:coqtail#panels#none
     " Failed to switch to goal panel
     return 0
   endif
@@ -358,7 +109,7 @@ function! coqtail#GotoGoal(ngoal, start) abort
     execute 'normal! ' . l:line . 'zb'
   endif
 
-  call s:switchPanel(l:panel)
+  call coqtail#panels#switch(l:panel)
   return 1
 endfunction
 
@@ -445,16 +196,10 @@ endfunction
 " TODO async: main-panel only
 function! s:cleanup() abort
   " Clean up auxiliary panels
-  for l:panel in s:aux_panels
-    silent! execute 'bdelete' . b:coqtail_panel_bufs[l:panel]
-  endfor
-  silent! unlet b:coqtail_panel_bufs
+  call coqtail#panels#cleanup()
 
   " Clean up autocmds
   silent! autocmd! coqtail#Autocmds * <buffer>
-
-  " Clear highlighting
-  call s:clearHighlighting()
 
   " Close the channel
   silent! call b:coqtail_chan.close()
@@ -584,8 +329,8 @@ function! coqtail#Start(...) abort
     let [b:coqtail_project_file, l:proj_args] = coqtail#coqproject#locate()
 
     " Prepare auxiliary panels
-    call s:initPanels()
-    call s:openPanels(0, 0)
+    call coqtail#panels#init()
+    call coqtail#panels#open(0)
 
     " Launch Coqtop
     let [l:ok, l:msg] = s:callCoqtail('start', 'sync', {
@@ -600,7 +345,7 @@ function! coqtail#Start(...) abort
     endif
 
     " Draw the logo
-    let l:info_win = bufwinnr(b:coqtail_panel_bufs[s:info_panel])
+    let l:info_win = bufwinnr(b:coqtail_panel_bufs[g:coqtail#panels#info])
     call s:callCoqtail('splash', 'sync', {
       \ 'version': b:coqtail_version,
       \ 'width': winwidth(l:info_win),
@@ -613,8 +358,9 @@ function! coqtail#Start(...) abort
     augroup coqtail#Autocmds
       autocmd! * <buffer>
       autocmd InsertEnter <buffer> call s:callCoqtail('sync', 'sync', {})
-      autocmd BufWinLeave <buffer> call s:hidePanels()
-      autocmd BufWinEnter <buffer> call s:openPanels(0, 1)
+      autocmd BufWinLeave <buffer> call coqtail#panels#hide()
+      autocmd BufWinEnter <buffer>
+        \ call coqtail#panels#open(0) | call s:callCoqtail('refresh', 'sync', {})
       autocmd QuitPre <buffer> call coqtail#Stop()
     augroup END
   endif
@@ -684,7 +430,8 @@ function! s:commands() abort
   call s:cmdDef('CoqJumpToEnd', 'call coqtail#JumpToEnd()')
   call s:cmdDef('CoqGotoDef', 'call coqtail#GotoDef(<f-args>, <bang>0)')
   call s:cmdDef('Coq', 'call s:callCoqtail("query", "", {"args": [<f-args>]})')
-  call s:cmdDef('CoqRestorePanels', 'call s:openPanels(1, 1)')
+  call s:cmdDef('CoqRestorePanels',
+    \ 'call coqtail#panels#open(1) | call s:callCoqtail("refresh", "sync", {})')
   call s:cmdDef('CoqGotoGoal', 'call coqtail#GotoGoal(<count>, <bang>1)')
   call s:cmdDef('CoqGotoGoalNext', 'call coqtail#GotoGoal(-1, <bang>1)')
   call s:cmdDef('CoqGotoGoalPrev', 'call coqtail#GotoGoal(-2, <bang>1)')
@@ -770,7 +517,7 @@ function! coqtail#Register() abort
   " Initialize once
   if !exists('b:coqtail_chan')
     let b:coqtail_chan = 0
-    for [l:var, l:_] in s:hlgroups
+    for [l:var, l:_] in g:coqtail#panels#hlgroups
       let b:[l:var] = -1
     endfor
     let b:coqtail_timeout = 0
