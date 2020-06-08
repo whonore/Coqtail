@@ -95,13 +95,12 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 The mappings above are set by default, but you can disable them all and define
 your own by setting `g:coqtail_nomap = 1` in your `.vimrc`.
 Alternatively, you can keep the defaults but remap specific commands.
-For example, set `map <leader>ci <Plug>CoqInterrupt` in your `.vimrc` to not
-hijack `CTRL-C`.
+For example, use `map <leader>ci <Plug>CoqInterrupt` to avoid hijacking `CTRL-C`.
 
-By default Coqtail will use the `coqtop/coqidetop` or `coqtop.opt` on your `PATH`.
-You can tell it to search instead in a specific directory by setting
+By default Coqtail uses the `coq(ide)top(.opt)` found on your `PATH`.
+You can tell it to instead search in a directory by setting
 `b:coqtail_coq_path` before calling `CoqStart`.
-To set this option globally use `g:coqtail_coq_path`.
+Use `g:coqtail_coq_path` to set this option globally.
 
 Coqtail also comes with an ftdetect script for Coq, as well as modified
 versions of Vincent Aravantinos'
