@@ -654,7 +654,7 @@ class Coqtail(object):
     def buffer(self):
         # type: () -> Sequence[Text]
         """The contents of this buffer."""
-        return self.handler.vimcall("getbufline", self.handler.bnum, 1, "$")  # type: ignore
+        return self.handler.vimcall("getbufline", True, self.handler.bnum, 1, "$")  # type: ignore
 
 
 class CoqtailHandler(StreamRequestHandler):
@@ -768,27 +768,29 @@ class CoqtailHandler(StreamRequestHandler):
             if func == "stop":
                 break
 
-    def vimeval(self, expr):
+    def vimeval(self, expr, wait=True):
         # type: (List[Any]) -> Any
         """Send Vim a request."""
         self.wfile.write(json.dumps(expr + [-self.msg_id]).encode("utf-8"))
 
-        msg_id, res = self.get_msg(self.msg_id)
-        assert msg_id == -self.msg_id
-        return res
+        if wait:
+            msg_id, res = self.get_msg(self.msg_id)
+            assert msg_id == -self.msg_id
+            return res
+        return None
 
-    def vimcall(self, expr, *args):
+    def vimcall(self, expr, wait, *args):
         # type: (str, *Any) -> Any
         """Request Vim to evaluate a function call."""
-        return self.vimeval(["call", expr, args])
+        return self.vimeval(["call", expr, args], wait=wait)
 
     def vimvar(self, var, val=None):
         # type: (str, Optional[Any]) -> Any
         """Get or set the value of a Vim variable."""
         if val is None:
-            return self.vimcall("getbufvar", self.bnum, var)
+            return self.vimcall("getbufvar", True, self.bnum, var)
         else:
-            return self.vimcall("setbufvar", self.bnum, var, val)
+            return self.vimcall("setbufvar", True, self.bnum, var, val)
 
     def refresh(self, goals=True, force=True, scroll=False):
         # type: (bool, bool, bool) -> None
@@ -800,6 +802,7 @@ class CoqtailHandler(StreamRequestHandler):
         if force:
             self.vimcall(
                 "coqtail#panels#refresh",
+                False,
                 self.bnum,
                 self.coq.highlights,
                 self.coq.panels(goals),

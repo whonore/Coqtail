@@ -229,9 +229,11 @@ endfunction
 " Refresh the highlighting and auxiliary panels.
 function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
   let l:win = bufwinnr(a:buf)
-  if l:win == -1
+  let l:refreshing = getbufvar(a:buf, 'coqtail_refreshing', 0)
+  if l:win == -1 || l:refreshing
     return
   endif
+  call setbufvar(a:buf, 'coqtail_refreshing', 1)
 
   let l:cur_win = win_getid()
   call win_gotoid(win_getid(l:win))
@@ -255,6 +257,7 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
   endtry
 
   redraw
+  call setbufvar(a:buf, 'coqtail_refreshing', 0)
 endfunction
 
 " Delete panel variables and clear highlighting.
