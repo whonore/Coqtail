@@ -348,7 +348,7 @@ function! coqtail#start(...) abort
       \ 'version': b:coqtail_version,
       \ 'width': winwidth(l:info_win),
       \ 'height': winheight(l:info_win)})
-    call s:call('refresh', 'sync', {})
+    call s:call('refresh', '', {})
 
     " Autocmds to do some detection when editing an already checked
     " portion of the code, and to hide and restore the info and goal
@@ -358,7 +358,7 @@ function! coqtail#start(...) abort
       autocmd InsertEnter <buffer> call s:call('sync', 'sync', {})
       autocmd BufWinLeave <buffer> call coqtail#panels#hide()
       autocmd BufWinEnter <buffer>
-        \ call coqtail#panels#open(0) | call s:call('refresh', 'sync', {})
+        \ call coqtail#panels#open(0) | call s:call('refresh', '', {})
       autocmd QuitPre <buffer> call coqtail#stop()
     augroup END
   endif
@@ -429,7 +429,7 @@ function! s:commands() abort
   call s:cmddef('CoqGotoDef', 'call coqtail#gotodef(<f-args>, <bang>0)')
   call s:cmddef('Coq', 'call s:call("query", "", {"args": [<f-args>]})')
   call s:cmddef('CoqRestorePanels',
-    \ 'call coqtail#panels#open(1) | call s:call("refresh", "sync", {})')
+    \ 'call coqtail#panels#open(1) | call s:call("refresh", "", {})')
   call s:cmddef('CoqGotoGoal', 'call coqtail#gotogoal(<count>, <bang>1)')
   call s:cmddef('CoqGotoGoalNext', 'call coqtail#gotogoal(-1, <bang>1)')
   call s:cmddef('CoqGotoGoalPrev', 'call coqtail#gotogoal(-2, <bang>1)')
