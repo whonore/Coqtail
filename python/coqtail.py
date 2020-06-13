@@ -767,7 +767,7 @@ class CoqtailHandler(StreamRequestHandler):
                 break
 
     def vimeval(self, expr, wait=True):
-        # type: (List[Any]) -> Any
+        # type: (List[Any], bool) -> Any
         """Send Vim a request."""
         self.wfile.write(json.dumps(expr + [-self.msg_id]).encode("utf-8"))
 
@@ -778,7 +778,7 @@ class CoqtailHandler(StreamRequestHandler):
         return None
 
     def vimcall(self, expr, wait, *args):
-        # type: (str, *Any) -> Any
+        # type: (str, bool, *Any) -> Any
         """Request Vim to evaluate a function call."""
         return self.vimeval(["call", expr, args], wait=wait)
 
