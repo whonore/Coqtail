@@ -14,7 +14,7 @@ import re
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from xml.dom.minidom import parseString  # type: ignore[import]
+from xml.dom.minidom import parseString
 
 from six import add_metaclass, string_types
 
@@ -1287,9 +1287,7 @@ class XMLInterface812(XMLInterface811):
         """Update conversion maps with new types."""
         super(XMLInterface812, self).__init__(versions)
 
-        self._standardize_funcs.update(
-            {"GetOptions": self._standardize_get_options,}
-        )
+        self._standardize_funcs.update({"GetOptions": self._standardize_get_options})
 
     def _standardize_get_options(self, res):
         # type: (Union[Ok, Err]) -> Union[Ok, Err]

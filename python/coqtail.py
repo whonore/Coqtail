@@ -996,7 +996,6 @@ def _find_dot_after(lines, sline, scol):
         line = lines[sline][scol:]
         dot_pos = line.find(".")
         com_pos = line.find("(*")
-        com_end_pos = line.find("*)")
         str_pos = line.find('"')
 
         if dot_pos == -1 and com_pos == -1 and str_pos == -1:
