@@ -74,24 +74,24 @@ function! coqtail#panels#init() abort
 endfunction
 
 " Detect what panel is focused.
-function! s:getcurpanel() abort
-  if !exists('b:coqtail_panel_bufs')
-    return g:coqtail#panels#none
-  endif
-
-  for [l:panel, l:buf] in items(b:coqtail_panel_bufs)
-    if l:buf == bufnr('%')
+function! s:getcurpanel(buf) abort
+  for [l:panel, l:buf] in items(getbufvar(a:buf, 'coqtail_panel_bufs', {}))
+    if l:buf == a:buf
       return l:panel
     endif
   endfor
+
+  return g:coqtail#panels#none
 endfunction
 
-" Attempt to switch to a panel.
-function! coqtail#panels#switch(panel) abort
-  let l:cur_panel = s:getcurpanel()
+" Attempt to switch to a panel from a buffer.
+function! s:switch_from(buf, panel) abort
+  let l:cur_panel = s:getcurpanel(a:buf)
 
   if a:panel != l:cur_panel && a:panel != g:coqtail#panels#none
-    if !win_gotoid(win_getid(bufwinnr(b:coqtail_panel_bufs[a:panel])))
+    if !win_gotoid(win_getid(bufwinnr(
+      \ get(getbufvar(a:buf, 'coqtail_panel_bufs', {}), a:panel, -1)
+    \)))
       return g:coqtail#panels#none
     endif
   endif
@@ -99,9 +99,14 @@ function! coqtail#panels#switch(panel) abort
   return l:cur_panel
 endfunction
 
+" Attempt to switch to a panel from the current buffer.
+function! coqtail#panels#switch(panel) abort
+  return s:switch_from(bufnr('%'), a:panel)
+endfunction
+
 " Open an auxiliary panel.
 function! s:open(panel, force) abort
-  let l:from = s:getcurpanel()
+  let l:from = s:getcurpanel(bufnr('%'))
   if l:from == g:coqtail#panels#none
     return 0
   endif
@@ -165,32 +170,13 @@ function! s:scroll() abort
   endif
 endfunction
 
-" Replace the contents of 'panel' with 'txt'.
-function! coqtail#panels#replace(panel, txt, scroll) abort
-  if coqtail#panels#switch(a:panel) == g:coqtail#panels#none
-    return
-  endif
-
-  " Save the view
-  let l:view = winsaveview()
-
-  " Update buffer text
-  silent %delete _
-  call append(0, a:txt)
-
-  " Restore the view
-  if !a:scroll || !g:coqtail_panel_scroll[a:panel]
-    call winrestview(l:view)
-  endif
-  call s:scroll()
-endfunction
-
 " Clear Coqtop highlighting.
-function! s:clearhl() abort
+function! s:clearhl(buf) abort
   for [l:var, l:_] in g:coqtail#panels#hlgroups
-    if get(b:, l:var, -1) != -1
-      call matchdelete(b:[l:var])
-      let b:[l:var] = -1
+    let l:val = getbufvar(a:buf, l:var, -1)
+    if l:val != -1
+      call matchdelete(l:val)
+      call setbufvar(a:buf, l:var, -1)
     endif
   endfor
 endfunction
@@ -201,7 +187,7 @@ function! coqtail#panels#hide() abort
     return
   endif
 
-  call s:clearhl()
+  call s:clearhl(bufnr('%'))
 
   " Hide other panels
   let l:toclose = []
@@ -220,29 +206,52 @@ function! coqtail#panels#hide() abort
   endfor
 endfunction
 
-" Refresh the highlighting and auxiliary panels.
-function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
-  if a:buf != bufnr('%')
+" Replace the contents of 'panel' with 'txt'.
+function! s:replace(buf, panel, txt, scroll) abort
+  if s:switch_from(a:buf, a:panel) == g:coqtail#panels#none
     return
   endif
-  let l:win = win_getid()
 
-  " Update highlighting
-  call s:clearhl()
-  for [l:var, l:grp] in g:coqtail#panels#hlgroups
-    let l:hl = a:highlights[l:var]
-    if l:hl != v:null
-      let b:[l:var] = matchadd(l:grp, l:hl)
-    endif
-  endfor
+  " Save the view
+  let l:view = winsaveview()
 
-  " Update panels
+  " Update buffer text
+  silent %delete _
+  call append(0, a:txt)
+
+  " Restore the view
+  if !a:scroll || !g:coqtail_panel_scroll[a:panel]
+    call winrestview(l:view)
+  endif
+  call s:scroll()
+endfunction
+
+" Refresh the highlighting and auxiliary panels.
+function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
+  let l:win = bufwinnr(a:buf)
+  if l:win == -1
+    return
+  endif
+
+  let l:cur_win = win_getid()
+  call win_gotoid(win_getid(l:win))
+
   try
+    " Update highlighting
+    call s:clearhl(a:buf)
+    for [l:var, l:grp] in g:coqtail#panels#hlgroups
+      let l:hl = a:highlights[l:var]
+      if l:hl != v:null
+        call setbufvar(a:buf, l:var, matchadd(l:grp, l:hl))
+      endif
+    endfor
+
+    " Update panels
     for [l:panel, l:txt] in items(a:panels)
-      call coqtail#panels#replace(l:panel, l:txt, a:scroll)
+      call s:replace(a:buf, l:panel, l:txt, a:scroll)
     endfor
   finally
-    call win_gotoid(l:win)
+    call win_gotoid(l:cur_win)
   endtry
 
   redraw
@@ -255,5 +264,5 @@ function! coqtail#panels#cleanup() abort
   endfor
   silent! unlet b:coqtail_panel_bufs
 
-  call s:clearhl()
+  call s:clearhl(bufnr('%'))
 endfunction

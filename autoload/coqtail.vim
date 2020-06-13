@@ -288,9 +288,10 @@ endfunction
 
 " Print any error messages.
 function! coqtail#defaultCB(chan, msg) abort
-  let b:cmds_pending -= 1
-  if b:cmds_pending == 0
-    setlocal modifiable
+  let l:pending = getbufvar(a:msg.buf, 'cmds_pending')
+  call setbufvar(a:msg.buf, 'cmds_pending', l:pending - 1)
+  if l:pending - 1 == 0
+    call setbufvar(a:msg.buf, '&modifiable', 1)
   endif
   if a:msg.ret != v:null
     call coqtail#util#err(a:msg.ret)
