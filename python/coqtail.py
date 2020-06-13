@@ -678,14 +678,12 @@ class CoqtailHandler(StreamRequestHandler):
         while not self.closed:
             try:
                 msg = self.rfile.readline().decode("utf-8")
+                msg_id, data = json.loads(msg)
             except ValueError:
-                msg = ""
-            # Check if channel closed
-            if msg == "":
+                # Check if channel closed
                 self.closed = True
                 break
 
-            msg_id, data = json.loads(msg)
             if msg_id >= 0:
                 bnum, func, args = data
                 if func == "interrupt":
