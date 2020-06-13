@@ -301,7 +301,8 @@ endfunction
 " Initialize Python interface, commands, autocmds, and auxiliary panels.
 function! coqtail#start(...) abort
   if s:port == -1
-    let s:port = coqtail#compat#pyeval('CoqtailServer.start_server()')
+    let s:port = coqtail#compat#pyeval(printf(
+      \ 'CoqtailServer.start_server(bool(%d))', !g:coqtail#compat#has_channel))
     augroup coqtail#StopServer
       autocmd! *
       autocmd VimLeavePre *

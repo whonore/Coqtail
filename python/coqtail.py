@@ -672,6 +672,9 @@ class CoqtailHandler(StreamRequestHandler):
     # Is a request currently being handled
     working = False
 
+    # Is the client synchronous
+    sync = False
+
     def parse_msgs(self):
         # type: () -> None
         """Parse messages sent over a Vim channel."""
@@ -800,7 +803,7 @@ class CoqtailHandler(StreamRequestHandler):
         if force:
             self.vimcall(
                 "coqtail#panels#refresh",
-                False,
+                self.sync,
                 self.bnum,
                 self.coq.highlights,
                 self.coq.panels(goals),
@@ -826,10 +829,11 @@ class CoqtailServer(object):
     serv = None
 
     @staticmethod
-    def start_server():
-        # type: () -> int
+    def start_server(sync):
+        # type: (bool) -> int
         """Start the TCP server."""
         # N.B. port = 0 chooses any arbitrary open one
+        CoqtailHandler.sync = sync
         CoqtailServer.serv = ThreadingTCPServer(("localhost", 0), CoqtailHandler)
         CoqtailServer.serv.daemon_threads = True
         _, port = CoqtailServer.serv.server_address
