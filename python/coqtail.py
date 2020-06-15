@@ -772,7 +772,9 @@ class CoqtailHandler(StreamRequestHandler):
     def vimeval(self, expr, wait=True):
         # type: (List[Any], bool) -> Any
         """Send Vim a request."""
-        self.wfile.write(json.dumps(expr + [-self.msg_id]).encode("utf-8"))
+        if wait:
+            expr += [-self.msg_id]
+        self.wfile.write(json.dumps(expr).encode("utf-8"))
 
         if wait:
             msg_id, res = self.get_msg(self.msg_id)
