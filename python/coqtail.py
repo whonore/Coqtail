@@ -767,11 +767,11 @@ class CoqtailHandler(StreamRequestHandler):
 
             try:
                 ret = handler(**args) if handler is not None else None  # type: ignore
-            except EOFError:
+                msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
+                self.wfile.write(json.dumps(msg).encode("utf-8"))
+            # Python 2 doesn't have BrokenPipeError
+            except (EOFError, OSError):
                 break
-
-            msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
-            self.wfile.write(json.dumps(msg).encode("utf-8"))
 
             try:
                 del self.resps[self.msg_id]
