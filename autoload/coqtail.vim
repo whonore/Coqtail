@@ -378,7 +378,6 @@ endfunction
 function! coqtail#toline(line) abort
   " If no line was given then use the cursor's position,
   " otherwise use the last column in the line
-  " TODO async: fix on multi-byte characters
   call s:call('to_line', '', {
     \ 'line': (a:line == 0 ? line('.') : a:line) - 1,
     \ 'col': (a:line == 0 ? col('.') : len(getline(a:line))) - 1})
