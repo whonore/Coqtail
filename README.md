@@ -5,12 +5,11 @@
 
 ## Interactive Coq Proofs in Vim
 
-Coqtail enables interactive Coq proof development in Vim similar to
-[CoqIDE](https://coq.inria.fr/refman/practical-tools/coqide.html)
-or [ProofGeneral](https://proofgeneral.github.io/).
+Coqtail enables interactive Coq proof development in Vim similar to [CoqIDE] or
+[ProofGeneral].
 
 It supports:
-- [Coq 8.4 - 8.11](https://coq.inria.fr/download)
+- [Coq 8.4 - 8.11]
 - Python 2<sup>[1](#python2)</sup> and 3
 - Vim >=7.4 (Neovim coming soon)
 - Simultaneous Coq sessions in different buffers
@@ -18,30 +17,26 @@ It supports:
 
 ## Installation and Requirements
 
-As a
-[vim package](https://vimhelp.org/repeat.txt.html#packages):
+As a [vim package]:
 ```sh
 mkdir -p ~/.vim/pack/coq/start
 git clone https://github.com/whonore/Coqtail.git ~/.vim/pack/coq/start/Coqtail
 vim +helptags\ ~/.vim/pack/coq/start/Coqtail/doc +q
 ```
 
-Using
-[pathogen](https://github.com/tpope/vim-pathogen):
+Using [pathogen]:
 ```sh
 git clone https://github.com/whonore/Coqtail.git ~/.vim/bundle/Coqtail
 vim +Helptags +q
 ```
 
-Using
-[Vundle](https://github.com/VundleVim/Vundle.vim):
+Using [Vundle]:
 ```sh
 Plugin 'whonore/Coqtail' (add this line in .vimrc)
 vim +PluginInstall +qa
 ```
 
-Using
-[VimPlug](https://github.com/junegunn/vim-plug):
+Using [VimPlug]:
 ```sh
 Plug 'whonore/Coqtail' (add this line in .vimrc)
 vim +PlugInstall +qa
@@ -51,7 +46,7 @@ Requirements:
 - Vim compiled with either `+python`<sup>[1](#python2)</sup> or `+python3`
 - Vim configuration options `filetype plugin on`, and optionally
   `filetype indent on` and `syntax on` (e.g. in `.vimrc`)
-- [Coq 8.4 - 8.11](https://coq.inria.fr/download)
+- [Coq 8.4 - 8.11]
 
 Newer versions of Coq have not yet been tested, but should still work as long
 as there are no major changes made to the XML protocol Coqtail uses to
@@ -103,9 +98,7 @@ You can tell it to instead search in a directory by setting
 Use `g:coqtail_coq_path` to set this option globally.
 
 Coqtail also comes with an ftdetect script for Coq, as well as modified
-versions of Vincent Aravantinos'
-[syntax](http://www.vim.org/scripts/script.php?script_id=2063) and
-[indent](http://www.vim.org/scripts/script.php?script_id=2079) scripts for Coq.
+versions of Vincent Aravantinos' [syntax] and [indent] scripts for Coq.
 These scripts are used by default but can be disabled by setting
 `g:coqtail_nosyntax = 1` and `g:coqtail_noindent = 1` respectively.
 
@@ -116,21 +109,18 @@ See `:help coqtail-configuration` for more configuration variables.
 ### Jumping between matches
 
 Coqtail defines `b:match_words` patterns to support jumping between matched
-text with `%` using the
-[matchup](https://github.com/andymass/vim-matchup) or
-[matchit](http://ftp.vim.org/pub/vim/runtime/macros/matchit.txt) plugins.
+text with `%` using the [matchup] or [matchit] plugins.
 
 ### Automatically closing blocks
 
 Coqtail defines patterns to enable automatic insertion of the appropriate `End`
 command for code blocks such as `Section`s, `Module`s, and `match` expressions
-with [endwise](https://github.com/tpope/vim-endwise).
+with [endwise].
 
 ## Thanks
 
-Parts of Coqtail were originally inspired by/adapted from
-[Coquille](https://github.com/the-lambda-church/coquille)
-(MIT License, Copyright (c) 2013, Thomas Refis).
+Parts of Coqtail were originally inspired by/adapted from [Coquille] (MIT
+License, Copyright (c) 2013, Thomas Refis).
 
 ---
 
@@ -140,3 +130,19 @@ supporting it alongside Python 3 makes it difficult to improve and maintain the
 code, Coqtail will drop support for Python 2 in the near future.
 At that time a stable version will be tagged and all future versions will be
 Python 3-only.
+See [YouCompleteMe] for help building Vim with Python 3 support.
+
+[Coq 8.4 - 8.11]: https://coq.inria.fr/download
+[CoqIDE]: https://coq.inria.fr/refman/practical-tools/coqide.html
+[ProofGeneral]: https://proofgeneral.github.io/
+[vim package]: https://vimhelp.org/repeat.txt.html#packages
+[pathogen]: https://github.com/tpope/vim-pathogen
+[Vundle]: https://github.com/VundleVim/Vundle.vim
+[VimPlug]: https://github.com/junegunn/vim-plug
+[syntax]: http://www.vim.org/scripts/script.php?script_id=2063
+[indent]: http://www.vim.org/scripts/script.php?script_id=2079
+[matchup]: https://github.com/andymass/vim-matchup
+[matchit]: http://ftp.vim.org/pub/vim/runtime/macros/matchit.txt
+[endwise]: https://github.com/tpope/vim-endwise
+[Coquille]: https://github.com/the-lambda-church/coquille
+[YouCompleteMe]: https://github.com/ycm-core/YouCompleteMe/wiki/Building-Vim-from-source
