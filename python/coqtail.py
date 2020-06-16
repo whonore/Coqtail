@@ -40,6 +40,9 @@ except ImportError:
 
 
 # Error Messages #
+COQTOP_ERR = "Coqtop is not running. Please restart and try again."
+
+
 def unexpected(response, where):
     # type: (Any, str) -> str
     """Create a debugging error about an unexpected response."""
@@ -178,7 +181,8 @@ class Coqtail(object):
     def rewind(self, steps, opts):
         # type: (int, Mapping[str, Any]) -> Optional[str]
         """Rewind Coq by 'steps' sentences."""
-        assert self.coqtop is not None
+        if self.coqtop is None:
+            return COQTOP_ERR
 
         if steps < 1 or self.endpoints == []:
             return None
@@ -262,7 +266,8 @@ class Coqtail(object):
     def send_until_fail(self, buffer, opts):
         # type: (Sequence[Text], Mapping[str, Any]) -> Tuple[Optional[Tuple[int, int]], Optional[str]]
         """Send all sentences in 'send_queue' until an error is encountered."""
-        assert self.coqtop is not None
+        if self.coqtop is None:
+            return None, COQTOP_ERR
 
         scroll = len(self.send_queue) > 1
         failed_at = None
@@ -320,7 +325,8 @@ class Coqtail(object):
     def do_query(self, query, opts):
         # type: (Text, Mapping[str, Any]) -> Tuple[bool, Text]
         """Execute a query and return the reply."""
-        assert self.coqtop is not None
+        if self.coqtop is None:
+            return False, COQTOP_ERR
 
         # Ensure that the query ends in '.'
         if not query.endswith("."):
@@ -444,7 +450,8 @@ class Coqtail(object):
     def get_goals(self, opts):
         # type: (Mapping[str, Any]) -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
         """Get the current goals."""
-        assert self.coqtop is not None
+        if self.coqtop is None:
+            return None, COQTOP_ERR
 
         try:
             success, msg, goals = self.coqtop.goals(timeout=opts["timeout"])
@@ -616,9 +623,10 @@ class Coqtail(object):
         self.info_msg = top_pad + msg
 
     def toggle_debug(self, opts):
-        # type: (Mapping[str, Any]) -> None
+        # type: (Mapping[str, Any]) -> Optional[str]
         """Enable or disable logging of debug messages."""
-        assert self.coqtop is not None
+        if self.coqtop is None:
+            return COQTOP_ERR
 
         log = self.coqtop.toggle_debug()
         if log is None:
@@ -630,6 +638,7 @@ class Coqtail(object):
 
         self.set_info(msg)
         self.refresh(goals=False, opts=opts)
+        return None
 
     # Vim Helpers #
     @property
