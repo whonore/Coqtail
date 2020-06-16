@@ -23,6 +23,9 @@
 ### Fixed
 - Commands no longer crash when called while Goal or Info panels are closed.
 
+### Deprecated
+- Python 2 support. See [ycm] if you need help building Vim with Python 3 support.
+
 ## [pre-1.0]
 
 ### Added
@@ -45,3 +48,4 @@
 [vimbufsync]: https://github.com/let-def/vimbufsync
 [matchup]: https://github.com/andymass/vim-matchup
 [endwise]: https://github.com/tpope/vim-endwise
+[ycm]: https://github.com/ycm-core/YouCompleteMe/wiki/Building-Vim-from-source

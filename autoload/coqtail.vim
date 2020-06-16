@@ -348,7 +348,8 @@ function! coqtail#start(...) abort
     call s:call('splash', 'sync', {
       \ 'version': b:coqtail_version,
       \ 'width': winwidth(l:info_win),
-      \ 'height': winheight(l:info_win)})
+      \ 'height': winheight(l:info_win),
+      \ 'deprecated': has('python')})
     call s:call('refresh', '', {})
 
     " Autocmds to do some detection when editing an already checked

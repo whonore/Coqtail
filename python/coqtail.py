@@ -593,8 +593,8 @@ class Coqtail(object):
             panels["goal"] = self.goal_msg
         return panels
 
-    def splash(self, version, width, height, opts):
-        # type: (Text, int, int, Mapping[str, Any]) -> None
+    def splash(self, version, width, height, deprecated, opts):
+        # type: (Text, int, int, bool, Mapping[str, Any]) -> None
         """Display the logo in the info panel."""
         msg = [
             u"~~~~~~~~~~~~~~~~~~~~~~~",
@@ -618,8 +618,11 @@ class Coqtail(object):
         msg_maxw = max(len(line) for line in msg)
         msg = [line.center(width - msg_maxw // 2) for line in msg]
 
-        top_pad = [u""] * ((height // 2) - (len(msg) // 2 + 1))
+        if deprecated:
+            depr_msg = u"Support for Python 2 is deprecated and will be dropped in an upcoming version."
+            msg += [u"", depr_msg.center(width - msg_maxw // 2)]
 
+        top_pad = [u""] * ((height // 2) - (len(msg) // 2 + 1))
         self.info_msg = top_pad + msg
 
     def toggle_debug(self, opts):
