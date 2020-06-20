@@ -4,7 +4,7 @@ if exists('b:did_ftplugin')
 endif
 let b:did_ftplugin = 1
 
-call coqtail#Register()
+call coqtail#register()
 
 " Comments
 if has('comments')
@@ -16,7 +16,7 @@ if has('comments')
 endif
 
 " Follow imports
-setlocal includeexpr=coqtail#FindLib(v:fname)
+setlocal includeexpr=coqtail#findlib(v:fname)
 setlocal suffixesadd=.v
 setlocal include=\\<Require\\>\\(\\s*\\(Import\\\|Export\\)\\>\\)\\?
 
@@ -24,7 +24,7 @@ let b:undo_ftplugin = 'setl cms< com< fo< inex< sua< inc<'
 
 " Tags
 if exists('+tagfunc')
-  setlocal tagfunc=coqtail#GetTags
+  setlocal tagfunc=coqtail#gettags
   let b:undo_ftplugin .= ' | setl tfu<'
 endif
 
