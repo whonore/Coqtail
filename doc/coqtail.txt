@@ -3,10 +3,10 @@
 Author:  Wolf Honore
 License: MIT (see LICENSE)
 
-Coqtail provides an interface to the Coqtop program to allow interactive
-theorem proving. Coqtail uses a separate instance of Coqtop for each buffer, so
-you can have multiple Coq files open and switch between them seamlessly using
-the |arglist| or |buffer-list|.
+Coqtail provides an interface to Coqtop to enable interactive Coq proof
+development. Coqtail uses a separate instance of Coqtop for each buffer, so
+you can have multiple open Coq sessions and switch between them seamlessly
+using standard Vim methods (e.g., the |argument-list| or |buffer-list|).
 
 1. Starting and Stopping Coqtail	|coqtail-start-stop|
 2. Movement Commands			|coqtail-movement|
@@ -43,34 +43,34 @@ Movement Commands					      *coqtail-movement*
 			checking. If successful, highlight the sentences and
 			update the Goal and Info panels accordingly. Otherwise,
 			highlight the error and display the error message in
-			the Info panel. [count] defaults to 1.
+			the Info panel.
+
+			[count] default: 1.
 
 					      *<leader>ck* *i_<leader>ck* *:CoqUndo*
 								  *coqtail-undo*
 :[count]CoqUndo	or
 [count]<leader>ck	Rewind by [count] steps. Un-highlight the previous
-			sentences and update the Goal and Info panels. [count]
-			defaults to 1.
+			sentences and update the Goal and Info panels.
+
+			[count] default: 1.
 
 					    *<leader>cl* *i_<leader>cl* *:CoqToLine*
 							       *coqtail-to-line*
 :[count]CoqToLine or
-[count]<leader>cl	Check/rewind all sentences up to line [count]. If
-			multiple sentences end on the same line then check
-			until just past the last one. However, if no [count] is
-			given, use the cursor position instead, including the
-			column. For example, given the line below, where '^'
-			represents the cursor position, `:CoqToLine` would
-			position the end of the checked section just after '1'
-			whereas `:27CoqToLine` would put it after '2'. >
+[count]<leader>cl	Check/rewind all sentences up to the end of line
+			[count]. If no [count] is given, use the cursor
+			position instead. For example, given the line below,
+			where '^' represents the cursor position, `:CoqToLine`
+			will position the end of the checked section just after
+			'1' whereas `:27CoqToLine` will put it after '2'. >
     line 27:	   Let x := 1.^Let y := 2.
 <
 					     *<leader>cT* *i_<leader>cT* *:CoqToTop*
 								*coqtail-to-top*
 :CoqToTop	or
-<leader>cT		Rewind to the top of the file. Differs from
-			`:1CoqToLine` because it rewinds to the beginning of
-			the line.
+<leader>cT		Rewind to the top of the file. Unlike `:1CoqToLine`
+			it rewinds to the beginning of the line.
 
 						      *<leader>cG* *:CoqJumpToEnd*
 							   *coqtail-jump-to-end*
@@ -92,38 +92,30 @@ Movement Commands					      *coqtail-movement*
 Coq Queries						       *coqtail-queries*
 
 							    *:Coq* *coqtail-query*
-:Coq {args}		Send an arbitrary query to Coqtop. Some of the common
-			queries are listed below.
+:Coq {args}		Send an arbitrary query to Coqtop and write the
+			response to the Info panel. Commands and mappings for
+			the common queries are listed below.
 
 						     *<leader>cs* *coqtail-search*
 :Coq Search {arg}
-<leader>cs		Send the Search command to Coqtop. The first version
-			uses {arg}, while the second uses the term under the
-			cursor. Write the response to the Info panel.
+<leader>cs		The first version uses {arg}, while the second uses the
+			term under the cursor.
 
 						      *<leader>ch* *coqtail-check*
 :Coq Check {arg}
-<leader>ch		Send the Check command to Coqtop. The first version
-			uses {arg}, while the second uses the term under the
-			cursor. Write the response to the Info panel.
+<leader>ch
 
 						      *<leader>ca* *coqtail-about*
 :Coq About {arg}
-<leader>ca		Send the About command to Coqtop. The first version
-			uses {arg}, while the second uses the term under the
-			cursor. Write the response to the Info panel.
+<leader>ca
 
 						      *<leader>cp* *coqtail-print*
 :Coq Print {arg}
-<leader>cp		Send the Print command to Coqtop. The first version
-			uses {arg}, while the second uses the term under the
-			cursor. Write the response to the Info panel.
+<leader>cp
 
 						     *<leader>cf* *coqtail-locate*
 :Coq Locate {arg}
-<leader>cf		Send the Locate command to Coqtop. The first version
-			uses {arg}, while the second uses the term under the
-			cursor. Write the response to the Info panel.
+<leader>cf
 
 ================
 Panel Management						*coqtail-panels*
@@ -131,21 +123,23 @@ Panel Management						*coqtail-panels*
 						  *<leader>cr* *:CoqRestorePanels*
 							*coqtail-restore-panels*
 :CoqRestorePanels
-<leader>cr		Re-open the Goal and Info panels.
+<leader>cr		Re-open the Goal and Info panels in their original
+			configuration.
 
 						      *<leader>cgg* *:CoqGotoGoal*
 						       *coqtail-goto-goal-start*
 :[count]CoqGotoGoal
-<count><leader>cgg	Scroll the Goal panel to the start of goal [count]
-			defaulting to the first goal. Use |g:coqtail_goal_lines|
-			to decide which line to put at the bottom of the
-			panel.
+<count><leader>cgg	Scroll the Goal panel to the start of goal [count].
+			Control the number of goal lines to display with
+			|g:coqtail_goal_lines|.
+
+			[count] default: 1.
 
 						     *<leader>cGG* *:CoqGotoGoal!*
 							 *coqtail-goto-goal-end*
 :[count]CoqGotoGoal!
-<count><leader>cGG	Same as `:CoqGotoGoal` but put the last line of the
-			goal at the bottom of the panel.
+<count><leader>cGG	Same as `:CoqGotoGoal` but scroll to the end of the
+			goal.
 
 							   *g]* *:CoqGotoGoalNext*
 						  *coqtail-goto-goal-next-start*
@@ -174,7 +168,7 @@ Configuration						 *coqtail-configuration*
 				         *g:coqtail_coq_path* *b:coqtail_coq_path*
 							      *coqtail-coq-path*
 g:coqtail_coq_path
-b:coqtail_coq_path	The path to search for the Coqtop binary. If
+b:coqtail_coq_path	The path to search for the coq(ide)top(.opt) binary. If
 			empty then $PATH is used. The global variable is
 			checked only when the .v file is first loaded, but the
 			buffer-local variable is checked on every call to
@@ -189,10 +183,10 @@ g:coqtail_goal_lines	The number of lines from the start of a goal to
 			Default: 5.
 
 					     *b:coqtail_timeout* *coqtail-timeout*
-b:coqtail_timeout	The time in seconds before sending interrupting an
-			interrupt to Coqtop after issuing a command. A value of
-			0 disables the timeout. Coqtail can also be manually
-			interrupted with `:CoqInterrupt`.
+b:coqtail_timeout	The time in seconds before interrupting Coqtop after
+			issuing a command. A value of 0 disables the timeout.
+			Coqtail can also be manually interrupted with
+			`:CoqInterrupt`.
 
 			Default: 0
 
@@ -218,13 +212,13 @@ g:coqtail_nomap		If true then don't set any default mappings for
 			Default: 0
 
 					  *g:coqtail_nosyntax* *coqtail-no-syntax*
-g:coqtail_nosyntax	If true then don't use the syntax script included with
+g:coqtail_nosyntax	If true then don't load the syntax script included with
 			Coqtail.
 
 			Default: 0
 
 					  *g:coqtail_noindent* *coqtail-no-indent*
-g:coqtail_noindent	If true then don't use the indent script included with
+g:coqtail_noindent	If true then don't load the indent script included with
 			Coqtail.
 
 			Default: 0
