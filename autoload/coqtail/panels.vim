@@ -244,7 +244,7 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
     for [l:var, l:grp] in g:coqtail#panels#hlgroups
       let l:hl = a:highlights[l:var]
       if l:hl != v:null
-        call setbufvar(a:buf, l:var, matchadd(l:grp, l:hl))
+        call setbufvar(a:buf, l:var, matchadd(l:grp, l:hl, -10))
       endif
     endfor
 
