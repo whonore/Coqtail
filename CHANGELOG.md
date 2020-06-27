@@ -3,6 +3,7 @@
 ## Unreleased ([master])
 
 ### Added
+- Support for NeoVim >=0.3.
 - `b:coqtail_coq_prog`/`g:coqtail_coq_prog` configuration option to override
   the name of the Coq executable.
 
