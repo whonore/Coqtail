@@ -4,7 +4,8 @@
 " Vim compatibility.
 let g:coqtail#compat#t_dict = type({})
 let g:coqtail#compat#t_list = type([])
-let g:coqtail#compat#has_channel = has('channel') && has('patch-8.0.0001')
+let g:coqtail#compat#nvim = has('nvim')
+let g:coqtail#compat#has_channel = (has('channel') && has('patch-8.0.0001')) || g:coqtail#compat#nvim
 
 " Python compatibility.
 if has('python3')

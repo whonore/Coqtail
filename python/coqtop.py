@@ -443,7 +443,8 @@ class Coqtop(object):
 
         while not self.stopping:
             try:
-                print(os.read(fd, 0x10000).decode())
+                # print(os.read(fd, 0x10000).decode())
+                pass
             except (AttributeError, OSError, ValueError):
                 # Coqtop died
                 return

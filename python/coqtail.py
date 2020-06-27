@@ -763,7 +763,7 @@ class CoqtailHandler(StreamRequestHandler):
             try:
                 ret = handler(**args) if handler is not None else None  # type: ignore
                 msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
-                self.wfile.write(json.dumps(msg).encode("utf-8"))
+                self.wfile.write(json.dumps(msg).encode("utf-8") + b"\n")
             # Python 2 doesn't have BrokenPipeError
             except (EOFError, OSError):
                 break
@@ -781,7 +781,7 @@ class CoqtailHandler(StreamRequestHandler):
         """Send Vim a request."""
         if wait:
             expr += [-self.msg_id]
-        self.wfile.write(json.dumps(expr).encode("utf-8"))
+        self.wfile.write(json.dumps(expr).encode("utf-8") + b"\n")
 
         if wait:
             msg_id, res = self.get_msg(self.msg_id)

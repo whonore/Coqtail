@@ -35,9 +35,8 @@ let s:unsupported_msg =
   \ 'Coqtail does not officially support your version of Coq (%s). ' .
   \ 'Continuing with the interface for the latest supported version (' .
   \ s:latest_supported . ').'
-" Server port and channel options.
+" Server port.
 let s:port = -1
-let s:chanopts = {'mode': 'json'}
 
 " Default Coq path.
 if !exists('g:coqtail_coq_path')
@@ -272,7 +271,7 @@ function! s:call(cmd, cb, args) abort
   \}
   let l:args = [bufnr('%'), a:cmd, a:args]
 
-  if a:cb !=# 'sync' && g:coqtail#compat#has_channel
+  if a:cb !=# 'sync' && g:coqtail#compat#has_channel && !has('nvim')
     " Async
     let b:cmds_pending += 1
     setlocal nomodifiable
@@ -333,7 +332,7 @@ function! coqtail#start(...) abort
 
     " Open channel with Coqtail server
     let b:coqtail_chan = coqtail#channel#new()
-    call b:coqtail_chan.open('localhost:' . s:port, s:chanopts)
+    call b:coqtail_chan.open('localhost:' . s:port)
 
     " Check for a Coq project file
     let [b:coqtail_project_file, l:proj_args] = coqtail#coqproject#locate()
