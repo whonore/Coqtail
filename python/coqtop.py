@@ -443,8 +443,8 @@ class Coqtop(object):
 
         while not self.stopping:
             try:
-                # print(os.read(fd, 0x10000).decode())
-                pass
+                # TODO: pass this output back to Vim
+                os.read(fd, 0x10000).decode()
             except (AttributeError, OSError, ValueError):
                 # Coqtop died
                 return
