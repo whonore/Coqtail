@@ -10,11 +10,9 @@ function! coqtail#channel#new() abort
 endfunction
 
 if g:coqtail#compat#has_channel && !g:coqtail#compat#nvim
-  " Channel options.
-  let s:chanopts = {'mode': 'json'}
-
   function! s:open(address) dict abort
-    let self.handle = ch_open(a:address, s:chanopts)
+    let l:chanopts = {'mode': 'json'}
+    let self.handle = ch_open(a:address, l:chanopts)
     return self.handle
   endfunction
 
@@ -34,6 +32,61 @@ if g:coqtail#compat#has_channel && !g:coqtail#compat#nvim
     return ch_evalexpr(self.handle, a:expr, a:options)
   endfunction
 elseif g:coqtail#compat#nvim
+  " Rate in ms to check if Coqtail is done computing.
+  let s:poll_rate = 10
+
+  " Unique message ID.
+  let s:msg_id = 0
+
+  " Coqtail responses to synchronous messages.
+  let s:replies_raw = ['']
+  let s:replies = {}
+
+  " Callbacks for asynchronous messages.
+  let s:callbacks = {}
+
+  function! s:open(address) dict abort
+    let l:chanopts = {'on_data': function('s:chanrecv'), 'data_buffered': 0}
+    let self.handle = sockconnect('tcp', a:address, l:chanopts)
+    return self.handle
+  endfunction
+
+  function! s:close() dict abort
+    return chanclose(self.handle)
+  endfunction
+
+  function! s:status() dict abort
+    return nvim_get_chan_info(self.handle) != {} ? 'open' : ''
+  endfunction
+
+  function! s:pre_send(expr) abort
+    let s:msg_id += 1
+    return [s:msg_id, [json_encode([s:msg_id, a:expr]), '']]
+  endfunction
+
+  function! s:sendexpr(expr, options) dict abort
+    let [l:msg_id, l:msg] = s:pre_send(a:expr)
+    let s:callbacks[l:msg_id] = a:options.callback
+    call chansend(self.handle, l:msg)
+  endfunction
+
+  function! s:evalexpr(expr, options) dict abort
+    let [l:msg_id, l:msg] = s:pre_send(a:expr)
+    let s:replies[l:msg_id] = {}
+    call chansend(self.handle, l:msg)
+
+    if get(a:options, 'timeout', -1) == 0
+      return ''
+    endif
+
+    while s:replies[l:msg_id] == {}
+      execute printf('sleep %dm', s:poll_rate)
+    endwhile
+    let l:res = s:replies[l:msg_id]
+    unlet s:replies[l:msg_id]
+    return l:res
+  endfunction
+
   " Handle replies from Coqtail.
   function! s:chanrecv(handle, msg, event) abort
     " Complete partial reply.
@@ -54,7 +107,13 @@ elseif g:coqtail#compat#nvim
           endif
         else
           let [l:msg_id, l:data] = l:res
-          let s:replies[l:msg_id] = l:data
+          " Return or execute callback
+          if has_key(s:replies, l:msg_id)
+            let s:replies[l:msg_id] = l:data
+          elseif has_key(s:callbacks, l:msg_id)
+            call call(s:callbacks[l:msg_id], [a:handle, l:data])
+            unlet s:callbacks[l:msg_id]
+          endif
         endif
       catch /^Vim\%((\a\+)\)\=:E474/
         let l:idx -= 1
@@ -64,54 +123,6 @@ elseif g:coqtail#compat#nvim
 
     " Remove parsed replies
     let s:replies_raw = s:replies_raw[l:idx + 1:]
-  endfunction
-
-  " Channel options.
-  let s:chanopts = {'on_data': function('s:chanrecv'), 'data_buffered': 0}
-
-  " Rate in ms to check if Coqtail is done computing.
-  let s:poll_rate = 10
-
-  " Unique message ID.
-  let s:msg_id = 0
-
-  " Coqtail responses to messages.
-  let s:replies_raw = ['']
-  let s:replies = {}
-
-  function! s:open(address) dict abort
-    let self.handle = sockconnect('tcp', a:address, s:chanopts)
-    return self.handle
-  endfunction
-
-  function! s:close() dict abort
-    return chanclose(self.handle)
-  endfunction
-
-  function! s:status() dict abort
-    return nvim_get_chan_info(self.handle) != {} ? 'open' : ''
-  endfunction
-
-  function! s:send(handle, expr) abort
-    let s:msg_id += 1
-    let l:msg = json_encode([s:msg_id, a:expr])
-    call chansend(a:handle, [l:msg, ''])
-    return s:msg_id
-  endfunction
-
-  function! s:sendexpr(expr, options) dict abort
-    call s:send(self.handle, a:expr)
-  endfunction
-
-  function! s:evalexpr(expr, options) dict abort
-    let l:msg_id = s:send(self.handle, a:expr)
-    let s:replies[l:msg_id] = {}
-    while s:replies[l:msg_id] == {}
-      execute printf('sleep %dm', s:poll_rate)
-    endwhile
-    let l:res = s:replies[l:msg_id]
-    unlet s:replies[l:msg_id]
-    return l:res
   endfunction
 else
   " Rate in ms to check if Coqtail is done computing.

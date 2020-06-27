@@ -271,7 +271,7 @@ function! s:call(cmd, cb, args) abort
   \}
   let l:args = [bufnr('%'), a:cmd, a:args]
 
-  if a:cb !=# 'sync' && g:coqtail#compat#has_channel && !has('nvim')
+  if a:cb !=# 'sync' && g:coqtail#compat#has_channel
     " Async
     let b:cmds_pending += 1
     setlocal nomodifiable
