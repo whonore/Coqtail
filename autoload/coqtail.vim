@@ -478,6 +478,11 @@ function! s:mappings() abort
   nnoremap <buffer> <silent> <Plug>CoqAbout :Coq About <C-r>=coqtail#util#getcurword()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqPrint :Coq Print <C-r>=coqtail#util#getcurword()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqLocate :Coq Locate <C-r>=coqtail#util#getcurword()<CR><CR>
+  xnoremap <buffer> <silent> <Plug>CoqSearch <ESC>:Coq Search <C-r>=coqtail#util#getvisual()<CR><CR>
+  xnoremap <buffer> <silent> <Plug>CoqCheck <ESC>:Coq Check <C-r>=coqtail#util#getvisual()<CR><CR>
+  xnoremap <buffer> <silent> <Plug>CoqAbout <ESC>:Coq About <C-r>=coqtail#util#getvisual()<CR><CR>
+  xnoremap <buffer> <silent> <Plug>CoqPrint <ESC>:Coq Print <C-r>=coqtail#util#getvisual()<CR><CR>
+  xnoremap <buffer> <silent> <Plug>CoqLocate <ESC>:Coq Locate <C-r>=coqtail#util#getvisual()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqRestorePanels :CoqRestorePanels<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalStart :<C-U>execute v:count1 'CoqGotoGoal'<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalEnd :<C-U>execute v:count1 'CoqGotoGoal!'<CR>
@@ -507,11 +512,11 @@ function! s:mappings() abort
     \ ['ToTop', 'T', 'ni'],
     \ ['JumpToEnd', 'G', 'ni'],
     \ ['GotoDef', 'g', 'n'],
-    \ ['Search', 's', 'n'],
-    \ ['Check', 'h', 'n'],
-    \ ['About', 'a', 'n'],
-    \ ['Print', 'p', 'n'],
-    \ ['Locate', 'f', 'n'],
+    \ ['Search', 's', 'nx'],
+    \ ['Check', 'h', 'nx'],
+    \ ['About', 'a', 'nx'],
+    \ ['Print', 'p', 'nx'],
+    \ ['Locate', 'f', 'nx'],
     \ ['RestorePanels', 'r', 'ni'],
     \ ['GotoGoalStart', 'gg', 'ni'],
     \ ['GotoGoalEnd', 'GG', 'ni'],
