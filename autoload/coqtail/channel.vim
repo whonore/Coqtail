@@ -28,7 +28,11 @@ if g:coqtail#compat#has_channel
   endfunction
 
   function! s:evalexpr(expr, options) dict abort
-    return ch_evalexpr(self.handle, a:expr, a:options)
+    let l:res = ch_evalexpr(self.handle, a:expr, a:options)
+    if type(l:res) != g:coqtail#compat#t_dict && ch_canread(self.handle)
+      return ch_read(self.handle)[1]
+    endif
+    return l:res
   endfunction
 else
   " Rate in ms to check if Coqtail is done computing.
