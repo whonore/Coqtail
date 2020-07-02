@@ -10,17 +10,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import sys
-
-try:
-    from unittest.mock import Mock
-except ImportError:
-    from mock import Mock
 import pytest
 
-# Mock vim modules
-sys.modules["vim"] = Mock()
-from coqtail import _get_message_range, _strip_comments, NoDotError, UnmatchedError
+from coqtail import NoDotError, UnmatchedError, _get_message_range, _strip_comments
 
 # Test Values #
 tests = (
