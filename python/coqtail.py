@@ -34,6 +34,7 @@ try:
         Sequence,
         Text,
         Tuple,
+        Union,
     )
 except ImportError:
     pass
@@ -256,10 +257,7 @@ class Coqtail(object):
         # type: (Mapping[str, Any]) -> Tuple[int, int]
         """Return the end of the Coq checked section."""
         # Get the location of the last '.'
-        if self.endpoints != []:
-            line, col = self.endpoints[-1]
-        else:
-            line, col = (0, 1)
+        line, col = self.endpoints[-1] if self.endpoints != [] else (0, 1)
         return (line + 1, col)
 
     # Helpers #
@@ -563,25 +561,16 @@ class Coqtail(object):
 
         if self.endpoints != []:
             line, col = self.endpoints[-1]
-            matches["coqtail_checked"] = _make_matcher((0, 0), (line + 1, col))
+            matches["coqtail_checked"] = matcher[: line + 1, :col]
 
         if self.send_queue:
-            if self.endpoints != []:
-                sline, scol = self.endpoints[-1]
-            else:
-                sline, scol = (0, -1)
-
-            to_send = self.send_queue[0]
-            eline, ecol = to_send["stop"]
-            matches["coqtail_sent"] = _make_matcher(
-                (sline, scol + 1), (eline + 1, ecol)
-            )
+            sline, scol = self.endpoints[-1] if self.endpoints != [] else (0, -1)
+            eline, ecol = self.send_queue[-1]["stop"]
+            matches["coqtail_sent"] = matcher[sline : eline + 1, scol:ecol]
 
         if self.error_at is not None:
             (sline, scol), (eline, ecol) = self.error_at
-            matches["coqtail_error"] = _make_matcher(
-                (sline + 1, scol), (eline + 1, ecol)
-            )
+            matches["coqtail_error"] = matcher[sline : eline + 1, scol:ecol]
 
         return matches
 
@@ -1234,54 +1223,73 @@ def _skip_block(lines, sline, scol, estr, sstr=None):
 
 
 # Region Highlighting #
-def _make_matcher(start, stop):
-    # type: (Tuple[int, int], Tuple[int, int]) -> str
-    """A wrapper function to call the appropriate _matcher function."""
-    if start[0] == stop[0]:
-        return _easy_matcher(start, stop)
-    return _hard_matcher(start, stop)
+class Matcher(object):
+    """Construct Vim regexes to pass to 'matchadd()' for an arbitrary region."""
+
+    class _Matcher(object):
+        """Construct regexes for a row or column."""
+
+        def __getitem__(self, key):
+            # type: (Tuple[Union[int, slice], str]) -> str
+            """Construct the regex."""
+            range, type = key
+            match = []
+            if isinstance(range, slice):
+                if range.start is not None and range.start > 1:
+                    match.append(r"\%>{}{}".format(range.start - 1, type))
+                if range.stop is not None:
+                    match.append(r"\%<{}{}".format(range.stop, type))
+            else:
+                match.append(r"\%{}{}".format(range, type))
+            return "".join(match)
+
+    def __init__(self):
+        # type: () -> None
+        """Initialize the row/column matcher."""
+        self._matcher = Matcher._Matcher()
+
+    def __getitem__(self, key):
+        # type: (Tuple[slice, slice]) -> str
+        """Construct the regex.
+
+        'key' is [line-start : line-end, col-start : col-end]
+        where positions are 0-indexed.
+        Ranges are inclusive on the left and exclusive on the right.
+        """
+        lines, cols = map(Matcher.shift_slice, key)
+        assert lines.stop is not None
+
+        if lines.start == lines.stop - 1:
+            return self._matcher[lines.start, "l"] + self._matcher[cols, "v"]
+        return r"\|".join(
+            x
+            for x in (
+                # First line
+                self._matcher[lines.start, "l"] + self._matcher[cols.start :, "v"],
+                # Middle lines
+                (
+                    self._matcher[lines.start + 1 : lines.stop - 1, "l"]
+                    + self._matcher[:, "v"]
+                    if lines.start + 1 < lines.stop - 1
+                    else ""
+                ),
+                # Last line
+                self._matcher[lines.stop - 1, "l"] + self._matcher[: cols.stop, "v"],
+            )
+            if x != ""
+        )
+
+    @staticmethod
+    def shift_slice(s):
+        # type: (slice) -> slice
+        """Shift a 0-indexed to 1-indexed slice."""
+        return slice(
+            s.start + 1 if s.start is not None else 1,
+            s.stop + 1 if s.stop is not None else None,
+        )
 
 
-def _easy_matcher(start, stop):
-    # type: (Tuple[int, int], Tuple[int, Optional[int]]) -> str
-    """Create a Vim match expression with the same start and end columns."""
-    startl = startc = ""
-    sline, scol = start
-    eline, ecol = stop
-
-    if sline > 0:
-        startl = r"\%>{0}l".format(sline - 1)
-    if scol > 0:
-        startc = r"\%>{0}c".format(scol)
-
-    start_match = startl + startc
-    if ecol is not None:
-        end_match = r"\%<{0}l\%<{1}c".format(eline + 1, ecol + 1)
-    else:
-        end_match = r"\%<{0}l".format(eline + 1)
-
-    return start_match + end_match
-
-
-def _hard_matcher(start, stop):
-    # type: (Tuple[int, int], Tuple[int, int]) -> str
-    """Create a Vim match expression with different start and end columns."""
-    sline, scol = start
-    eline, ecol = stop
-
-    first_start = (sline, scol)
-    first_stop = (sline, None)
-    first_line = _easy_matcher(first_start, first_stop)
-
-    mid_start = (sline + 1, 0)
-    mid_stop = (eline - 1, None)
-    middle = _easy_matcher(mid_start, mid_stop)
-
-    last_start = (eline, 0)
-    last_stop = (eline, ecol)
-    last_line = _easy_matcher(last_start, last_stop)
-
-    return r"{0}\|{1}\|{2}".format(first_line, middle, last_line)
+matcher = Matcher()
 
 
 # Misc #

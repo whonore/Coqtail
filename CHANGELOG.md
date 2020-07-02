@@ -8,6 +8,9 @@
   from `'hlsearch'`.
 - Only call `coqtail#stop` on `:quit` if it would close the last visible
   instance of the buffer.
+- Coqtail highlighting correctly handles multibyte characters.
+- All pending sentences waiting to be checked by Coq (`CoqtailSent`) are
+  highlighted instead of just the next one.
 
 ## [1.0.0]
 
