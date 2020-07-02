@@ -361,7 +361,7 @@ function! coqtail#start(...) abort
       autocmd BufWinLeave <buffer> call coqtail#panels#hide()
       autocmd BufWinEnter <buffer>
         \ call coqtail#panels#open(0) | call s:call('refresh', '', {})
-      autocmd QuitPre <buffer> call coqtail#stop()
+      autocmd QuitPre <buffer> if len(win_findbuf(expand('<abuf>'))) == 1 | call coqtail#stop() | endif
     augroup END
   endif
 
