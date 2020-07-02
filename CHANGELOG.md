@@ -2,6 +2,13 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Lowered priority of Coqtail-related highlighting (`CoqtailChecked`,
+  `CoqtailSent`, `CoqtailError`) so they don't cover existing highlight, e.g.
+  from `'hlsearch'`.
+- Only call `coqtail#stop` on `:quit` if it would close the last visible
+  instance of the buffer.
+
 ## [1.0.0]
 
 ### Added
