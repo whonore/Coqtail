@@ -3,7 +3,7 @@
 File: test_parse.py
 Author: Wolf Honore
 
-Description: Unit tests for parsing in coqtail.py.
+Description: Unit tests for constructing match patterns in coqtail.py.
 """
 
 from __future__ import absolute_import
