@@ -565,7 +565,7 @@ class Coqtail(object):
 
         if self.send_queue:
             sline, scol = self.endpoints[-1] if self.endpoints != [] else (0, -1)
-            eline, ecol = self.send_queue[0]["stop"]
+            eline, ecol = self.send_queue[-1]["stop"]
             matches["coqtail_sent"] = matcher[sline : eline + 1, scol + 1 : ecol + 1]
 
         if self.error_at is not None:
