@@ -561,18 +561,16 @@ class Coqtail(object):
 
         if self.endpoints != []:
             line, col = self.endpoints[-1]
-            matches["coqtail_checked"] = matcher[: line + 1, : col + 1]
+            matches["coqtail_checked"] = matcher[: line + 1, :col]
 
         if self.send_queue:
             sline, scol = self.endpoints[-1] if self.endpoints != [] else (0, -1)
             eline, ecol = self.send_queue[-1]["stop"]
-            matches["coqtail_sent"] = matcher[sline : eline + 1, scol + 1 : ecol + 1]
+            matches["coqtail_sent"] = matcher[sline : eline + 1, scol:ecol]
 
         if self.error_at is not None:
             (sline, scol), (eline, ecol) = self.error_at
-            matches["coqtail_error"] = matcher[
-                sline + 1 : eline + 1, scol + 1 : ecol + 1
-            ]
+            matches["coqtail_error"] = matcher[sline : eline + 1, scol:ecol]
 
         return matches
 
@@ -1237,7 +1235,7 @@ class Matcher(object):
             range, type = key
             match = []
             if isinstance(range, slice):
-                if range.start is not None and range.start > 0:
+                if range.start is not None and range.start > 1:
                     match.append(r"\%>{}{}".format(range.start - 1, type))
                 if range.stop is not None:
                     match.append(r"\%<{}{}".format(range.stop, type))
@@ -1252,20 +1250,42 @@ class Matcher(object):
 
     def __getitem__(self, key):
         # type: (Tuple[slice, slice]) -> str
-        """Construct the regex."""
-        lines, cols = key
-        sline = lines.start if lines.start is not None else 0
+        """Construct the regex.
+
+        'key' is [line-start : line-end, col-start : col-end]
+        where positions are 0-indexed.
+        Ranges are inclusive on the left and exclusive on the right.
+        """
+        lines, cols = map(Matcher.shift_slice, key)
         assert lines.stop is not None
 
-        if sline == lines.stop:
-            return self._matcher[sline, "l"] + self._matcher[cols, "v"]
-        return r"{}\|{}\|{}".format(
-            # First line
-            self._matcher[sline, "l"] + self._matcher[cols.start :, "v"],
-            # Middle lines
-            self._matcher[sline + 1 : lines.stop, "l"] + self._matcher[:, "v"],
-            # Last line
-            self._matcher[lines.stop, "l"] + self._matcher[: cols.stop, "v"],
+        if lines.start == lines.stop - 1:
+            return self._matcher[lines.start, "l"] + self._matcher[cols, "v"]
+        return r"\|".join(
+            x
+            for x in (
+                # First line
+                self._matcher[lines.start, "l"] + self._matcher[cols.start :, "v"],
+                # Middle lines
+                (
+                    self._matcher[lines.start + 1 : lines.stop - 1, "l"]
+                    + self._matcher[:, "v"]
+                    if lines.start + 1 < lines.stop - 1
+                    else ""
+                ),
+                # Last line
+                self._matcher[lines.stop - 1, "l"] + self._matcher[: cols.stop, "v"],
+            )
+            if x != ""
+        )
+
+    @staticmethod
+    def shift_slice(s):
+        # type: (slice) -> slice
+        """Shift a 0-indexed to 1-indexed slice."""
+        return slice(
+            s.start + 1 if s.start is not None else 1,
+            s.stop + 1 if s.stop is not None else None,
         )
 
 
