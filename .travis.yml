@@ -24,6 +24,9 @@ matrix:
     - env: TOXENV=vim
 
 install:
+  # Need CI to be a trusted user for cachix
+  # https://github.com/travis-ci/travis-build/pull/1833#issuecomment-651013953
+  - if [[ $TOXENV =~ coqmaster ]]; then echo "trusted-users = $USER" | sudo tee -a /etc/nix/nix.conf; sudo systemctl restart nix-daemon; fi
   - if [[ $TOXENV =~ py27 ]]; then PY=27; else PY=36; fi
   - nix-env -j auto -iA nixpkgs.python${PY}Packages.virtualenv
   - virtualenv venv

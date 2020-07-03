@@ -6,10 +6,8 @@ if [ -z "$outdir" ]; then exit 1; fi
 outdir="$outdir/coq"
 
 function master {
-    echo "substituters = https://cache.nixos.org https://coq.cachix.org" | sudo tee -a /etc/nix/nix.conf
-    echo "trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= coq.cachix.org-1:5QW/wwEnD+l2jvN6QRbRRsa4hBHG3QiQQ26cxu1F5tI=" | sudo tee -a /etc/nix/nix.conf
     path=$(nix-prefetch-url --unpack 'https://github.com/coq/coq-on-cachix/tarball/master' --name source --print-path | tail -n1)
-    nix-build -j auto "$path" -o "$outdir"
+    nix-build -j auto "$path" --extra-substituters "https://coq.cachix.org" --trusted-public-keys "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= coq.cachix.org-1:5QW/wwEnD+l2jvN6QRbRRsa4hBHG3QiQQ26cxu1F5tI=" -o "$outdir"
     exit
 }
 
