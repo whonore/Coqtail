@@ -393,28 +393,28 @@ endfunction
 
 " Define Coqtail commands with the correct options.
 let s:cmd_opts = {
-  \ 'CoqStart': '-nargs=* -complete=file',
-  \ 'CoqStop': '',
-  \ 'CoqInterrupt': '',
-  \ 'CoqNext': '-count=1',
-  \ 'CoqUndo': '-count=1',
-  \ 'CoqToLine': '-count=0',
-  \ 'CoqToTop': '',
-  \ 'CoqJumpToEnd': '',
+  \ 'CoqStart': '-bar -nargs=* -complete=file',
+  \ 'CoqStop': '-bar',
+  \ 'CoqInterrupt': '-bar',
+  \ 'CoqNext': '-bar -count=1',
+  \ 'CoqUndo': '-bar -count=1',
+  \ 'CoqToLine': '-bar -count=0',
+  \ 'CoqToTop': '-bar',
+  \ 'CoqJumpToEnd': '-bar',
   \ 'CoqGotoDef': '-bang -nargs=1',
   \ 'Coq': '-nargs=+ -complete=custom,s:querycomplete',
-  \ 'CoqRestorePanels': '',
-  \ 'CoqGotoGoal': '-bang -count=1',
-  \ 'CoqGotoGoalNext': '-bang',
-  \ 'CoqGotoGoalPrev': '-bang',
-  \ 'CoqToggleDebug': ''
+  \ 'CoqRestorePanels': '-bar',
+  \ 'CoqGotoGoal': '-bar -bang -count=1',
+  \ 'CoqGotoGoalNext': '-bar -bang',
+  \ 'CoqGotoGoalPrev': '-bar -bang',
+  \ 'CoqToggleDebug': '-bar'
 \}
 function! s:cmddef(name, act) abort
   " Start Coqtail first if needed
   let l:act = a:name !~# '\(Start\|Stop\|Interrupt\)$'
     \ ? printf('if s:running() || coqtail#start() | %s | endif', a:act)
     \ : a:act
-  execute printf('command! -buffer -bar %s %s %s', s:cmd_opts[a:name], a:name, l:act)
+  execute printf('command! -buffer %s %s %s', s:cmd_opts[a:name], a:name, l:act)
 endfunction
 
 " Define Coqtail commands.
