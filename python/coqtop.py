@@ -74,45 +74,42 @@ class Coqtop(object):
 
     # Coqtop Interface #
     def start(self, coq_path, *args, **kwargs):
-        # type: (str, *str, **int) -> bool
+        # type: (Optional[str], *str, **int) -> Optional[Text]
         """Launch the Coqtop process."""
         assert self.coqtop is None
 
         self.logger.debug("start")
         timeout = kwargs.get("timeout", None)
 
-        for launch in self.xml.launch(coq_path):
-            try:
-                self.coqtop = subprocess.Popen(
-                    launch + args,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    bufsize=0,
-                )
+        try:
+            self.coqtop = subprocess.Popen(
+                self.xml.launch(coq_path) + args,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                bufsize=0,
+            )
 
-                # Spawn threads to monitor Coqtop's stdout and stderr
-                for f in (self.capture_out, self.capture_err, self.capture_dead):
-                    read_thread = threading.Thread(target=f)
-                    read_thread.daemon = True
-                    read_thread.start()
+            # Spawn threads to monitor Coqtop's stdout and stderr
+            for f in (self.capture_out, self.capture_err, self.capture_dead):
+                read_thread = threading.Thread(target=f)
+                read_thread.daemon = True
+                read_thread.start()
 
-                # Initialize Coqtop
-                response = self.call(self.xml.init(), timeout=timeout)
+            # Initialize Coqtop
+            response = self.call(self.xml.init(), timeout=timeout)
 
-                if isinstance(response, Err):
-                    return False
+            if isinstance(response, Err):
+                return response.msg
 
-                self.root_state = response.val
-                self.state_id = response.val
+            self.root_state = response.val
+            self.state_id = response.val
 
-                return True
-            except OSError:
-                continue
-
-        # Failed to launch Coqtop
-        self.coqtop = None
-        return False
+            return None
+        except OSError as e:
+            # Failed to launch Coqtop
+            self.coqtop = None
+            return str(e)
 
     def stop(self):
         # type: () -> None

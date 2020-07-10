@@ -13,6 +13,7 @@
   highlighted instead of just the next one.
 - Made `:Coq` and `:CoqGotoDef` not treat arguments containing `"` as comments
   by removing `-bar` option.
+- When choosing between `coq(ide)top` and `coq(ide)top.opt` respect the `$PATH` order.
 
 ## [1.0.0]
 
