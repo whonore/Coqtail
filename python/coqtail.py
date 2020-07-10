@@ -126,7 +126,6 @@ class Coqtail(object):
     def start(self, version, coq_path, args, opts):
         # type: (str, str, List[str], Mapping[str, Any]) -> Optional[Text]
         """Start a new Coqtop instance."""
-        success = False
         errmsg = ["Failed to launch Coq"]  # type: List[Text]
 
         try:
