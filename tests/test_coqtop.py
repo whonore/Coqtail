@@ -40,12 +40,11 @@ def get_state(coq):
 def coq():
     """Return a Coqtop for each version."""
     ct = Coqtop(VERSION)
-    if ct.start(""):
+    if ct.start(None) is None:
         yield ct
         ct.stop()
     else:
-        print("Failed to create Coqtop instance")
-        yield None
+        pytest.fail("Failed to create Coqtop instance")
 
 
 # Test Cases #
