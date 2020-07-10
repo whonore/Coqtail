@@ -1280,8 +1280,18 @@ class XMLInterface812(XMLInterface811):
             res.val = opts
         return res
 
+class XMLInterface813(XMLInterface812):
+    """The version 8.13.* XML interface."""
 
-XMLInterfaceLatest = XMLInterface812
+    def __init__(self, versions):
+        # type: (Tuple[int, ...]) -> None
+        """Update launch arguments."""
+        super(XMLInterface812, self).__init__(versions)
+
+        # Unclear why this makes things work when building locally with dune
+        self.coqtop = "coqidetop.opt"
+
+XMLInterfaceLatest = XMLInterface813
 
 
 def XMLInterface(version):
@@ -1315,5 +1325,7 @@ def XMLInterface(version):
         return XMLInterface810(versions)
     elif (8, 11, 0) <= versions < (8, 12, 0):
         return XMLInterface811(versions)
+    elif (8, 12, 0) <= versions < (8, 13, 0):
+        return XMLInterface812(versions)
     else:
         return XMLInterfaceLatest(versions)
