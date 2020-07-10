@@ -212,11 +212,14 @@ function! s:coqversion() abort
   " The Coq Proof Assistant, version _._._ (_ _)
   " The 2nd '._' is optional and the 2nd '.' can also be 'pl'. Other text, such
   " as '+beta_' will be stripped and ignored by str2nr()
-  let l:coqtop = 'coqtop'
-  if b:coqtail_coq_path !=# ''
-    let l:coqtop = b:coqtail_coq_path . '/' . l:coqtop
+  let l:coq = 'coqc'
+  let l:coq = b:coqtail_coq_path !=# ''
+    \ ? b:coqtail_coq_path . '/' . l:coq
+    \ : exepath(l:coq)
+  let l:version_raw = split(system(l:coq . ' --version'))
+  if l:version_raw == []
+    return [-1, 0]
   endif
-  let l:version_raw = split(system(l:coqtop . ' --version'))
   let l:version = l:version_raw[index(l:version_raw, 'version') + 1]
   let l:versions = map(split(l:version, '\v(\.|pl)'), 'str2nr(v:val)')
 
@@ -316,7 +319,12 @@ function! coqtail#start(...) abort
     " Check if version supported
     let [b:coqtail_version, l:supported] = s:coqversion()
     if !l:supported
-      call coqtail#util#warn(printf(s:unsupported_msg, b:coqtail_version))
+      if b:coqtail_version == -1
+        call coqtail#util#err('No coqc binary found.')
+        return 0
+      else
+        call coqtail#util#warn(printf(s:unsupported_msg, b:coqtail_version))
+      endif
     endif
     let b:cmds_pending = 0
 

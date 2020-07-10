@@ -14,6 +14,7 @@ import re
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
+from distutils.spawn import find_executable
 from xml.dom.minidom import parseString
 
 from six import add_metaclass, string_types
@@ -158,12 +159,22 @@ class XMLInterfaceBase(object):
         self.noop = "Eval lazy in forall x, x."
 
     def launch(self, coq_path):
-        # type: (str) -> Iterable[Tuple[Text, ...]]
+        # type: (Optional[str]) -> Tuple[Text, ...]
         """The command to launch coqtop with the appropriate arguments."""
-        return (
-            (os.path.join(coq_path, self.coqtop) + ext,) + tuple(self.launch_args)
-            for ext in ("", ".opt")
+        path = coq_path if coq_path is not None else os.environ["PATH"]
+        paths = path.split(os.pathsep)
+        coq = min(
+            (
+                p
+                for p in (
+                    find_executable(self.coqtop + ext, path=coq_path)
+                    for ext in ("", ".opt")
+                )
+                if p is not None
+            ),
+            key=lambda p: paths.index(os.path.dirname(p)),
         )
+        return (coq,) + tuple(self.launch_args)
 
     # XML Parsing and Marshalling #
     def _to_unit(self, _xml):
