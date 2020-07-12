@@ -524,9 +524,6 @@ function! coqtail#register() abort
   " Initialize once
   if !exists('b:coqtail_chan')
     let b:coqtail_chan = 0
-    for [l:var, l:_] in g:coqtail#panels#hlgroups
-      let b:[l:var] = -1
-    endfor
     let b:coqtail_timeout = 0
     let b:coqtail_log_name = ''
     if !exists('b:coqtail_coq_path')
