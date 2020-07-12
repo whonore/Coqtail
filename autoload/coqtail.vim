@@ -369,6 +369,7 @@ function! coqtail#start(...) abort
       autocmd BufWinLeave <buffer> call coqtail#panels#hide()
       autocmd BufWinEnter <buffer>
         \ call coqtail#panels#open(0) | call s:call('refresh', '', {})
+      autocmd WinNew <buffer> call s:call('refresh', '', {})
       autocmd QuitPre <buffer> if len(win_findbuf(expand('<abuf>'))) == 1 | call coqtail#stop() | endif
     augroup END
   endif
@@ -524,9 +525,6 @@ function! coqtail#register() abort
   " Initialize once
   if !exists('b:coqtail_chan')
     let b:coqtail_chan = 0
-    for [l:var, l:_] in g:coqtail#panels#hlgroups
-      let b:[l:var] = -1
-    endfor
     let b:coqtail_timeout = 0
     let b:coqtail_log_name = ''
     if !exists('b:coqtail_coq_path')

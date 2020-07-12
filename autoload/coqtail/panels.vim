@@ -10,7 +10,7 @@ let g:coqtail#panels#goal = 'goal'
 let g:coqtail#panels#info = 'info'
 let g:coqtail#panels#aux = [g:coqtail#panels#goal, g:coqtail#panels#info]
 " Highlighting groups.
-let g:coqtail#panels#hlgroups = [
+let s:hlgroups = [
   \ ['coqtail_checked', 'CoqtailChecked'],
   \ ['coqtail_sent', 'CoqtailSent'],
   \ ['coqtail_error', 'CoqtailError']
@@ -171,12 +171,12 @@ function! s:scroll() abort
 endfunction
 
 " Clear Coqtop highlighting.
-function! s:clearhl(buf) abort
-  for [l:var, l:_] in g:coqtail#panels#hlgroups
-    let l:val = getbufvar(a:buf, l:var, -1)
+function! s:clearhl(win) abort
+  for [l:var, l:_] in s:hlgroups
+    let l:val = getwinvar(a:win, l:var, -1)
     if l:val != -1
       call matchdelete(l:val)
-      call setbufvar(a:buf, l:var, -1)
+      call setwinvar(a:win, l:var, -1)
     endif
   endfor
 endfunction
@@ -187,7 +187,7 @@ function! coqtail#panels#hide() abort
     return
   endif
 
-  call s:clearhl(bufnr('%'))
+  call s:clearhl(winnr())
 
   " Hide other panels
   let l:toclose = []
@@ -228,24 +228,26 @@ endfunction
 
 " Refresh the highlighting and auxiliary panels.
 function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
-  let l:win = bufwinnr(a:buf)
+  let l:wins = win_findbuf(a:buf)
   let l:refreshing = getbufvar(a:buf, 'coqtail_refreshing', 0)
-  if l:win == -1 || l:refreshing
+  if l:wins == [] || l:refreshing
     return
   endif
   call setbufvar(a:buf, 'coqtail_refreshing', 1)
-
   let l:cur_win = win_getid()
-  call win_gotoid(win_getid(l:win))
 
   try
     " Update highlighting
-    call s:clearhl(a:buf)
-    for [l:var, l:grp] in g:coqtail#panels#hlgroups
-      let l:hl = a:highlights[l:var]
-      if l:hl != v:null
-        call setbufvar(a:buf, l:var, matchadd(l:grp, l:hl, -10))
-      endif
+    for l:win in l:wins
+      call win_gotoid(l:win)
+
+      call s:clearhl(l:win)
+      for [l:var, l:grp] in s:hlgroups
+        let l:hl = a:highlights[l:var]
+        if l:hl != v:null
+          call setwinvar(l:win, l:var, matchadd(l:grp, l:hl, -10))
+        endif
+      endfor
     endfor
 
     " Update panels
@@ -267,5 +269,5 @@ function! coqtail#panels#cleanup() abort
   endfor
   silent! unlet b:coqtail_panel_bufs
 
-  call s:clearhl(bufnr('%'))
+  call s:clearhl(winnr())
 endfunction
