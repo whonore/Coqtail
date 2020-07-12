@@ -14,6 +14,7 @@
 - Made `:Coq` and `:CoqGotoDef` not treat arguments containing `"` as comments
   by removing `-bar` option.
 - When choosing between `coq(ide)top` and `coq(ide)top.opt` respect the `$PATH` order.
+- Crash ("E803: ID not found") after `:split`ting the main Coq window.
 
 ## [1.0.0]
 
