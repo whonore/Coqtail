@@ -162,7 +162,7 @@ class XMLInterfaceBase(object):
         # type: (Optional[str], Optional[str]) -> Tuple[Text, ...]
         """The command to launch coqtop with the appropriate arguments."""
         path = coq_path if coq_path is not None else os.environ["PATH"]
-        paths = path.split(os.pathsep)
+        paths = [os.path.abspath(p) for p in path.split(os.pathsep)]
         coqtop = coq_prog if coq_prog is not None else self.coqtop
         coq = min(
             (

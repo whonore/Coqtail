@@ -320,7 +320,10 @@ function! coqtail#start(...) abort
     let [b:coqtail_version, l:supported] = s:coqversion()
     if !l:supported
       if b:coqtail_version == -1
-        call coqtail#util#err('No coqc binary found.')
+        call coqtail#util#err(printf(
+          \ 'No %s binary found. Check that it exists in your $PATH, or set ' .
+          \ 'b:coqtail_coq_path.',
+          \ coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', 'coqc')))
         return 0
       else
         call coqtail#util#warn(printf(s:unsupported_msg, b:coqtail_version))
