@@ -2,6 +2,10 @@
 
 ## Unreleased ([master])
 
+### Added
+- `b:coqtail_coq_prog`/`g:coqtail_coq_prog` configuration option to override
+  the name of the Coq executable.
+
 ### Fixed
 - Lowered priority of Coqtail-related highlighting (`CoqtailChecked`,
   `CoqtailSent`, `CoqtailError`) so they don't cover existing highlighting, e.g.

@@ -92,10 +92,17 @@ your own by setting `g:coqtail_nomap = 1` in your `.vimrc`.
 Alternatively, you can keep the defaults but remap specific commands.
 For example, use `map <leader>ci <Plug>CoqInterrupt` to avoid hijacking `CTRL-C`.
 
-By default Coqtail uses the `coq(ide)top(.opt)` found on your `PATH`.
-You can tell it to instead search in a directory by setting
-`b:coqtail_coq_path` before calling `CoqStart`.
-Use `g:coqtail_coq_path` to set this option globally.
+By default Coqtail uses the first `coq(ide)top(.opt)` found in your `PATH`.
+Use `b:coqtail_coq_path` (or `g:coqtail_coq_path`) to specify a different
+directory to search in.
+You can also override the name of the Coq executable to use with
+`b:coqtail_coq_prog` (or `g:coqtail_coq_prog`).
+For example, to use the [HoTT library](https://github.com/HoTT/HoTT):
+
+```vim
+let b:coqtail_coq_path = '/path/to/HoTT'
+let b:coqtail_coq_prog = 'hoqidetop'
+```
 
 Coqtail also comes with an ftdetect script for Coq, as well as modified
 versions of Vincent Aravantinos' [syntax] and [indent] scripts for Coq.
