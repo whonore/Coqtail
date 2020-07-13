@@ -123,15 +123,18 @@ class Coqtail(object):
         return err
 
     # Coqtop Interface #
-    def start(self, version, coq_path, args, opts):
-        # type: (str, str, List[str], Mapping[str, Any]) -> Optional[Text]
+    def start(self, version, coq_path, coq_prog, args, opts):
+        # type: (str, str, str, List[str], Mapping[str, Any]) -> Optional[Text]
         """Start a new Coqtop instance."""
         errmsg = []  # type: List[Text]
 
         try:
             self.coqtop = CT.Coqtop(version)
             err = self.coqtop.start(
-                coq_path if coq_path != "" else None, *args, timeout=opts["timeout"]
+                coq_path if coq_path != "" else None,
+                coq_prog if coq_prog != "" else None,
+                *args,
+                timeout=opts["timeout"]
             )
             if err is not None:
                 errmsg.append(err)

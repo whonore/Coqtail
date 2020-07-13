@@ -73,8 +73,8 @@ class Coqtop(object):
         self.logger.setLevel(logging.INFO)
 
     # Coqtop Interface #
-    def start(self, coq_path, *args, **kwargs):
-        # type: (Optional[str], *str, **int) -> Optional[Text]
+    def start(self, coq_path, coq_prog, *args, **kwargs):
+        # type: (Optional[str], Optional[str], *str, **int) -> Optional[Text]
         """Launch the Coqtop process."""
         assert self.coqtop is None
 
@@ -83,7 +83,7 @@ class Coqtop(object):
 
         try:
             self.coqtop = subprocess.Popen(
-                self.xml.launch(coq_path) + args,
+                self.xml.launch(coq_path, coq_prog) + args,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

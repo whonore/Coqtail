@@ -176,6 +176,17 @@ b:coqtail_coq_path	The path to search for the coq(ide)top(.opt) binary. If
 
 			Default: ''
 
+				         *g:coqtail_coq_prog* *b:coqtail_coq_prog*
+							      *coqtail-coq-prog*
+g:coqtail_coq_prog
+b:coqtail_coq_prog	The name of the Coq executable to run. If empty then it
+			defaults to coqtop or coqidetop depending on the Coq
+			version. For example, to use the HoTT library: >
+		    let b:coqtail_coq_path = '/path/to/HoTT'
+		    let b:coqtail_coq_prog = 'hoqidetop'
+<
+			Default: ''
+
 				       *g:coqtail_goal-lines* *coqtail-goal-lines*
 g:coqtail_goal_lines	The number of lines from the start of a goal to
 			display. Used by `:CoqGotoGoal`.

@@ -49,3 +49,10 @@ function! coqtail#util#dedup_qflist() abort
 
   call setqflist(l:uniq)
 endfunction
+
+" Get 'var' from the first scope in 'scopes' in which it is defined.
+function! coqtail#util#getvar(scopes, var, default) abort
+  return a:scopes != []
+    \ ? get(a:scopes[0], a:var, coqtail#util#getvar(a:scopes[1:], a:var, a:default))
+    \ : a:default
+endfunction

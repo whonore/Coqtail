@@ -158,17 +158,17 @@ class XMLInterfaceBase(object):
         # A command that can safely and quickly be executed just to get a new state id
         self.noop = "Eval lazy in forall x, x."
 
-    def launch(self, coq_path):
-        # type: (Optional[str]) -> Tuple[Text, ...]
+    def launch(self, coq_path, coq_prog):
+        # type: (Optional[str], Optional[str]) -> Tuple[Text, ...]
         """The command to launch coqtop with the appropriate arguments."""
         path = coq_path if coq_path is not None else os.environ["PATH"]
-        paths = path.split(os.pathsep)
+        paths = [os.path.abspath(p) for p in path.split(os.pathsep)]
+        coqtop = coq_prog if coq_prog is not None else self.coqtop
         coq = min(
             (
-                p
+                os.path.abspath(p)
                 for p in (
-                    find_executable(self.coqtop + ext, path=coq_path)
-                    for ext in ("", ".opt")
+                    find_executable(coqtop + ext, path=coq_path) for ext in ("", ".opt")
                 )
                 if p is not None
             ),
