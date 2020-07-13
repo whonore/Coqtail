@@ -212,7 +212,7 @@ function! s:coqversion() abort
   " The Coq Proof Assistant, version _._._ (_ _)
   " The 2nd '._' is optional and the 2nd '.' can also be 'pl'. Other text, such
   " as '+beta_' will be stripped and ignored by str2nr()
-  let l:coq = 'coqc'
+  let l:coq = coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', 'coqc')
   let l:coq = b:coqtail_coq_path !=# ''
     \ ? b:coqtail_coq_path . '/' . l:coq
     \ : exepath(l:coq)
@@ -343,6 +343,7 @@ function! coqtail#start(...) abort
     let [l:ok, l:msg] = s:call('start', 'sync', {
       \ 'version': b:coqtail_version,
       \ 'coq_path': expand(b:coqtail_coq_path),
+      \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', ''),
       \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
     if !l:ok || l:msg != v:null
       let l:msg = l:ok && l:msg != v:null ? l:msg : 'Failed to launch Coq.'
