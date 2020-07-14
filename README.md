@@ -11,9 +11,9 @@ Coqtail enables interactive Coq proof development in Vim similar to [CoqIDE] or
 It supports:
 - [Coq 8.4 - 8.11]
 - Python 2<sup>[1](#python2)</sup> and 3
-- Vim >=7.4 (Neovim coming soon)
+- Vim >=7.4 and Neovim >=0.3
 - Simultaneous Coq sessions in different buffers
-- Non-blocking communication between Vim and Coq (Vim >=8.0 only)
+- Non-blocking communication between Vim and Coq (Vim >=8.0 and NeoVim only)
 
 ## Installation and Requirements
 
