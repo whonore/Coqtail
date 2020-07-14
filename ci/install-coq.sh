@@ -21,6 +21,7 @@ case $version in
     *coq89*) attr=coq_8_9;;
     *coq810*) attr=coq_8_10;;
     *coq811*) attr=coq_8_11;;
+    *coq812*) attr=coq_8_12;;
     *coqmaster*) master;;
     *) exit 1;;
 esac
