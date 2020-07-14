@@ -130,7 +130,7 @@ class Coqtail(object):
 
         try:
             self.coqtop = CT.Coqtop(version)
-            err = self.coqtop.start(
+            err, stderr = self.coqtop.start(
                 coq_path if coq_path != "" else None,
                 coq_prog if coq_prog != "" else None,
                 *args,
@@ -138,6 +138,7 @@ class Coqtail(object):
             )
             if err is not None:
                 errmsg.append(err)
+            self.print_stderr(stderr)
         except (ValueError, CT.CoqtopError) as e:
             errmsg.append(str(e))
 
@@ -179,7 +180,7 @@ class Coqtail(object):
         failed_at, err = self.send_until_fail(buffer, opts=opts)
         if unmatched is not None and failed_at is None:
             # Only report unmatched if no other errors occured first
-            self.set_info(str(unmatched), False)
+            self.set_info(str(unmatched), reset=False)
             self.error_at = unmatched.range
             self.refresh(goals=False, opts=opts)
 
@@ -195,7 +196,8 @@ class Coqtail(object):
             return None
 
         try:
-            success, extra_steps = self.coqtop.rewind(steps)
+            success, extra_steps, stderr = self.coqtop.rewind(steps)
+            self.print_stderr(stderr)
         except CT.CoqtopError as e:
             return str(e)
 
@@ -240,7 +242,7 @@ class Coqtail(object):
             failed_at, err = self.send_until_fail(buffer, opts=opts)
             if unmatched is not None and failed_at is None:
                 # Only report unmatched if no other errors occured first
-                self.set_info(str(unmatched), False)
+                self.set_info(str(unmatched), reset=False)
                 self.error_at = unmatched.range
                 self.refresh(goals=False, opts=opts)
 
@@ -254,9 +256,10 @@ class Coqtail(object):
     def query(self, args, opts):
         # type: (List[Text], Mapping[str, Any]) -> None
         """Forward Coq query to Coqtop interface."""
-        _, msg = self.do_query(" ".join(args), opts=opts)
+        _, msg, stderr = self.do_query(" ".join(args), opts=opts)
 
-        self.set_info(msg)
+        self.set_info(msg, reset=True)
+        self.print_stderr(stderr)
         self.refresh(goals=False, opts=opts)
 
     def endpoint(self, opts):
@@ -284,14 +287,17 @@ class Coqtail(object):
             no_comments, com_pos = _strip_comments(message)
 
             try:
-                success, msg, err_loc = self.coqtop.dispatch(
+                success, msg, err_loc, stderr = self.coqtop.dispatch(
                     no_comments, encoding=opts["encoding"], timeout=opts["timeout"],
                 )
             except CT.CoqtopError as e:
                 return None, str(e)
 
+            self.print_stderr(stderr)
+            no_msgs = no_msgs and stderr == ""
+
             if msg != "":
-                self.set_info(msg, no_msgs)
+                self.set_info(msg, reset=no_msgs)
                 no_msgs = False
 
             if success:
@@ -315,7 +321,7 @@ class Coqtail(object):
 
         # Clear info if no messages
         if no_msgs:
-            self.set_info("")
+            self.set_info("", reset=True)
         self.refresh(opts=opts, scroll=scroll)
         return failed_at, None
 
@@ -327,31 +333,31 @@ class Coqtail(object):
         return self.rewind(steps_too_far, opts=opts)
 
     def do_query(self, query, opts):
-        # type: (Text, Mapping[str, Any]) -> Tuple[bool, Text]
+        # type: (Text, Mapping[str, Any]) -> Tuple[bool, Text, Text]
         """Execute a query and return the reply."""
         if self.coqtop is None:
-            return False, COQTOP_ERR
+            return False, COQTOP_ERR, ""
 
         # Ensure that the query ends in '.'
         if not query.endswith("."):
             query += "."
 
         try:
-            success, msg, _ = self.coqtop.dispatch(
+            success, msg, _, stderr = self.coqtop.dispatch(
                 query,
                 in_script=False,
                 encoding=opts["encoding"],
                 timeout=opts["timeout"],
             )
         except CT.CoqtopError as e:
-            return False, str(e)
+            return False, str(e), ""
 
-        return success, msg
+        return success, msg, stderr
 
     def qual_name(self, target, opts):
         # type: (Text, Mapping[str, Any]) -> Optional[Tuple[Text, Text]]
         """Find the fully qualified name of 'target' using 'Locate'."""
-        success, locate = self.do_query("Locate {}.".format(target), opts=opts)
+        success, locate, _ = self.do_query("Locate {}.".format(target), opts=opts)
         if not success:
             return None
 
@@ -383,7 +389,7 @@ class Coqtail(object):
     def find_lib(self, lib, opts):
         # type: (Text, Mapping[str, Any]) -> Optional[Text]
         """Find the path to the .v file corresponding to the libary 'lib'."""
-        success, locate = self.do_query("Locate Library {}.".format(lib), opts=opts)
+        success, locate, _ = self.do_query("Locate Library {}.".format(lib), opts=opts)
         if not success:
             return None
 
@@ -430,7 +436,7 @@ class Coqtail(object):
     def next_bullet(self, opts):
         # type: (Mapping[str, Any]) -> Optional[Text]
         """Check the bullet expected for the next subgoal."""
-        success, show = self.do_query("Show.", opts=opts)
+        success, show, _ = self.do_query("Show.", opts=opts)
         if not success:
             return None
 
@@ -444,7 +450,7 @@ class Coqtail(object):
         if goals:
             newgoals, newinfo = self.get_goals(opts=opts)
             if newinfo != "":
-                self.set_info(newinfo, False)
+                self.set_info(newinfo, reset=False)
             if newgoals is not None:
                 self.set_goal(self.pp_goals(newgoals, opts=opts))
             else:
@@ -458,7 +464,8 @@ class Coqtail(object):
             return None, COQTOP_ERR
 
         try:
-            success, msg, goals = self.coqtop.goals(timeout=opts["timeout"])
+            success, msg, goals, stderr = self.coqtop.goals(timeout=opts["timeout"])
+            self.print_stderr(stderr)
         except CT.CoqtopError as e:
             return None, str(e)
 
@@ -555,6 +562,12 @@ class Coqtail(object):
             else:
                 self.info_msg += [u""] + info
 
+    def print_stderr(self, err):
+        # type: (Text) -> None
+        """Display a message from Coqtop stderr."""
+        if err != "":
+            self.set_info("From stderr: " + err, reset=False)
+
     @property
     def highlights(self):
         # type: () -> Dict[str, Optional[str]]
@@ -634,7 +647,7 @@ class Coqtail(object):
             msg = "Debugging enabled. Log: {}.".format(log)
             self.log = log
 
-        self.set_info(msg)
+        self.set_info(msg, reset=True)
         self.refresh(goals=False, opts=opts)
         return None
 
