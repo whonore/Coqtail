@@ -2,24 +2,28 @@
 
 ## Unreleased ([master])
 
+## [1.1.0]
+
 ### Added
-- Support for NeoVim >=0.3.
+- Support for NeoVim >=0.3. (PR #103)
 - `b:coqtail_coq_prog`/`g:coqtail_coq_prog` configuration option to override
-  the name of the Coq executable.
+  the name of the Coq executable. (PR #119)
 
 ### Fixed
 - Lowered priority of Coqtail-related highlighting (`CoqtailChecked`,
   `CoqtailSent`, `CoqtailError`) so they don't cover existing highlighting, e.g.
-  from `'hlsearch'`.
+  from `'hlsearch'`. (PR #104)
 - Only call `coqtail#stop` on `:quit` if it would close the last visible
-  instance of the buffer.
-- Coqtail highlighting correctly handles multibyte characters.
+  instance of the buffer. (PR #105)
+- Coqtail highlighting correctly handles multibyte characters. (PR #109)
 - All pending sentences waiting to be checked by Coq (`CoqtailSent`) are
-  highlighted instead of just the next one.
-- Made `:Coq` and `:CoqGotoDef` not treat arguments containing `"` as comments
-  by removing `-bar` option.
-- When choosing between `coq(ide)top` and `coq(ide)top.opt` respect the `$PATH` order.
-- Crash ("E803: ID not found") after `:split`ting the main Coq window.
+  highlighted instead of just the next one. (PR #109)
+- `:Coq` and `:CoqGotoDef` do not treat arguments containing `"` as comments
+  by removing `-bar` option. (PR #111)
+- Respect the `$PATH` order when choosing between `coq(ide)top` and
+  `coq(ide)top.opt`. (PR #114).
+- No longer crash ("E803: ID not found") after `:split`ting the main Coq window.
+  (PR #118)
 
 ## [1.0.0]
 
@@ -62,6 +66,7 @@
 - Interoperability with [matchup] and [endwise].
 
 [master]: https://github.com/whonore/Coqtail
+[1.1.0]: https://github.com/whonore/Coqtail/tree/v1.1.0
 [1.0.0]: https://github.com/whonore/Coqtail/tree/v1.0.0
 [pre-1.0]: https://github.com/whonore/Coqtail/tree/pre-1.0
 [vimbufsync]: https://github.com/let-def/vimbufsync
