@@ -1326,5 +1326,7 @@ def XMLInterface(version):
         return XMLInterface810(versions)
     elif (8, 11, 0) <= versions < (8, 12, 0):
         return XMLInterface811(versions)
+    elif (8, 12, 0) <= versions < (8, 13, 0):
+        return XMLInterface812(versions)
     else:
         return XMLInterfaceLatest(versions)
