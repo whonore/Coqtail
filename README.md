@@ -89,8 +89,13 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 
 The mappings above are set by default, but you can disable them all and define
 your own by setting `g:coqtail_nomap = 1` in your `.vimrc`.
+Some of the commands, such as `CoqNext`, also have insert-mode mappings by
+default, which can be disabled with `g:coqtail_noimap`.
 Alternatively, you can keep the defaults but remap specific commands.
 For example, use `map <leader>ci <Plug>CoqInterrupt` to avoid hijacking `CTRL-C`.
+The `<leader>c` prefix may be inconvenient depending on your `mapleader` setting.
+In that case you can set a custom prefix with `g:coqtail_map_prefix` (or
+`g:coqtail_imap_prefix` for just insert-mode mappings).
 
 By default Coqtail uses the first `coq(ide)top(.opt)` found in your `PATH`.
 Use `b:coqtail_coq_path` (or `g:coqtail_coq_path`) to specify a different

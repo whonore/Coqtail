@@ -4,6 +4,8 @@
 
 ### Added
 - Support for Coq 8.12. (PR #120)
+- `g:coqtail_noimap`, `g:coqtail_map_prefix`, `g:coqtail_imap_prefix`
+  configuration options to control insert-mode mappings. (PR #121)
 
 ## [1.1.0]
 
