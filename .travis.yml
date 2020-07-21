@@ -4,7 +4,7 @@ nix: 2.3.6
 matrix:
   include:
     - env: TOXENV=pytest-coq84-py27
-    # - env: TOXENV=pytest-coq85-py27
+    - env: TOXENV=pytest-coq85-py27
     - env: TOXENV=pytest-coq86-py27
     - env: TOXENV=pytest-coq87-py27
     - env: TOXENV=pytest-coq88-py27
@@ -14,7 +14,7 @@ matrix:
     - env: TOXENV=pytest-coq812-py27
     - env: TOXENV=pytest-coqmaster-py27
     - env: TOXENV=pytest-coq84-py36
-    # - env: TOXENV=pytest-coq85-py36
+    - env: TOXENV=pytest-coq85-py36
     - env: TOXENV=pytest-coq86-py36
     - env: TOXENV=pytest-coq87-py36
     - env: TOXENV=pytest-coq88-py36
