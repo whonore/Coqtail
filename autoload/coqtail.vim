@@ -484,6 +484,7 @@ function! s:mappings() abort
   if get(g:, 'coqtail_nomap', 0)
     return
   endif
+  let l:imap = !get(g:, 'coqtail_noimap', 0)
 
   let l:maps = [
     \ ['Start', 'c', 'n'],
@@ -512,7 +513,7 @@ function! s:mappings() abort
 
   for [l:cmd, l:key, l:types] in l:maps
     for l:type in split(l:types, '\zs')
-      if !hasmapto('<Plug>Coq' . l:cmd, l:type)
+      if !hasmapto('<Plug>Coq' . l:cmd, l:type) && (l:type !=# 'i' || l:imap)
         let l:prefix = '<leader>c'
         if l:key[0] ==# '!'
           let l:key = l:key[1:]
