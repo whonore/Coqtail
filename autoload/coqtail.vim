@@ -484,6 +484,11 @@ function! s:mappings() abort
   if get(g:, 'coqtail_nomap', 0)
     return
   endif
+  let l:imap = !get(g:, 'coqtail_noimap', 0)
+
+  " Use custom mapping prefix if set
+  let l:map_prefix = get(g:, 'coqtail_map_prefix', '<leader>c')
+  let l:imap_prefix = get(g:, 'coqtail_imap_prefix', l:map_prefix)
 
   let l:maps = [
     \ ['Start', 'c', 'n'],
@@ -512,8 +517,8 @@ function! s:mappings() abort
 
   for [l:cmd, l:key, l:types] in l:maps
     for l:type in split(l:types, '\zs')
-      if !hasmapto('<Plug>Coq' . l:cmd, l:type)
-        let l:prefix = '<leader>c'
+      if !hasmapto('<Plug>Coq' . l:cmd, l:type) && (l:type !=# 'i' || l:imap)
+        let l:prefix = l:type ==# 'i' ? l:imap_prefix : l:map_prefix
         if l:key[0] ==# '!'
           let l:key = l:key[1:]
           let l:prefix = ''

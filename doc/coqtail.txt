@@ -213,12 +213,29 @@ g:coqtail_project_name	The name of the Coq project file to search for
 b:coqtail_project_file	The path to the Coq project file. Set automatically if
 			one is found during `:CoqStart`.
 
+				   *g:coqtail_map_prefix* *coqtail-mapping-prefix*
+g:coqtail_map_prefix	The character(s) to begin Coqtail mappings.
+
+			Default: '<leader>c'
+
+			   *g:coqtail_imap_prefix* *coqtail-insert-mapping-prefix*
+g:coqtail_imap_prefix	The character(s) to begin Coqtail insert-mode
+			mappings. Takes precedence over |g:coqtail_map_prefix|.
+
+			Default: |g:coqtail_map_prefix|
+
 					    *g:coqtail_nomap* *coqtail-no-mapping*
 g:coqtail_nomap		If true then don't set any default mappings for
 			Coqtail	commands. Specific mappings can also be
 			overwritten by defining new mappings for the desired
 			commands. The defaults will continue to be used for the
 			rest.
+
+			Default: 0
+
+				    *g:coqtail_inomap* *coqtail-no-insert-mapping*
+g:coqtail_inomap	If true then don't set insert-mode mappings for
+			Coqtail	commands.
 
 			Default: 0
 
