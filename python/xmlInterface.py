@@ -162,7 +162,8 @@ class XMLInterfaceBase(object):
         # type: (Optional[str], Optional[str]) -> Tuple[Text, ...]
         """The command to launch coqtop with the appropriate arguments."""
         path = coq_path if coq_path is not None else os.environ["PATH"]
-        paths = [os.path.abspath(p) for p in path.split(os.pathsep)]
+        # N.B. find_executable always checks the current directory so add '.'
+        paths = [os.path.abspath(p) for p in path.split(os.pathsep) + [os.curdir]]
         coqtop = coq_prog if coq_prog is not None else self.coqtop
         coq = min(
             (
