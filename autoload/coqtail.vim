@@ -29,6 +29,8 @@ let s:supported = [
   \ [8, 12, -1]
 \]
 let s:latest_supported = join(s:supported[-1][:1], '.')
+" Coq binaries to try when checking the version if coqtail_coq_prog is not set.
+let s:default_coqs = ['coqtop.opt', 'coqtop', 'coqidetop.opt', 'coqidetop']
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
 " Warning/error messages.
@@ -202,10 +204,19 @@ endfunction
 
 " Get the Coq version and determine if it is supported.
 function! s:coqversion() abort
+  " Find a coq(ide)top(.opt) binary
   let l:coq_path = coqtail#util#getvar([b:, g:], 'coqtail_coq_path', '')
-  let l:coq = coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', 'coqc')
-  let l:coq = l:coq_path !=# '' ? l:coq_path . '/' . l:coq : exepath(l:coq)
-  let l:version_raw = split(system(l:coq . ' --version'))
+  let l:coq = coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', '')
+  let l:coqs = l:coq !=# '' ? [l:coq] : s:default_coqs
+  for l:coq in l:coqs
+    let l:coq = l:coq_path !=# '' ? l:coq_path . '/' . l:coq : exepath(l:coq)
+    let l:version_raw = split(system(l:coq . ' --version'))
+    if l:version_raw != []
+      break
+    endif
+  endfor
+
+  " No binary found
   if l:version_raw == []
     return [-1, 0]
   endif
@@ -317,7 +328,7 @@ function! coqtail#start(...) abort
         call coqtail#util#err(printf(
           \ 'No %s binary found. Check that it exists in your $PATH, or set ' .
           \ 'b:coqtail_coq_path.',
-          \ coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', 'coqc')))
+          \ coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', 'coqtop')))
         return 0
       else
         call coqtail#util#warn(printf(s:unsupported_msg, b:coqtail_version))
