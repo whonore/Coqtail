@@ -78,6 +78,7 @@ syn keyword coqVernacCmd         Polymorphic Functional Scheme Back Combined
 syn keyword coqFeedback          Show
 
 syn region coqPrint matchgroup=coqVernacCmd start="\<\%(Print\%(\_s\+Assumptions\)\?\|About\)\>" contains=coqIdent end="\.\_s"
+syn region coqPrintUniversesSubgraph matchgroup=coqVernacCmd start="\<Print\_s\+Universes\_s\+Subgraph\>" contains=coqIdent end="\.\_s"
 
 " Modules
 syn region coqModule contains=coqModule,coqSection,coqVernacPunctuation,coqModBinder,@coqVernac matchgroup=coqVernacCmd start="\<Module\%(\_s\+Type\)\?\_s\+\z([_[:alpha:]][_'[:alnum:]]*\)\%([^=]*\.\_s\)\@=" end="\<End\_s\+\z1\_s*\.\_s"
