@@ -365,6 +365,19 @@ syn region coqDeriveCmds    contained contains=coqDeriveCmd matchgroup=coqVernac
 syn keyword coqDeriveCmd    contained DependentEliminationPackage Signature NoConfusion
 syn keyword coqDeriveCmd    contained NoConfusionHom EqDec Subterm
 
+" Extraction
+syn keyword coqExtrLangEnum contained OCaml Haskell Scheme
+syn region coqExtrLang matchgroup=coqVernacCmd start="\<Extraction\_s\+Language\>" contains=coqExtrLangEnum end="\.\_s"
+" TODO: ^ make typos/wrong languages stand out
+syn region coqExtrBlacklist matchgroup=coqVernacCmd start="\<Extraction\_s\+Blacklist\>" contains=coqIdent end="\.\_s"
+syn region coqExtr matchgroup=coqVernacCmd start="\<Extraction\>" contains=coqString,coqIdent end="\.\_s"
+" TODO: ^ string only allowed at the beginning of 'Extraction'
+syn region coqRSExtr matchgroup=coqVernacCmd start="\<\%(Recursive\_s\+\|Separate\_s\+\)Extraction\>" contains=coqIdent end="\.\_s"
+syn region coqExtrLib matchgroup=coqVernacCmd start="\<\%(Recursive\_s\+\)\?Extraction\_s\+Library\>" contains=coqIdent end="\.\_s"
+syn region coqExtrConst matchgroup=coqVernacCmd start="\<Extract\_s\+\%(Inlined\_s\+\)\?Constant\>" contains=coqIdent,coqBigArrow,coqString end="\.\_s"
+" TODO: ^ Enforce order of tokens: ident => "string"
+syn match coqBigArrow contained "=>"
+
 " Various (High priority)
 syn region  coqComment           containedin=ALL contains=coqComment,coqTodo start="(\*" end="\*)" extend keepend
 syn keyword coqTodo              contained TODO FIXME XXX NOTE
