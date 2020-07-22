@@ -72,7 +72,7 @@ syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqEval,coqNotation,co
 syn match   coqError             "\S\+"
 syn match   coqVernacPunctuation ":=\|\.\|:"
 syn match   coqIdent             contained "[_[:alpha:]][_'[:alnum:]]*"
-syn keyword coqTopLevel          Declare Type Canonical Structure Cd Drop Existential
+syn keyword coqTopLevel          Type Canonical Structure Cd Drop Existential
 "...
 syn keyword coqVernacCmd         Functional Scheme Back Combined
 syn keyword coqFeedback          Show About Print
@@ -122,6 +122,7 @@ syn region coqOblExpr    contains=coqLtac   matchgroup=coqVernacPunctuation star
 
 " Scopes
 syn region coqBind    contains=coqScope matchgroup=coqVernacCmd start="\<Bind\|Delimit\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqDeclareScope contains=coqIdent matchgroup=coqVernacCmd start="\<Declare\_s\+Scope\>" end="\.\_s"
 syn region coqArgsScope contains=coqScope matchgroup=coqVernacCmd start="\<\%(\%(Local\|Global\)\_s\+\)\?Arguments\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
 syn region coqOpen    contains=coqScope matchgroup=coqVernacCmd start="\%(\<\%(Local\|Global\)\>\_s\+\)\?\<Open\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
 syn region coqClose   contains=coqScope matchgroup=coqVernacCmd start="\%(\<\%(Local\|Global\)\>\_s\+\)\?\<Close\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
@@ -339,7 +340,7 @@ syn region coqCls        contains=coqClsProfile start="\<Class\>" matchgroup=coq
 syn region coqClsProfile contained contains=coqIdent,coqRecTerm,coqRecBinder matchgroup=coqVernacCmd start="Class" matchgroup=NONE end="\.\_s"
 
 " Typeclass instances
-syn region coqIns contains=coqDefName matchgroup=coqVernacCmd start="\<\%(\%(Global\|Local\)\_s\+\)\?Instance\>" matchgroup=coqVernacPunctuation end=":="me=e-2 end="\.$"me=e-1 end="\.\_s"me=e-2 nextgroup=coqDefContents1,coqProofBody keepend skipnl skipwhite skipempty
+syn region coqIns contains=coqDefName matchgroup=coqVernacCmd start="\<\%(\%(Global\|Local\)\_s\+\)\?\%(Declare\_s\+\)\?Instance\>" matchgroup=coqVernacPunctuation end=":="me=e-2 end="\.$"me=e-1 end="\.\_s"me=e-2 nextgroup=coqDefContents1,coqProofBody keepend skipnl skipwhite skipempty
 syn region coqIns matchgroup=coqVernacCmd start="\<Existing\_s\+Instance\>" matchgroup=coqVernacPunctuation end="\.$"me=e-1 end="\.\s"me=e-2
 
 " Equations
