@@ -169,10 +169,7 @@ Configuration						 *coqtail-configuration*
 							      *coqtail-coq-path*
 g:coqtail_coq_path
 b:coqtail_coq_path	The path to search for the coq(ide)top(.opt) binary. If
-			empty then $PATH is used. The global variable is
-			checked only when the .v file is first loaded, but the
-			buffer-local variable is checked on every call to
-			`:CoqStart`.
+			empty then $PATH is used.
 
 			Default: ''
 

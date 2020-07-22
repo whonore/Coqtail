@@ -29,6 +29,8 @@ let s:supported = [
   \ [8, 12, -1]
 \]
 let s:latest_supported = join(s:supported[-1][:1], '.')
+" Coq binaries to try when checking the version if coqtail_coq_prog is not set.
+let s:default_coqs = ['coqtop.opt', 'coqtop', 'coqidetop.opt', 'coqidetop']
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
 " Warning/error messages.
@@ -38,11 +40,6 @@ let s:unsupported_msg =
   \ s:latest_supported . ').'
 " Server port.
 let s:port = -1
-
-" Default Coq path.
-if !exists('g:coqtail_coq_path')
-  let g:coqtail_coq_path = ''
-endif
 
 " Default CoqProject file name.
 if !exists('g:coqtail_project_name')
@@ -207,19 +204,27 @@ endfunction
 
 " Get the Coq version and determine if it is supported.
 function! s:coqversion() abort
-  " Check that Coq version is supported
+  " Find a coq(ide)top(.opt) binary
+  let l:coq_path = coqtail#util#getvar([b:, g:], 'coqtail_coq_path', '')
+  let l:coq = coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', '')
+  let l:coqs = l:coq !=# '' ? [l:coq] : s:default_coqs
+  for l:coq in l:coqs
+    let l:coq = l:coq_path !=# '' ? l:coq_path . '/' . l:coq : exepath(l:coq)
+    let l:version_raw = split(system(l:coq . ' --version'))
+    if l:version_raw != []
+      break
+    endif
+  endfor
+
+  " No binary found
+  if l:version_raw == []
+    return [-1, 0]
+  endif
+
   " Assumes message is of the following form:
   " The Coq Proof Assistant, version _._._ (_ _)
   " The 2nd '._' is optional and the 2nd '.' can also be 'pl'. Other text, such
   " as '+beta_' will be stripped and ignored by str2nr()
-  let l:coq = coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', 'coqc')
-  let l:coq = b:coqtail_coq_path !=# ''
-    \ ? b:coqtail_coq_path . '/' . l:coq
-    \ : exepath(l:coq)
-  let l:version_raw = split(system(l:coq . ' --version'))
-  if l:version_raw == []
-    return [-1, 0]
-  endif
   let l:version = l:version_raw[index(l:version_raw, 'version') + 1]
   let l:versions = map(split(l:version, '\v(\.|pl)'), 'str2nr(v:val)')
 
@@ -323,7 +328,7 @@ function! coqtail#start(...) abort
         call coqtail#util#err(printf(
           \ 'No %s binary found. Check that it exists in your $PATH, or set ' .
           \ 'b:coqtail_coq_path.',
-          \ coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', 'coqc')))
+          \ coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', 'coqtop')))
         return 0
       else
         call coqtail#util#warn(printf(s:unsupported_msg, b:coqtail_version))
@@ -345,7 +350,7 @@ function! coqtail#start(...) abort
     " Launch Coqtop
     let [l:ok, l:msg] = s:call('start', 'sync', {
       \ 'version': b:coqtail_version,
-      \ 'coq_path': expand(b:coqtail_coq_path),
+      \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', '')),
       \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', ''),
       \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
     if !l:ok || l:msg != v:null
@@ -536,9 +541,6 @@ function! coqtail#register() abort
     let b:coqtail_chan = 0
     let b:coqtail_timeout = 0
     let b:coqtail_log_name = ''
-    if !exists('b:coqtail_coq_path')
-      let b:coqtail_coq_path = g:coqtail_coq_path
-    endif
 
     call s:commands()
     call s:mappings()

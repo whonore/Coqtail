@@ -7,6 +7,12 @@
 - `g:coqtail_noimap`, `g:coqtail_map_prefix`, `g:coqtail_imap_prefix`
   configuration options to control insert-mode mappings. (PR #122)
 
+### Fixed
+- `g:coqtail_coq_path` is now checked on `:CoqStart` instead of on buffer load.
+  (PR #123)
+- `:CoqStart` no longer fails when the Coq executable is in the current directory.
+  (PR #123)
+
 ## [1.1.0]
 
 ### Added

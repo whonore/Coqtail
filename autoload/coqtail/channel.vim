@@ -11,7 +11,7 @@ endfunction
 
 if g:coqtail#compat#has_channel && !g:coqtail#compat#nvim
   function! s:open(address) dict abort
-    let l:chanopts = {'mode': 'json'}
+    let l:chanopts = {'mode': 'json', 'timeout': 5000}
     let self.handle = ch_open(a:address, l:chanopts)
     return self.handle
   endfunction
