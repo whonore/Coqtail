@@ -75,7 +75,9 @@ syn match   coqIdent             contained "[_[:alpha:]][_'[:alnum:]]*"
 syn keyword coqTopLevel          Type Canonical Structure Cd Drop Existential
 "...
 syn keyword coqVernacCmd         Functional Scheme Back Combined
-syn keyword coqFeedback          Show About Print
+syn keyword coqFeedback          Show
+
+syn region coqPrint matchgroup=coqVernacCmd start="\<\%(Print\%(\_s\+Assumptions\)\?\|About\)\>" contains=coqIdent end="\.\_s"
 
 " Modules
 syn region coqModule contains=coqModule,coqSection,coqVernacPunctuation,coqModBinder,@coqVernac matchgroup=coqVernacCmd start="\<Module\%(\_s\+Type\)\?\_s\+\z([_[:alpha:]][_'[:alnum:]]*\)\%([^=]*\.\_s\)\@=" end="\<End\_s\+\z1\_s*\.\_s"
