@@ -129,6 +129,7 @@ syn region coqClose   contains=coqScope matchgroup=coqVernacCmd start="\%(\<\%(L
 syn region coqScope   contained matchgroup=coqVernacCmd start="\<Scope\>" end="\.\_s"
 
 " Hints
+syn region coqCreateHintDb matchgroup=coqVernacCmd start="\<Create\_s\+HintDb\>" contains=coqIdent end="\.\_s" keepend
 syn region coqHint contains=coqHintOption start="\<\%(\%(Local\|Global\)\_s\+\)\?Hint\>" end="\.\_s" keepend
 syn region coqHintOption start="\<\%(Resolve\|Immediate\|Constructors\|Unfold\|Extern\)\>" end="\.\_s"
 
