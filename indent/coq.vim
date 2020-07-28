@@ -40,7 +40,7 @@ let s:proofend = '\<\%(Qed\|Defined\|Abort\|Admitted\|Save\)\>'
 let s:bullet = '[-+*]\+'
 let s:bulletline = '^\s*' . s:bullet
 let s:match = '\<\%(lazy\|multi\)\?match\>'
-let s:inductive = '\%(Co\)\?Inductive'
+let s:inductive = '\%(\%(Co\)\?Inductive\|Variant\)'
 let s:skip = 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"'
 
 " Skipping pattern, for comments
