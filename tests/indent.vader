@@ -47,6 +47,23 @@ Expect coq (indented-coinductive):
     | con2 : ind
     | con3 : ind.
 
+Given coq (variant):
+  Variant ind :=
+  | con1 :
+  ind
+  | con2 : ind
+  | con3 : ind.
+
+Do (indent-variant):
+  =ip
+
+Expect coq (indented-variant):
+  Variant ind :=
+    | con1 :
+        ind
+    | con2 : ind
+    | con3 : ind.
+
 Given coq (match):
   Definition f (b : bool) :=
   match b with
