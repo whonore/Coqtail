@@ -12,6 +12,7 @@
   (PR #123)
 - `:CoqStart` no longer fails when the Coq executable is in the current directory.
   (PR #123)
+- Various syntax highlighting/indentation fixes. (PRs #124, #126, #127)
 
 ## [1.1.0]
 
