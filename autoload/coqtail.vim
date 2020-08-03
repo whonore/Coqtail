@@ -208,16 +208,18 @@ function! s:coqversion() abort
   let l:coq_path = coqtail#util#getvar([b:, g:], 'coqtail_coq_path', '')
   let l:coq = coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', '')
   let l:coqs = l:coq !=# '' ? [l:coq] : s:default_coqs
+  let l:ok = 0
   for l:coq in l:coqs
     let l:coq = l:coq_path !=# '' ? l:coq_path . '/' . l:coq : exepath(l:coq)
     let l:version_raw = split(system(l:coq . ' --version'))
-    if l:version_raw != []
+    let l:ok = !v:shell_error && l:version_raw != []
+    if l:ok
       break
     endif
   endfor
 
   " No binary found
-  if l:version_raw == []
+  if !l:ok
     return [-1, 0]
   endif
 
