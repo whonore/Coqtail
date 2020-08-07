@@ -233,15 +233,16 @@ endfunction
 
 " Refresh the highlighting and auxiliary panels.
 function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
-  let l:wins = win_findbuf(a:buf)
-  let l:refreshing = getbufvar(a:buf, 'coqtail_refreshing', 0)
-  if l:wins == [] || l:refreshing
-    return
-  endif
-  call setbufvar(a:buf, 'coqtail_refreshing', 1)
-  let l:cur_win = win_getid()
-
+  " Catch interrupt instead of aborting
   try
+    let l:wins = win_findbuf(a:buf)
+    let l:refreshing = getbufvar(a:buf, 'coqtail_refreshing', 0)
+    if l:wins == [] || l:refreshing
+      return
+    endif
+    call setbufvar(a:buf, 'coqtail_refreshing', 1)
+    let l:cur_win = win_getid()
+
     " Update highlighting
     for l:win in l:wins
       call win_gotoid(l:win)
@@ -259,12 +260,13 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
     for [l:panel, l:txt] in items(a:panels)
       call s:replace(a:buf, l:panel, l:txt, a:scroll)
     endfor
+  catch /^Vim:Interrupt$/
   finally
-    call win_gotoid(l:cur_win)
+    " l:cur_win might not exist yet
+    silent! call win_gotoid(l:cur_win)
+    call setbufvar(a:buf, 'coqtail_refreshing', 0)
+    redraw
   endtry
-
-  redraw
-  call setbufvar(a:buf, 'coqtail_refreshing', 0)
 endfunction
 
 " Delete panel variables and clear highlighting.
