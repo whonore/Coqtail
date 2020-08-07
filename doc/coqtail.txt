@@ -99,7 +99,8 @@ Coq Queries						       *coqtail-queries*
 						     *<leader>cs* *coqtail-search*
 :Coq Search {arg}
 <leader>cs		The first version uses {arg}, while the second uses the
-			term under the cursor.
+			term under the cursor or the highlighted range in
+			visual mode.
 
 						      *<leader>ch* *coqtail-check*
 :Coq Check {arg}

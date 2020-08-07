@@ -6,6 +6,8 @@
 - Support for Coq 8.12. (PR #120)
 - `g:coqtail_noimap`, `g:coqtail_map_prefix`, `g:coqtail_imap_prefix`
   configuration options to control insert-mode mappings. (PR #122)
+- Mappings for query commands (`<leader>cs`, `<leader>ch`, etc) now work on the
+  highlighted range in Visual mode. (PR #131)
 
 ### Fixed
 - `g:coqtail_coq_path` is now checked on `:CoqStart` instead of on buffer load.
