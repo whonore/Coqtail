@@ -33,6 +33,18 @@ function! coqtail#util#getcurword() abort
   return l:cword
 endfunction
 
+" Get the text selected in Visual mode.
+function! coqtail#util#getvisual() abort
+  try
+    let l:v_old = @v
+    normal! gv"vy
+    return join(split(@v, '\n'), ' ')
+  finally
+    " Restore register
+    let @v = l:v_old
+  endtry
+endfunction
+
 " Remove entries in the quickfix list with the same position.
 function! coqtail#util#dedup_qflist() abort
   let l:qfl = getqflist()
