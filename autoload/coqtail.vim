@@ -191,8 +191,8 @@ endfunction
 
 " Clean up commands, panels, and autocommands.
 function! s:cleanup() abort
-  " Clean up auxiliary panels
-  call coqtail#panels#cleanup()
+  " Switch back to main buffer for cleanup
+  call coqtail#panels#switch(g:coqtail#panels#main)
 
   " Clean up autocmds
   silent! autocmd! coqtail#Autocmds * <buffer>
@@ -200,9 +200,14 @@ function! s:cleanup() abort
   " Close the channel
   silent! call b:coqtail_chan.close()
   let b:coqtail_chan = 0
+
+  " Clean up auxiliary panels
+  call coqtail#panels#cleanup()
 endfunction
 
 " Get the Coq version and determine if it is supported.
+" Only called in coqtail#start(), from main buffer,
+" so we can safely use b: vars here.
 function! s:coqversion() abort
   " Find a coq(ide)top(.opt) binary
   let l:coq_path = coqtail#util#getvar([b:, g:], 'coqtail_coq_path', '')
@@ -258,7 +263,7 @@ endfunction
 " Check if the channel with Coqtail is open.
 function! s:running() abort
   try
-    let l:ok = b:coqtail_chan.status() ==# 'open'
+    let l:ok = coqtail#panels#getvar('coqtail_chan').status() ==# 'open'
   catch
     let l:ok = 0
   finally
@@ -274,22 +279,26 @@ function! s:call(cmd, cb, args) abort
 
   let a:args.opts = {
     \ 'encoding': &encoding,
-    \ 'timeout': b:coqtail_timeout,
+    \ 'timeout': coqtail#panels#getvar('coqtail_timeout'),
     \ 'filename': expand('%:p')
   \}
   let l:args = [bufnr('%'), a:cmd, a:args]
 
   if a:cb !=# 'sync' && g:coqtail#compat#has_channel
     " Async
-    let b:cmds_pending += 1
+
+    " Increment cmds_pending
+    let l:cmds_pending = coqtail#panels#getvar('cmds_pending')
+    call coqtail#panels#setvar('cmds_pending', l:cmds_pending + 1)
+
     setlocal nomodifiable
     let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#defaultCB'}
-    return [1, b:coqtail_chan.sendexpr(l:args, l:opts)]
+    return [1, coqtail#panels#getvar('coqtail_chan').sendexpr(l:args, l:opts)]
   else
     " Sync
     " Don't wait for interrupt to return
     let l:opts = a:cmd ==# 'interrupt' ? {'timeout': 0} : {}
-    let l:res = b:coqtail_chan.evalexpr(l:args, l:opts)
+    let l:res = coqtail#panels#getvar('coqtail_chan').evalexpr(l:args, l:opts)
     return type(l:res) == g:coqtail#compat#t_dict
       \ ? [l:res.buf == bufnr('%'), l:res.ret]
       \ : [0, -1]
@@ -323,6 +332,10 @@ function! coqtail#start(...) abort
   if s:running()
     call coqtail#util#warn('Coq is already running.')
   else
+    " Since we are initializing, we are in the main buffer;
+    " the other buffers have not been initialized yet.
+    " Thus, we can safely refer to buffer-local b: variables
+
     " Check if version supported
     let [b:coqtail_version, l:supported] = s:coqversion()
     if !l:supported
@@ -556,6 +569,8 @@ function! coqtail#define_mappings() abort
 endfunction
 
 " Initialize buffer local variables, commands, and mappings.
+" Called from ftplugin/coq.vim, from the main buffer,
+" meaning we can safely refer to b: vars here
 function! coqtail#register() abort
   " Initialize once
   if !exists('b:coqtail_chan')
