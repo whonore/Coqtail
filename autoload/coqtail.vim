@@ -282,7 +282,7 @@ function! s:call(cmd, cb, args) abort
     \ 'timeout': coqtail#panels#getvar('coqtail_timeout'),
     \ 'filename': expand('%:p')
   \}
-  let l:args = [bufnr('%'), a:cmd, a:args]
+  let l:args = [b:coqtail_panel_bufs.main, a:cmd, a:args]
 
   if a:cb !=# 'sync' && g:coqtail#compat#has_channel
     " Async
@@ -291,7 +291,7 @@ function! s:call(cmd, cb, args) abort
     let l:cmds_pending = coqtail#panels#getvar('cmds_pending')
     call coqtail#panels#setvar('cmds_pending', l:cmds_pending + 1)
 
-    setlocal nomodifiable
+    call setbufvar(b:coqtail_panel_bufs.main, '&modifiable', 0)
     let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#defaultCB'}
     return [1, coqtail#panels#getvar('coqtail_chan').sendexpr(l:args, l:opts)]
   else
@@ -300,7 +300,7 @@ function! s:call(cmd, cb, args) abort
     let l:opts = a:cmd ==# 'interrupt' ? {'timeout': 0} : {}
     let l:res = coqtail#panels#getvar('coqtail_chan').evalexpr(l:args, l:opts)
     return type(l:res) == g:coqtail#compat#t_dict
-      \ ? [l:res.buf == bufnr('%'), l:res.ret]
+      \ ? [l:res.buf == b:coqtail_panel_bufs.main, l:res.ret]
       \ : [0, -1]
   endif
 endfunction
@@ -443,45 +443,32 @@ let s:cmd_opts = {
   \ 'CoqToggleDebug': '-bar'
 \}
 
-" a:aux indicates whether we're defining the command
-" for an auxiliary buffer or the main buffer
-function! s:cmddef(aux, name, act) abort
-  if a:aux
-    let l:act =
-          \ printf( 'let _tmp_panel = ' .
-          \             'coqtail#panels#switch(g:coqtail#panels#main) | ' .
-          \         'if _tmp_panel != g:coqtail#panels#none | ' .
-          \           '%s | ' .
-          \           'call coqtail#panels#switch(_tmp_panel) | ' .
-          \         'endif',
-          \ a:act)
-  else
-    " Start Coqtail first if needed
-    let l:act = a:name !~# '\(Start\|Stop\|Interrupt\)$'
-      \ ? printf('if s:running() || coqtail#start() | %s | endif', a:act)
-      \ : a:act
-  endif
+function! s:cmddef(name, act) abort
+  " Start Coqtail first if needed
+  let l:act = a:name !~# '\(Start\|Stop\|Interrupt\)$'
+    \ ? printf('if s:running() || coqtail#start() | %s | endif', a:act)
+    \ : a:act
   execute printf('command! -buffer %s %s %s', s:cmd_opts[a:name], a:name, l:act)
 endfunction
 
 " Define Coqtail commands.
-function! coqtail#define_commands(aux) abort
-  call s:cmddef(a:aux, 'CoqStart', 'call coqtail#start(<f-args>)')
-  call s:cmddef(a:aux, 'CoqStop', 'call coqtail#stop()')
-  call s:cmddef(a:aux, 'CoqInterrupt', 'call s:call("interrupt", "sync", {})')
-  call s:cmddef(a:aux, 'CoqNext', 'call s:call("step", "", {"steps": <count>})')
-  call s:cmddef(a:aux, 'CoqUndo', 'call s:call("rewind", "", {"steps": <count>})')
-  call s:cmddef(a:aux, 'CoqToLine', 'call coqtail#toline(<count>)')
-  call s:cmddef(a:aux, 'CoqToTop', 'call s:call("to_top", "", {})')
-  call s:cmddef(a:aux, 'CoqJumpToEnd', 'call coqtail#jumptoend()')
-  call s:cmddef(a:aux, 'CoqGotoDef', 'call coqtail#gotodef(<f-args>, <bang>0)')
-  call s:cmddef(a:aux, 'Coq', 'call s:call("query", "", {"args": [<f-args>]})')
-  call s:cmddef(a:aux, 'CoqRestorePanels',
+function! coqtail#define_commands() abort
+  call s:cmddef('CoqStart', 'call coqtail#start(<f-args>)')
+  call s:cmddef('CoqStop', 'call coqtail#stop()')
+  call s:cmddef('CoqInterrupt', 'call s:call("interrupt", "sync", {})')
+  call s:cmddef('CoqNext', 'call s:call("step", "", {"steps": <count>})')
+  call s:cmddef('CoqUndo', 'call s:call("rewind", "", {"steps": <count>})')
+  call s:cmddef('CoqToLine', 'call coqtail#toline(<count>)')
+  call s:cmddef('CoqToTop', 'call s:call("to_top", "", {})')
+  call s:cmddef('CoqJumpToEnd', 'call coqtail#jumptoend()')
+  call s:cmddef('CoqGotoDef', 'call coqtail#gotodef(<f-args>, <bang>0)')
+  call s:cmddef('Coq', 'call s:call("query", "", {"args": [<f-args>]})')
+  call s:cmddef('CoqRestorePanels',
     \ 'call coqtail#panels#open(1) | call s:call("refresh", "", {})')
-  call s:cmddef(a:aux, 'CoqGotoGoal', 'call coqtail#gotogoal(<count>, <bang>1)')
-  call s:cmddef(a:aux, 'CoqGotoGoalNext', 'call coqtail#gotogoal(-1, <bang>1)')
-  call s:cmddef(a:aux, 'CoqGotoGoalPrev', 'call coqtail#gotogoal(-2, <bang>1)')
-  call s:cmddef(a:aux, 'CoqToggleDebug', 'call s:call("toggle_debug", "", {})')
+  call s:cmddef('CoqGotoGoal', 'call coqtail#gotogoal(<count>, <bang>1)')
+  call s:cmddef('CoqGotoGoalNext', 'call coqtail#gotogoal(-1, <bang>1)')
+  call s:cmddef('CoqGotoGoalPrev', 'call coqtail#gotogoal(-2, <bang>1)')
+  call s:cmddef('CoqToggleDebug', 'call s:call("toggle_debug", "", {})')
 endfunction
 
 " Define <Plug> and default mappings for Coqtail commands.
@@ -581,7 +568,7 @@ function! coqtail#register() abort
     " Only define commands + mappings for main buffer for now;
     " these will be redefined for the goal and info buffers
     " when those are created (when :CoqStart is called)
-    call coqtail#define_commands(0)
+    call coqtail#define_commands()
     call coqtail#define_mappings()
   endif
 endfunction
