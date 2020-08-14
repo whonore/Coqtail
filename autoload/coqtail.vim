@@ -280,7 +280,7 @@ function! s:call(cmd, cb, args) abort
   let a:args.opts = {
     \ 'encoding': &encoding,
     \ 'timeout': coqtail#panels#getvar('coqtail_timeout'),
-    \ 'filename': expand('%:p')
+    \ 'filename': expand('#b:coqtail_panel_bufs.main:p')
   \}
   let l:args = [b:coqtail_panel_bufs.main, a:cmd, a:args]
 
@@ -291,7 +291,7 @@ function! s:call(cmd, cb, args) abort
     let l:cmds_pending = coqtail#panels#getvar('cmds_pending')
     call coqtail#panels#setvar('cmds_pending', l:cmds_pending + 1)
 
-    call setbufvar(b:coqtail_panel_bufs.main, '&modifiable', 0)
+    call coqtail#panels#setvar('&modifiable', 0)
     let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#defaultCB'}
     return [1, coqtail#panels#getvar('coqtail_chan').sendexpr(l:args, l:opts)]
   else
