@@ -280,7 +280,7 @@ function! s:call(cmd, cb, args) abort
   let a:args.opts = {
     \ 'encoding': &encoding,
     \ 'timeout': coqtail#panels#getvar('coqtail_timeout'),
-    \ 'filename': expand('#b:coqtail_panel_bufs.main:p')
+    \ 'filename': expand('#' . b:coqtail_panel_bufs.main . ':p')
   \}
   let l:args = [b:coqtail_panel_bufs.main, a:cmd, a:args]
 
