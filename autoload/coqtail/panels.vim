@@ -132,6 +132,9 @@ function! s:open(panel, force) abort
     endfor
   endif
 
+  call coqtail#define_commands(1)
+  call coqtail#define_mappings()
+
   call coqtail#panels#switch(l:from)
   return l:opened
 endfunction

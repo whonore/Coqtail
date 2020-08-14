@@ -349,24 +349,6 @@ function! coqtail#start(...) abort
     call coqtail#panels#init()
     call coqtail#panels#open(0)
 
-    " Define commands and mappings for Goal buffer
-    let l:panel = coqtail#panels#switch(g:coqtail#panels#goal)
-    if l:panel != g:coqtail#panels#none
-      " Switched to goal panel
-      call s:commands(1)
-      call s:mappings()
-      call coqtail#panels#switch(l:panel)
-    endif
-
-    " Define commands and mappings for Info buffer
-    let l:panel = coqtail#panels#switch(g:coqtail#panels#info)
-    if l:panel != g:coqtail#panels#none
-      " Switched to info panel
-      call s:commands(1)
-      call s:mappings()
-      call coqtail#panels#switch(l:panel)
-    endif
-
     " Launch Coqtop
     let [l:ok, l:msg] = s:call('start', 'sync', {
       \ 'version': b:coqtail_version,
@@ -470,7 +452,7 @@ function! s:cmddef(aux, name, act) abort
 endfunction
 
 " Define Coqtail commands.
-function! s:commands(aux) abort
+function! coqtail#define_commands(aux) abort
   call s:cmddef(a:aux, 'CoqStart', 'call coqtail#start(<f-args>)')
   call s:cmddef(a:aux, 'CoqStop', 'call coqtail#stop()')
   call s:cmddef(a:aux, 'CoqInterrupt', 'call s:call("interrupt", "sync", {})')
@@ -490,7 +472,7 @@ function! s:commands(aux) abort
 endfunction
 
 " Define <Plug> and default mappings for Coqtail commands.
-function! s:mappings() abort
+function! coqtail#define_mappings() abort
   nnoremap <buffer> <silent> <Plug>CoqStart :CoqStart<CR>
   nnoremap <buffer> <silent> <Plug>CoqStop :CoqStop<CR>
   nnoremap <buffer> <silent> <Plug>CoqInterrupt :CoqInterrupt<CR>
@@ -584,7 +566,7 @@ function! coqtail#register() abort
     " Only define commands + mappings for main buffer for now;
     " these will be redefined for the goal and info buffers
     " when those are created (when :CoqStart is called)
-    call s:commands(0)
-    call s:mappings()
+    call coqtail#define_commands(0)
+    call coqtail#define_mappings()
   endif
 endfunction
