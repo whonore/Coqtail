@@ -8,6 +8,7 @@
   configuration options to control insert-mode mappings. (PR #122)
 - Mappings for query commands (`<leader>cs`, `<leader>ch`, etc) now work on the
   highlighted range in Visual mode. (PR #131)
+- Commands and mappings now work when called in the Goal and Info panels. (PR #132)
 
 ### Fixed
 - `g:coqtail_coq_path` is now checked on `:CoqStart` instead of on buffer load.

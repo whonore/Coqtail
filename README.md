@@ -71,7 +71,7 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | `CoqGotoDef[!] <arg>` | `<leader>cg` | Populate the quickfix list with possible locations of the definition of `<arg>` and try to jump to the first one. If your Vim supports `'tagfunc'` you can also use `CTRL-]`, `:tag`, and friends. |
 | **Queries** | |
 | `Coq <args>` | | Send arbitrary queries to Coq (e.g. `Check`, `About`, `Print`, etc.). |
-| `Coq Check <arg>` | `<leader>ch` | Show the type of `<arg>` (the mapping will use the term under the cursor). |
+| `Coq Check <arg>` | `<leader>ch` | Show the type of `<arg>` (the mapping will use the term under the cursor or the highlighted range in visual mode). |
 | `Coq About <arg>` | `<leader>ca` | Show information about `<arg>`. |
 | `Coq Print <arg>` | `<leader>cp` | Show the definition of `<arg>`. |
 | `Coq Locate <arg>` | `<leader>cf` | Show where `<arg>` is defined. |
