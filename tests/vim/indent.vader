@@ -1,3 +1,6 @@
+" Author: Wolf Honore
+" Coq indentation unit tests.
+
 Given coq (inductive):
   Inductive ind :=
   | con1 :

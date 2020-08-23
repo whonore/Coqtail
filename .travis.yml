@@ -3,26 +3,28 @@ nix: 2.3.6
 
 matrix:
   include:
-    - env: TOXENV=pytest-coq84-py27
-    - env: TOXENV=pytest-coq85-py27
-    - env: TOXENV=pytest-coq86-py27
-    - env: TOXENV=pytest-coq87-py27
-    - env: TOXENV=pytest-coq88-py27
-    - env: TOXENV=pytest-coq89-py27
-    - env: TOXENV=pytest-coq810-py27
-    - env: TOXENV=pytest-coq811-py27
-    - env: TOXENV=pytest-coq812-py27
-    - env: TOXENV=pytest-coqmaster-py27
-    - env: TOXENV=pytest-coq84-py36
-    - env: TOXENV=pytest-coq85-py36
-    - env: TOXENV=pytest-coq86-py36
-    - env: TOXENV=pytest-coq87-py36
-    - env: TOXENV=pytest-coq88-py36
-    - env: TOXENV=pytest-coq89-py36
-    - env: TOXENV=pytest-coq810-py36
-    - env: TOXENV=pytest-coq811-py36
-    - env: TOXENV=pytest-coq812-py36
-    - env: TOXENV=pytest-coqmaster-py36
+    - env: TOXENV=coq84-py27
+    - env: TOXENV=coq85-py27
+    - env: TOXENV=coq86-py27
+    - env: TOXENV=coq87-py27
+    - env: TOXENV=coq88-py27
+    - env: TOXENV=coq89-py27
+    - env: TOXENV=coq810-py27
+    - env: TOXENV=coq811-py27
+    - env: TOXENV=coq812-py27
+    - env: TOXENV=coqmaster-py27
+    - env: TOXENV=coq84-py36
+    - env: TOXENV=coq85-py36
+    - env: TOXENV=coq86-py36
+    - env: TOXENV=coq87-py36
+    - env: TOXENV=coq88-py36
+    - env: TOXENV=coq89-py36
+    - env: TOXENV=coq810-py36
+    - env: TOXENV=coq811-py36
+    - env: TOXENV=coq812-py36
+    - env: TOXENV=coqmaster-py36
+    - env: TOXENV=unit-py27
+    - env: TOXENV=unit-py36
     - env: TOXENV=vim
 
 install:

@@ -1,10 +1,6 @@
 # -*- coding: utf8 -*-
-"""
-File: test_parse.py
-Author: Wolf Honore
-
-Description: Unit tests for parsing in coqtail.py.
-"""
+# Author: Wolf Honore
+"""Sentence parsing unit tests."""
 
 from __future__ import absolute_import
 from __future__ import division

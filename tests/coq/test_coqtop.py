@@ -1,11 +1,6 @@
 # -*- coding: utf8 -*-
-"""
-File: test_coqtop.py
-Author: Wolf Honore
-
-Description: Unit/integration tests for coqtop.py.
-TODO: test timeout similarly to manual interrupt
-"""
+# Author: Wolf Honore
+"""Coq integration tests."""
 
 from __future__ import absolute_import
 from __future__ import division
