@@ -16,7 +16,7 @@ import pytest
 from xmlInterface import XMLInterface
 
 # Test Values #
-VERSIONS = ('8.{}.0'.format(v) for v in range(4, 13))
+VERSIONS = ("8.{}.0".format(v) for v in range(4, 13))
 
 
 # Pairs of Python values and the corresponding XML representation. Parametrized
