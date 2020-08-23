@@ -16,8 +16,7 @@ import pytest
 from xmlInterface import XMLInterface
 
 # Test Values #
-# Check current version
-VERSION = check_output(("coqtop", "--version")).split()[5].decode()
+VERSIONS = ('8.{}.0'.format(v) for v in range(4, 13))
 
 
 # Pairs of Python values and the corresponding XML representation. Parametrized
@@ -38,8 +37,7 @@ def mkXML(tag, text="", attrs=None, children=None):
 
 
 class ToOfTests(object):
-    """Methods return test cases for _of_py and _to_py as PyXML
-    objects."""
+    """Methods return test cases for _of_py and _to_py as PyXML objects."""
 
     @staticmethod
     def all_tests():
@@ -335,10 +333,10 @@ class ToOfTests(object):
 
 
 # Test Fixtures #
-@pytest.fixture(scope="module")
-def xmlInt():
+@pytest.fixture(scope="module", params=VERSIONS)
+def xmlInt(request):
     """Return an XMLInterface for each version."""
-    return XMLInterface(VERSION)
+    return XMLInterface(request.param)
 
 
 @pytest.fixture(scope="module", params=ToOfTests.all_tests())
