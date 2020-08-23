@@ -1,10 +1,6 @@
 # -*- coding: utf8 -*-
-"""
-File: test_xmlInterface.py
-Author: Wolf Honore
-
-Description: Unit tests for xmlInterface.py.
-"""
+# Author: Wolf Honore
+"""XMLInterface marshalling unit tests."""
 
 from __future__ import absolute_import
 from __future__ import division

@@ -1,3 +1,6 @@
+" Author: Wolf Honore
+" _CoqProject parsing unit tests.
+
 Before (initialize):
   call coqtail#compat#init('../python/')
 
