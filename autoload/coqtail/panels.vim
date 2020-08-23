@@ -132,6 +132,9 @@ function! s:open(panel, force) abort
     endfor
   endif
 
+  call coqtail#define_commands()
+  call coqtail#define_mappings()
+
   call coqtail#panels#switch(l:from)
   return l:opened
 endfunction
@@ -270,4 +273,14 @@ function! coqtail#panels#cleanup() abort
   silent! unlet b:coqtail_panel_bufs
 
   call s:clearhl(winnr())
+endfunction
+
+" Getter for variables local to the main buffer
+function! coqtail#panels#getvar(var) abort
+  return getbufvar(b:coqtail_panel_bufs.main, a:var)
+endfunction
+
+" Setter for variables local to the main buffer
+function! coqtail#panels#setvar(var, val) abort
+  return setbufvar(b:coqtail_panel_bufs.main, a:var, a:val)
 endfunction
