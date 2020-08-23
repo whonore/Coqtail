@@ -418,6 +418,12 @@ endfunction
 
 " Move the cursor to the end of the region checked by Coq.
 function! coqtail#jumptoend() abort
+  let l:panel = coqtail#panels#switch(g:coqtail#panels#main)
+  if l:panel == g:coqtail#panels#none
+    " Failed to switch to main panel
+    return
+  endif
+
   let [l:ok, l:pos] = s:call('endpoint', 'sync', {})
   if l:ok
     call cursor(l:pos)
