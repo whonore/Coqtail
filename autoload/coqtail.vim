@@ -145,12 +145,19 @@ function! coqtail#gotodef(target, bang) abort
     " Filter duplicate matches
     call coqtail#util#dedup_qflist()
 
+    " Set usetab instead of opening a new buffer
+    let l:swb = &switchbuf
+    set switchbuf+=usetab
+
     " Jump to first if possible, otherwise open list
     try
       execute 'cfirst' . l:bang
     catch /^Vim(cfirst):/
       botright cwindow
     endtry
+
+    " Reset switchbuf
+    let &switchbuf = l:swb
   endif
 endfunction
 
