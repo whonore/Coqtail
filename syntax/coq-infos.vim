@@ -12,13 +12,11 @@
 if exists('b:current_syntax') || get(g:, 'coqtail_nosyntax', 0)
   finish
 endif
+let b:current_syntax = 'coq-infos'
 
-" Keywords are alphanumeric, _, and '
-setlocal iskeyword=@,48-57,192-255,_,'
-syn iskeyword clear
-
-" Coq is case sensitive.
-syn case match
+" Helpers
+execute printf('source %s/_coq_common.vim', expand('<sfile>:p:h'))
+let s:h = g:CoqtailSyntaxHelpers()
 
 " Various
 syn match   coqVernacPunctuation ":=\|\.\|:"
@@ -138,10 +136,6 @@ syn region  coqComment           containedin=ALL contains=coqComment,coqTodo sta
 syn keyword coqTodo              contained TODO FIXME XXX NOTE
 syn region  coqString            start=+"+ skip=+""+ end=+"+ extend
 
-" Synchronization
-syn sync minlines=50
-syn sync maxlines=500
-
 " Define the default highlighting.
 command -nargs=+ HiLink hi def link <args>
 
@@ -198,5 +192,3 @@ HiLink coqError             Error
 HiLink coqString            String
 
 delcommand HiLink
-
-let b:current_syntax = 'coq-infos'
