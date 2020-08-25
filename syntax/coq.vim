@@ -1,30 +1,6 @@
-" Vim syntax file
-" Language:     Coq
-" Filenames:    *.v
-" Maintainer:  Vincent Aravantinos <vincent.aravantinos@gmail.com>
-" Last Change: 2008 Dec 02 - Added the Program and Obligation constructions (in Coq v8.2) - with Serge Leblanc.
-"              2008 Jan 30 - Applied the improvments for all constructions, added 'with' and 'where' for
-"                            fixpoints and inductives, fixed some hard long standing bugs.
-"              2008 Jan 27 - Changed the way things are coloured, improved the efficiency of colouring.
-"              2008 Jan 25 - Added Ltac, added Notations, bugfixes.
-"              2007 Dec 1 - Added Record's.
-"              2007 Nov 28 - Added things to reuse (in other plugins) the knowledge that we are inside a proof.
-"              2007 Nov 19 - Fixed bug with comments.
-"              2007 Nov 17 - Various minor bugfixes.
-"              2007 Nov 8 - Added keywords.
-"              2007 Nov 8 - Fixed some ill-highlighting in the type of declarations.
-"              2007 Nov 8 - Fixed pb with keywords ("\<...\>" had been forgotten)
-"                           (thanks to Vasileios Koutavas)
-"              2007 Nov 8 - Definition...Defined now works as expected,
-"                           fixed a bug with tactics that were not recognized,
-"                           fixed other bugs
-"              2007 Nov 7 - Complete refactoring, (much) more accurate highlighting. Much bigger file...
-"              2007 Nov 7 - Added tactic colouration, added other keywords (thanks to Tom Harke)
-"              2007 Nov 6 - Added "Defined" keyword (thanks to Serge Leblanc)
-"              2007 Nov 5 - Initial version.
-" License:     public domain
-" Modified By: Wolf Honore
-" TODO: mark bad constructions (eg. Section ended but not opened)
+" Author: Wolf Honore
+" Original Maintainer: Vincent Aravantinos <vincent.aravantinos@gmail.com>
+" Coq syntax definitions.
 
 " Define Coqtail-specific highlighting groups.
 if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight

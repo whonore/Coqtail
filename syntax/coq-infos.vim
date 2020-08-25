@@ -1,12 +1,6 @@
-" Vim syntax file
-" Language:    Coq-infos
-" Filenames:   *.v
-" Maintainer:  Laurent Georget <laurent@lgeorget.eu>
-" Last Change: 2015 Jul 8: Fix Print Module and Print Scope coloring
-"              2015 Jul 7: Initial version
-" License:     public domain
-" Modified By: Wolf Honore
-" TODO:        Show commands
+" Author: Wolf Honore
+" Original Maintainer: Laurent Georget <laurent@lgeorget.eu>
+" Coq Info panel syntax definitions.
 
 " Only load this syntax file when no other was loaded and user didn't opt out.
 if exists('b:current_syntax') || get(g:, 'coqtail_nosyntax', 0)

@@ -1,10 +1,6 @@
-" Vim syntax file
-" Language:     Coq-goals
-" Filenames:    *.v
-" Maintainer:  Laurent Georget <laurent@lgeorget.eu>
-" Last Change: 2015 Jul 07 - Initial syntax coloring, pretty stable
-" License:     public domain
-" Modified By: Wolf Honore
+" Author: Wolf Honore
+" Original Maintainer: Laurent Georget <laurent@lgeorget.eu>
+" Coq Goal panel syntax definitions.
 
 " Only load this syntax file when no other was loaded and user didn't opt out.
 if exists('b:current_syntax') || get(g:, 'coqtail_nosyntax', 0)
