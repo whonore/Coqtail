@@ -130,59 +130,53 @@ syn region  coqComment           containedin=ALL contains=coqComment,coqTodo sta
 syn keyword coqTodo              contained TODO FIXME XXX NOTE
 syn region  coqString            start=+"+ skip=+""+ end=+"+ extend
 
-" Define the default highlighting.
-command -nargs=+ HiLink hi def link <args>
-
 " TERMS AND TYPES
-HiLink coqTerm              Type
-HiLink coqKwd               coqTerm
-HiLink coqTermPunctuation   coqTerm
+hi def link coqTerm              Type
+hi def link coqKwd               coqTerm
+hi def link coqTermPunctuation   coqTerm
 
 " VERNACULAR COMMANDS
-HiLink coqVernacCmd         coqVernacular
-HiLink coqVernacPunctuation coqVernacular
-HiLink coqTopLevel          coqVernacular
-HiLink coqSectionDecl       coqTopLevel
-HiLink coqModuleEnd         coqTopLevel
+hi def link coqVernacCmd         coqVernacular
+hi def link coqVernacPunctuation coqVernacular
+hi def link coqTopLevel          coqVernacular
+hi def link coqSectionDecl       coqTopLevel
+hi def link coqModuleEnd         coqTopLevel
 
 " DEFINED OBJECTS
-HiLink coqIdent             Identifier
-HiLink coqSectionName       Identifier
-HiLink coqDefName           Identifier
-HiLink coqDefNameHidden     Identifier
-HiLink coqNotationString    coqIdent
+hi def link coqIdent             Identifier
+hi def link coqSectionName       Identifier
+hi def link coqDefName           Identifier
+hi def link coqDefNameHidden     Identifier
+hi def link coqNotationString    coqIdent
 
 " CONSTRUCTORS AND FIELDS
-HiLink coqConstructor       Keyword
-HiLink coqField             coqConstructor
+hi def link coqConstructor       Keyword
+hi def link coqField             coqConstructor
 
 " NOTATION SPECIFIC ("at level", "format", etc)
-HiLink coqNotationKwd       Special
+hi def link coqNotationKwd       Special
 
 " SPECIFICATIONS
-HiLink coqArgumentSpecificationKeywords Underlined
-HiLink coqScopeSpecification            Underlined
+hi def link coqArgumentSpecificationKeywords Underlined
+hi def link coqScopeSpecification            Underlined
 
 " WARNINGS AND ERRORS
-HiLink coqBad               WarningMsg
-HiLink coqVeryBad           ErrorMsg
-HiLink coqWarningMsg        WarningMsg
-HiLink coqBad               WarningMsg
-
+hi def link coqBad               WarningMsg
+hi def link coqVeryBad           ErrorMsg
+hi def link coqWarningMsg        WarningMsg
+hi def link coqBad               WarningMsg
 
 " USUAL VIM HIGHLIGHTINGS
 " Comments
-HiLink coqComment           Comment
-HiLink coqSectionDelimiter  Comment
-HiLink coqProofComment      coqComment
+hi def link coqComment           Comment
+hi def link coqSectionDelimiter  Comment
+hi def link coqProofComment      coqComment
 
 " Todo
-HiLink coqTodo              Todo
+hi def link coqTodo              Todo
 
 " Errors
-HiLink coqError             Error
+hi def link coqError             Error
 
 " Strings
-HiLink coqString            String
-
-delcommand HiLink
+hi def link coqString            String

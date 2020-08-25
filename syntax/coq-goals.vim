@@ -51,30 +51,25 @@ syn match coqTermPunctuation   contained ":=\|:>\|:\|;\|,\|||\|\[\|\]\|@\|?\|\<_
 " Various (High priority)
 syn region  coqString            start=+"+ skip=+""+ end=+"+ extend
 
-" Define the default highlighting.
-command -nargs=+ HiLink hi def link <args>
-
 " TERMS AND TYPES
-HiLink coqTerm              Type
-HiLink coqKwd               coqTerm
-HiLink coqTermPunctuation   coqTerm
+hi def link coqTerm              Type
+hi def link coqKwd               coqTerm
+hi def link coqTermPunctuation   coqTerm
 
 " WORK LEFT
-HiLink coqNumberGoals       Todo
-HiLink coqNumberUnfocused   Todo
-HiLink coqNumberAdmitted    Error
-HiLink coqNumberShelved     Todo
-HiLink coqGoalLine          Todo
+hi def link coqNumberGoals       Todo
+hi def link coqNumberUnfocused   Todo
+hi def link coqNumberAdmitted    Error
+hi def link coqNumberShelved     Todo
+hi def link coqGoalLine          Todo
 
 " GOAL IDENTIFIER
-HiLink coqGoalNumber        Underlined
-HiLink coqNextGoal          Underlined
+hi def link coqGoalNumber        Underlined
+hi def link coqNextGoal          Underlined
 
 " USUAL VIM HIGHLIGHTINGS
 " Comments
-HiLink coqComment           Comment
+hi def link coqComment           Comment
 
 " Strings
-HiLink coqString            String
-
-delcommand HiLink
+hi def link coqString            String

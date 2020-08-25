@@ -468,61 +468,56 @@ syn region  coqComment           containedin=ALL contains=coqComment,coqTodo sta
 syn keyword coqTodo              contained TODO FIXME XXX NOTE
 syn region  coqString            start=+"+ skip=+""+ end=+"+ extend
 
-" Define the default highlighting.
-command -nargs=+ HiLink hi def link <args>
-
 " PROOFS
-HiLink coqTactic            Keyword
-HiLink coqLtac              coqTactic
-HiLink coqProofKwd          coqTactic
-HiLink coqProofPunctuation  coqTactic
-HiLink coqTacticKwd         coqTactic
-HiLink coqTacNotationKwd    coqTactic
-HiLink coqEvalFlag          coqTactic
-HiLink coqEqnKwd            coqTactic
+hi def link coqTactic            Keyword
+hi def link coqLtac              coqTactic
+hi def link coqProofKwd          coqTactic
+hi def link coqProofPunctuation  coqTactic
+hi def link coqTacticKwd         coqTactic
+hi def link coqTacNotationKwd    coqTactic
+hi def link coqEvalFlag          coqTactic
+hi def link coqEqnKwd            coqTactic
 " Exception
-HiLink coqProofDot          coqVernacular
+hi def link coqProofDot          coqVernacular
 
 " PROOF DELIMITERS ("Proof", "Qed", "Defined", "Save")
-HiLink coqProofDelim        Underlined
+hi def link coqProofDelim        Underlined
 
 " TERMS AND TYPES
-HiLink coqTerm              Type
-HiLink coqKwd               coqTerm
-HiLink coqTermPunctuation   coqTerm
+hi def link coqTerm              Type
+hi def link coqKwd               coqTerm
+hi def link coqTermPunctuation   coqTerm
 
 " VERNACULAR COMMANDS
-HiLink coqVernacular        PreProc
-HiLink coqVernacCmd         coqVernacular
-HiLink coqVernacPunctuation coqVernacular
-HiLink coqFeedback          coqVernacular
-HiLink coqTopLevel          coqVernacular
+hi def link coqVernacular        PreProc
+hi def link coqVernacCmd         coqVernacular
+hi def link coqVernacPunctuation coqVernacular
+hi def link coqFeedback          coqVernacular
+hi def link coqTopLevel          coqVernacular
 
 " DEFINED OBJECTS
-HiLink coqIdent             Identifier
-HiLink coqNotationString    coqIdent
+hi def link coqIdent             Identifier
+hi def link coqNotationString    coqIdent
 
 " CONSTRUCTORS AND FIELDS
-HiLink coqConstructor       Keyword
-HiLink coqField             coqConstructor
+hi def link coqConstructor       Keyword
+hi def link coqField             coqConstructor
 
 " NOTATION SPECIFIC ("at level", "format", etc)
-HiLink coqNotationKwd       Special
-HiLink coqEqnOptions        coqNotationKwd
+hi def link coqNotationKwd       Special
+hi def link coqEqnOptions        coqNotationKwd
 
 " USUAL VIM HIGHLIGHTINGS
 " Comments
-HiLink coqComment           Comment
-HiLink coqProofComment      coqComment
+hi def link coqComment           Comment
+hi def link coqProofComment      coqComment
 
 " Todo
-HiLink coqTodo              Todo
+hi def link coqTodo              Todo
 
 " Errors
-HiLink coqError             Error
-HiLink coqProofAdmit        coqError
+hi def link coqError             Error
+hi def link coqProofAdmit        coqError
 
 " Strings
-HiLink coqString            String
-
-delcommand HiLink
+hi def link coqString            String
