@@ -128,23 +128,7 @@ function! coqtail#gotodef(target, bang) abort
   let [l:path, l:searches] = l:loc
 
   " Try progressively broader searches
-  let l:found_match = 0
-  for l:search in l:searches
-    try
-      if !l:found_match
-        execute 'vimgrep /\v' . l:search . '/j ' . l:path
-        let l:found_match = 1
-      else
-        execute 'vimgrepadd /\v' . l:search . '/j ' . l:path
-      endif
-    catch /^Vim\%((\a\+)\)\=:E480/
-    endtry
-  endfor
-
-  if l:found_match
-    " Filter duplicate matches
-    call coqtail#util#dedup_qflist()
-
+  if coqtail#util#qflist_search(b:coqtail_panel_bufs.main, l:path, l:searches)
     " Set usetab instead of opening a new buffer
     let l:swb = &switchbuf
     set switchbuf+=usetab
