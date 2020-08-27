@@ -39,6 +39,8 @@ function! s:init(name) abort
   let l:name = a:name . 's'
   let l:bufname = substitute(a:name, '\l', '\u\0', '')
 
+  " badd forces a new buffer to be created in case the main buffer is empty
+  execute 'badd ' . l:bufname . s:counter
   execute 'silent hide edit ' . l:bufname . s:counter
   setlocal buftype=nofile
   execute 'setlocal filetype=coq-' . l:name
