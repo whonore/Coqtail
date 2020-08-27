@@ -4,9 +4,7 @@
 and provide a uniform interface.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 # xml.dom.minidom only needed for pretty printing. No stubs for xml.dom.minidom
 import os
@@ -665,7 +663,10 @@ class XMLInterface84(XMLInterfaceBase):
         return (
             "Add",
             self._make_call(
-                encoding, "interp", attrs={"verbose": "true", "id": str(state)}, arg=cmd
+                encoding,
+                "interp",
+                attrs={"verbose": "true", "id": str(state)},
+                arg=cmd,
             ),
         )
 
@@ -1013,7 +1014,9 @@ class XMLInterface85(XMLInterfaceBase):
         return (
             "Add",
             self._make_call(
-                encoding, "Add", children=((cmd, -1), (self.StateId(state), True))
+                encoding,
+                "Add",
+                children=((cmd, -1), (self.StateId(state), True)),
             ),
         )
 
@@ -1234,7 +1237,9 @@ class XMLInterface87(XMLInterface86):
         return (
             "Query",
             self._make_call(
-                encoding, "Query", (self.RouteId(0), (query, self.StateId(state)))
+                encoding,
+                "Query",
+                (self.RouteId(0), (query, self.StateId(state))),
             ),
         )
 

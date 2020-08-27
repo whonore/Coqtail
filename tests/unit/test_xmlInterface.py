@@ -2,9 +2,7 @@
 # Author: Wolf Honore
 """XMLInterface marshalling unit tests."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 from collections import namedtuple
 from inspect import getmembers, isfunction, ismethod

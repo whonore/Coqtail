@@ -2,9 +2,7 @@
 # Author: Wolf Honore
 """Coqtop interface with functions to send commands and parse responses."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import datetime
 import logging
@@ -18,11 +16,11 @@ from tempfile import NamedTemporaryFile
 from six import ensure_text
 from six.moves.queue import Empty, Queue
 
-from xmlInterface import Err, Ok, TIMEOUT_ERR, XMLInterface, prettyxml
+from xmlInterface import TIMEOUT_ERR, Err, Ok, XMLInterface, prettyxml
 
 # For Mypy
 try:
-    from typing import Any, IO, List, Iterator, Optional, Text, Tuple, Union
+    from typing import IO, Any, Iterator, List, Optional, Text, Tuple, Union
 except ImportError:
     pass
 

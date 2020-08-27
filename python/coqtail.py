@@ -2,16 +2,15 @@
 # Author: Wolf Honore
 """Classes and functions for managing auxiliary panels and Coqtop interfaces."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import json
 import re
 import socket
 import threading
 import time
-from collections import defaultdict as ddict, deque
+from collections import defaultdict as ddict
+from collections import deque
 from itertools import islice
 
 from six.moves import zip_longest
@@ -27,10 +26,10 @@ try:
         DefaultDict,
         Deque,
         Dict,
-        List,
         Iterator,
-        Optional,
+        List,
         Mapping,
+        Optional,
         Sequence,
         Text,
         Tuple,
@@ -288,7 +287,9 @@ class Coqtail(object):
 
             try:
                 success, msg, err_loc, stderr = self.coqtop.dispatch(
-                    no_comments, encoding=opts["encoding"], timeout=opts["timeout"],
+                    no_comments,
+                    encoding=opts["encoding"],
+                    timeout=opts["timeout"],
                 )
             except CT.CoqtopError as e:
                 return None, str(e)
