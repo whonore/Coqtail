@@ -152,12 +152,20 @@ else
 
   " Send a command to Coqtail and wait for the response.
   function! s:send_wait(handle, session, expr, reply) abort
-    let l:returns = a:expr[1] !=# 'interrupt'
+    let l:response = a:expr[0] == -1
+    let l:returns = l:response || a:expr[1] !=# 'interrupt'
+
+    " In Vim 7.4, json_encode(expand('%')) returns v:null instead of "",
+    " which breaks pyeval
+    if has_key(a:expr[2], 'opts') && a:expr[2].opts.filename ==# ''
+      let a:expr[2].opts.filename = ''
+    endif
+
     call coqtail#compat#pyeval(printf(
       \ 'ChannelManager.send(%d, %s, %s, reply=%s, returns=bool(%s))',
       \ a:handle,
-      \ a:expr[1] !=# 'interrupt' ? a:session : 'None',
-      \ json_encode(a:expr),
+      \ l:returns ? a:session : 'None',
+      \ json_encode(l:response ? a:expr[1] : a:expr),
       \ a:reply != 0 ? a:reply : 'None',
       \ l:returns
     \))
@@ -191,7 +199,7 @@ else
         " Handle requests
         while type(l:res) == g:coqtail#compat#t_list && l:res[0] ==# 'call'
           let l:val = call(l:res[1], l:res[2])
-          let l:res = s:send_wait(self.handle, l:session, l:val, l:res[-1])
+          let l:res = s:send_wait(self.handle, l:session, [-1, l:val, {}], l:res[-1])
         endwhile
       catch /^Vim:Interrupt$/
         " Interrupt Coqtop and retry

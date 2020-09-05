@@ -46,7 +46,7 @@ function! coqtail#util#getvisual() abort
 endfunction
 
 " Remove entries in the quickfix list with the same position.
-function! coqtail#util#dedup_qflist() abort
+function! s:dedup_qflist() abort
   let l:qfl = getqflist()
   let l:seen = {}
   let l:uniq = []
@@ -60,6 +60,65 @@ function! coqtail#util#dedup_qflist() abort
   endfor
 
   call setqflist(l:uniq)
+endfunction
+
+" Find the positions of all matches.
+function! s:searchall(text, search) abort
+  let l:matches = []
+  let l:cnt = 1
+
+  while 1
+    let l:match = matchstrpos(a:text, a:search, 0, l:cnt)[0:2]
+    if l:match[1] == -1
+      break
+    endif
+
+    let l:matches = add(l:matches, l:match)
+    let l:cnt += 1
+  endwhile
+
+  return l:matches
+endfunction
+
+" Perform a sequence of searches and put the results in the quickfix list.
+function! coqtail#util#qflist_search(buf, path, searches) abort
+  let l:found_match = 0
+  let l:has_file = a:path !=# ''
+  if !l:has_file
+    let l:text = getbufline(a:buf, 1, '$')
+    let l:matches = []
+  endif
+
+  for l:search in a:searches
+    let l:search = '\v\C' . l:search
+    try
+      if !l:has_file
+        let l:matches += map(
+          \ s:searchall(l:text, l:search),
+          \ '{"bufnr": a:buf, "text": v:val[0], "lnum": v:val[1] + 1, "col": v:val[2] + 1}')
+      elseif !l:found_match
+        execute 'vimgrep /' . l:search . '/j ' . a:path
+        let l:found_match = 1
+      else
+        execute 'vimgrepadd /' . l:search . '/j ' . a:path
+      endif
+    catch /^Vim\%((\a\+)\)\=:E480/
+    endtry
+  endfor
+
+  if !l:has_file
+    let l:found_match = l:matches != []
+    if l:found_match
+      call setqflist(l:matches)
+    endif
+  endif
+
+  if l:found_match
+    " Filter duplicate matches
+    call s:dedup_qflist()
+  endif
+
+  return l:found_match
 endfunction
 
 " Get 'var' from the first scope in 'scopes' in which it is defined.
