@@ -840,7 +840,9 @@ class CoqtailHandler(StreamRequestHandler):
             self.working = False
             while not self.reqs.empty():
                 try:
-                    self.reqs.get_nowait()
+                    msg_id, bnum, _, _ = self.reqs.get_nowait()
+                    msg = [msg_id, {"buf": bnum, "ret": None}]
+                    self.wfile.write(json.dumps(msg).encode("utf-8") + b"\n")
                 except Empty:
                     break
             self.coq.coqtop.interrupt()

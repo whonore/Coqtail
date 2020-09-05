@@ -18,6 +18,9 @@
 - Various syntax highlighting/indentation fixes. (PRs #124, #126, #127)
 - No longer crash when checking Coq version if `coqtop.opt` does not exist. (PR #129)
 - No longer crash on `:CoqStart` when a buffer has no associated file. (PR #137)
+- Improved interrupt-handling logic, which should reduce the frequency of the
+  cases where Coqtail thinks there are pending commands and sets `nomodifiable`.
+  (PR #130)
 
 ## [1.1.0]
 

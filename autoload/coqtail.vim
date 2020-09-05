@@ -279,8 +279,8 @@ function! s:call(cmd, cb, args) abort
     " Async
 
     " Increment cmds_pending
-    let l:cmds_pending = coqtail#panels#getvar('cmds_pending')
-    call coqtail#panels#setvar('cmds_pending', l:cmds_pending + 1)
+    let l:cmds_pending = coqtail#panels#getvar('coqtail_cmds_pending')
+    call coqtail#panels#setvar('coqtail_cmds_pending', l:cmds_pending + 1)
 
     call coqtail#panels#setvar('&modifiable', 0)
     let l:opts = a:cb !=# '' ? {'callback': a:cb} : {'callback': 'coqtail#defaultCB'}
@@ -298,8 +298,8 @@ endfunction
 
 " Print any error messages.
 function! coqtail#defaultCB(chan, msg) abort
-  let l:pending = getbufvar(a:msg.buf, 'cmds_pending')
-  call setbufvar(a:msg.buf, 'cmds_pending', l:pending - 1)
+  let l:pending = getbufvar(a:msg.buf, 'coqtail_cmds_pending')
+  call setbufvar(a:msg.buf, 'coqtail_cmds_pending', l:pending - 1)
   if l:pending - 1 == 0
     call setbufvar(a:msg.buf, '&modifiable', 1)
   endif
@@ -340,7 +340,7 @@ function! coqtail#start(...) abort
         call coqtail#util#warn(printf(s:unsupported_msg, b:coqtail_version))
       endif
     endif
-    let b:cmds_pending = 0
+    let b:coqtail_cmds_pending = 0
 
     " Open channel with Coqtail server
     let b:coqtail_chan = coqtail#channel#new()
