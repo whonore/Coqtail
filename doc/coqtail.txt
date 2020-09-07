@@ -231,8 +231,8 @@ g:coqtail_nomap		If true then don't set any default mappings for
 
 			Default: 0
 
-				    *g:coqtail_inomap* *coqtail-no-insert-mapping*
-g:coqtail_inomap	If true then don't set insert-mode mappings for
+				    *g:coqtail_noimap* *coqtail-no-insert-mapping*
+g:coqtail_noimap	If true then don't set insert-mode mappings for
 			Coqtail	commands.
 
 			Default: 0
