@@ -2,6 +2,8 @@
 
 ## Unreleased ([master])
 
+## [1.2.0]
+
 ### Added
 - Support for Coq 8.12. (PR #120)
 - `g:coqtail_noimap`, `g:coqtail_map_prefix`, `g:coqtail_imap_prefix`
@@ -15,12 +17,12 @@
   (PR #123)
 - `:CoqStart` no longer fails when the Coq executable is in the current directory.
   (PR #123)
-- Various syntax highlighting/indentation fixes. (PRs #124, #126, #127)
+- Various syntax highlighting/indentation improvements. (PRs #124, #126, #127)
 - No longer crash when checking Coq version if `coqtop.opt` does not exist. (PR #129)
 - No longer crash on `:CoqStart` when a buffer has no associated file. (PR #137)
 - Improved interrupt-handling logic, which should reduce the frequency of the
-  cases where Coqtail thinks there are pending commands and sets `nomodifiable`.
-  (PR #130)
+  case where pending commands are not cleared and `nomodifiable` is set after
+  every command. (PR #130)
 
 ## [1.1.0]
 
@@ -86,6 +88,7 @@
 - Interoperability with [matchup] and [endwise].
 
 [master]: https://github.com/whonore/Coqtail
+[1.2.0]: https://github.com/whonore/Coqtail/tree/v1.2.0
 [1.1.0]: https://github.com/whonore/Coqtail/tree/v1.1.0
 [1.0.0]: https://github.com/whonore/Coqtail/tree/v1.0.0
 [pre-1.0]: https://github.com/whonore/Coqtail/tree/pre-1.0
