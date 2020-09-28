@@ -199,17 +199,16 @@ b:coqtail_timeout	The time in seconds before interrupting Coqtop after
 
 			Default: 0
 
-				       *g:coqtail_project_name* *coq-project-file*
-g:coqtail_project_name	The name of the Coq project file to search for
-			beginning from the current directory up to the root.
-			If found, the project file options are parsed and
-			passed to Coqtop by `:CoqStart`.
+				     *g:coqtail_project_names* *coq-project-files*
+g:coqtail_project_names	The names of Coq project files to search for. The search
+			begins in the current directory and proceeds upwards.
+			If found, project files are parsed and passed as
+			arguments to Coqtop by `:CoqStart`.
 
-			Default: '_CoqProject'
+			Default: ['_CoqProject']
 
-							*b:coqtail_project_file*
-b:coqtail_project_file	The path to the Coq project file. Set automatically if
-			one is found during `:CoqStart`.
+						       *b:coqtail_project_files*
+b:coqtail_project_files	Paths to the Coq project files found during `:CoqStart`.
 
 				   *g:coqtail_map_prefix* *coqtail-mapping-prefix*
 g:coqtail_map_prefix	The character(s) to begin Coqtail mappings.

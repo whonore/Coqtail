@@ -2,6 +2,11 @@
 
 ## Unreleased ([master])
 
+### Added
+- Support for multiple `_CoqProject` files. **BREAKING**: renamed
+  `g:coqtail_project_name` to `g:coqtail_project_names` and
+  `b:coqtail_project_file` to `b:coqtail_project_files`.
+
 ### Fixed
 - Recognize and highlight strings in more contexts. (PR #139)
 
