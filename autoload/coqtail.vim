@@ -42,8 +42,8 @@ let s:unsupported_msg =
 let s:port = -1
 
 " Default CoqProject file name.
-if !exists('g:coqtail_project_name')
-  let g:coqtail_project_name = '_CoqProject'
+if !exists('g:coqtail_project_names')
+  let g:coqtail_project_names = ['_CoqProject']
 endif
 
 " Find the path corresponding to 'lib'. Used by includeexpr.
@@ -346,8 +346,8 @@ function! coqtail#start(...) abort
     let b:coqtail_chan = coqtail#channel#new()
     call b:coqtail_chan.open('localhost:' . s:port)
 
-    " Check for a Coq project file
-    let [b:coqtail_project_file, l:proj_args] = coqtail#coqproject#locate()
+    " Locate Coq project files
+    let [b:coqtail_project_files, l:proj_args] = coqtail#coqproject#locate()
 
     " Prepare auxiliary panels
     call coqtail#panels#init()
