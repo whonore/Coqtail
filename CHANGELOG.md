@@ -2,6 +2,9 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Recognize and highlight strings in more contexts. (PR #139)
+
 ## [1.2.0]
 
 ### Added

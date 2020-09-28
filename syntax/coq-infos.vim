@@ -55,7 +55,7 @@ syn region  coqStructDef  contained contains=coqStruct matchgroup=coqVernacPunct
 syn region  coqStruct     contained contains=coqIdent,coqDef,coqThm,coqDec,coqInd matchgroup=coqTopLevel start="\<Struct\>" end="End"
 
 " Terms
-syn cluster coqTerm            contains=coqKwd,coqTermPunctuation,coqKwdMatch,coqKwdLet,coqKwdParen
+syn cluster coqTerm            contains=coqKwd,coqTermPunctuation,coqKwdMatch,coqKwdLet,coqKwdParen,coqString
 syn region coqKwdMatch         contained contains=@coqTerm matchgroup=coqKwd start="\<match\>" end="\<with\>"
 syn region coqKwdLet           contained contains=@coqTerm matchgroup=coqKwd start="\<let\>"   end=":="
 syn region coqKwdParen         contained contains=@coqTerm matchgroup=coqTermPunctuation start="(" end=")" keepend extend
