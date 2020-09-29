@@ -87,6 +87,8 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 
 ## Configuration
 
+### Mappings
+
 The mappings above are set by default, but you can disable them all and define
 your own by setting `g:coqtail_nomap = 1` in your `.vimrc`.
 Some of the commands, such as `CoqNext`, also have insert-mode mappings by
@@ -96,6 +98,8 @@ For example, use `map <leader>ci <Plug>CoqInterrupt` to avoid hijacking `CTRL-C`
 The `<leader>c` prefix may be inconvenient depending on your `mapleader` setting.
 In that case you can set a custom prefix with `g:coqtail_map_prefix` (or
 `g:coqtail_imap_prefix` for just insert-mode mappings).
+
+### Coq Executable
 
 By default Coqtail uses the first `coq(ide)top(.opt)` found in your `PATH`.
 Use `b:coqtail_coq_path` (or `g:coqtail_coq_path`) to specify a different
@@ -108,6 +112,18 @@ For example, to use the [HoTT library](https://github.com/HoTT/HoTT):
 let b:coqtail_coq_path = '/path/to/HoTT'
 let b:coqtail_coq_prog = 'hoqidetop'
 ```
+
+### _CoqProject
+
+Coqtail understands and will search for `_CoqProject` files on `:CoqStart`.
+Additional or different project files can be specified with `g:coqtail_project_files`.
+For example, to include arguments from both `_CoqProject` and `_CoqProject.local`:
+
+```vim
+let g:coqtail_project_files = ['_CoqProject', '_CoqProject.local']
+```
+
+### Syntax Highlighting and Indentation
 
 Coqtail also comes with an ftdetect script for Coq, as well as modified
 versions of Vincent Aravantinos' [syntax] and [indent] scripts for Coq.

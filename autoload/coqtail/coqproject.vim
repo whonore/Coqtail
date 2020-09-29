@@ -44,11 +44,18 @@ function! coqtail#coqproject#parse(file) abort
   return l:proj_args
 endfunction
 
-" Search for a CoqProject file using 'g:coqtail_project_name' starting in the
-" current directory and recursively try parent directories until '/' is
-" reached. Return the file name and a list of arguments to pass to Coqtop.
+" Find Coq project files in 'g:coqtail_project_names' searching upwards from
+" the current directory. Return the file names and a list of arguments to pass
+" to Coqtop.
 function! coqtail#coqproject#locate() abort
-  let l:file = findfile(g:coqtail_project_name, '.;')
-  let l:args = l:file !=# '' ? coqtail#coqproject#parse(l:file) : []
-  return [l:file, l:args]
+  let l:files = []
+  let l:args = []
+  for l:proj in g:coqtail_project_names
+    let l:file = findfile(l:proj, '.;')
+    if l:file !=# ''
+      let l:files = add(l:files, l:file)
+      let l:args += coqtail#coqproject#parse(l:file)
+    endif
+  endfor
+  return [l:files, l:args]
 endfunction
