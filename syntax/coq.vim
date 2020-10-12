@@ -375,6 +375,7 @@ syn region coqExtr matchgroup=coqVernacCmd start="\<Extraction\>" contains=coqSt
 syn region coqRSExtr matchgroup=coqVernacCmd start="\<\%(Recursive\_s\+\|Separate\_s\+\)Extraction\>" contains=coqIdent end="\.\_s"
 syn region coqExtrLib matchgroup=coqVernacCmd start="\<\%(Recursive\_s\+\)\?Extraction\_s\+Library\>" contains=coqIdent end="\.\_s"
 syn region coqExtrConst matchgroup=coqVernacCmd start="\<Extract\_s\+\%(Inlined\_s\+\)\?Constant\>" contains=coqIdent,coqBigArrow,coqString end="\.\_s"
+syn region coqExtrInductive matchgroup=coqVernacCmd start="\<Extract\_s\+Inductive\>" contains=coqIdent,coqBigArrow,coqString,coqTermPunctuation end="\.\_s"
 " TODO: ^ Enforce order of tokens: ident => "string"
 syn match coqBigArrow contained "=>"
 
