@@ -33,7 +33,7 @@ def get_state(coq):
 def coq():
     """Return a Coqtop for each version."""
     ct = Coqtop(VERSION)
-    if ct.start(None, None)[0] is None:
+    if ct.start(None, None, "", [])[0] is None:
         yield ct
         ct.stop()
     else:

@@ -22,7 +22,18 @@ from six import add_metaclass, string_types
 # to use type aliases while still avoiding requiring mypy/typing as a
 # requirement need to define dummy replacements for some of the below
 try:
-    from typing import Any, Callable, Dict, Iterable, List, Optional, Text, Tuple, Union
+    from typing import (
+        Any,
+        Callable,
+        Dict,
+        Iterable,
+        List,
+        Optional,
+        Sequence,
+        Text,
+        Tuple,
+        Union,
+    )
 except ImportError:
     pass
 
@@ -156,8 +167,8 @@ class XMLInterfaceBase(object):
         # A command that can safely and quickly be executed just to get a new state id
         self.noop = "Eval lazy in forall x, x."
 
-    def launch(self, coq_path, coq_prog):
-        # type: (Optional[str], Optional[str]) -> Tuple[Text, ...]
+    def launch(self, coq_path, coq_prog, filename, args):
+        # type: (Optional[str], Optional[str], Text, List[str]) -> Tuple[Union[str, Text], ...]
         """The command to launch coqtop with the appropriate arguments."""
         path = coq_path if coq_path is not None else os.environ["PATH"]
         # N.B. find_executable always checks the current directory so add '.'
@@ -173,7 +184,28 @@ class XMLInterfaceBase(object):
             ),
             key=lambda p: paths.index(os.path.dirname(p)),
         )
-        return (coq,) + tuple(self.launch_args)
+
+        return (
+            (coq,)
+            + tuple(self.launch_args)
+            + self.topfile(filename, args)
+            + tuple(args)
+        )
+
+    def topfile(self, filename, args):
+        # type: (Text, Sequence[Text]) -> Tuple[Text, ...]
+        """The command to set the top-level module name."""
+        return ()
+
+    def valid_module(self, filename):
+        # type: (Text) -> bool
+        """Check if a file name is a valid module name."""
+        filename = os.path.splitext(os.path.basename(filename))[0]
+        # TODO: use fullmatch in Python 3
+        return (
+            re.match(r"\w+$", filename, re.UNICODE) is not None
+            and re.match(r"\d", filename, re.UNICODE) is None
+        )
 
     # XML Parsing and Marshalling #
     def _to_unit(self, _xml):
@@ -1263,6 +1295,16 @@ class XMLInterface89(XMLInterface88):
 
 class XMLInterface810(XMLInterface89):
     """The version 8.10.* XML interface."""
+
+    def topfile(self, filename, args):
+        # type: (Text, Sequence[Text]) -> Tuple[Text, ...]
+        """The command to set the top-level module name."""
+        return (
+            ("-topfile", filename)
+            if all(arg not in args for arg in ("-top", "-topfile"))
+            and self.valid_module(filename)
+            else ()
+        )
 
 
 class XMLInterface811(XMLInterface810):
