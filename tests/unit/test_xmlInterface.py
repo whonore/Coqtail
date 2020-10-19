@@ -365,7 +365,7 @@ def test_valid_module(xmlInt):
     assert xmlInt.valid_module("C.v")
     assert xmlInt.valid_module("_c.v")
     assert xmlInt.valid_module("c3.v")
-    assert xmlInt.valid_module("ç.v")
+    assert xmlInt.valid_module(u"ç.v")
     assert not xmlInt.valid_module("")
     assert not xmlInt.valid_module("c.v.v")
     assert not xmlInt.valid_module("1.v")

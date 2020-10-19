@@ -203,8 +203,8 @@ class XMLInterfaceBase(object):
         filename = os.path.splitext(os.path.basename(filename))[0]
         # TODO: use fullmatch in Python 3
         return (
-            re.match(r"\w+$", filename) is not None
-            and re.match(r"\d", filename) is None
+            re.match(r"\w+$", filename, re.UNICODE) is not None
+            and re.match(r"\d", filename, re.UNICODE) is None
         )
 
     # XML Parsing and Marshalling #
