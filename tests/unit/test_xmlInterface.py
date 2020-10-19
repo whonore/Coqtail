@@ -356,3 +356,27 @@ def test_to_of_py(xmlInt, py_xml):
         assert tostring(xmlInt._of_py(py)) == tostring(xml).replace(
             b"richpp", b"string"
         )
+
+
+def test_valid_module(xmlInt):
+    """Test whether valid_module correctly identifies valid module names."""
+    assert xmlInt.valid_module("/a/b/c.v")
+    assert xmlInt.valid_module("a/b/c.v")
+    assert xmlInt.valid_module("C.v")
+    assert xmlInt.valid_module("_c.v")
+    assert xmlInt.valid_module("c3.v")
+    assert xmlInt.valid_module("ç.v")
+    assert not xmlInt.valid_module("")
+    assert not xmlInt.valid_module("c.v.v")
+    assert not xmlInt.valid_module("1.v")
+    assert not xmlInt.valid_module("a b.v")
+
+
+def test_topfile(xmlInt):
+    """Test whether topfile adds the correct argument."""
+    if xmlInt.versions < (8, 10, 0):
+        assert xmlInt.topfile("c.v", []) == ()
+    else:
+        assert xmlInt.topfile("c.v", []) == ("-topfile", "c.v")
+        assert xmlInt.topfile("", []) == ()
+        assert xmlInt.topfile("c.v", ["-top", "x"]) == ()

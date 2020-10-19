@@ -201,7 +201,11 @@ class XMLInterfaceBase(object):
         # type: (Text) -> bool
         """Check if a file name is a valid module name."""
         filename = os.path.splitext(os.path.basename(filename))[0]
-        return filename != "" and ("." not in filename)
+        # TODO: use fullmatch in Python 3
+        return (
+            re.match(r"\w+$", filename) is not None
+            and re.match(r"\d", filename) is None
+        )
 
     # XML Parsing and Marshalling #
     def _to_unit(self, _xml):
