@@ -132,8 +132,9 @@ class Coqtail(object):
             err, stderr = self.coqtop.start(
                 coq_path if coq_path != "" else None,
                 coq_prog if coq_prog != "" else None,
-                *args,
-                timeout=opts["timeout"]
+                opts["filename"],
+                args,
+                timeout=opts["timeout"],
             )
             if err is not None:
                 errmsg.append(err)
