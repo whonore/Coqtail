@@ -248,6 +248,12 @@ g:coqtail_noindent	If true then don't load the indent script included with
 
 			Default: 0
 
+			  *g:coqtail_noindent_comment* *coqtail-no-indent-comment*
+g:coqtail_noindent_comment
+			If true then don't auto-indent within comments.
+
+			Default: 0
+
 				     *g:coqtail_match_shift* *coqtail-match-shift*
 g:coqtail_match_shift	A multiple of 'shiftwidth' to indent lines in a match
 			branch. E.g. >
