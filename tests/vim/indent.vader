@@ -565,6 +565,39 @@ Expect coq (indented-record-constructor-nested):
 "      comment *)
 "   Definition z := 3.
 
+Given coq (after-comment):
+  Definition x := 1.
+  (* Comment
+  *)
+  Definition y := 2.
+  Section A.
+  (* Comment
+  *)
+  Definition z := 3.
+  End A.
+  Inductive w :=
+  | a (*
+  *)
+  | b.
+
+Do (indent-after-comment):
+  =ip
+
+Expect coq (indented-after-comment):
+  Definition x := 1.
+  (* Comment
+  *)
+  Definition y := 2.
+  Section A.
+    (* Comment
+    *)
+    Definition z := 3.
+  End A.
+  Inductive w :=
+    | a (*
+        *)
+    | b.
+
 Given coq (single-bullets):
   Lemma p (b1 b2 b3 : bool) : True.
   Proof.
