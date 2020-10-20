@@ -545,58 +545,104 @@ Expect coq (indented-record-constructor-nested):
       |}
     |}.
 
-" TODO
-" Given coq (comments):
-"   Definition x := 1.
-"   (* Line comment *)
-"   Definition y := 2.
-"   (* Block
-"   comment *)
-"   Definition z := 3.
-
-" Do (indent-comments):
-"   =ip
-
-" Expect coq (indented-comments):
-"   Definition x := 1.
-"   (* Line comment *)
-"   Definition y := 2.
-"   (* Block
-"      comment *)
-"   Definition z := 3.
-
-Given coq (after-comment):
+Given coq (comments):
+  (* Comment
+  * abc
+  def
+  *)
   Definition x := 1.
   (* Comment
+  xyz
   *)
   Definition y := 2.
+  (* Comment *)
   Section A.
-  (* Comment
+  (*
+  Comment
   *)
-  Definition z := 3.
+  Definition z := 3. (* Comment *)
   End A.
   Inductive w :=
   | a (*
   *)
   | b.
 
-Do (indent-after-comment):
+Do (indent-comments):
   =ip
 
-Expect coq (indented-after-comment):
+Expect coq (indented-comments):
+  (* Comment
+   * abc
+     def
+   *)
   Definition x := 1.
   (* Comment
-  *)
+     xyz
+   *)
   Definition y := 2.
+  (* Comment *)
   Section A.
-    (* Comment
-    *)
-    Definition z := 3.
+    (*
+       Comment
+     *)
+    Definition z := 3. (* Comment *)
   End A.
   Inductive w :=
     | a (*
-        *)
+         *)
     | b.
+
+Execute (set-no-indent-comment):
+  let g:coqtail_noindent_comment = 1
+
+Given coq (no-indent-comments):
+    (* Comment
+   * abc
+   *)
+  Definition x := 1.
+   (* Comment
+   xyz
+  *)
+  Definition y := 2.
+       (* Comment *)
+  Section A.
+   (*
+  Comment
+       *)
+  Definition z := 3. (* Comment *)
+  End A.
+  Inductive w :=
+  | a (*
+  *)
+  | b.
+
+Do (indent-no-indent-comments):
+  =ip
+
+Expect coq (indented-no-indent-comments):
+    (* Comment
+   * abc
+  def
+   *)
+  Definition x := 1.
+   (* Comment
+   xyz
+  *)
+  Definition y := 2.
+       (* Comment *)
+  Section A.
+   (*
+  Comment
+       *)
+    Definition z := 3. (* Comment *)
+  End A.
+  Inductive w :=
+    | a (*
+  *)
+    | b.
+
+Execute (unset-no-indent-comment):
+  let g:coqtail_noindent_comment = 0
 
 Given coq (single-bullets):
   Lemma p (b1 b2 b3 : bool) : True.
