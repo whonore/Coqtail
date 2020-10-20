@@ -194,15 +194,18 @@ function! GetCoqIndent() abort
 
   " previous line ends a comment
   if l:previousline =~# '\*)\s*$'
-    " indent relative to the last non-comment
-    call search('\*)', 'bW')
-    let l:skip = s:matchsyn('line(".")', 'col(".")', 'string')
-    let l:startcom = searchpair('(\*', '', '\*)', 'bWn', l:skip)
-    let l:lnum = s:GetLineWithoutFullComment(l:startcom)
+    while eval(s:matchsyn(l:lnum, 1, ['comment']))
+      " indent relative to the last non-comment
+      call search('\*)', 'bW')
+      let l:skip = s:matchsyn('line(".")', 'col(".")', 'string')
+      let l:startcom = searchpair('(\*', '', '\*)', 'bWn', l:skip)
+      let l:lnum = s:GetLineWithoutFullComment(l:startcom)
+    endwhile
+
     let l:ind = indent(l:lnum)
     let l:previousline = substitute(getline(l:lnum), '(\*.*\*)\s*$', '', '')
 
-    if l:lnum == 0 || eval(s:matchsyn(l:lnum, 1, ['comment']))
+    if l:lnum == 0
       return 0
     endif
   endif

@@ -561,6 +561,11 @@ Given coq (comments):
   Comment
   *)
   Definition z := 3. (* Comment *)
+  (* C1
+  *)
+  (* C2
+  *)
+  Definition a := 4.
   End A.
   Inductive w :=
   | a (*
@@ -586,6 +591,11 @@ Expect coq (indented-comments):
        Comment
      *)
     Definition z := 3. (* Comment *)
+    (* C1
+     *)
+    (* C2
+     *)
+    Definition a := 4.
   End A.
   Inductive w :=
     | a (*
@@ -598,6 +608,7 @@ Execute (set-no-indent-comment):
 Given coq (no-indent-comments):
     (* Comment
    * abc
+  def
    *)
   Definition x := 1.
    (* Comment
@@ -610,6 +621,11 @@ Given coq (no-indent-comments):
   Comment
        *)
   Definition z := 3. (* Comment *)
+   (* C1
+       *)
+   (* C2
+       *)
+  Definition a := 4.
   End A.
   Inductive w :=
   | a (*
@@ -635,6 +651,11 @@ Expect coq (indented-no-indent-comments):
   Comment
        *)
     Definition z := 3. (* Comment *)
+   (* C1
+       *)
+   (* C2
+       *)
+    Definition a := 4.
   End A.
   Inductive w :=
     | a (*
