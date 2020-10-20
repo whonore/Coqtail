@@ -41,7 +41,16 @@ let s:bullet = '[-+*]\+)\@!'
 let s:bulletline = '^\s*' . s:bullet
 let s:match = '\<\%(lazy\|multi\)\?match\>'
 let s:inductive = '\%(\%(Co\)\?Inductive\|Variant\)'
-let s:skip = 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment"'
+
+" Match syntax groups.
+function! s:matchsyn(line, col, syns)
+  return printf(
+    \ 'synIDattr(synID(%s, %s, 0), "name") =~? "%s"',
+    \ a:line,
+    \ a:col,
+    \ join(a:syns, '\\|'))
+endfunction
+let s:skip = s:matchsyn('line(".")', 'col(".")', ['string', 'comment'])
 
 " Skipping pattern, for comments
 " (stolen from indent/ocaml.vim, thanks to the authors)
@@ -76,10 +85,11 @@ function! s:indent_of_previous(patt) abort
 endfunction
 
 " Indent pairs
-function! s:indent_of_previous_pair(pstart, pmid, pend, usecol) abort
+function! s:indent_of_previous_pair(pstart, pmid, pend, usecol, syns) abort
+  let l:skip = s:matchsyn('line(".")', 'col(".")', a:syns)
   " N.B. Match when cursor is inside the match. See ':h searchpair'.
   let l:pend = len(a:pend) > 1 ? a:pend . '\zs' : a:pend
-  let [l:line, l:col] = searchpairpos(a:pstart, a:pmid, l:pend, 'bWn', s:skip)
+  let [l:line, l:col] = searchpairpos(a:pstart, a:pmid, l:pend, 'bWn', l:skip)
   return a:usecol && l:line != 0 ? l:col - 1 : indent(l:line)
 endfunction
 
@@ -153,15 +163,49 @@ endfunction
 function! GetCoqIndent() abort
   " Find a non-commented currentline above the current currentline.
   let l:lnum = s:GetLineWithoutFullComment(v:lnum)
+  let l:ind = indent(l:lnum)
+  let l:previousline = substitute(getline(l:lnum), '(\*.*\*)\s*$', '', '')
+  let l:currentline = getline(v:lnum)
+
+  " current line is a comment
+  if l:currentline =~# '^\s*(\*' || eval(s:matchsyn(v:lnum, 1, ['comment']))
+    " ignore comments
+    if g:coqtail_noindent_comment
+      return -1
+    endif
+
+    " ignore line comments
+    if l:currentline !~# '^\s*(\*'
+      " current line is starting a multiline comment
+      let l:startcom = s:indent_of_previous_pair('(\*', '', '\*)', 1, ['string'])
+      " let l:startcom = indent(search('(\*', 'bWn'))
+      if l:currentline =~# '^\s*\*'
+        return l:startcom + 1
+      else
+        return l:startcom + 3
+      endif
+    endif
+  endif
 
   " At the start of the file use zero indent.
   if l:lnum == 0
     return 0
   endif
 
-  let l:ind = indent(l:lnum)
-  let l:previousline = substitute(getline(l:lnum), '(\*.*\*)\s*$', '', '')
-  let l:currentline = getline(v:lnum)
+  " previous line ends a comment
+  if l:previousline =~# '\*)\s*$'
+    " indent relative to the last non-comment
+    call search('\*)', 'bW')
+    let l:skip = s:matchsyn('line(".")', 'col(".")', 'string')
+    let l:startcom = searchpair('(\*', '', '\*)', 'bWn', l:skip)
+    let l:lnum = s:GetLineWithoutFullComment(l:startcom)
+    let l:ind = indent(l:lnum)
+    let l:previousline = substitute(getline(l:lnum), '(\*.*\*)\s*$', '', '')
+
+    if l:lnum == 0 || eval(s:matchsyn(l:lnum, 1, ['comment']))
+      return 0
+    endif
+  endif
 
   " current line begins with '.':
   if l:currentline =~# '^\s*\.'
@@ -170,27 +214,27 @@ function! GetCoqIndent() abort
 
   " current line begins with 'end':
   if l:currentline =~# '^\s*end\>'
-    return s:indent_of_previous_pair(s:match, '', '\<end\>', 1)
+    return s:indent_of_previous_pair(s:match, '', '\<end\>', 1, ['string', 'comment'])
   endif
 
   " current line begins with 'in':
   if l:currentline =~# '^\s*\<in\>'
-    return s:indent_of_previous_pair('\<let\>', '', '\<in\>', 0)
+    return s:indent_of_previous_pair('\<let\>', '', '\<in\>', 0, ['string', 'comment'])
   endif
 
   " current line begins with '|':
   if l:currentline =~# '^\s*|[|}]\@!'
-    let l:match = s:indent_of_previous_pair(s:match, '', '\<end\>', 1)
+    let l:match = s:indent_of_previous_pair(s:match, '', '\<end\>', 1, ['string', 'comment'])
     return l:match != -1 ? l:match : s:indent_of_previous('^\s*' . s:inductive) + &sw
   endif
 
   " current line begins with terminating '|}', '}', or ')'
   if l:currentline =~# '^\s*|}'
-    return s:indent_of_previous_pair('{|', '', '|}', 0)
+    return s:indent_of_previous_pair('{|', '', '|}', 0, ['string', 'comment'])
   elseif l:currentline =~# '^\s*}'
-    return s:indent_of_previous_pair('{', '', '}', 0)
+    return s:indent_of_previous_pair('{', '', '}', 0, ['string', 'comment'])
   elseif l:currentline =~# '^\s*)'
-    return s:indent_of_previous_pair('(', '', ')', 0)
+    return s:indent_of_previous_pair('(', '', ')', 0, ['string', 'comment'])
   endif
 
   " end of proof
@@ -222,7 +266,7 @@ function! GetCoqIndent() abort
   " N.B. must come after the bullet cases
   if l:previousline =~# '}\s*$'
     call search('}', 'bW')
-    return s:indent_of_previous_pair('{', '', '}', 0)
+    return s:indent_of_previous_pair('{', '', '}', 0, ['string', 'comment'])
   endif
 
   " previous line begins with 'Section/Module':
@@ -261,7 +305,7 @@ function! GetCoqIndent() abort
 
   " back to normal indent after lines ending with '.'
   if l:previousline =~# '\.\s*$'
-    if synIDattr(synID(l:lnum, 1, 0), 'name') =~? 'proof\|tactic'
+    if eval(s:matchsyn(l:lnum, 1, ['proof', 'tactic']))
       return l:ind
     else
       return s:indent_of_previous(s:vernac)
