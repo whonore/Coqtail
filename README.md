@@ -129,6 +129,7 @@ Coqtail also comes with an ftdetect script for Coq, as well as modified
 versions of Vincent Aravantinos' [syntax] and [indent] scripts for Coq.
 These scripts are used by default but can be disabled by setting
 `g:coqtail_nosyntax = 1` and `g:coqtail_noindent = 1` respectively.
+Formatting of comments can be disabled with `g:coqtail_noindent_comment`.
 
 See `:help coqtail-configuration` for more configuration variables.
 
