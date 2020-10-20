@@ -170,7 +170,7 @@ function! GetCoqIndent() abort
   " current line is a comment
   if l:currentline =~# '^\s*(\*' || eval(s:matchsyn(v:lnum, 1, ['comment']))
     " ignore comments
-    if g:coqtail_noindent_comment
+    if get(g:, 'coqtail_noindent_comment', 0)
       return -1
     endif
 
