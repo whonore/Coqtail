@@ -178,7 +178,6 @@ function! GetCoqIndent() abort
     if l:currentline !~# '^\s*(\*'
       " current line is starting a multiline comment
       let l:startcom = s:indent_of_previous_pair('(\*', '', '\*)', 1, ['string'])
-      " let l:startcom = indent(search('(\*', 'bWn'))
       if l:currentline =~# '^\s*\*'
         return l:startcom + 1
       else
