@@ -116,12 +116,6 @@ class Coqtop(object):
             self.logger.debug("stop")
             self.stopping = True
 
-            # Close debugging log
-            self.handler.flush()
-            self.handler.close()
-            if self.log is not None:
-                self.log.close()
-
             try:
                 # Try to terminate Coqtop cleanly
                 # TODO: use Quit call
@@ -135,6 +129,12 @@ class Coqtop(object):
                     pass
 
             self.coqtop = None
+
+        # Close debugging log
+        self.handler.flush()
+        self.handler.close()
+        if self.log is not None:
+            self.log.close()
 
     def advance(
         self,
