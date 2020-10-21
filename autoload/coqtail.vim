@@ -338,6 +338,8 @@ function! coqtail#init() abort
       autocmd QuitPre <buffer> if len(win_findbuf(expand('<abuf>'))) == 1 | call coqtail#stop() | endif
     augroup END
   endif
+
+  return 1
 endfunction
 
 " Initialize Python interface, commands, autocmds, and auxiliary panels.

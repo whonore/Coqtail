@@ -39,10 +39,6 @@ except ImportError:
     pass
 
 
-# Error Messages #
-COQTOP_ERR = "Coqtop is not running. Please restart and try again."
-
-
 def unexpected(response, where):
     # type: (Any, str) -> str
     """Create a debugging error about an unexpected response."""
@@ -82,7 +78,7 @@ class Coqtail(object):
         info_msg - The text to display in the info panel
         goal_msg - The text to display in the goal panel
         """
-        self.coqtop = None  # type: Optional[CT.Coqtop]
+        self.coqtop = CT.Coqtop()
         self.handler = handler
         self.oldchange = 0
         self.oldbuf = []  # type: Sequence[Text]
@@ -128,8 +124,8 @@ class Coqtail(object):
         errmsg = []  # type: List[Text]
 
         try:
-            self.coqtop = CT.Coqtop(version)
             err, stderr = self.coqtop.start(
+                version,
                 coq_path if coq_path != "" else None,
                 coq_prog if coq_prog != "" else None,
                 opts["filename"],
@@ -149,8 +145,7 @@ class Coqtail(object):
     def stop(self, opts):
         # type: (Mapping[str, Any]) -> None
         """Stop Coqtop."""
-        if self.coqtop is not None:
-            self.coqtop.stop()
+        self.coqtop.stop()
 
     def step(self, steps, opts):
         # type: (int, Mapping[str, Any]) -> Optional[str]
@@ -189,9 +184,6 @@ class Coqtail(object):
     def rewind(self, steps, opts):
         # type: (int, Mapping[str, Any]) -> Optional[str]
         """Rewind Coq by 'steps' sentences."""
-        if self.coqtop is None:
-            return COQTOP_ERR
-
         if steps < 1 or self.endpoints == []:
             return None
 
@@ -273,9 +265,6 @@ class Coqtail(object):
     def send_until_fail(self, buffer, opts):
         # type: (Sequence[Text], Mapping[str, Any]) -> Tuple[Optional[Tuple[int, int]], Optional[str]]
         """Send all sentences in 'send_queue' until an error is encountered."""
-        if self.coqtop is None:
-            return None, COQTOP_ERR
-
         scroll = len(self.send_queue) > 1
         failed_at = None
         no_msgs = True
@@ -337,9 +326,6 @@ class Coqtail(object):
     def do_query(self, query, opts):
         # type: (Text, Mapping[str, Any]) -> Tuple[bool, Text, Text]
         """Execute a query and return the reply."""
-        if self.coqtop is None:
-            return False, COQTOP_ERR, ""
-
         # Ensure that the query ends in '.'
         if not query.endswith("."):
             query += "."
@@ -462,9 +448,6 @@ class Coqtail(object):
     def get_goals(self, opts):
         # type: (Mapping[str, Any]) -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
         """Get the current goals."""
-        if self.coqtop is None:
-            return None, COQTOP_ERR
-
         try:
             success, msg, goals, stderr = self.coqtop.goals(timeout=opts["timeout"])
             self.print_stderr(stderr)
@@ -638,9 +621,6 @@ class Coqtail(object):
     def toggle_debug(self, opts):
         # type: (Mapping[str, Any]) -> Optional[str]
         """Enable or disable logging of debug messages."""
-        if self.coqtop is None:
-            return COQTOP_ERR
-
         log = self.coqtop.toggle_debug()
         if log is None:
             msg = "Debugging disabled."
@@ -837,7 +817,7 @@ class CoqtailHandler(StreamRequestHandler):
     def interrupt(self):
         # type: () -> None
         """Interrupt Coqtop and clear the request queue."""
-        if self.coq.coqtop is not None and self.working:
+        if self.working:
             self.working = False
             while not self.reqs.empty():
                 try:
