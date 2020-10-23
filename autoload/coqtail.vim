@@ -48,7 +48,7 @@ endif
 
 " Find the path corresponding to 'lib'. Used by includeexpr.
 function! coqtail#findlib(lib) abort
-  let [l:ok, l:lib] = s:call('find_lib', 'sync', {'lib': a:lib})
+  let [l:ok, l:lib] = s:call('find_lib', 'sync', 0, {'lib': a:lib})
   return (l:ok && l:lib != v:null) ? l:lib : a:lib
 endfunction
 
@@ -112,7 +112,7 @@ endfunction
 
 " Get a list of possible locations of the definition of 'target'.
 function! s:finddef(target) abort
-  let [l:ok, l:loc] = s:call('find_def', 'sync', {'target': a:target})
+  let [l:ok, l:loc] = s:call('find_def', 'sync', 0, {'target': a:target})
   return (!l:ok || type(l:loc) != g:coqtail#compat#t_list) ? v:null : l:loc
 endfunction
 
@@ -192,6 +192,7 @@ function! s:cleanup() abort
   " Close the channel
   silent! call b:coqtail_chan.close()
   let b:coqtail_chan = 0
+  let b:coqtail_started = 0
 
   " Clean up auxiliary panels
   call coqtail#panels#cleanup()
@@ -253,19 +254,26 @@ function! s:coqversion() abort
 endfunction
 
 " Check if the channel with Coqtail is open.
+function! s:initted() abort
+  try
+    return coqtail#panels#getvar('coqtail_chan').status() ==# 'open'
+  catch
+    return 0
+  endtry
+endfunction
+
+" Check if Coqtop has been started.
 function! s:running() abort
   try
-    let l:ok = coqtail#panels#getvar('coqtail_chan').status() ==# 'open'
+    return s:initted() && coqtail#panels#getvar('coqtail_started')
   catch
-    let l:ok = 0
-  finally
-    return l:ok
+    return 0
   endtry
 endfunction
 
 " Send a request to Coqtail.
-function! s:call(cmd, cb, args) abort
-  if !s:running()
+function! s:call(cmd, cb, nocoq, args) abort
+  if !((a:nocoq && s:initted()) || (!a:nocoq && s:running()))
     return [0, -1]
   endif
 
@@ -321,16 +329,18 @@ function! coqtail#init() abort
     augroup END
   endif
 
-  if !s:running()
+  if !s:initted()
     " Since we are initializing, we are in the main buffer;
     " the other buffers have not been initialized yet.
     " Thus, we can safely refer to buffer-local b: variables
-
     let b:coqtail_cmds_pending = 0
 
     " Open channel with Coqtail server
     let b:coqtail_chan = coqtail#channel#new()
     call b:coqtail_chan.open('localhost:' . s:port)
+
+    " Prepare auxiliary panels
+    call coqtail#panels#init()
 
     " Shutdown the Coqtop interface when the last instance of this buffer is closed.
     augroup coqtail#Quit
@@ -342,14 +352,15 @@ function! coqtail#init() abort
   return 1
 endfunction
 
-" Initialize Python interface, commands, autocmds, and auxiliary panels.
+" Launch Coqtop and open the auxiliary panels.
 function! coqtail#start(...) abort
   if s:running()
     call coqtail#util#warn('Coq is already running.')
   else
     " See comment in coqtail#init() about buffer-local variables
+    let b:coqtail_started = 1
 
-    " Initialize the channel
+    " Initialize the interface
     call coqtail#init()
 
     " Check if version supported
@@ -370,12 +381,11 @@ function! coqtail#start(...) abort
     " Locate Coq project files
     let [b:coqtail_project_files, l:proj_args] = coqtail#coqproject#locate()
 
-    " Prepare auxiliary panels
-    call coqtail#panels#init()
+    " Open auxiliary panels
     call coqtail#panels#open(0)
 
     " Launch Coqtop
-    let [l:ok, l:msg] = s:call('start', 'sync', {
+    let [l:ok, l:msg] = s:call('start', 'sync', 0, {
       \ 'version': b:coqtail_version,
       \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', '')),
       \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', ''),
@@ -389,21 +399,21 @@ function! coqtail#start(...) abort
 
     " Draw the logo
     let l:info_win = bufwinnr(b:coqtail_panel_bufs[g:coqtail#panels#info])
-    call s:call('splash', 'sync', {
+    call s:call('splash', 'sync', 0, {
       \ 'version': b:coqtail_version,
       \ 'width': winwidth(l:info_win),
       \ 'height': winheight(l:info_win),
       \ 'deprecated': has('python')})
-    call s:call('refresh', '', {})
+    call s:call('refresh', '', 0, {})
 
     " Sync edits to the buffer, close and restore the auxiliary panels
     augroup coqtail#Sync
       autocmd! * <buffer>
-      autocmd InsertEnter <buffer> call s:call('sync', 'sync', {})
+      autocmd InsertEnter <buffer> call s:call('sync', 'sync', 0, {})
       autocmd BufWinLeave <buffer> call coqtail#panels#hide()
       autocmd BufWinEnter <buffer>
-        \ call coqtail#panels#open(0) | call s:call('refresh', '', {})
-      autocmd WinNew <buffer> call s:call('refresh', '', {})
+        \ call coqtail#panels#open(0) | call s:call('refresh', '', 0, {})
+      autocmd WinNew <buffer> call s:call('refresh', '', 0, {})
     augroup END
   endif
 
@@ -412,7 +422,7 @@ endfunction
 
 " Stop the Coqtop interface and clean up auxiliary panels.
 function! coqtail#stop() abort
-  call s:call('stop', 'sync', {})
+  call s:call('stop', 'sync', 0, {})
   call s:cleanup()
 endfunction
 
@@ -420,7 +430,7 @@ endfunction
 function! coqtail#toline(line) abort
   " If no line was given then use the cursor's position,
   " otherwise use the last column in the line
-  call s:call('to_line', '', {
+  call s:call('to_line', '', 0, {
     \ 'line': (a:line == 0 ? line('.') : a:line) - 1,
     \ 'col': (a:line == 0 ? col('.') : len(getline(a:line))) - 1})
 endfunction
@@ -433,7 +443,7 @@ function! coqtail#jumptoend() abort
     return
   endif
 
-  let [l:ok, l:pos] = s:call('endpoint', 'sync', {})
+  let [l:ok, l:pos] = s:call('endpoint', 'sync', 0, {})
   if l:ok
     call cursor(l:pos)
   endif
@@ -472,20 +482,20 @@ endfunction
 function! coqtail#define_commands() abort
   call s:cmddef('CoqStart', 'call coqtail#start(<f-args>)', '')
   call s:cmddef('CoqStop', 'call coqtail#stop()', '')
-  call s:cmddef('CoqInterrupt', 'call s:call("interrupt", "sync", {})', '')
-  call s:cmddef('CoqNext', 'call s:call("step", "", {"steps": <count>})', 's')
-  call s:cmddef('CoqUndo', 'call s:call("rewind", "", {"steps": <count>})', 's')
+  call s:cmddef('CoqInterrupt', 'call s:call("interrupt", "sync", 0, {})', '')
+  call s:cmddef('CoqNext', 'call s:call("step", "", 0, {"steps": <count>})', 's')
+  call s:cmddef('CoqUndo', 'call s:call("rewind", "", 0, {"steps": <count>})', 's')
   call s:cmddef('CoqToLine', 'call coqtail#toline(<count>)', 's')
-  call s:cmddef('CoqToTop', 'call s:call("to_top", "", {})', 's')
+  call s:cmddef('CoqToTop', 'call s:call("to_top", "", 0, {})', 's')
   call s:cmddef('CoqJumpToEnd', 'call coqtail#jumptoend()', 's')
   call s:cmddef('CoqGotoDef', 'call coqtail#gotodef(<f-args>, <bang>0)', 's')
-  call s:cmddef('Coq', 'call s:call("query", "", {"args": [<f-args>]})', 's')
+  call s:cmddef('Coq', 'call s:call("query", "", 0, {"args": [<f-args>]})', 's')
   call s:cmddef('CoqRestorePanels',
-    \ 'call coqtail#panels#open(1) | call s:call("refresh", "", {})', 's')
+    \ 'call coqtail#panels#open(1) | call s:call("refresh", "", 0, {})', 's')
   call s:cmddef('CoqGotoGoal', 'call coqtail#gotogoal(<count>, <bang>1)', 's')
   call s:cmddef('CoqGotoGoalNext', 'call coqtail#gotogoal(-1, <bang>1)', 's')
   call s:cmddef('CoqGotoGoalPrev', 'call coqtail#gotogoal(-2, <bang>1)', 's')
-  call s:cmddef('CoqToggleDebug', 'call s:call("toggle_debug", "", {})', 'i')
+  call s:cmddef('CoqToggleDebug', 'call s:call("toggle_debug", "", 1, {})', 'i')
 endfunction
 
 " Define <Plug> and default mappings for Coqtail commands.
@@ -579,6 +589,7 @@ function! coqtail#register() abort
   " Initialize once
   if !exists('b:coqtail_chan')
     let b:coqtail_chan = 0
+    let b:coqtail_started = 0
     let b:coqtail_timeout = 0
     let b:coqtail_log_name = ''
 
