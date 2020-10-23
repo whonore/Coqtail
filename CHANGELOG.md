@@ -10,7 +10,7 @@
   name with `-topfile` (Coq >=8.10 only). (PR #145)
 - Improved comment autoformatting. Disable with `g:coqtail_noindent_comment`. (PR #146)
 - Debugging can be enabled with `:CoqToggleDebug` without calling `:CoqStart`.
-  (PR #147)
+  (PR #148)
 
 ### Fixed
 - Recognize and highlight strings in more contexts. (PR #139)
