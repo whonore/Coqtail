@@ -473,7 +473,7 @@ function! s:cmddef(name, act, precmd) abort
   let l:act = {
     \ '': a:act,
     \ 's': printf('if s:running() || coqtail#start() | %s | endif', a:act),
-    \ 'i': printf('if s:running() || coqtail#init() | %s | endif', a:act)
+    \ 'i': printf('if s:initted() || coqtail#init() | %s | endif', a:act)
   \}[a:precmd]
   execute printf('command! -buffer %s %s %s', s:cmd_opts[a:name], a:name, l:act)
 endfunction
