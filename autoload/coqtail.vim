@@ -471,10 +471,10 @@ let s:cmd_opts = {
 function! s:cmddef(name, act, precmd) abort
   " Start Coqtail first if needed
   let l:act = {
-    \ '': a:act,
+    \ '_': a:act,
     \ 's': printf('if s:running() || coqtail#start() | %s | endif', a:act),
     \ 'i': printf('if s:initted() || coqtail#init() | %s | endif', a:act)
-  \}[a:precmd]
+  \}[a:precmd ==# '' ? '_' : a:precmd]
   execute printf('command! -buffer %s %s %s', s:cmd_opts[a:name], a:name, l:act)
 endfunction
 
