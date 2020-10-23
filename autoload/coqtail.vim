@@ -422,7 +422,7 @@ endfunction
 
 " Stop the Coqtop interface and clean up auxiliary panels.
 function! coqtail#stop() abort
-  call s:call('stop', 'sync', 0, {})
+  call s:call('stop', 'sync', 1, {})
   call s:cleanup()
 endfunction
 
