@@ -32,8 +32,8 @@ def get_state(coq):
 @pytest.fixture(scope="function")
 def coq():
     """Return a Coqtop for each version."""
-    ct = Coqtop(VERSION)
-    if ct.start(None, None, "", [])[0] is None:
+    ct = Coqtop()
+    if ct.start(VERSION, None, None, "", [])[0] is None:
         yield ct
         ct.stop()
     else:
