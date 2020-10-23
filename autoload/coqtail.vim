@@ -199,8 +199,8 @@ function! s:cleanup() abort
 endfunction
 
 " Get the Coq version and determine if it is supported.
-" Only called in coqtail#start(), from main buffer,
-" so we can safely use b: vars here.
+" Only called in coqtail#start(), from main buffer, so we can safely use b:
+" vars here.
 function! s:coqversion() abort
   " Find a coq(ide)top(.opt) binary
   let l:coq_path = coqtail#util#getvar([b:, g:], 'coqtail_coq_path', '')
@@ -223,8 +223,8 @@ function! s:coqversion() abort
 
   " Assumes message is of the following form:
   " The Coq Proof Assistant, version _._._ (_ _)
-  " The 2nd '._' is optional and the 2nd '.' can also be 'pl'. Other text, such
-  " as '+beta_' will be stripped and ignored by str2nr()
+  " The 2nd '._' is optional and the 2nd '.' can also be 'pl'.
+  " Other text, such as '+beta_' is stripped and ignored by str2nr()
   let l:version = l:version_raw[index(l:version_raw, 'version') + 1]
   let l:versions = map(split(l:version, '\v(\.|pl)'), 'str2nr(v:val)')
 
@@ -342,10 +342,12 @@ function! coqtail#init() abort
     " Prepare auxiliary panels
     call coqtail#panels#init()
 
-    " Shutdown the Coqtop interface when the last instance of this buffer is closed.
+    " Shutdown the Coqtop interface when the last instance of this buffer is
+    " closed
     augroup coqtail#Quit
       autocmd! * <buffer>
-      autocmd QuitPre <buffer> if len(win_findbuf(expand('<abuf>'))) == 1 | call coqtail#stop() | endif
+      autocmd QuitPre <buffer>
+        \ if len(win_findbuf(expand('<abuf>'))) == 1 | call coqtail#stop() | endif
     augroup END
   endif
 
@@ -359,8 +361,6 @@ function! coqtail#start(...) abort
   else
     " See comment in coqtail#init() about buffer-local variables
     let b:coqtail_started = 1
-
-    " Initialize the interface
     call coqtail#init()
 
     " Check if version supported
@@ -583,8 +583,8 @@ function! coqtail#define_mappings() abort
 endfunction
 
 " Initialize buffer local variables, commands, and mappings.
-" Called from ftplugin/coq.vim, from the main buffer,
-" meaning we can safely refer to b: vars here
+" Called from ftplugin/coq.vim, from the main buffer, meaning we can safely
+" refer to b: vars here.
 function! coqtail#register() abort
   " Initialize once
   if !exists('b:coqtail_chan')
