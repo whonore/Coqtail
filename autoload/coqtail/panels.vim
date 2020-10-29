@@ -126,6 +126,7 @@ function! s:open(panel, force) abort
           \ : l:dir ==# 'right' ? 'vertical rightbelow' : ''
         if l:dir !=# ''
           execute printf('silent keepjumps keepalt %s sbuffer %d', l:dir, l:buf)
+          clearjumps
           let b:coqtail_panel_open = 1
           let l:opened = l:buf
           break
