@@ -11,6 +11,7 @@
 - Improved comment autoformatting. Disable with `g:coqtail_noindent_comment`. (PR #146)
 - Debugging can be enabled with `:CoqToggleDebug` without calling `:CoqStart`.
   (PR #148)
+- Syntax highlighting for Ltac2 commands. (PR #149)
 
 ### Fixed
 - Recognize and highlight strings in more contexts. (PR #139)
