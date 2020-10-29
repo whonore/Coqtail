@@ -66,7 +66,7 @@ syn iskeyword clear
 " Coq is case sensitive.
 syn case match
 
-syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqShow
+syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqLtac2Decl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqShow
 
 " Various
 syn match   coqError             "\S\+"
@@ -258,6 +258,17 @@ syn keyword coqLtac contained do info progress repeat try
 syn keyword coqLtac contained abstract constr context end external eval fail first fresh fun goal
 syn keyword coqLtac contained idtac in let ltac lazymatch multimatch match of rec reverse solve type with
 syn match   coqLtac contained "|-\|=>\|||\|\[\|\]\|\<_\>\||"
+
+" Ltac2
+syn region coqLtac2Decl contains=coqLtac2Ident,coqVernacPunctuation,coqLtacContents start="\<Ltac2\%(\_sType\)\?\>" end="\.\_s" keepend
+syn region coqLtac2Decl contains=coqLtac2Eval start="\<Ltac2\_sEval\>" end="\.\_s" keepend
+syn region coqLtac2Decl contains=coqLtac2Notation,coqLtacContents start="\<Ltac2\_sNotation\>" end="\.\_s" keepend
+syn region coqLtac2Decl contains=coqIdent matchgroup=coqVernacCmd start="\<Print\_sLtac2\>" end="\.\_s" keepend
+
+syn region coqLtac2Ident contained matchgroup=coqVernacCmd start="\<Ltac2\%(\_sType\)\?\>" matchgroup=coqIdent end="[_[:alpha:]][_'[:alnum:]]*"
+
+syn region coqLtac2Eval  contained contains=coqTerm,coqTactic,coqTacticKwd,coqLtac,coqProofPunctuation matchgroup=coqVernacCmd start="\<Ltac2\_sEval\>" matchgroup=coqIdent end="\.\_s"
+syn region coqLtac2Notation contained contains=coqProofPunctuation,coqString matchgroup=coqVernacCmd start="\<Ltac2\_sNotation\>" end="\.\_s"
 
 " Proofs
 " TODO: The \ze in the start match is a terrible hack so coqProofDelim will still
