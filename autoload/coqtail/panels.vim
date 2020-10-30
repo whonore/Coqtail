@@ -46,6 +46,7 @@ function! s:init(name) abort
   execute 'setlocal filetype=coq-' . l:name
   setlocal noswapfile
   setlocal bufhidden=hide
+  setlocal nobuflisted
   setlocal nocursorline
   setlocal wrap
 
