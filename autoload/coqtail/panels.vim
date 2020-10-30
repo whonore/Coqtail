@@ -40,8 +40,8 @@ function! s:init(name) abort
   let l:bufname = substitute(a:name, '\l', '\u\0', '')
 
   " badd forces a new buffer to be created in case the main buffer is empty
-  execute 'badd ' . l:bufname . s:counter
-  execute 'silent hide edit ' . l:bufname . s:counter
+  execute 'keepjumps badd ' . l:bufname . s:counter
+  execute 'silent keepjumps keepalt hide edit ' . l:bufname . s:counter
   setlocal buftype=nofile
   execute 'setlocal filetype=coq-' . l:name
   setlocal noswapfile
@@ -69,7 +69,7 @@ function! coqtail#panels#init() abort
   endfor
 
   " Switch back to main panel
-  execute 'silent buffer ' . l:main_buf
+  execute 'silent keepjumps keepalt buffer ' . l:main_buf
   call cursor(l:curpos)
 
   let s:counter += 1
@@ -125,7 +125,8 @@ function! s:open(panel, force) abort
           \ : l:dir ==# 'left' ? 'vertical leftabove'
           \ : l:dir ==# 'right' ? 'vertical rightbelow' : ''
         if l:dir !=# ''
-          execute printf('silent %s sbuffer %d', l:dir, l:buf)
+          execute printf('silent keepjumps keepalt %s sbuffer %d', l:dir, l:buf)
+          clearjumps
           let b:coqtail_panel_open = 1
           let l:opened = l:buf
           break
