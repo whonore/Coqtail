@@ -114,7 +114,7 @@ syn region coqImplicitTypes matchgroup=coqVernacCmd start="\<Implicit Types\?" e
 syn region coqGeneralizable matchgroup=coqVernacCmd start="\<Generalizable\_s\+\%(\%(All\|No\)\_s\+\)\?Variables\?" end="\.\_s"
 
 " Attributes
-syn match coqAttribute "#[[[:alpha:]()]*]"
+syn match coqAttribute "#[[[:alpha:][:space:](),]*]"
 
 " Sections
 syn region coqSection contains=coqSection,@coqVernac matchgroup=coqVernacCmd start="\<Section\_s\+\z(\S\+\)\_s*\.\_s" end="\<End\_s\+\z1\_s*\.\_s"
