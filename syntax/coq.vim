@@ -66,7 +66,7 @@ syn iskeyword clear
 " Coq is case sensitive.
 syn case match
 
-syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqLtac2Decl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqShow
+syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqOpaque,coqShow,coqImplicitTypes,coqGeneralizable,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqLtac2Decl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns
 
 " Various
 syn match   coqError             "\S\+"
