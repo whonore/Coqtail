@@ -684,7 +684,8 @@ class CoqtailHandler(StreamRequestHandler):
             try:
                 msg = self.rfile.readline().decode("utf-8")
                 msg_id, data = json.loads(msg)
-            except ValueError:
+            # Python 2 doesn't have ConnectionError
+            except (ValueError, socket.error):
                 # Check if channel closed
                 self.closed = True
                 break

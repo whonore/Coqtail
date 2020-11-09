@@ -17,6 +17,8 @@
 - Recognize and highlight strings in more contexts. (PR #139)
 - Preserve jumplist and alternate file when opening Info and Goal panels. (PR #150)
 - Don't list Info and Goal panel buffers. (PR #151)
+- Catch exception in `CoqtailServer` when the connection is reset by the peer.
+  (PR #155)
 
 ## [1.2.0]
 
