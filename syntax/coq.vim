@@ -120,7 +120,7 @@ syn region coqOblOf      contains=coqIdent,coqOblUsing matchgroup=coqVernacCmd s
 syn region coqOblOfDelim contains=coqIdent,coqOblUsing matchgroup=coqProofDelim start="\<of\>" matchgroup=coqProofDot end="\.\_s" keepend
 syn region coqObligation contains=coqOblUsing   matchgroup=coqVernacCmd start="\<Solve\_s\+All\_s\+Obligations\>" end="\.\_s" keepend
 syn region coqOblUsing   contains=coqLtac   matchgroup=coqVernacCmd start="\<using\>" end="\.\_s"
-syn region coqObligation contains=coqOblExpr matchgroup=coqVernacCmd start="\<Obligations\_s\+Tactic\>" end="\.\_s" keepend
+syn region coqObligation contains=coqOblExpr matchgroup=coqVernacCmd start="\<Obligation\_s\+Tactic\>" end="\.\_s" keepend
 syn region coqOblExpr    contains=coqLtac   matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
 
 " Scopes
@@ -355,8 +355,10 @@ syn match coqField       contained "[_[:alpha:]][_'[:alnum:]]*"
 syn region coqCls        contains=coqClsProfile start="\<Class\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
 syn region coqClsProfile contained contains=coqIdent,coqRecTerm,coqRecBinder matchgroup=coqVernacCmd start="Class" matchgroup=NONE end="\.\_s"
 
+syn region coqCls matchgroup=coqVernacCmd start="\<Existing\_s\+Class\>" contains=coqIdent end="\.\_s"
+
 " Typeclass instances
-syn region coqIns contains=coqDefName matchgroup=coqVernacCmd start="\<\%(Declare\_s\+\)\?Instance\>" matchgroup=coqVernacPunctuation end=":="me=e-2 end="\.$"me=e-1 end="\.\_s"me=e-2 nextgroup=coqDefContents1,coqProofBody keepend skipnl skipwhite skipempty
+syn region coqIns contains=coqDefName matchgroup=coqVernacCmd start="\<\%(\%(Program\|Declare\)\_s\+\)\?Instance\>" matchgroup=coqVernacPunctuation end=":="me=e-2 end="\.$"me=e-1 end="\.\_s"me=e-2 nextgroup=coqDefContents1,coqProofBody keepend skipnl skipwhite skipempty
 syn region coqIns matchgroup=coqVernacCmd start="\<Existing\_s\+Instance\>" matchgroup=coqVernacPunctuation end="\.$"me=e-1 end="\.\s"me=e-2
 
 " Equations
