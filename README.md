@@ -47,7 +47,6 @@ Requirements:
 - Vim configuration options `filetype plugin on`, and optionally
   `filetype indent on` and `syntax on` (e.g. in `.vimrc`)
 - [Coq 8.4 - 8.12]
-- The `python3-distutils` package.
 
 Newer versions of Coq have not yet been tested, but should still work as long
 as there are no major changes made to the XML protocol Coqtail uses to

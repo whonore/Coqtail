@@ -16,7 +16,15 @@ from tempfile import NamedTemporaryFile
 from six import ensure_text
 from six.moves.queue import Empty, Queue
 
-from xmlInterface import TIMEOUT_ERR, Err, Ok, XMLInterface, XMLInterfaceBase, prettyxml
+from xmlInterface import (
+    TIMEOUT_ERR,
+    Err,
+    FindCoqtopError,
+    Ok,
+    XMLInterface,
+    XMLInterfaceBase,
+    prettyxml,
+)
 
 # For Mypy
 try:
@@ -105,8 +113,8 @@ class Coqtop(object):
             self.state_id = response.val
 
             return None, err
-        except OSError as e:
-            # Failed to launch Coqtop
+        except (OSError, FindCoqtopError) as e:
+            # Failed to launch or find Coqtop
             self.coqtop = None
             return str(e), ""
 

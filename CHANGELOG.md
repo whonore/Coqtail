@@ -20,6 +20,9 @@
 - Catch exception in `CoqtailServer` when the connection is reset by the peer.
   (PR #155)
 
+### Removed
+- Dependency on `distutils` if `shutil.which` is available (Python >=3.3). (PR #161)
+
 ## [1.2.0]
 
 ### Added
