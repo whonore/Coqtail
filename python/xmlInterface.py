@@ -12,8 +12,12 @@ import re
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from distutils.spawn import find_executable
 from xml.dom.minidom import parseString
+
+try:
+    from shutil import which  # type: ignore[attr-defined]
+except ImportError:
+    from distutils.spawn import find_executable as which  # type: ignore[no-redef]
 
 from six import add_metaclass, string_types
 
@@ -36,6 +40,10 @@ try:
     )
 except ImportError:
     pass
+
+
+class FindCoqtopError(Exception):
+    """An exception for when a coqtop executable could not be found."""
 
 
 # Coqtop Response Types #
@@ -170,27 +178,37 @@ class XMLInterfaceBase(object):
     def launch(self, coq_path, coq_prog, filename, args):
         # type: (Optional[str], Optional[str], Text, List[str]) -> Tuple[Union[str, Text], ...]
         """The command to launch coqtop with the appropriate arguments."""
-        path = coq_path if coq_path is not None else os.environ["PATH"]
-        # N.B. find_executable always checks the current directory so add '.'
-        paths = [os.path.abspath(p) for p in path.split(os.pathsep) + [os.curdir]]
+        # Include current directory in search if coq_path is not specified
+        path = (
+            coq_path
+            if coq_path is not None
+            else os.pathsep.join((os.curdir, os.environ["PATH"]))
+        )
+        paths = [os.path.abspath(p) for p in path.split(os.pathsep)]
         coqtop = coq_prog if coq_prog is not None else self.coqtop
-        coq = min(
-            (
-                os.path.abspath(p)
-                for p in (
-                    find_executable(coqtop + ext, path=coq_path) for ext in ("", ".opt")
-                )
-                if p is not None
-            ),
-            key=lambda p: paths.index(os.path.dirname(p)),
+
+        # NOTE: find_executable always checks the current directory so ./coqtop
+        # shadows coq_path/coqtop. This is potentially confusing so filter out
+        # results not in the paths explicitly asked for.
+        coqs = (
+            os.path.abspath(p)
+            for p in (which(coqtop + ext, path=path) for ext in ("", ".opt"))
+            for path in paths
+            if p is not None and os.path.dirname(os.path.abspath(p)) in paths
         )
 
-        return (
-            (coq,)
-            + tuple(self.launch_args)
-            + self.topfile(filename, args)
-            + tuple(args)
-        )
+        try:
+            return (
+                (next(coqs),)
+                + tuple(self.launch_args)
+                + self.topfile(filename, args)
+                + tuple(args)
+            )
+        except StopIteration:
+            raise FindCoqtopError(
+                "Could not find {} in {}. Perhaps you need to set "
+                "g:coqtail_coq_path or g:coqtail_coq_prog.".format(coqtop, path)
+            )
 
     def topfile(self, filename, args):
         # type: (Text, Sequence[Text]) -> Tuple[Text, ...]
