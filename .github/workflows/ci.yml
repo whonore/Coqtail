@@ -22,7 +22,7 @@ jobs:
         uses: coq-community/docker-coq-action@v1
         with:
           coq_version: ${{ matrix.coq_version }}
-          custom_script: ""
+          custom_script: "echo"
       - name: Install Python ${{ matrix.py_version }}
         uses: actions/setup-python@v1
         with:
