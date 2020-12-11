@@ -31,10 +31,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox
       - name: Run Coq tests
-        if: py_version == '2.7'
+        if: matrix.py_version == '2.7'
         run: tox -e coq-py27
       - name: Run Coq tests
-        if: py_version == '3.6'
+        if: matrix.py_version == '3.6'
         run: tox -e coq-py36
 
   py-tests:
@@ -54,10 +54,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox
       - name: Run Coq tests
-        if: py_version == '2.7'
+        if: matrix.py_version == '2.7'
         run: tox -e unit-py27
       - name: Run Coq tests
-        if: py_version == '3.6'
+        if: matrix.py_version == '3.6'
         run: tox -e unit-py36
 
   vim-tests:
