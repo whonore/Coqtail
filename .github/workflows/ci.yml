@@ -72,5 +72,13 @@ jobs:
         uses: rhysd/action-setup-vim@v1
         with:
           vim-version: ${{ matrix.vim_version }}
+      - name: Install Vader
+        uses: actions/checkout@v2
+        with:
+          repository: junegunn/vader.vim
+          path: ./vader.vim
       - name: Run Vim tests
-        run: tox -e vim
+        env:
+          VADER_PATH: $GITHUB_WORKSPACE/vader.vim
+        working-directory: ./tests/vim
+        run: ./run.sh
