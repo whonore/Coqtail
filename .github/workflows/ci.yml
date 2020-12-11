@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  coq-tests:
+    name: Coq integration tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        coq_version: [8.10, 8.11, dev]
+        py_version: [2.7, 3.6]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Coq ${{ matrix.coq_version }}
+        uses: coq-community/docker-coq-action@v1
+        with:
+          coq_version: ${{ matrix.coq_version }}
+      - name: Install Python ${{ matrix.py_version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.py_version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox
+      - name: Run Coq tests
+        if: py_version == '2.7'
+        run: tox -e coq-py27
+      - name: Run Coq tests
+        if: py_version == '3.6'
+        run: tox -e coq-py36
+
+  py-tests:
+    name: Python unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        py_version: [2.7, 3.6]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Python ${{ matrix.py_version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.py_version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox
+      - name: Run Coq tests
+        if: py_version == '2.7'
+        run: tox -e unit-py27
+      - name: Run Coq tests
+        if: py_version == '3.6'
+        run: tox -e unit-py36
+
+  vim-tests:
+    name: Vim unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        vim_version: [v7.4.2367, v8.0.1850]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Vim ${{ matrix.vim_version }}
+        uses: rhysd/action-setup-vim@v1
+        with:
+          vim-version: ${{ matrix.vim_version }}
+      - name: Run Vim tests
+        run: tox -e vim
