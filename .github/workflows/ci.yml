@@ -14,15 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        coq_version: ['8.10', '8.11', dev]
+        coq_version: [810, 811, master]
         py_version: [2.7, 3.6]
     steps:
       - uses: actions/checkout@v2
+      - name: Install Nix
+        uses: cachix/install-nix-action@v12
       - name: Install Coq ${{ matrix.coq_version }}
-        uses: coq-community/docker-coq-action@v1
-        with:
-          coq_version: ${{ matrix.coq_version }}
-          custom_script: "echo"
+        run: ci/install-coq.sh ${{ format('coq{0}', matrix.coq_version) }} ./coq
       - name: Install Python ${{ matrix.py_version }}
         uses: actions/setup-python@v1
         with:
@@ -33,9 +32,13 @@ jobs:
           pip install tox
       - name: Run Coq tests
         if: matrix.py_version == '2.7'
+        env:
+          PATH: ./coq:$PATH
         run: tox -e coq-py27
       - name: Run Coq tests
         if: matrix.py_version == '3.6'
+        env:
+          PATH: ./coq:$PATH
         run: tox -e coq-py36
 
   # py-tests:
