@@ -23,7 +23,9 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
       - name: Install Coq ${{ matrix.coq_version }}
-        run: ci/install-coq.sh ${{ format('coq{0}', matrix.coq_version) }} $GITHUB_WORKSPACE
+        run: |
+          ci/install-coq.sh ${{ format('coq{0}', matrix.coq_version) }} $GITHUB_WORKSPACE
+          echo "$GITHUB_WORKSPACE/coq/bin" >> $GITHUB_PATH
       - name: Install Python ${{ matrix.py_version }}
         uses: actions/setup-python@v1
         with:
@@ -34,13 +36,13 @@ jobs:
           pip install tox
       - name: Run Coq tests
         if: matrix.py_version == '2.7'
-        env:
-          PATH: $GITHUB_WORKSPACE/coq/bin:$PATH
+        # env:
+        #   PATH: $GITHUB_WORKSPACE/coq/bin:$PATH
         run: tox -e coq-py27
       - name: Run Coq tests
         if: matrix.py_version == '3.6'
-        env:
-          PATH: $GITHUB_WORKSPACE/coq/bin:$PATH
+        # env:
+        #   PATH: $GITHUB_WORKSPACE/coq/bin:$PATH
         run: tox -e coq-py36
 
   # py-tests:
