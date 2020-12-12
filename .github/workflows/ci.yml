@@ -9,70 +9,70 @@ on:
       - '**'
 
 jobs:
-  coq-tests:
-    name: Coq integration tests
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        coq_version: [810, 811, master]
-        py_version: [2.7, 3.6]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Nix
-        uses: cachix/install-nix-action@v12
-        with:
-          nix_path: nixpkgs=channel:nixpkgs-unstable
-      - name: Install Coq ${{ matrix.coq_version }}
-        run: |
-          ci/install-coq.sh ${{ format('coq{0}', matrix.coq_version) }} $GITHUB_WORKSPACE
-          echo "$GITHUB_WORKSPACE/coq/bin" >> $GITHUB_PATH
-      - name: Install Python ${{ matrix.py_version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.py_version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install tox
-      - name: Run Coq tests
-        if: matrix.py_version == '2.7'
-        run: |
-          coqtop --version
-          python --version
-          tox -e coq-py27
-      - name: Run Coq tests
-        if: matrix.py_version == '3.6'
-        run: |
-          coqtop --version
-          python --version
-          tox -e coq-py36
+#   coq-tests:
+#     name: Coq integration tests
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         coq_version: [810, 811, master]
+#         py_version: [2.7, 3.6]
+#     steps:
+#       - uses: actions/checkout@v2
+#       - name: Install Nix
+#         uses: cachix/install-nix-action@v12
+#         with:
+#           nix_path: nixpkgs=channel:nixpkgs-unstable
+#       - name: Install Coq ${{ matrix.coq_version }}
+#         run: |
+#           ci/install-coq.sh ${{ format('coq{0}', matrix.coq_version) }} $GITHUB_WORKSPACE
+#           echo "$GITHUB_WORKSPACE/coq/bin" >> $GITHUB_PATH
+#       - name: Install Python ${{ matrix.py_version }}
+#         uses: actions/setup-python@v1
+#         with:
+#           python-version: ${{ matrix.py_version }}
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install tox
+#       - name: Run Coq tests
+#         if: matrix.py_version == '2.7'
+#         run: |
+#           coqtop --version
+#           python --version
+#           tox -e coq-py27
+#       - name: Run Coq tests
+#         if: matrix.py_version == '3.6'
+#         run: |
+#           coqtop --version
+#           python --version
+#           tox -e coq-py36
 
-  py-tests:
-    name: Python unit tests
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        py_version: [2.7, 3.6]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install Python ${{ matrix.py_version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.py_version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install tox
-      - name: Run Python 2 tests
-        if: matrix.py_version == '2.7'
-        run: |
-          python --version
-          tox -e unit-py27
-      - name: Run Python 3 tests
-        if: matrix.py_version == '3.6'
-        run: |
-          python --version
-          tox -e unit-py36
+  # py-tests:
+  #   name: Python unit tests
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       py_version: [2.7, 3.6]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Install Python ${{ matrix.py_version }}
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: ${{ matrix.py_version }}
+  #     - name: Install dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install tox
+  #     - name: Run Python 2 tests
+  #       if: matrix.py_version == '2.7'
+  #       run: |
+  #         python --version
+  #         tox -e unit-py27
+  #     - name: Run Python 3 tests
+  #       if: matrix.py_version == '3.6'
+  #       run: |
+  #         python --version
+  #         tox -e unit-py36
 
   vim-tests:
     name: Vim unit tests
