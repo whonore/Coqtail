@@ -36,14 +36,16 @@ jobs:
           pip install tox
       - name: Run Coq tests
         if: matrix.py_version == '2.7'
-        # env:
-        #   PATH: $GITHUB_WORKSPACE/coq/bin:$PATH
-        run: tox -e coq-py27
+        run: |
+          coqtop --version
+          python --version
+          tox -e coq-py27
       - name: Run Coq tests
         if: matrix.py_version == '3.6'
-        # env:
-        #   PATH: $GITHUB_WORKSPACE/coq/bin:$PATH
-        run: tox -e coq-py36
+        run: |
+          coqtop --version
+          python --version
+          tox -e coq-py36
 
   # py-tests:
   #   name: Python unit tests
