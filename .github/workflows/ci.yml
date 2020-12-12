@@ -85,7 +85,7 @@ jobs:
       - name: Install Vim ${{ matrix.vim_version }}
         uses: rhysd/action-setup-vim@v1
         with:
-          vim-version: ${{ matrix.vim_version }}
+          version: ${{ matrix.vim_version }}
       - name: Install Vader
         uses: actions/checkout@v2
         with:
