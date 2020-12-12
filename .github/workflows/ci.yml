@@ -23,7 +23,7 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
       - name: Install Coq ${{ matrix.coq_version }}
-        run: ci/install-coq.sh ${{ format('coq{0}', matrix.coq_version) }} $GITHUB_WORKSPACE/coq
+        run: ci/install-coq.sh ${{ format('coq{0}', matrix.coq_version) }} $GITHUB_WORKSPACE
       - name: Install Python ${{ matrix.py_version }}
         uses: actions/setup-python@v1
         with:
