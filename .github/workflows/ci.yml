@@ -83,9 +83,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install Vim ${{ matrix.vim_version }}
-        uses: thinca/action-setup-vim@v1
+        uses: whonore/action-setup-vim@v1
         with:
-          vim_version: ${{ matrix.vim_version }}
+          version: ${{ matrix.vim_version }}
+          python: true
       - name: Install Vader
         uses: actions/checkout@v2
         with:
