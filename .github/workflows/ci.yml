@@ -83,7 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install Vim ${{ matrix.vim_version }}
-        uses: whonore/action-setup-vim@master
+        uses: whonore/action-setup-vim
         with:
           version: ${{ matrix.vim_version }}
           python: true
