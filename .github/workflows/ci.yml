@@ -79,14 +79,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        vim_version: [v7.4.2367, v8.0.1850]
+        version: [7.4, 8.0]
     steps:
       - uses: actions/checkout@v2
-      - name: Install Vim ${{ matrix.vim_version }}
-        uses: whonore/action-setup-vim2@v1.3.0
+      - name: Install Nix
+        uses: cachix/install-nix-action@v12
         with:
-          version: ${{ matrix.vim_version }}
-          python: true
+          nix_path: nixpkgs=channel:nixpkgs-unstable
+      - name: Install Vim ${{ matrix.versoin }}
+        run: nix-env -i -f ci/vim.nix --argstr version ${{ matrix.version }}
       - name: Install Vader
         uses: actions/checkout@v2
         with:
