@@ -241,10 +241,8 @@ function! s:replace(buf, panel, txt, richpp, scroll) abort
   " Set new highlights
   let l:matches = []
   for [l:line_no, l:start_pos, l:span, l:hlgroup] in a:richpp
-    echom 'wee hooo ' . l:hlgroup
     if has_key(s:richpp_hlgroups, l:hlgroup)
       let l:match = matchaddpos(s:richpp_hlgroups[l:hlgroup], [[l:line_no, l:start_pos, l:span]])
-      echom 'Added highlight (' . l:hlgroup . '): ' . string(l:line_no) . ' ' . string(l:start_pos) . ' ' . string(l:span)
       call add(l:matches, l:match)
     endif
   endfor
