@@ -46,33 +46,39 @@ def unexpected(response, where):
     return "Coqtail received unexpected response {} in {}".format(response, where)
 
 
-def line_and_highlights(tagged_tokens, line_no):
-    # type: (Union[Text, Iterable[Tuple[Text, Optional[Text]]]], int) -> Tuple[Text, List[Tuple[int, int, int, Text]]]
-    """Converts a sequence of tagged tokens into a string and higlight positions.
-
-    If tagged_tokens turns out to already be a string (which is the case for
-    older version of Coq), just return it as is, with no highlights.
+def lines_and_highlights(tagged_tokens, line_no):
+    # type: (Union[Text, Iterable[Tuple[Text, Optional[Text]]]], int) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]
+    """Converts a sequence of tagged tokens into lines and higlight positions.
 
     Note that matchaddpos()'s highlight positions are 1-indexed,
     but this function expects line_no to be 0-indexed.
     """
 
+    # If tagged_tokens turns out to already be a string (which is the case for
+    # older versions of Coq), just return it as is, with no highlights.
     if isinstance(tagged_tokens, Text):
-        return tagged_tokens, []
+        return tagged_tokens.splitlines(), []
 
-    index = 1
-    line_no += 1
-    line, highlights = '', [] # type: Tuple[str, List[Tuple[int, int, int, str]]]
+    lines, highlights = [], [] # type: Tuple[List[Text], List[Tuple[int, int, int, str]]]
+    line_no += 1 # Convert to 1-indexed per matchaddpos()'s spec
+    line, index = '', 1
 
     for token, tag in tagged_tokens:
-        # TODO: for now I scrape out all newlines for simplicity. Don't do this xD.
-        token = ''.join(token.splitlines())
-        if tag is not None:
-            highlights.append((line_no, index, len(token), tag))
-        line += token
-        index += len(token)
+        for i, tok in enumerate(token.splitlines()):
+            if i > 0:
+                # Encountered a newline in token
+                lines.append(line)
+                line_no += 1
+                line, index = '', 1
 
-    return line, highlights
+            if tag is not None:
+                highlights.append((line_no, index, len(tok), tag))
+
+            line += tok
+            index += len(tok)
+
+    lines.append(line)
+    return lines, highlights
 
 
 class UnmatchedError(Exception):
@@ -553,8 +559,8 @@ class Coqtail(object):
                 if isinstance(next_goal.ccl, Text):
                     lines.append(next_goal.ccl)
                 else:
-                    line, hls = line_and_highlights(next_goal.ccl, len(lines))
-                    lines.append(line)
+                    ls, hls = lines_and_highlights(next_goal.ccl, len(lines))
+                    lines += ls
                     highlights += hls
 
             else:
@@ -564,15 +570,15 @@ class Coqtail(object):
             if idx == 0:
                 # Print the environment only for the current goal
                 for hyp in goal.hyp:
-                    line, hls = line_and_highlights(hyp, len(lines))
-                    lines.append(line)
+                    ls, hls = lines_and_highlights(hyp, len(lines))
+                    lines += ls
                     highlights += hls
 
             hbar = "{:=>25} ({} / {})".format("", idx + 1, ngoals)
             lines.append(hbar)
 
-            line, hls = line_and_highlights(goal.ccl, len(lines))
-            lines.append(line)
+            ls, hls = lines_and_highlights(goal.ccl, len(lines))
+            lines += ls
             highlights += hls
 
         return lines, highlights
