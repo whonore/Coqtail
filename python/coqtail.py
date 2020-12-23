@@ -27,6 +27,7 @@ try:
         Deque,
         Dict,
         Iterator,
+        Iterable,
         List,
         Mapping,
         Optional,
@@ -43,6 +44,35 @@ def unexpected(response, where):
     # type: (Any, str) -> str
     """Create a debugging error about an unexpected response."""
     return "Coqtail received unexpected response {} in {}".format(response, where)
+
+
+def line_and_highlights(tagged_tokens, line_no):
+    # type: (Union[Text, Iterable[Tuple[Text, Optional[Text]]]], int) -> Tuple[Text, List[Tuple[int, int, int, Text]]]
+    """Converts a sequence of tagged tokens into a string and higlight positions.
+
+    If tagged_tokens turns out to already be a string (which is the case for
+    older version of Coq), just return it as is, with no highlights.
+
+    Note that matchaddpos()'s highlight positions are 1-indexed,
+    but this function expects line_no to be 0-indexed.
+    """
+
+    if isinstance(tagged_tokens, Text):
+        return tagged_tokens, []
+
+    index = 1
+    line_no += 1
+    line, highlights = '', [] # type: Tuple[str, List[Tuple[int, int, int, str]]]
+
+    for token, tag in tagged_tokens:
+        # TODO: for now I scrape out all newlines for simplicity. Don't do this xD.
+        token = ''.join(token.splitlines())
+        if tag is not None:
+            highlights.append((line_no, index, len(token), tag))
+        line += token
+        index += len(token)
+
+    return line, highlights
 
 
 class UnmatchedError(Exception):
@@ -75,8 +105,9 @@ class Coqtail(object):
                     (grows to the right)
         send_queue - A queue of the sentences to send to Coqtop
         error_at - The position of the last error
-        info_msg - The text to display in the info panel
-        goal_msg - The text to display in the goal panel
+        info_msg - Lines of text to display in the info panel
+        goal_msg - Lines of text to display in the goal panel
+        goal_hls - Highlight positions for each line of goal_msg
         """
         self.coqtop = CT.Coqtop()
         self.handler = handler
@@ -87,6 +118,7 @@ class Coqtail(object):
         self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
         self.info_msg = []  # type: List[Text]
         self.goal_msg = []  # type: List[Text]
+        self.goal_hls = []  # type: List[Tuple[int, int, int, str]]
 
     def sync(self, opts):
         # type: (Mapping[str, Any]) -> Optional[str]
@@ -442,7 +474,7 @@ class Coqtail(object):
             if newgoals is not None:
                 self.set_goal(self.pp_goals(newgoals, opts=opts))
             else:
-                self.set_goal("")
+                self.set_goal()
         self.handler.refresh(goals=goals, force=force, scroll=scroll)
 
     def get_goals(self, opts):
@@ -460,8 +492,9 @@ class Coqtail(object):
         return goals, msg
 
     def pp_goals(self, goals, opts):
-        # type: (Tuple[List[Any], List[Any], List[Any], List[Any]], Mapping[str, Any]) -> Text
+        # type: (Tuple[List[Any], List[Any], List[Any], List[Any]], Mapping[str, Any]) -> Tuple[List[Text], List[Tuple[int, int, int, str]]]
         """Pretty print the goals."""
+        lines, highlights = [], [] # type: Tuple[List[Text], List[Tuple[int, int, int, str]]]
         fg, bg, shelved, given_up = goals
         bg_joined = [pre + post for pre, post in bg]
 
@@ -487,11 +520,10 @@ class Coqtail(object):
         if hidden_info != "":
             goal_info += " ({})".format(hidden_info)
 
-        msg = [goal_info]
         if extra_info != "":
-            msg.append(extra_info + "\n")
-        else:
-            msg[0] += "\n"
+            goal_info += extra_info
+
+        lines.append(goal_info)
 
         # When a subgoal is finished
         if ngoals == 0:
@@ -510,32 +542,48 @@ class Coqtail(object):
                     else:
                         bullet_info = "use bullet '{}'".format(bullet)
 
-                next_info = "\nNext goal"
+                next_info = "Next goal"
                 if bullet_info != "":
                     next_info += " ({})".format(bullet_info)
-                next_info += ":\n"
+                next_info += ":"
 
-                msg += [next_info, next_goal.ccl]
+                lines.append("")
+                lines.append(next_info)
+
+                if isinstance(next_goal.ccl, Text):
+                    lines.append(next_goal.ccl)
+                else:
+                    line, hls = line_and_highlights(next_goal.ccl, len(lines))
+                    lines.append(line)
+                    highlights += hls
+
             else:
-                msg.append("All goals completed.")
+                lines.append("All goals completed.")
 
         for idx, goal in enumerate(fg):
             if idx == 0:
                 # Print the environment only for the current goal
-                msg += goal.hyp
+                for hyp in goal.hyp:
+                    line, hls = line_and_highlights(hyp, len(lines))
+                    lines.append(line)
+                    highlights += hls
 
-            msg.append("\n{:=>25} ({} / {})\n".format("", idx + 1, ngoals))
-            msg.append(goal.ccl)
+            hbar = "{:=>25} ({} / {})".format("", idx + 1, ngoals)
+            lines.append(hbar)
 
-        return "\n".join(msg)
+            line, hls = line_and_highlights(goal.ccl, len(lines))
+            lines.append(line)
+            highlights += hls
+
+        return lines, highlights
 
     def set_goal(self, msg=None):
-        # type: (Optional[Text]) -> None
+        # type: (Optional[Tuple[List[Text], List[Tuple[int, int, int, str]]]]) -> None
         """Update the goal message."""
         if msg is not None:
-            self.goal_msg = msg.split("\n")
-        if self.goal_msg == [] or self.goal_msg == [""]:
-            self.goal_msg = ["No goals."]
+            self.goal_msg, self.goal_hls = msg
+        if ''.join(self.goal_msg) == '':
+            self.goal_msg, self.goal_hls = ["No goals."], []
 
     def set_info(self, msg=None, reset=True):
         # type: (Optional[Text], bool) -> None
@@ -579,11 +627,11 @@ class Coqtail(object):
         return matches
 
     def panels(self, goals=True):
-        # type: (bool) -> Mapping[str, List[Text]]
+        # type: (bool) -> Mapping[str, Tuple[List[Text], List[Tuple[int, int, int, str]]]]
         """The auxiliary panel content."""
-        panels = {"info": self.info_msg}
+        panels = {"info": (self.info_msg, [])} # type: Dict[str, Tuple[List[Text], List[Tuple[int, int, int, str]]]]
         if goals:
-            panels["goal"] = self.goal_msg
+            panels["goal"] = (self.goal_msg, self.goal_hls)
         return panels
 
     def splash(self, version, width, height, deprecated, opts):
