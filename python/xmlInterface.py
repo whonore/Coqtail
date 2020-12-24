@@ -27,7 +27,6 @@ from six import add_metaclass, string_types
 # requirement need to define dummy replacements for some of the below
 try:
     from typing import (
-        cast,
         Any,
         Callable,
         Dict,
@@ -40,14 +39,7 @@ try:
         Union,
     )
 except ImportError:
-    def cast(_, o): # type: ignore
-        """Mimics mypy's cast() function; does nothing and returns second arg
-
-        For some reason, cast() needs to appear as a function rather than
-        as a comment like all other Mypy type hints. So if we don't have typing,
-        we just mock out this function.
-        """
-        return o
+    pass
 
 
 class FindCoqtopError(Exception):
@@ -539,11 +531,9 @@ class XMLInterfaceBase(object):
             elif xml.tag in ("message", "feedback"):
                 # _to_py is guaranteed to either return Text or
                 # a sequence of tagged tokens for message or feedback
-                msg = cast(Union[Text, Iterable[Tuple[str, Optional[str]]]],
-                        self._to_py(xml))
-
+                msg = self._to_py(xml)
                 if not isinstance(msg, Text):
-                    msg = join_tagged_tokens(msg)
+                    msg = join_tagged_tokens(msg) # type: ignore
 
                 msgs.append(msg.strip())
             else:
