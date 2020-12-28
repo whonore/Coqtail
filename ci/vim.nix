@@ -34,7 +34,7 @@ in stdenv.mkDerivation {
     "--with-features=huge"
     "--enable-python3interp=yes"
     "--with-python3-config-dir=${python36}/lib"
-    "--disable-python2interp"
+    "--disable-pythoninterp"
     "--disable-gui"
     "--enable-fail-if-missing"
   ];
