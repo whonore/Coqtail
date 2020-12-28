@@ -97,4 +97,6 @@ jobs:
         env:
           VADER_PATH: $GITHUB_WORKSPACE/vader.vim
         working-directory: ./tests/vim
-        run: ./run.sh
+        run: |
+          vim -c 'py3 import sys; print(sys.version); print(sys.path); print(sys.prefix)' -c 'q'
+          ./run.sh
