@@ -7,3 +7,4 @@ htmlcov
 .mypy_cache/
 .pytest_cache/
 .tox
+ci/result
