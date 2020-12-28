@@ -73,7 +73,7 @@ class ToOfTests(object):
 
     def abc_richpp(self):
         if self.xi.versions >= (8, 6, 0):
-            return PyXML(self.abc().py, mkXML("richpp", text="abc"), True)
+            return PyXML([("abc", None)], mkXML("richpp", text="abc"), False)
         return None
 
     def list1(self):
@@ -353,9 +353,7 @@ def test_to_of_py(xmlInt, py_xml):
 
     assert xmlInt._to_py(xml) == py
     if py_xml.bijection:
-        assert tostring(xmlInt._of_py(py)) == tostring(xml).replace(
-            b"richpp", b"string"
-        )
+        assert tostring(xmlInt._of_py(py)) == tostring(xml)
 
 
 def test_valid_module(xmlInt):

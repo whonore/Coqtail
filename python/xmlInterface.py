@@ -1329,9 +1329,9 @@ class XMLInterface86(XMLInterface85):
         self._to_py_funcs.update({"richpp": self._to_richpp})
 
     def _to_richpp(self, xml):
-        # type: (ET.Element) -> Iterable[Tuple[Text,Optional[str]]]
+        # type: (ET.Element) -> List[Tuple[Text,Optional[str]]]
         """Expect: <richpp>richpp</richpp>"""
-        return parse_tagged_tokens(self.richpp_tags, xml)
+        return list(parse_tagged_tokens(self.richpp_tags, xml))
 
     # XML Parsing and Marshalling #
     # Overrides _to_message() from 8.5
