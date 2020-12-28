@@ -406,6 +406,10 @@ function! coqtail#start(...) abort
       \ 'deprecated': has('python')})
     call s:call('refresh', '', 0, {})
 
+    if coqtail#util#getvar([b:, g:], 'coqtail_proof_diffs', 0)
+      call s:call("query", "", 0, {"args": ["Set", "Diffs", '"on"' ]})
+    endif
+
     " Sync edits to the buffer, close and restore the auxiliary panels
     augroup coqtail#Sync
       autocmd! * <buffer>
@@ -415,6 +419,7 @@ function! coqtail#start(...) abort
         \ call coqtail#panels#open(0) | call s:call('refresh', '', 0, {})
       autocmd WinNew <buffer> call s:call('refresh', '', 0, {})
     augroup END
+
   endif
 
   return 1

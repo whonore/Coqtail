@@ -280,6 +280,14 @@ g:CoqtailHighlight()	Optional function to override the default highlighting
 		      hi def CoqtailSent ctermbg=62
 		    endfunction
 <
+				         *g:coqtail_proof_diffs* *b:coqtail_proof_diffs*
+							      *coqtail-proof-diffs*
+g:coqtail_proof_diffs
+b:coqtail_proof_diffs	If true then turn on proof diffs for each Coqtail
+			buffer.
+
+			Default: 0
+
 =========
 Debugging							 *coqtail-debug*
 
