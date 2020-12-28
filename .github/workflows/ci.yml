@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: ['7.4', '8.0']
+        version: ['7.4', '8.0', '8.1']
     steps:
       - uses: actions/checkout@v2
       - name: Install Nix
