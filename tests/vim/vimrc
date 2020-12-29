@@ -1,0 +1,6 @@
+let vader_path = empty($VADER_PATH) ? '~/.vim/bundle/vader.vim' : $VADER_PATH
+filetype off
+execute 'set rtp+=' . vader_path
+set rtp+=../..
+filetype plugin indent on
+syntax enable
