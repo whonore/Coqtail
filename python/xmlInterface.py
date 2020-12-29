@@ -132,7 +132,7 @@ def _parse_tagged_tokens(tags, xml, stack, inner):
 
     # Get text before first inner child
     if xml.text is not None:
-        yield (xml.text, stack.copy())
+        yield (xml.text, stack[:])
 
     # Recurse on children, with modified stack
     for child in xml:
@@ -144,7 +144,7 @@ def _parse_tagged_tokens(tags, xml, stack, inner):
 
     # Get trailing text up to start of next tag, unless this is the outermost tag
     if inner and xml.tail is not None:
-        yield (xml.tail, stack.copy())
+        yield (xml.tail, stack[:])
 
 
 def parse_tagged_tokens(tags, xml):
