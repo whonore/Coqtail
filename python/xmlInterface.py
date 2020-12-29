@@ -532,7 +532,7 @@ class XMLInterfaceBase(object):
                 # _to_py is guaranteed to either return Text or
                 # a sequence of tagged tokens for message or feedback
                 msg = self._to_py(xml)
-                if not isinstance(msg, str):
+                if not isinstance(msg, str) or isinstance(msg, list):
                     msg = join_tagged_tokens(msg) # type: ignore
 
                 msgs.append(msg.strip())
