@@ -535,7 +535,9 @@ class XMLInterfaceBase(object):
                 if isinstance(msg, list):
                     msg = join_tagged_tokens(msg)
 
-                msgs.append(msg.strip()) # type: ignore
+                assert isinstance(msg, string_types), unexpected(string_types, type(msg))
+
+                msgs.append(msg.strip())
             else:
                 raise unexpected(("value", "message", "feedback"), xml.tag)
 

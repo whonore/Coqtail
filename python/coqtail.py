@@ -13,6 +13,7 @@ from collections import defaultdict as ddict
 from collections import deque
 from itertools import islice
 
+from six import string_types
 from six.moves import zip_longest
 from six.moves.queue import Empty, Queue
 from six.moves.socketserver import StreamRequestHandler, ThreadingTCPServer
@@ -56,8 +57,8 @@ def lines_and_highlights(tagged_tokens, line_no):
 
     # If tagged_tokens turns out to already be a string (which is the case for
     # older versions of Coq), just return it as is, with no highlights.
-    if not isinstance(tagged_tokens, list):
-        return tagged_tokens.splitlines(), [] # type: ignore
+    if isinstance(tagged_tokens, string_types):
+        return tagged_tokens.splitlines(), []
 
     lines, highlights = [], [] # type: Tuple[List[Text], List[Tuple[int, int, int, str]]]
     line_no += 1 # Convert to 1-indexed per matchaddpos()'s spec
@@ -557,12 +558,9 @@ class Coqtail(object):
                 lines.append("")
                 lines.append(next_info)
 
-                if isinstance(next_goal.ccl, Text):
-                    lines.append(next_goal.ccl)
-                else:
-                    ls, hls = lines_and_highlights(next_goal.ccl, len(lines))
-                    lines += ls
-                    highlights += hls
+                ls, hls = lines_and_highlights(next_goal.ccl, len(lines))
+                lines += ls
+                highlights += hls
 
             else:
                 lines.append("All goals completed.")
