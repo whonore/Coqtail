@@ -93,10 +93,12 @@ jobs:
         with:
           repository: junegunn/vader.vim
           path: ./vader.vim
-      - name: Run Vim tests
-        env:
-          VADER_PATH: $GITHUB_WORKSPACE/vader.vim
-        working-directory: ./tests/vim
-        run: |
-          vim -c 'py3 import sys; print(sys.version); print(sys.path); print(sys.prefix)' -c 'q'
-          ./run.sh
+      # - name: Run Vim tests
+      #   env:
+      #     VADER_PATH: $GITHUB_WORKSPACE/vader.vim
+      #   working-directory: ./tests/vim
+      #   run: |
+      #     vim -c 'py3 import sys; print(sys.version); print(sys.path); print(sys.prefix)' -c 'q'
+      #     ./run.sh
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
