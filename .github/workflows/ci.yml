@@ -84,7 +84,7 @@ jobs:
     strategy:
       matrix:
         # TODO: Figure out why 8.* versions don't work
-        version: ['7.4']
+        version: ['7.4', '8.0']
     steps:
       - uses: actions/checkout@v2
       - name: Install Nix
