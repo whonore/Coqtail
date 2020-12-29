@@ -56,8 +56,8 @@ def lines_and_highlights(tagged_tokens, line_no):
 
     # If tagged_tokens turns out to already be a string (which is the case for
     # older versions of Coq), just return it as is, with no highlights.
-    if isinstance(tagged_tokens, Text):
-        return tagged_tokens.splitlines(), []
+    if not isinstance(tagged_tokens, list):
+        return tagged_tokens.splitlines(), [] # type: ignore
 
     lines, highlights = [], [] # type: Tuple[List[Text], List[Tuple[int, int, int, str]]]
     line_no += 1 # Convert to 1-indexed per matchaddpos()'s spec
