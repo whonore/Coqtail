@@ -71,11 +71,12 @@ def lines_and_highlights(tagged_tokens, line_no):
                 line_no += 1
                 line, index = '', 1
 
+            tok_len = len(tok.encode('utf-8'))
             if tag is not None:
-                highlights.append((line_no, index, len(tok), tag))
+                highlights.append((line_no, index, tok_len, tag))
 
             line += tok
-            index += len(tok)
+            index += tok_len
 
     lines.append(line)
     return lines, highlights
