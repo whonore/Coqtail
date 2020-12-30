@@ -5,20 +5,22 @@
 ### Added
 - Support for multiple `_CoqProject` files. **BREAKING**: renamed
   `g:coqtail_project_name` to `g:coqtail_project_names` and
-  `b:coqtail_project_file` to `b:coqtail_project_files`.
+  `b:coqtail_project_file` to `b:coqtail_project_files`. (PR #141)
 - Match CoqIDE behavior and set the top-level module name based on the file
   name with `-topfile` (Coq >=8.10 only). (PR #145)
 - Improved comment autoformatting. Disable with `g:coqtail_noindent_comment`. (PR #146)
 - Debugging can be enabled with `:CoqToggleDebug` without calling `:CoqStart`.
   (PR #148)
-- Syntax highlighting for Ltac2 commands. (PR #149)
 
 ### Fixed
-- Recognize and highlight strings in more contexts. (PR #139)
 - Preserve jumplist and alternate file when opening Info and Goal panels. (PR #150)
 - Don't list Info and Goal panel buffers. (PR #151)
 - Catch exception in `CoqtailServer` when the connection is reset by the peer.
   (PR #155)
+- Remember the cursor position in the jumplist before moving it with
+  `:CoqJumpToEnd`. (PR #173)
+- Various syntax highlighting improvements including basic support for Ltac2.
+  (PRs #139, #143, #149, #153, #156, #172)
 
 ### Removed
 - Dependency on `distutils` if `shutil.which` is available (Python >=3.3). (PR #161)
