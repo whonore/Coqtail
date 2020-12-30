@@ -66,13 +66,13 @@ syn iskeyword clear
 " Coq is case sensitive.
 syn case match
 
-syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqOpaque,coqShow,coqImplicitTypes,coqGeneralizable,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqLtac2Decl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns
+syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqOpaque,coqShow,coqImplicitTypes,coqGeneralizable,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqLtac2Decl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqCanon
 
 " Various
 syn match   coqError             "\S\+"
 syn match   coqVernacPunctuation ":=\|\.\|:"
 syn match   coqIdent             contained "[_[:alpha:]][_'[:alnum:]]*"
-syn keyword coqTopLevel          Type Canonical Structure Cd Drop Existential
+syn keyword coqTopLevel          Type Structure Cd Drop Existential
 "...
 syn keyword coqVernacCmd         Local Global Polymorphic Functional Scheme Back Combined
 syn keyword coqFeedback          Show
@@ -360,6 +360,9 @@ syn region coqCls matchgroup=coqVernacCmd start="\<Existing\_s\+Class\>" contain
 " Typeclass instances
 syn region coqIns contains=coqDefName matchgroup=coqVernacCmd start="\<\%(\%(Program\|Declare\)\_s\+\)\?Instance\>" matchgroup=coqVernacPunctuation end=":="me=e-2 end="\.$"me=e-1 end="\.\_s"me=e-2 nextgroup=coqDefContents1,coqProofBody keepend skipnl skipwhite skipempty
 syn region coqIns matchgroup=coqVernacCmd start="\<Existing\_s\+Instance\>" matchgroup=coqVernacPunctuation end="\.$"me=e-1 end="\.\s"me=e-2
+
+" Canonical structures
+syn region coqCanon contains=coqIdent matchgroup=coqVernacCmd start="\<Canonical\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
 
 " Equations
 syn region coqEqn           contains=coqEqnProfile start="\<Equations?\?\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
