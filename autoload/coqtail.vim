@@ -445,6 +445,7 @@ function! coqtail#jumptoend() abort
 
   let [l:ok, l:pos] = s:call('endpoint', 'sync', 0, {})
   if l:ok
+    mark '
     call cursor(l:pos)
   endif
 endfunction
