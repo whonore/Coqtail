@@ -58,7 +58,7 @@ function! s:init(name) abort
 
   let b:coqtail_panel_open = 1
   let b:coqtail_panel_size = [-1, -1]
-  call setbufvar(bufnr('%'), 'coqtail_panel_richpp', [])
+  let b:coqtail_panel_richpp = []
   return bufnr('%')
 endfunction
 
@@ -230,7 +230,7 @@ function! s:replace(buf, panel, txt, richpp, scroll) abort
   let l:view = winsaveview()
 
   " Remove previous highlights
-  for l:match in getbufvar(bufnr('%'), 'coqtail_panel_richpp')
+  for l:match in b:coqtail_panel_richpp
     call matchdelete(l:match)
   endfor
 
@@ -247,7 +247,7 @@ function! s:replace(buf, panel, txt, richpp, scroll) abort
     endif
   endfor
 
-  call setbufvar(bufnr('%'), 'coqtail_panel_richpp', l:matches)
+  let b:coqtail_panel_richpp = l:matches
 
   " Restore the view
   if !a:scroll || !g:coqtail_panel_scroll[a:panel]
