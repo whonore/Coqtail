@@ -81,7 +81,7 @@ class Coqtail(object):
         self.coqtop = CT.Coqtop()
         self.handler = handler
         self.oldchange = 0
-        self.oldbuf = []  # type: Sequence[Text]
+        self.oldbuf = []  # type: Sequence[bytes]
         self.endpoints = []  # type: List[Tuple[int, int]]
         self.send_queue = deque()  # type: Deque[Mapping[str, Tuple[int, int]]]
         self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
@@ -263,7 +263,7 @@ class Coqtail(object):
 
     # Helpers #
     def send_until_fail(self, buffer, opts):
-        # type: (Sequence[Text], Mapping[str, Any]) -> Tuple[Optional[Tuple[int, int]], Optional[str]]
+        # type: (Sequence[bytes], Mapping[str, Any]) -> Tuple[Optional[Tuple[int, int]], Optional[str]]
         """Send all sentences in 'send_queue' until an error is encountered."""
         scroll = len(self.send_queue) > 1
         failed_at = None
@@ -277,7 +277,7 @@ class Coqtail(object):
 
             try:
                 success, msg, err_loc, stderr = self.coqtop.dispatch(
-                    no_comments,
+                    no_comments.decode("utf-8"),
                     encoding=opts["encoding"],
                     timeout=opts["timeout"],
                 )
@@ -654,9 +654,10 @@ class Coqtail(object):
 
     @property
     def buffer(self):
-        # type: () -> Sequence[Text]
+        # type: () -> Sequence[bytes]
         """The contents of this buffer."""
-        return self.handler.vimcall("getbufline", True, self.handler.bnum, 1, "$")  # type: ignore
+        lines = self.handler.vimcall("getbufline", True, self.handler.bnum, 1, "$")  # type: Sequence[Text]
+        return list(map(lambda l: l.encode("utf-8"), lines))
 
 
 class CoqtailHandler(StreamRequestHandler):
@@ -682,7 +683,7 @@ class CoqtailHandler(StreamRequestHandler):
         """Parse messages sent over a Vim channel."""
         while not self.closed:
             try:
-                msg = self.rfile.readline().decode("utf-8")
+                msg = self.rfile.readline()  # type: bytes
                 msg_id, data = json.loads(msg)
             # Python 2 doesn't have ConnectionError
             except (ValueError, socket.error):
@@ -1032,10 +1033,10 @@ def _adjust_offset(start, end, com_pos):
 
 
 def _pos_from_offset(col, msg, offset):
-    # type: (int, Text, int) -> Tuple[int, int]
+    # type: (int, bytes, int) -> Tuple[int, int]
     """Calculate the line and column of a given offset."""
     msg = msg[:offset]
-    lines = msg.split("\n")
+    lines = msg.split(b"\n")
 
     line = len(lines) - 1
     col = len(lines[-1]) + (col if line == 0 else 0)
@@ -1044,38 +1045,38 @@ def _pos_from_offset(col, msg, offset):
 
 
 def _between(buf, start, end):
-    # type: (Sequence[Text], Tuple[int, int], Tuple[int, int]) -> Text
+    # type: (Sequence[bytes], Tuple[int, int], Tuple[int, int]) -> bytes
     """Return the text between a given start and end point."""
     sline, scol = start
     eline, ecol = end
 
-    lines = []  # type: List[Text]
+    lines = []  # type: List[bytes]
     for idx, line in enumerate(buf[sline : eline + 1]):
         lcol = scol if idx == 0 else 0
         rcol = ecol + 1 if idx == eline - sline else len(line)
         lines.append(line[lcol:rcol])
 
-    return "\n".join(lines)
+    return b"\n".join(lines)
 
 
 def _get_message_range(lines, after):
-    # type: (Sequence[Text], Tuple[int, int]) -> Mapping[str, Tuple[int, int]]
+    # type: (Sequence[bytes], Tuple[int, int]) -> Mapping[str, Tuple[int, int]]
     """Return the next sentence to send after a given point."""
     end_pos = _find_next_sentence(lines, *after)
     return {"start": after, "stop": end_pos}
 
 
 def _find_next_sentence(lines, sline, scol):
-    # type: (Sequence[Text], int, int) -> Tuple[int, int]
+    # type: (Sequence[bytes], int, int) -> Tuple[int, int]
     """Find the next sentence to send to Coq."""
-    bullets = ("{", "}", "-", "+", "*")
+    bullets = (b"{", b"}", b"-", b"+", b"*")
 
     line, col = (sline, scol)
     while True:
         # Skip leading whitespace
         for line in range(sline, len(lines)):
             first_line = lines[line][col:].lstrip()
-            if first_line.rstrip() != "":
+            if first_line.rstrip() != b"":
                 col += len(lines[line][col:]) - len(first_line)
                 break
 
@@ -1084,7 +1085,7 @@ def _find_next_sentence(lines, sline, scol):
             raise NoDotError()
 
         # Skip leading comments
-        if first_line.startswith("(*"):
+        if first_line.startswith(b"(*"):
             com_end = _skip_comment(lines, line, col + 2)
             if com_end is None:
                 raise UnmatchedError("(*", (line, col))
@@ -1104,26 +1105,26 @@ def _find_next_sentence(lines, sline, scol):
         return (line, col)
 
     # Check if this is a bracketed goal selector
-    if first_line[0].isdigit():
+    if _char_isdigit(first_line[0]):
         state = "digit"
         selcol = col
         for c in first_line[1:]:
-            if state == "digit" and c.isdigit():
+            if state == "digit" and _char_isdigit(c):
                 selcol += 1
-            elif state == "digit" and c.isspace():
+            elif state == "digit" and _char_isspace(c):
                 state = "beforecolon"
                 selcol += 1
-            elif state == "digit" and c == ":":
+            elif state == "digit" and c == b":":
                 state = "aftercolon"
                 selcol += 1
-            elif state == "beforecolon" and c.isspace():
+            elif state == "beforecolon" and _char_isspace(c):
                 selcol += 1
-            elif state == "beforecolon" and c == ":":
+            elif state == "beforecolon" and c == b":":
                 state = "aftercolon"
                 selcol += 1
-            elif state == "aftercolon" and c.isspace():
+            elif state == "aftercolon" and _char_isspace(c):
                 selcol += 1
-            elif state == "aftercolon" and c == "{":
+            elif state == "aftercolon" and c == b"{":
                 selcol += 1
                 return (line, selcol)
             else:
@@ -1134,15 +1135,15 @@ def _find_next_sentence(lines, sline, scol):
 
 
 def _find_dot_after(lines, sline, scol):
-    # type: (Sequence[Text], int, int) -> Tuple[int, int]
+    # type: (Sequence[bytes], int, int) -> Tuple[int, int]
     """Find the next '.' after a given point."""
     max_line = len(lines)
 
     while sline < max_line:
         line = lines[sline][scol:]
-        dot_pos = line.find(".")
-        com_pos = line.find("(*")
-        str_pos = line.find('"')
+        dot_pos = line.find(b".")
+        com_pos = line.find(b"(*")
+        str_pos = line.find(b'"')
 
         if dot_pos == -1 and com_pos == -1 and str_pos == -1:
             # Nothing on this line
@@ -1163,13 +1164,13 @@ def _find_dot_after(lines, sline, scol):
                     raise UnmatchedError('"', (sline, scol + str_pos))
 
                 sline, scol = str_end
-        elif line[dot_pos : dot_pos + 2] in (".", ". "):
+        elif line[dot_pos : dot_pos + 2] in (b".", b". "):
             # Don't stop for '.' used in qualified name or for '..'
             return (sline, scol + dot_pos)
-        elif line[dot_pos : dot_pos + 3] == "...":
+        elif line[dot_pos : dot_pos + 3] == b"...":
             # But do allow '...'
             return (sline, scol + dot_pos + 2)
-        elif line[dot_pos : dot_pos + 2] == "..":
+        elif line[dot_pos : dot_pos + 2] == b"..":
             # Skip second '.'
             scol += dot_pos + 2
         else:
@@ -1179,19 +1180,19 @@ def _find_dot_after(lines, sline, scol):
 
 
 def _skip_str(lines, sline, scol):
-    # type: (Sequence[Text], int, int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in " "."""
-    return _skip_block(lines, sline, scol, '"')
+    return _skip_block(lines, sline, scol, b'"')
 
 
 def _skip_comment(lines, sline, scol):
-    # type: (Sequence[Text], int, int) -> Optional[Tuple[int, int]]
+    # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in (* *)."""
-    return _skip_block(lines, sline, scol, "*)", "(*")
+    return _skip_block(lines, sline, scol, b"*)", b"(*")
 
 
 def _skip_block(lines, sline, scol, estr, sstr=None):
-    # type: (Sequence[Text], int, int, str, Optional[str]) -> Optional[Tuple[int, int]]
+    # type: (Sequence[bytes], int, int, bytes, Optional[bytes]) -> Optional[Tuple[int, int]]
     """A generic function to skip the next block contained in sstr estr."""
     nesting = 1
     max_line = len(lines)
@@ -1264,21 +1265,21 @@ class Matcher(object):
         assert lines.stop is not None
 
         if lines.start == lines.stop - 1:
-            return self._matcher[lines.start, "l"] + self._matcher[cols, "v"]
+            return self._matcher[lines.start, "l"] + self._matcher[cols, "c"]
         return r"\|".join(
             x
             for x in (
                 # First line
-                self._matcher[lines.start, "l"] + self._matcher[cols.start :, "v"],
+                self._matcher[lines.start, "l"] + self._matcher[cols.start :, "c"],
                 # Middle lines
                 (
                     self._matcher[lines.start + 1 : lines.stop - 1, "l"]
-                    + self._matcher[:, "v"]
+                    + self._matcher[:, "c"]
                     if lines.start + 1 < lines.stop - 1
                     else ""
                 ),
                 # Last line
-                self._matcher[lines.stop - 1, "l"] + self._matcher[: cols.stop, "v"],
+                self._matcher[lines.stop - 1, "l"] + self._matcher[: cols.stop, "c"],
             )
             if x != ""
         )
@@ -1298,7 +1299,7 @@ matcher = Matcher()
 
 # Misc #
 def _strip_comments(msg):
-    # type: (Text) -> Tuple[Text, List[List[int]]]
+    # type: (bytes) -> Tuple[bytes, List[List[int]]]
     """Remove all comments from 'msg'."""
     # N.B. Coqtop will ignore comments, but it makes it easier to inspect
     # commands in Coqtail (e.g. options in coqtop.do_option) if we remove
@@ -1309,8 +1310,8 @@ def _strip_comments(msg):
     nesting = 0
 
     while msg != "":
-        start = msg.find("(*")
-        end = msg.find("*)")
+        start = msg.find(b"(*")
+        end = msg.find(b"*)")
         if start == -1 and (end == -1 or (end != -1 and nesting == 0)):
             # No comments left
             nocom.append(msg)
@@ -1331,7 +1332,7 @@ def _strip_comments(msg):
             if nesting == 0:
                 com_pos[-1][1] = off - com_pos[-1][0]
 
-    return " ".join(nocom), com_pos
+    return b" ".join(nocom), com_pos
 
 
 def _find_diff(x, y, stop=None):
@@ -1341,3 +1342,11 @@ def _find_diff(x, y, stop=None):
     if stop is not None:
         seq = islice(seq, stop)
     return next((i for i, vs in seq if vs[0] != vs[1]), None)
+
+def _char_isdigit(c):
+    # type: (int) -> bool
+    return 48 <= c <= 57
+
+def _char_isspace(c):
+    # type: (int) -> bool
+    return c in b" \t\n\r\x0b\f"
