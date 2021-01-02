@@ -20,6 +20,7 @@ from six.moves.socketserver import StreamRequestHandler, ThreadingTCPServer
 import coqtop as CT
 
 # For Mypy
+# mypy: strict-equality
 try:
     from typing import (
         Any,
@@ -1069,7 +1070,7 @@ def _get_message_range(lines, after):
 def _find_next_sentence(lines, sline, scol):
     # type: (Sequence[bytes], int, int) -> Tuple[int, int]
     """Find the next sentence to send to Coq."""
-    bullets = (b"{", b"}", b"-", b"+", b"*")
+    bullets = (ord("{"), ord("}"), ord("-"), ord("+"), ord("*"))
 
     line, col = (sline, scol)
     while True:
@@ -1114,17 +1115,17 @@ def _find_next_sentence(lines, sline, scol):
             elif state == "digit" and _char_isspace(c):
                 state = "beforecolon"
                 selcol += 1
-            elif state == "digit" and c == b":":
+            elif state == "digit" and c == ord(":"):
                 state = "aftercolon"
                 selcol += 1
             elif state == "beforecolon" and _char_isspace(c):
                 selcol += 1
-            elif state == "beforecolon" and c == b":":
+            elif state == "beforecolon" and c == ord(":"):
                 state = "aftercolon"
                 selcol += 1
             elif state == "aftercolon" and _char_isspace(c):
                 selcol += 1
-            elif state == "aftercolon" and c == b"{":
+            elif state == "aftercolon" and c == ord("{"):
                 selcol += 1
                 return (line, selcol)
             else:
@@ -1309,7 +1310,7 @@ def _strip_comments(msg):
     off = 0
     nesting = 0
 
-    while msg != "":
+    while msg != b"":
         start = msg.find(b"(*")
         end = msg.find(b"*)")
         if start == -1 and (end == -1 or (end != -1 and nesting == 0)):
