@@ -13,6 +13,7 @@ from collections import defaultdict as ddict
 from collections import deque
 from itertools import islice
 
+from six import indexbytes, iterbytes
 from six.moves import zip_longest
 from six.moves.queue import Empty, Queue
 from six.moves.socketserver import StreamRequestHandler, ThreadingTCPServer
@@ -1096,20 +1097,20 @@ def _find_next_sentence(lines, sline, scol):
             break
 
     # Check if the first character of the sentence is a bullet
-    if first_line[0] in bullets:
+    if indexbytes(first_line, 0) in bullets:
         # '-', '+', '*' can be repeated
-        for c in first_line[1:]:
-            if c in bullets[2:] and c == first_line[0]:
+        for c in iterbytes(first_line[1:]):
+            if c in bullets[2:] and c == indexbytes(first_line, 0):
                 col += 1
             else:
                 break
         return (line, col)
 
     # Check if this is a bracketed goal selector
-    if _char_isdigit(first_line[0]):
+    if _char_isdigit(indexbytes(first_line, 0)):
         state = "digit"
         selcol = col
-        for c in first_line[1:]:
+        for c in iterbytes(first_line[1:]):
             if state == "digit" and _char_isdigit(c):
                 selcol += 1
             elif state == "digit" and _char_isspace(c):
@@ -1350,4 +1351,4 @@ def _char_isdigit(c):
 
 def _char_isspace(c):
     # type: (int) -> bool
-    return c in b" \t\n\r\x0b\f"
+    return c in iterbytes(b" \t\n\r\x0b\f")
