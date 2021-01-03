@@ -74,7 +74,12 @@ tests = (
 
 # Default 'start' to (0, 0)
 tests = (
-    (t[0], t[1], t[2] if len(t) == 4 else (0, 0), t[3] if len(t) == 4 else t[2])
+    (
+        t[0],
+        list(map(lambda s: s.encode("utf-8"), t[1])),
+        t[2] if len(t) == 4 else (0, 0),
+        t[3] if len(t) == 4 else t[2],
+    )
     for t in tests
 )
 
@@ -94,32 +99,32 @@ def test_parse(_name, lines, start, stop):
 
 
 com_tests = (
-    ("no comment", "abc", ("abc", [])),
-    ("pre", "(*abc*)def", (" def", [[0, 7]])),
-    ("mid", "ab(* c *)de", ("ab de", [[2, 7]])),
-    ("post", "abc(*def *)", ("abc", [[3, 8]])),
+    ("no comment", b"abc", (b"abc", [])),
+    ("pre", b"(*abc*)def", (b" def", [[0, 7]])),
+    ("mid", b"ab(* c *)de", (b"ab de", [[2, 7]])),
+    ("post", b"abc(*def *)", (b"abc", [[3, 8]])),
     (
         "multi",
-        "abc (* com1 *)  def (*com2 *) g",
-        ("abc    def   g", [[4, 10], [20, 9]]),
+        b"abc (* com1 *)  def (*com2 *) g",
+        (b"abc    def   g", [[4, 10], [20, 9]]),
     ),
-    ("nested", "abc (* c1 (*c2 (*c3*) (*c4*) *) *)def", ("abc  def", [[4, 30]])),
-    ("no comment newline", "\nabc\n\n", ("\nabc\n\n", [])),
-    ("pre newline", "(*ab\nc*)d\nef", (" d\nef", [[0, 8]])),
-    ("mid newline", "ab(* c *)\nde", ("ab \nde", [[2, 7]])),
-    ("post newline", "abc\n(*def *)\n", ("abc\n \n", [[4, 8]])),
+    ("nested", b"abc (* c1 (*c2 (*c3*) (*c4*) *) *)def", (b"abc  def", [[4, 30]])),
+    ("no comment newline", b"\nabc\n\n", (b"\nabc\n\n", [])),
+    ("pre newline", b"(*ab\nc*)d\nef", (b" d\nef", [[0, 8]])),
+    ("mid newline", b"ab(* c *)\nde", (b"ab \nde", [[2, 7]])),
+    ("post newline", b"abc\n(*def *)\n", (b"abc\n \n", [[4, 8]])),
     (
         "multi newline",
-        "abc (* com1 *)\n def \n(*\ncom2 *) g",
-        ("abc  \n def \n  g", [[4, 10], [21, 10]]),
+        b"abc (* com1 *)\n def \n(*\ncom2 *) g",
+        (b"abc  \n def \n  g", [[4, 10], [21, 10]]),
     ),
     (
         "nested newline",
-        "\nabc (* c1 (*c2 \n\n(*c3\n*) (*c4*) *) *)def\n",
-        ("\nabc  def\n", [[5, 33]]),
+        b"\nabc (* c1 (*c2 \n\n(*c3\n*) (*c4*) *) *)def\n",
+        (b"\nabc  def\n", [[5, 33]]),
     ),
-    ("star paren", "abc *)", ("abc *)", [])),
-    ("star paren post comment", "(*abc*) *)", ("  *)", [[0, 7]])),
+    ("star paren", b"abc *)", (b"abc *)", [])),
+    ("star paren post comment", b"(*abc*) *)", (b"  *)", [[0, 7]])),
 )
 
 

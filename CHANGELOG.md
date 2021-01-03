@@ -13,6 +13,7 @@
   (PR #148)
 
 ### Fixed
+- Correctly handle highlighting of multibyte characters (for real this time). (PR #177)
 - Preserve jumplist and alternate file when opening Info and Goal panels. (PR #150)
 - Don't list Info and Goal panel buffers. (PR #151)
 - Catch exception in `CoqtailServer` when the connection is reset by the peer.
