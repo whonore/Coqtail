@@ -21,7 +21,6 @@ from six.moves.socketserver import StreamRequestHandler, ThreadingTCPServer
 import coqtop as CT
 
 # For Mypy
-# mypy: strict-equality
 try:
     from typing import (
         Any,
@@ -1103,20 +1102,22 @@ def _find_next_sentence(lines, sline, scol):
             break
 
     # Check if the first character of the sentence is a bullet
-    if indexbytes(first_line, 0) in bullets:
+    if indexbytes(first_line, 0) in bullets:  # type: ignore[no-untyped-call]
         # '-', '+', '*' can be repeated
         for c in iterbytes(first_line[1:]):
-            if c in bullets[2:] and c == indexbytes(first_line, 0):
+            if c in bullets[2:] and c == indexbytes(first_line, 0):  # type: ignore[no-untyped-call]
                 col += 1
             else:
                 break
         return (line, col)
 
     # Check if this is a bracketed goal selector
-    if _char_isdigit(indexbytes(first_line, 0)):
+    if _char_isdigit(indexbytes(first_line, 0)):  # type: ignore[no-untyped-call]
         state = "digit"
         selcol = col
         for c in iterbytes(first_line[1:]):
+            # Hack to silence mypy complaints in Python 2
+            assert isinstance(c, int)
             if state == "digit" and _char_isdigit(c):
                 selcol += 1
             elif state == "digit" and _char_isspace(c):
@@ -1359,4 +1360,4 @@ def _char_isdigit(c):
 
 def _char_isspace(c):
     # type: (int) -> bool
-    return c in iterbytes(b" \t\n\r\x0b\f")
+    return c in iterbytes(b" \t\n\r\x0b\f")  # type: ignore[operator]
