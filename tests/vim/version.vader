@@ -1,0 +1,80 @@
+" Author: Wolf Honore
+" Coq version parsing tests.
+
+Execute (match-exact):
+  Assert coqtail#version#match('1.2.3', '1.2.3')
+
+Execute (match-exact-pl):
+  Assert coqtail#version#match('1.2pl3', '1.2.3')
+
+Execute (match-exact-short):
+  Assert coqtail#version#match('1.2', '1.2.0')
+
+Execute (match-exact-alpha):
+  Assert coqtail#version#match('1.2+alpha3', '1.2.0')
+
+Execute (match-star-last):
+  Assert coqtail#version#match('1.2.3', '1.2.*')
+
+Execute (match-star-mid):
+  Assert coqtail#version#match('1.2.3', '1.*.3')
+
+Execute (not-match-exact):
+  Assert !coqtail#version#match('1.2.3', '1.2.4')
+
+Execute (not-match-exact-pl):
+  Assert !coqtail#version#match('1.2pl3', '1.2.4')
+
+Execute (not-match-exact-short):
+  Assert !coqtail#version#match('1.2', '1.2.4')
+
+Execute (not-match-exact-alpha):
+  Assert !coqtail#version#match('1.2+alpha3', '1.2.1')
+
+Execute (not-match-star-last):
+  Assert !coqtail#version#match('1.2.3', '1.3.*')
+
+Execute (not-match-star-mid):
+  Assert !coqtail#version#match('1.2.3', '1.*.4')
+
+Execute (atleast-exact-equal):
+  Assert coqtail#version#atleast('1.2.3', '1.2.3')
+
+Execute (atleast-exact-gt-last):
+  Assert coqtail#version#atleast('1.2.4', '1.2.3')
+
+Execute (atleast-exact-gt-mid):
+  Assert coqtail#version#atleast('1.3.0', '1.2.3')
+
+Execute (atleast-exact-gt-first):
+  Assert coqtail#version#atleast('2.0.0', '1.2.3')
+
+Execute (atleast-exact-gt-pl):
+  Assert coqtail#version#atleast('1.2pl4', '1.2.3')
+
+Execute (atleast-star-last):
+  Assert coqtail#version#atleast('1.2.4', '1.2.*')
+
+Execute (atleast-star-mid):
+  Assert coqtail#version#atleast('1.2.4', '1.*.3')
+
+Execute (atleast-star-short):
+  Assert coqtail#version#atleast('1.2', '1.2.*')
+
+Execute (atleast-star-alpha):
+  Assert coqtail#version#atleast('1.2+alpha4', '1.2.*')
+
+Execute (not-atleast-exact-lt-last):
+  Assert !coqtail#version#atleast('1.2.3', '1.2.4')
+
+Execute (not-atleast-exact-lt-mid):
+  Assert !coqtail#version#atleast('1.2.3', '1.3.0')
+
+Execute (not-atleast-exact-lt-first):
+  Assert !coqtail#version#atleast('1.2.3', '2.0.0')
+
+Execute (not-atleast-exact-lt-pl):
+  Assert !coqtail#version#atleast('1.2pl3', '1.2.4')
+
+Execute (not-atleast-star-alpha):
+  Assert !coqtail#version#atleast('1.2+alpha3', '1.2.1')
