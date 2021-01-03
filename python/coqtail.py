@@ -54,16 +54,13 @@ def lines_and_highlights(tagged_tokens, line_no):
     Note that matchaddpos()'s highlight positions are 1-indexed,
     but this function expects line_no to be 0-indexed.
     """
-
     # If tagged_tokens turns out to already be a string (which is the case for
     # older versions of Coq), just return it as is, with no highlights.
     if isinstance(tagged_tokens, string_types):
         return tagged_tokens.splitlines(), []
 
-    lines, highlights = (
-        [],
-        [],
-    )  # type: Tuple[List[Text], List[Tuple[int, int, int, str]]]
+    lines = []  # type: List[Text]
+    highlights = []  # type: List[Tuple[int, int, int, str]]
     line_no += 1  # Convert to 1-indexed per matchaddpos()'s spec
     line, index = "", 1
 
@@ -505,10 +502,8 @@ class Coqtail(object):
     def pp_goals(self, goals, opts):
         # type: (Tuple[List[Any], List[Any], List[Any], List[Any]], Mapping[str, Any]) -> Tuple[List[Text], List[Tuple[int, int, int, str]]]
         """Pretty print the goals."""
-        lines, highlights = (
-            [],
-            [],
-        )  # type: Tuple[List[Text], List[Tuple[int, int, int, str]]]
+        lines = []  # type: List[Text]
+        highlights = []  # type: List[Tuple[int, int, int, str]]
         fg, bg, shelved, given_up = goals
         bg_joined = [pre + post for pre, post in bg]
 
@@ -567,7 +562,6 @@ class Coqtail(object):
                 ls, hls = lines_and_highlights(next_goal.ccl, len(lines))
                 lines += ls
                 highlights += hls
-
             else:
                 lines.append("All goals completed.")
 

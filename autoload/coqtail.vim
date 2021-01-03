@@ -285,13 +285,13 @@ endfunction
 
 " Enable proof diffs upon starting
 function! s:init_proof_diffs(coq_version) abort
-    let l:proof_diffs_arg = coqtail#util#getvar([b:, g:], 'coqtail_auto_enable_proof_diffs', "")
-    if l:proof_diffs_arg == ""
+    let l:proof_diffs_arg = coqtail#util#getvar([b:, g:], 'coqtail_auto_enable_proof_diffs', '')
+    if l:proof_diffs_arg ==# ''
       return
     endif
 
     if coqtail#version#atleast(a:coq_version, '8.9.*')
-      call s:call("query", "", 0, {"args": ["Set", "Diffs", '"' . l:proof_diffs_arg . '"' ]})
+      call s:call('query', '', 0, {'args': ['Set', 'Diffs', '"' . l:proof_diffs_arg . '"']})
     endif
 endfunction
 
@@ -407,7 +407,6 @@ function! coqtail#start(...) abort
         \ call coqtail#panels#open(0) | call s:call('refresh', '', 0, {})
       autocmd WinNew <buffer> call s:call('refresh', '', 0, {})
     augroup END
-
   endif
 
   return 1

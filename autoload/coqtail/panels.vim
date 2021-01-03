@@ -16,11 +16,11 @@ let s:hlgroups = [
   \ ['coqtail_error', 'CoqtailError']
 \]
 let s:richpp_hlgroups = {
-      \ 'diff.added': 'CoqtailDiffAdded',
-      \ 'diff.removed': 'CoqtailDiffRemoved',
-      \ 'diff.added.bg': 'CoqtailDiffAddedBg',
-      \ 'diff.removed.bg': 'CoqtailDiffRemovedBg',
-      \}
+  \ 'diff.added': 'CoqtailDiffAdded',
+  \ 'diff.removed': 'CoqtailDiffRemoved',
+  \ 'diff.added.bg': 'CoqtailDiffAddedBg',
+  \ 'diff.removed.bg': 'CoqtailDiffRemovedBg'
+\}
 
 " Default panel layout.
 if !exists('g:coqtail_panel_layout')
@@ -243,10 +243,9 @@ function! s:replace(buf, panel, txt, richpp, scroll) abort
   for [l:line_no, l:start_pos, l:span, l:hlgroup] in a:richpp
     if has_key(s:richpp_hlgroups, l:hlgroup)
       let l:match = matchaddpos(s:richpp_hlgroups[l:hlgroup], [[l:line_no, l:start_pos, l:span]])
-      call add(l:matches, l:match)
+      let l:matches = add(l:matches, l:match)
     endif
   endfor
-
   let b:coqtail_panel_richpp = l:matches
 
   " Restore the view

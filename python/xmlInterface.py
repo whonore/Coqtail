@@ -92,8 +92,8 @@ def _unescape(cmd):
     return cmd
 
 
-def _parse_tagged_tokens(tags, xml, stack, inner):
-    # type: (List[Text], ET.Element, List[Text], bool) -> Iterable[Tuple[Text, List[Text]]]
+def _parse_tagged_tokens(tags, xml, stack=None, inner=False):
+    # type: (List[Text], ET.Element, Optional[List[Text]], bool) -> Iterable[Tuple[Text, List[Text]]]
     """Scrape an XML element into a stream of text tokens and stack of tags.
 
     Helper function to parse_tagged_tokens.
@@ -109,8 +109,9 @@ def _parse_tagged_tokens(tags, xml, stack, inner):
     <start.a>foo</start.a>bar as <start.a/>foobar and
     <end.b>foo</end.b>bar as foobar<end.b/>.
     """
-
     pop_after = None
+    if stack is None:
+        stack = []
 
     # Check tag, see if we should modify stack
     if xml.tag.startswith("start."):
@@ -152,16 +153,14 @@ def parse_tagged_tokens(tags, xml):
     """Scrape an XML element into a stream of text tokens and accompanying tags.
 
     Written to support richpp markup.
-    Only considers tags that specified by the tags parameter.
+    Only considers tags specified by the tags parameter.
     """
-
     token_acc, last_tag = "", None
 
     # Recursive helper _parse_tagged_tokens gives us tag stacks
-    for (token, tag_list) in _parse_tagged_tokens(tags, xml, [], False):
-
+    for token, tag_list in _parse_tagged_tokens(tags, xml):
         # Take top tag from tag stack, if any
-        top_tag = tag_list[0] if len(tag_list) > 0 else None
+        top_tag = tag_list[0] if tag_list != [] else None
 
         if top_tag == last_tag:
             # Join tokens whose top tag is the same
@@ -178,10 +177,10 @@ def join_tagged_tokens(tagged_tokens):
     """Join tokens from tagged token stream.
 
     Note:
-        forall xml tags,
-            join_tagged_tokens(parse_tagged_token(tags, xml)) = "".join(xml.itertext())
+      forall xml tags,
+        join_tagged_tokens(parse_tagged_token(tags, xml)) = "".join(xml.itertext())
     """
-    return "".join([s for (s, _) in tagged_tokens])
+    return "".join(s for s, _ in tagged_tokens)
 
 
 # Debugging #
@@ -535,9 +534,9 @@ class XMLInterfaceBase(object):
                 if isinstance(msg, list):
                     msg = join_tagged_tokens(msg)
 
-                assert isinstance(msg, string_types), unexpected(
-                    string_types, type(msg)
-                )
+                # Sanity check
+                if not isinstance(msg, string_types):
+                    raise unexpected(string_types, type(msg))
 
                 msgs.append(msg.strip())
             else:
@@ -1333,7 +1332,7 @@ class XMLInterface86(XMLInterface85):
         self._to_py_funcs.update({"richpp": self._to_richpp})
 
     def _to_richpp(self, xml):
-        # type: (ET.Element) -> List[Tuple[Text,Optional[str]]]
+        # type: (ET.Element) -> List[Tuple[Text, Optional[str]]]
         """Expect: <richpp>richpp</richpp>"""
         return list(parse_tagged_tokens(self.richpp_tags, xml))
 
