@@ -18,17 +18,16 @@ Py from coqtail import ChannelManager, Coqtail, CoqtailServer
 " Initialize global variables.
 " Supported Coq versions (-1 means any number).
 let s:supported = [
-  \ [8, 4, -1],
-  \ [8, 5, -1],
-  \ [8, 6, -1],
-  \ [8, 7, -1],
-  \ [8, 8, -1],
-  \ [8, 9, -1],
-  \ [8, 10, -1],
-  \ [8, 11, -1],
-  \ [8, 12, -1]
+  \ '8.4.*',
+  \ '8.5.*',
+  \ '8.6.*',
+  \ '8.7.*',
+  \ '8.8.*',
+  \ '8.9.*',
+  \ '8.10.*',
+  \ '8.11.*',
+  \ '8.12.*'
 \]
-let s:latest_supported = join(s:supported[-1][:1], '.')
 " Coq binaries to try when checking the version if coqtail_coq_prog is not set.
 let s:default_coqs = ['coqtop.opt', 'coqtop', 'coqidetop.opt', 'coqidetop']
 " Default number of lines of a goal to show.
@@ -37,7 +36,7 @@ let s:goal_lines = 5
 let s:unsupported_msg =
   \ 'Coqtail does not officially support your version of Coq (%s). ' .
   \ 'Continuing with the interface for the latest supported version (' .
-  \ s:latest_supported . ').'
+  \ s:supported[-1] . ').'
 " Server port.
 let s:port = -1
 
@@ -221,36 +220,15 @@ function! s:coqversion() abort
     return [-1, 0]
   endif
 
-  " Assumes message is of the following form:
-  " The Coq Proof Assistant, version _._._ (_ _)
-  " The 2nd '._' is optional and the 2nd '.' can also be 'pl'.
-  " Other text, such as '+beta_' is stripped and ignored by str2nr()
+  " Assumes message is of the form: The Coq Proof Assistant, version _ (_ _)
   let l:version = l:version_raw[index(l:version_raw, 'version') + 1]
-  let l:versions = map(split(l:version, '\v(\.|pl)'), 'str2nr(v:val)')
-
-  " Pad missing version numbers with 0
-  while len(l:versions) < 3
-    let l:versions = add(l:versions, 0)
-  endwhile
-
-  let l:found_sup = 0
   for l:supp in s:supported
-    let l:is_sup = 1
-
-    for l:idx in range(3)
-      if l:supp[l:idx] != l:versions[l:idx] && l:supp[l:idx] != -1
-        let l:is_sup = 0
-        break
-      endif
-    endfor
-
-    if l:is_sup
-      let l:found_sup = 1
-      break
+    if coqtail#version#match(l:version, l:supp)
+      return [l:version, 1]
     endif
   endfor
 
-  return [l:version, l:found_sup]
+  return [l:version, 0]
 endfunction
 
 " Check if the channel with Coqtail is open.
