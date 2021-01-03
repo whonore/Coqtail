@@ -16,7 +16,7 @@ endif
 Py from coqtail import ChannelManager, Coqtail, CoqtailServer
 
 " Initialize global variables.
-" Supported Coq versions (-1 means any number).
+" Supported Coq versions.
 let s:supported = [
   \ '8.4.*',
   \ '8.5.*',
