@@ -658,8 +658,14 @@ class Coqtail(object):
     def buffer(self):
         # type: () -> Sequence[bytes]
         """The contents of this buffer."""
-        lines = self.handler.vimcall("getbufline", True, self.handler.bnum, 1, "$")  # type: Sequence[Text]
-        return list(map(lambda l: l.encode("utf-8"), lines))
+        lines = self.handler.vimcall(
+            "getbufline",
+            True,
+            self.handler.bnum,
+            1,
+            "$",
+        )  # type: Sequence[Text]
+        return [line.encode("utf-8") for line in lines]
 
 
 class CoqtailHandler(StreamRequestHandler):
@@ -1345,9 +1351,11 @@ def _find_diff(x, y, stop=None):
         seq = islice(seq, stop)
     return next((i for i, vs in seq if vs[0] != vs[1]), None)
 
+
 def _char_isdigit(c):
     # type: (int) -> bool
-    return 48 <= c <= 57
+    return ord("0") <= c <= ord("9")
+
 
 def _char_isspace(c):
     # type: (int) -> bool
