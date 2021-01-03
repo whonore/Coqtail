@@ -74,7 +74,7 @@ tests = (
 
 # Default 'start' to (0, 0)
 tests = (
-    (t[0], t[1], t[2] if len(t) == 4 else (0, 0), t[3] if len(t) == 4 else t[2])
+    (t[0], list(map(lambda s: s.encode("utf-8"), t[1])), t[2] if len(t) == 4 else (0, 0), t[3] if len(t) == 4 else t[2])
     for t in tests
 )
 
@@ -120,6 +120,11 @@ com_tests = (
     ),
     ("star paren", "abc *)", ("abc *)", [])),
     ("star paren post comment", "(*abc*) *)", ("  *)", [[0, 7]])),
+)
+
+com_tests = (
+    (t[0], t[1].encode("utf-8"), (t[2][0].encode("utf-8"), t[2][1]))
+    for t in com_tests
 )
 
 
