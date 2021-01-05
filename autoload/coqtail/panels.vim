@@ -298,7 +298,7 @@ endfunction
 " Delete panel variables and clear highlighting.
 function! coqtail#panels#cleanup() abort
   for l:panel in g:coqtail#panels#aux
-    silent! execute 'bdelete' . b:coqtail_panel_bufs[l:panel]
+    silent! execute 'bwipeout' b:coqtail_panel_bufs[l:panel]
   endfor
   silent! unlet b:coqtail_panel_bufs
 
