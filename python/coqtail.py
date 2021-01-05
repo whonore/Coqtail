@@ -27,8 +27,8 @@ try:
         DefaultDict,
         Deque,
         Dict,
-        Iterator,
         Iterable,
+        Iterator,
         List,
         Mapping,
         Optional,
@@ -60,9 +60,12 @@ def lines_and_highlights(tagged_tokens, line_no):
     if isinstance(tagged_tokens, string_types):
         return tagged_tokens.splitlines(), []
 
-    lines, highlights = [], [] # type: Tuple[List[Text], List[Tuple[int, int, int, str]]]
-    line_no += 1 # Convert to 1-indexed per matchaddpos()'s spec
-    line, index = '', 1
+    lines, highlights = (
+        [],
+        [],
+    )  # type: Tuple[List[Text], List[Tuple[int, int, int, str]]]
+    line_no += 1  # Convert to 1-indexed per matchaddpos()'s spec
+    line, index = "", 1
 
     for token, tag in tagged_tokens:
         for i, tok in enumerate(token.splitlines()):
@@ -70,9 +73,9 @@ def lines_and_highlights(tagged_tokens, line_no):
                 # Encountered a newline in token
                 lines.append(line)
                 line_no += 1
-                line, index = '', 1
+                line, index = "", 1
 
-            tok_len = len(tok.encode('utf-8'))
+            tok_len = len(tok.encode("utf-8"))
             if tag is not None:
                 highlights.append((line_no, index, tok_len, tag))
 
@@ -502,7 +505,10 @@ class Coqtail(object):
     def pp_goals(self, goals, opts):
         # type: (Tuple[List[Any], List[Any], List[Any], List[Any]], Mapping[str, Any]) -> Tuple[List[Text], List[Tuple[int, int, int, str]]]
         """Pretty print the goals."""
-        lines, highlights = [], [] # type: Tuple[List[Text], List[Tuple[int, int, int, str]]]
+        lines, highlights = (
+            [],
+            [],
+        )  # type: Tuple[List[Text], List[Tuple[int, int, int, str]]]
         fg, bg, shelved, given_up = goals
         bg_joined = [pre + post for pre, post in bg]
 
@@ -587,7 +593,7 @@ class Coqtail(object):
         """Update the goal message."""
         if msg is not None:
             self.goal_msg, self.goal_hls = msg
-        if ''.join(self.goal_msg) == '':
+        if "".join(self.goal_msg) == "":
             self.goal_msg, self.goal_hls = ["No goals."], []
 
     def set_info(self, msg=None, reset=True):
@@ -634,7 +640,9 @@ class Coqtail(object):
     def panels(self, goals=True):
         # type: (bool) -> Mapping[str, Tuple[List[Text], List[Tuple[int, int, int, str]]]]
         """The auxiliary panel content."""
-        panels = {"info": (self.info_msg, [])} # type: Dict[str, Tuple[List[Text], List[Tuple[int, int, int, str]]]]
+        panels = {
+            "info": (self.info_msg, [])
+        }  # type: Dict[str, Tuple[List[Text], List[Tuple[int, int, int, str]]]]
         if goals:
             panels["goal"] = (self.goal_msg, self.goal_hls)
         return panels

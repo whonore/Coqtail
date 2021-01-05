@@ -114,13 +114,13 @@ def _parse_tagged_tokens(tags, xml, stack, inner):
 
     # Check tag, see if we should modify stack
     if xml.tag.startswith("start."):
-        _, _, tag = xml.tag.rpartition("start.") # assert(tag != "")
+        _, _, tag = xml.tag.rpartition("start.")  # assert(tag != "")
         if tag in tags:
             # start. tag: push onto stack
             stack.insert(0, tag)
 
     elif xml.tag.startswith("end."):
-        _, _, tag = xml.tag.rpartition("end.") # assert(tag != "")
+        _, _, tag = xml.tag.rpartition("end.")  # assert(tag != "")
         if tag in tags:
             # end. tag: remove from stack (even if it's not at the top)
             pop_after = tag
@@ -181,7 +181,7 @@ def join_tagged_tokens(tagged_tokens):
         forall xml tags,
             join_tagged_tokens(parse_tagged_token(tags, xml)) = "".join(xml.itertext())
     """
-    return ''.join([s for (s, _) in tagged_tokens])
+    return "".join([s for (s, _) in tagged_tokens])
 
 
 # Debugging #
@@ -535,7 +535,9 @@ class XMLInterfaceBase(object):
                 if isinstance(msg, list):
                     msg = join_tagged_tokens(msg)
 
-                assert isinstance(msg, string_types), unexpected(string_types, type(msg))
+                assert isinstance(msg, string_types), unexpected(
+                    string_types, type(msg)
+                )
 
                 msgs.append(msg.strip())
             else:
@@ -1310,11 +1312,11 @@ class XMLInterface86(XMLInterface85):
 
     # Tags to look for when parsing richpp
     richpp_tags = [
-                "diff.added",
-                "diff.removed",
-                "diff.added.bg",
-                "diff.removed.bg",
-                ]
+        "diff.added",
+        "diff.removed",
+        "diff.added.bg",
+        "diff.removed.bg",
+    ]
 
     def __init__(self, versions):
         # type: (Tuple[int, ...]) -> None
