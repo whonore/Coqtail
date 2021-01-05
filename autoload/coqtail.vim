@@ -283,6 +283,18 @@ function! s:call(cmd, cb, nocoq, args) abort
   endif
 endfunction
 
+" Enable proof diffs upon starting
+function! s:init_proof_diffs(coq_version) abort
+    let l:proof_diffs_arg = coqtail#util#getvar([b:, g:], 'coqtail_auto_enable_proof_diffs', "")
+    if l:proof_diffs_arg == ""
+      return
+    endif
+
+    if coqtail#version#atleast(a:coq_version, '8.9.*')
+      call s:call("query", "", 0, {"args": ["Set", "Diffs", '"' . l:proof_diffs_arg . '"' ]})
+    endif
+endfunction
+
 " Print any error messages.
 function! coqtail#defaultCB(chan, msg) abort
   let l:pending = getbufvar(a:msg.buf, 'coqtail_cmds_pending')
@@ -384,9 +396,7 @@ function! coqtail#start(...) abort
       \ 'deprecated': has('python')})
     call s:call('refresh', '', 0, {})
 
-    if coqtail#util#getvar([b:, g:], 'coqtail_proof_diffs', 0)
-      call s:call("query", "", 0, {"args": ["Set", "Diffs", '"on"' ]})
-    endif
+    call s:init_proof_diffs(b:coqtail_version)
 
     " Sync edits to the buffer, close and restore the auxiliary panels
     augroup coqtail#Sync
