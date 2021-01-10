@@ -285,7 +285,7 @@ endfunction
 
 " Enable proof diffs upon starting
 function! s:init_proof_diffs(coq_version) abort
-    let l:proof_diffs_arg = coqtail#util#getvar([b:, g:], 'coqtail_auto_enable_proof_diffs', '')
+    let l:proof_diffs_arg = coqtail#util#getvar([b:, g:], 'coqtail_auto_set_proof_diffs', '')
     if l:proof_diffs_arg ==# ''
       return
     endif

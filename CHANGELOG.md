@@ -3,6 +3,10 @@
 ## Unreleased ([master])
 
 ### Added
+- Support for highlighting proof diffs.
+  `g:coqtail_auto_set_proof_diffs` can be used to automatically enable diffs on
+  `:CoqStart`.
+  (PR #169)
 - Support for multiple `_CoqProject` files. **BREAKING**: renamed
   `g:coqtail_project_name` to `g:coqtail_project_names` and
   `b:coqtail_project_file` to `b:coqtail_project_files`. (PR #141)

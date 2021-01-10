@@ -131,6 +131,26 @@ These scripts are used by default but can be disabled by setting
 `g:coqtail_nosyntax = 1` and `g:coqtail_noindent = 1` respectively.
 Formatting of comments can be disabled with `g:coqtail_noindent_comment`.
 
+### Proof Diffs
+
+Since 8.9, Coq can generate
+[proof diffs](https://coq.inria.fr/distrib/current/refman/proofs/writing-proofs/proof-mode.html#coq:opt.Diffs)
+to highlight the differences in the proof context between successive steps.
+To enable proof diffs manually, use `:Coq Set Diffs "on"`.
+To automatically enable proof diffs on every `:CoqStart`, set
+`g:coqtail_auto_set_proof_diffs = "on"`.
+By default, Coqtail highlights these diffs as follows:
+
+```vim
+hi def link CoqtailDiffAdded DiffText
+hi def link CoqtailDiffAddedBg DiffChange
+hi def link CoqtailDiffRemoved DiffDelete
+hi def link CoqtailDiffRemovedBg DiffDelete
+```
+
+To override these settings simply set your own colors for these highlighting
+groups before `syntax/coq.vim` is sourced (e.g., in your `.vimrc`).
+
 See `:help coqtail-configuration` for more configuration variables.
 
 ## Vim Plugin Interoperability
