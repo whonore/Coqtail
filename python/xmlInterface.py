@@ -360,7 +360,7 @@ class XMLInterfaceBase(object):
         """Expect: <string>str</string>"""
         # In Python 2 itertext returns Generator[Any, None, None] instead
         # of Generator[str, None, None]
-        return "".join(xml.itertext())  # type: ignore[no-any-return]
+        return u"".join(xml.itertext())  # type: ignore[no-any-return]
 
     def _of_string(self, val):
         # type: (Text) -> ET.Element
