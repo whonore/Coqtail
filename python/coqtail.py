@@ -285,12 +285,13 @@ class Coqtail(object):
         """Rewind to the beginning of the file."""
         return self.rewind_to(0, 1, opts=opts)
 
-    def query(self, args, opts):
-        # type: (List[Text], Mapping[str, Any]) -> None
+    def query(self, args, opts, silent=False):
+        # type: (List[Text], Mapping[str, Any], bool) -> None
         """Forward Coq query to Coqtop interface."""
-        _, msg, stderr = self.do_query(" ".join(args), opts=opts)
+        success, msg, stderr = self.do_query(" ".join(args), opts=opts)
 
-        self.set_info(msg, reset=True)
+        if not success or not silent:
+            self.set_info(msg, reset=True)
         self.print_stderr(stderr)
         self.refresh(goals=False, opts=opts)
 

@@ -291,7 +291,9 @@ function! s:init_proof_diffs(coq_version) abort
     endif
 
     if coqtail#version#atleast(a:coq_version, '8.9.*')
-      call s:call('query', '', 0, {'args': ['Set', 'Diffs', '"' . l:proof_diffs_arg . '"']})
+      call s:call('query', '', 0, {
+        \ 'args': ['Set', 'Diffs', '"' . l:proof_diffs_arg . '"'],
+        \ 'silent': 1})
     endif
 endfunction
 
