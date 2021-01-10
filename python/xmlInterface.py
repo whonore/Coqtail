@@ -19,7 +19,7 @@ try:
 except ImportError:
     from distutils.spawn import find_executable as which  # type: ignore[no-redef]
 
-from six import add_metaclass, string_types
+from six import add_metaclass, string_types, text_type
 
 # For Mypy
 # TODO: Replace some of the 'Any's with more specific types. But in order
@@ -93,7 +93,7 @@ def _unescape(cmd):
 
 
 def _parse_tagged_tokens(tags, xml, stack=None, inner=False):
-    # type: (List[Text], ET.Element, Optional[List[Text]], bool) -> Iterable[Tuple[Text, List[Text]]]
+    # type: (Sequence[str], ET.Element, Optional[List[Text]], bool) -> Iterable[Tuple[Text, List[Text]]]
     """Scrape an XML element into a stream of text tokens and stack of tags.
 
     Helper function to parse_tagged_tokens.
@@ -149,13 +149,13 @@ def _parse_tagged_tokens(tags, xml, stack=None, inner=False):
 
 
 def parse_tagged_tokens(tags, xml):
-    # type: (List[Text], ET.Element) -> Iterable[Tuple[Text, Optional[Text]]]
+    # type: (Sequence[str], ET.Element) -> Iterable[Tuple[Text, Optional[Text]]]
     """Scrape an XML element into a stream of text tokens and accompanying tags.
 
     Written to support richpp markup.
     Only considers tags specified by the tags parameter.
     """
-    token_acc, last_tag = "", None
+    token_acc, last_tag = u"", None
 
     # Recursive helper _parse_tagged_tokens gives us tag stacks
     for token, tag_list in _parse_tagged_tokens(tags, xml):
@@ -535,8 +535,8 @@ class XMLInterfaceBase(object):
                     msg = join_tagged_tokens(msg)
 
                 # Sanity check
-                if not isinstance(msg, string_types):
-                    raise unexpected(string_types, type(msg))
+                if not isinstance(msg, text_type):
+                    raise unexpected((text_type,), type(msg))
 
                 msgs.append(msg.strip())
             else:
@@ -783,7 +783,7 @@ class XMLInterface84(XMLInterfaceBase):
             return self._to_py(content[1])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
-            return ""
+            return u""
 
     # Coqtop Commands #
     def init(self, _encoding="utf-8"):
@@ -1130,7 +1130,7 @@ class XMLInterface85(XMLInterfaceBase):
             return self._to_py(content[1])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
-            return ""
+            return u""
 
     # Coqtop Commands #
     def init(self, encoding="utf-8"):
@@ -1332,7 +1332,7 @@ class XMLInterface86(XMLInterface85):
         self._to_py_funcs.update({"richpp": self._to_richpp})
 
     def _to_richpp(self, xml):
-        # type: (ET.Element) -> List[Tuple[Text, Optional[str]]]
+        # type: (ET.Element) -> List[Tuple[Text, Optional[Text]]]
         """Expect: <richpp>richpp</richpp>"""
         return list(parse_tagged_tokens(self.richpp_tags, xml))
 
@@ -1359,7 +1359,7 @@ class XMLInterface86(XMLInterface85):
             return self._to_py(content[0])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
-            return ""
+            return u""
 
 
 class XMLInterface87(XMLInterface86):

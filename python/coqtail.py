@@ -60,9 +60,9 @@ def lines_and_highlights(tagged_tokens, line_no):
         return tagged_tokens.splitlines(), []
 
     lines = []  # type: List[Text]
-    highlights = []  # type: List[Tuple[int, int, int, str]]
+    highlights = []  # type: List[Tuple[int, int, int, Text]]
     line_no += 1  # Convert to 1-indexed per matchaddpos()'s spec
-    line, index = "", 1
+    line, index = u"", 1
 
     for token, tag in tagged_tokens:
         for i, tok in enumerate(token.splitlines()):
@@ -126,7 +126,7 @@ class Coqtail(object):
         self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
         self.info_msg = []  # type: List[Text]
         self.goal_msg = []  # type: List[Text]
-        self.goal_hls = []  # type: List[Tuple[int, int, int, str]]
+        self.goal_hls = []  # type: List[Tuple[int, int, int, Text]]
 
     def sync(self, opts):
         # type: (Mapping[str, Any]) -> Optional[str]
@@ -500,10 +500,10 @@ class Coqtail(object):
         return goals, msg
 
     def pp_goals(self, goals, opts):
-        # type: (Tuple[List[Any], List[Any], List[Any], List[Any]], Mapping[str, Any]) -> Tuple[List[Text], List[Tuple[int, int, int, str]]]
+        # type: (Tuple[List[Any], List[Any], List[Any], List[Any]], Mapping[str, Any]) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]
         """Pretty print the goals."""
         lines = []  # type: List[Text]
-        highlights = []  # type: List[Tuple[int, int, int, str]]
+        highlights = []  # type: List[Tuple[int, int, int, Text]]
         fg, bg, shelved, given_up = goals
         bg_joined = [pre + post for pre, post in bg]
 
@@ -570,7 +570,7 @@ class Coqtail(object):
         return lines, highlights
 
     def set_goal(self, msg=None, clear=False):
-        # type: (Optional[Tuple[List[Text], List[Tuple[int, int, int, str]]]], bool) -> None
+        # type: (Optional[Tuple[List[Text], List[Tuple[int, int, int, Text]]]], bool) -> None
         """Update the goal message."""
         if msg is not None:
             self.goal_msg, self.goal_hls = msg
@@ -619,11 +619,11 @@ class Coqtail(object):
         return matches
 
     def panels(self, goals=True):
-        # type: (bool) -> Mapping[str, Tuple[List[Text], List[Tuple[int, int, int, str]]]]
+        # type: (bool) -> Mapping[str, Tuple[List[Text], List[Tuple[int, int, int, Text]]]]
         """The auxiliary panel content."""
         panels = {
             "info": (self.info_msg, [])
-        }  # type: Dict[str, Tuple[List[Text], List[Tuple[int, int, int, str]]]]
+        }  # type: Dict[str, Tuple[List[Text], List[Tuple[int, int, int, Text]]]]
         if goals:
             panels["goal"] = (self.goal_msg, self.goal_hls)
         return panels
