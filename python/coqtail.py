@@ -482,7 +482,7 @@ class Coqtail(object):
             if newgoals is not None:
                 self.set_goal(self.pp_goals(newgoals, opts=opts))
             else:
-                self.set_goal()
+                self.set_goal(clear=True)
         self.handler.refresh(goals=goals, force=force, scroll=scroll)
 
     def get_goals(self, opts):
@@ -514,34 +514,22 @@ class Coqtail(object):
 
         # Information about number of remaining goals
         plural = "" if ngoals == 1 else "s"
-        goal_info = "{} subgoal{}".format(ngoals, plural)
-        hidden_info = (
-            "{} unfocused at this level".format(nhidden) if nhidden > 0 else ""
-        )
-        extra_info = " ".join(
-            s
-            for s in (
-                "{} shelved".format(nshelved) if nshelved > 0 else "",
-                "{} admitted".format(nadmit) if nadmit > 0 else "",
-            )
-            if s != ""
-        )
-        if hidden_info != "":
-            goal_info += " ({})".format(hidden_info)
+        lines.append("{} subgoal{}".format(ngoals, plural))
+        if 0 < nhidden:
+            lines.append("({} unfocused at this level)".format(nhidden))
+        if 0 < nshelved or 0 < nadmit:
+            line = []
+            if 0 < nshelved:
+                line.append("{} shelved".format(nshelved))
+            if 0 < nadmit:
+                line.append("{} admitted".format(nadmit))
+            lines.append(" ".join(line))
 
-        if extra_info != "":
-            goal_info += extra_info
-
-        lines.append(goal_info)
+        lines.append("")
 
         # When a subgoal is finished
         if ngoals == 0:
-            next_goal = None
-            for bgs in bg_joined:
-                if bgs != []:
-                    next_goal = bgs[0]
-                    break
-
+            next_goal = next((bgs[0] for bgs in bg_joined if bgs != []), None)
             if next_goal is not None:
                 bullet = self.next_bullet(opts=opts)
                 bullet_info = ""
@@ -556,8 +544,7 @@ class Coqtail(object):
                     next_info += " ({})".format(bullet_info)
                 next_info += ":"
 
-                lines.append("")
-                lines.append(next_info)
+                lines += [next_info, ""]
 
                 ls, hls = lines_and_highlights(next_goal.ccl, len(lines))
                 lines += ls
@@ -574,7 +561,7 @@ class Coqtail(object):
                     highlights += hls
 
             hbar = "{:=>25} ({} / {})".format("", idx + 1, ngoals)
-            lines.append(hbar)
+            lines += ["", hbar, ""]
 
             ls, hls = lines_and_highlights(goal.ccl, len(lines))
             lines += ls
@@ -582,12 +569,12 @@ class Coqtail(object):
 
         return lines, highlights
 
-    def set_goal(self, msg=None):
-        # type: (Optional[Tuple[List[Text], List[Tuple[int, int, int, str]]]]) -> None
+    def set_goal(self, msg=None, clear=False):
+        # type: (Optional[Tuple[List[Text], List[Tuple[int, int, int, str]]]], bool) -> None
         """Update the goal message."""
         if msg is not None:
             self.goal_msg, self.goal_hls = msg
-        if "".join(self.goal_msg) == "":
+        if clear or "".join(self.goal_msg) == "":
             self.goal_msg, self.goal_hls = ["No goals."], []
 
     def set_info(self, msg=None, reset=True):
