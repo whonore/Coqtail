@@ -214,7 +214,7 @@ class Coqtail(object):
 
         failed_at, err = self.send_until_fail(buffer, opts=opts)
         if unmatched is not None and failed_at is None:
-            # Only report unmatched if no other errors occured first
+            # Only report unmatched if no other errors occurred first
             self.set_info(str(unmatched), reset=False)
             self.error_at = unmatched.range
             self.refresh(goals=False, opts=opts)
@@ -273,7 +273,7 @@ class Coqtail(object):
 
             failed_at, err = self.send_until_fail(buffer, opts=opts)
             if unmatched is not None and failed_at is None:
-                # Only report unmatched if no other errors occured first
+                # Only report unmatched if no other errors occurred first
                 self.set_info(str(unmatched), reset=False)
                 self.error_at = unmatched.range
                 self.refresh(goals=False, opts=opts)
