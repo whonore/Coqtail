@@ -65,7 +65,9 @@ def lines_and_highlights(tagged_tokens, line_no):
     line, index = u"", 1
 
     for token, tag in tagged_tokens:
-        for i, tok in enumerate(token.splitlines()):
+        # NOTE: Can't use splitlines or else tokens like ' =\n' won't properly
+        # begin a new line
+        for i, tok in enumerate(token.split("\n")):
             if i > 0:
                 # Encountered a newline in token
                 lines.append(line)
