@@ -1363,7 +1363,7 @@ class XMLInterface812(XMLInterface811):
 
 
 class XMLInterface813(XMLInterface812):
-    """The version 8.12.* XML interface."""
+    """The version 8.13.* XML interface."""
 
 
 XMLInterfaceLatest = XMLInterface813
