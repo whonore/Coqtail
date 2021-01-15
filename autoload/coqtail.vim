@@ -214,6 +214,9 @@ function! s:coqversion() abort
   let l:ok = 0
   for l:coq in l:coqs
     let l:coq = l:coq_path !=# '' ? l:coq_path . '/' . l:coq : exepath(l:coq)
+    if l:coq ==# ''
+      continue
+    endif
     let l:version_raw = split(system(l:coq . ' --version'))
     let l:ok = !v:shell_error && l:version_raw != []
     if l:ok
