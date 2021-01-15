@@ -283,7 +283,11 @@ class XMLInterfaceBase(object):
         # results not in the paths explicitly asked for.
         coqs = (
             os.path.abspath(p)
-            for p in (which(coqtop + ext, path=path) for ext in ("", ".opt"))
+            for p in (
+                which(pre + coqtop + ext, path=path)
+                for pre in ("", "coq-prover.")
+                for ext in ("", ".opt")
+            )
             for path in paths
             if p is not None and os.path.dirname(os.path.abspath(p)) in paths
         )
@@ -1471,7 +1475,11 @@ class XMLInterface812(XMLInterface811):
         return res
 
 
-XMLInterfaceLatest = XMLInterface812
+class XMLInterface813(XMLInterface812):
+    """The version 8.13.* XML interface."""
+
+
+XMLInterfaceLatest = XMLInterface813
 
 
 def XMLInterface(version):
@@ -1507,5 +1515,7 @@ def XMLInterface(version):
         return XMLInterface811(versions)
     elif (8, 12, 0) <= versions < (8, 13, 0):
         return XMLInterface812(versions)
+    elif (8, 13, 0) <= versions < (8, 14, 0):
+        return XMLInterface813(versions)
     else:
         return XMLInterfaceLatest(versions)

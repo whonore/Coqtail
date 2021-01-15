@@ -5,8 +5,10 @@
 ### Added
 - Support for highlighting proof diffs.
   `g:coqtail_auto_set_proof_diffs` can be used to automatically enable diffs on
-  `:CoqStart`.
-  (PR #169)
+  `:CoqStart`. (PR #169)
+- Support for Coq 8.13. (PR #181)
+- Support for Coq installed through Snap by checking for the `coq-prover.`
+  prefix as a fallback when looking for `coqidetop`. (PR #180)
 - Support for multiple `_CoqProject` files. **BREAKING**: renamed
   `g:coqtail_project_name` to `g:coqtail_project_names` and
   `b:coqtail_project_file` to `b:coqtail_project_files`. (PR #141)
