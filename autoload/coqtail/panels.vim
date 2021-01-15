@@ -15,6 +15,12 @@ let s:hlgroups = [
   \ ['coqtail_sent', 'CoqtailSent'],
   \ ['coqtail_error', 'CoqtailError']
 \]
+let s:richpp_hlgroups = {
+  \ 'diff.added': 'CoqtailDiffAdded',
+  \ 'diff.removed': 'CoqtailDiffRemoved',
+  \ 'diff.added.bg': 'CoqtailDiffAddedBg',
+  \ 'diff.removed.bg': 'CoqtailDiffRemovedBg'
+\}
 
 " Default panel layout.
 if !exists('g:coqtail_panel_layout')
@@ -52,6 +58,7 @@ function! s:init(name) abort
 
   let b:coqtail_panel_open = 1
   let b:coqtail_panel_size = [-1, -1]
+  let b:coqtail_panel_richpp = []
   return bufnr('%')
 endfunction
 
@@ -214,7 +221,7 @@ function! coqtail#panels#hide() abort
 endfunction
 
 " Replace the contents of 'panel' with 'txt'.
-function! s:replace(buf, panel, txt, scroll) abort
+function! s:replace(buf, panel, txt, richpp, scroll) abort
   if s:switch_from(a:buf, a:panel) == g:coqtail#panels#none
     return
   endif
@@ -222,9 +229,24 @@ function! s:replace(buf, panel, txt, scroll) abort
   " Save the view
   let l:view = winsaveview()
 
+  " Remove previous highlights
+  for l:match in b:coqtail_panel_richpp
+    call matchdelete(l:match)
+  endfor
+
   " Update buffer text
   silent %delete _
   call append(0, a:txt)
+
+  " Set new highlights
+  let l:matches = []
+  for [l:line_no, l:start_pos, l:span, l:hlgroup] in a:richpp
+    if has_key(s:richpp_hlgroups, l:hlgroup)
+      let l:match = matchaddpos(s:richpp_hlgroups[l:hlgroup], [[l:line_no, l:start_pos, l:span]])
+      let l:matches = add(l:matches, l:match)
+    endif
+  endfor
+  let b:coqtail_panel_richpp = l:matches
 
   " Restore the view
   if !a:scroll || !g:coqtail_panel_scroll[a:panel]
@@ -259,8 +281,9 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
     endfor
 
     " Update panels
-    for [l:panel, l:txt] in items(a:panels)
-      call s:replace(a:buf, l:panel, l:txt, a:scroll)
+    for [l:panel, l:panel_data] in items(a:panels)
+      let [l:txt, l:richpp] = l:panel_data
+      call s:replace(a:buf, l:panel, l:txt, l:richpp, a:scroll)
     endfor
   catch /^Vim:Interrupt$/
   finally

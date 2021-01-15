@@ -39,6 +39,10 @@ if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight
       hi def CoqtailChecked ctermbg=4 guibg=LightGreen
       hi def CoqtailSent ctermbg=7 guibg=LimeGreen
     endif
+    hi def link CoqtailDiffAdded DiffText
+    hi def link CoqtailDiffAddedBg DiffChange
+    hi def link CoqtailDiffRemoved DiffDelete
+    hi def link CoqtailDiffRemovedBg DiffDelete
     hi def link CoqtailError Error
   endfunction
 

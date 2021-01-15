@@ -19,7 +19,7 @@ try:
 except ImportError:
     from distutils.spawn import find_executable as which  # type: ignore[no-redef]
 
-from six import add_metaclass, string_types
+from six import add_metaclass, string_types, text_type
 
 # For Mypy
 # TODO: Replace some of the 'Any's with more specific types. But in order
@@ -90,6 +90,97 @@ def _unescape(cmd):
         cmd = cmd.replace(escape, unescape)
 
     return cmd
+
+
+def _parse_tagged_tokens(tags, xml, stack=None, inner=False):
+    # type: (Sequence[str], ET.Element, Optional[List[Text]], bool) -> Iterable[Tuple[Text, List[Text]]]
+    """Scrape an XML element into a stream of text tokens and stack of tags.
+
+    Helper function to parse_tagged_tokens.
+
+    Written to support richpp tags, and thus supports .start and .end tags
+    used by Coqtop to highlight ranges that are not properly nested
+    (i.e., <start.a/>...<start.b/>...<end.a/>...<end.b/> is allowed).
+    This is somewhat documented here: https://github.com/coq/coq/blob/master/dev/doc/xml-protocol.md#highlighting-text
+    Documentation neglects to mention the semantics of start. and end. tags
+    that are not self-closing.
+
+    Until we get clarification, we will interpret
+    <start.a>foo</start.a>bar as <start.a/>foobar and
+    <end.b>foo</end.b>bar as foobar<end.b/>.
+    """
+    pop_after = None
+    if stack is None:
+        stack = []
+
+    # Check tag, see if we should modify stack
+    if xml.tag.startswith("start."):
+        _, _, tag = xml.tag.rpartition("start.")  # assert(tag != "")
+        if tag in tags:
+            # start. tag: push onto stack
+            stack.insert(0, tag)
+
+    elif xml.tag.startswith("end."):
+        _, _, tag = xml.tag.rpartition("end.")  # assert(tag != "")
+        if tag in tags:
+            # end. tag: remove from stack (even if it's not at the top)
+            pop_after = tag
+
+    elif xml.tag in tags:
+        # regular tag: push onto stack, but remember to pop it before xml.tail
+        stack.insert(0, xml.tag)
+        pop_after = xml.tag
+
+    # Get text before first inner child
+    if xml.text is not None:
+        yield (xml.text, stack[:])
+
+    # Recurse on children, with modified stack
+    for child in xml:
+        for tt in _parse_tagged_tokens(tags, child, stack, True):
+            yield tt
+
+    if pop_after is not None:
+        stack.remove(pop_after)
+
+    # Get trailing text up to start of next tag, unless this is the outermost tag
+    if inner and xml.tail is not None:
+        yield (xml.tail, stack[:])
+
+
+def parse_tagged_tokens(tags, xml):
+    # type: (Sequence[str], ET.Element) -> Iterable[Tuple[Text, Optional[Text]]]
+    """Scrape an XML element into a stream of text tokens and accompanying tags.
+
+    Written to support richpp markup.
+    Only considers tags specified by the tags parameter.
+    """
+    token_acc, last_tag = u"", None
+
+    # Recursive helper _parse_tagged_tokens gives us tag stacks
+    for token, tag_list in _parse_tagged_tokens(tags, xml):
+        # Take top tag from tag stack, if any
+        top_tag = tag_list[0] if tag_list != [] else None
+
+        if top_tag == last_tag:
+            # Join tokens whose top tag is the same
+            token_acc += token
+        else:
+            yield (token_acc, last_tag)
+            token_acc, last_tag = token, top_tag
+
+    yield (token_acc, last_tag)
+
+
+def join_tagged_tokens(tagged_tokens):
+    # type: (Iterable[Tuple[Text, Optional[Text]]]) -> Text
+    """Join tokens from tagged token stream.
+
+    Note:
+      forall xml tags,
+        join_tagged_tokens(parse_tagged_token(tags, xml)) = "".join(xml.itertext())
+    """
+    return "".join(s for s, _ in tagged_tokens)
 
 
 # Debugging #
@@ -273,7 +364,7 @@ class XMLInterfaceBase(object):
         """Expect: <string>str</string>"""
         # In Python 2 itertext returns Generator[Any, None, None] instead
         # of Generator[str, None, None]
-        return "".join(xml.itertext())  # type: ignore[no-any-return]
+        return u"".join(xml.itertext())  # type: ignore[no-any-return]
 
     def _of_string(self, val):
         # type: (Text) -> ET.Element
@@ -441,8 +532,17 @@ class XMLInterfaceBase(object):
             if xml.tag == "value":
                 res = self._to_response(xml)
             elif xml.tag in ("message", "feedback"):
-                # _to_py guaranteed to return Text for message or feedback
-                msgs.append(self._to_py(xml).strip())  # type: ignore[attr-defined]
+                # _to_py is guaranteed to either return Text or
+                # a sequence of tagged tokens for message or feedback
+                msg = self._to_py(xml)
+                if isinstance(msg, list):
+                    msg = join_tagged_tokens(msg)
+
+                # Sanity check
+                if not isinstance(msg, text_type):
+                    raise unexpected((text_type,), type(msg))
+
+                msgs.append(msg.strip())
             else:
                 raise unexpected(("value", "message", "feedback"), xml.tag)
 
@@ -687,7 +787,7 @@ class XMLInterface84(XMLInterfaceBase):
             return self._to_py(content[1])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
-            return ""
+            return u""
 
     # Coqtop Commands #
     def init(self, _encoding="utf-8"):
@@ -1034,7 +1134,7 @@ class XMLInterface85(XMLInterfaceBase):
             return self._to_py(content[1])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
-            return ""
+            return u""
 
     # Coqtop Commands #
     def init(self, encoding="utf-8"):
@@ -1213,6 +1313,14 @@ class XMLInterface85(XMLInterfaceBase):
 class XMLInterface86(XMLInterface85):
     """The version 8.6.* XML interface."""
 
+    # Tags to look for when parsing richpp
+    richpp_tags = [
+        "diff.added",
+        "diff.removed",
+        "diff.added.bg",
+        "diff.removed.bg",
+    ]
+
     def __init__(self, versions):
         # type: (Tuple[int, ...]) -> None
         """Update conversion maps with new types."""
@@ -1225,7 +1333,12 @@ class XMLInterface86(XMLInterface85):
             "off",
         ]
 
-        self._to_py_funcs.update({"richpp": self._to_string})
+        self._to_py_funcs.update({"richpp": self._to_richpp})
+
+    def _to_richpp(self, xml):
+        # type: (ET.Element) -> List[Tuple[Text, Optional[Text]]]
+        """Expect: <richpp>richpp</richpp>"""
+        return list(parse_tagged_tokens(self.richpp_tags, xml))
 
     # XML Parsing and Marshalling #
     # Overrides _to_message() from 8.5
@@ -1250,7 +1363,7 @@ class XMLInterface86(XMLInterface85):
             return self._to_py(content[0])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
-            return ""
+            return u""
 
 
 class XMLInterface87(XMLInterface86):
