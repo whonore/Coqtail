@@ -26,7 +26,8 @@ let s:supported = [
   \ '8.9.*',
   \ '8.10.*',
   \ '8.11.*',
-  \ '8.12.*'
+  \ '8.12.*',
+  \ '8.13.*'
 \]
 " Coq binaries to try when checking the version if coqtail_coq_prog is not set.
 let s:default_coqs = [
