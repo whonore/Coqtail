@@ -2,6 +2,8 @@
 
 ## Unreleased ([master])
 
+## [1.3.0]
+
 ### Added
 - Support for highlighting proof diffs.
   `g:coqtail_auto_set_proof_diffs` can be used to automatically enable diffs on
@@ -118,6 +120,7 @@
 - Interoperability with [matchup] and [endwise].
 
 [master]: https://github.com/whonore/Coqtail
+[1.3.0]: https://github.com/whonore/Coqtail/tree/v1.3.0
 [1.2.0]: https://github.com/whonore/Coqtail/tree/v1.2.0
 [1.1.0]: https://github.com/whonore/Coqtail/tree/v1.1.0
 [1.0.0]: https://github.com/whonore/Coqtail/tree/v1.0.0
