@@ -29,7 +29,13 @@ let s:supported = [
   \ '8.12.*'
 \]
 " Coq binaries to try when checking the version if coqtail_coq_prog is not set.
-let s:default_coqs = ['coqtop.opt', 'coqtop', 'coqidetop.opt', 'coqidetop']
+let s:default_coqs = [
+  \ 'coqtop.opt',
+  \ 'coqtop',
+  \ 'coqidetop.opt',
+  \ 'coqidetop',
+  \ 'coq-prover.coqidetop'
+\]
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
 " Warning/error messages.
