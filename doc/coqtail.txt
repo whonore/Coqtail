@@ -285,17 +285,17 @@ g:CoqtailHighlight()	Optional function to override the default highlighting
 							   *coqtail-proof-diffs*
 g:coqtail_auto_set_proof_diffs
 b:coqtail_auto_set_proof_diffs
-			An argument to automatically enable proof diffs with
-			`:Coq Set Diffs` on every new Coqtail session. For
-			example, if `g:coqtail_auto_set_proof_diffs` is `'on'`
-			then `:CoqStart` calls `:Coq Set Diffs "on"`
-			immediately after launching Coqtop. The argument is
-			ignored if it is set to `''` (the default) or if using
-			a version of Coq that does not support proof diffs.
+			The argument to automatically pass to `:Coq Set Diffs`
+			on every new Coqtail session. For example, if
+			`g:coqtail_auto_set_proof_diffs` is `'on'` then
+			`:CoqStart` calls `:Coq Set Diffs "on"` immediately
+			after launching Coqtop. The argument is ignored if it
+			is set to `''` (the default) or if using a version of
+			Coq that does not support proof diffs.
 			Note: Changing this option after `:CoqStart` has no
-			effect on the current proof. To manually toggle
-			diffs mid-proof use `:Coq Set Diffs "{arg}"` where
-			`{arg}` is `on`, `off`, or `removed`.
+			effect on the current proof. To manually toggle diffs
+			mid-proof use `:Coq Set Diffs "{arg}"` where `{arg}` is
+			`on`, `off`, or `removed`.
 
 			Default: ''
 
