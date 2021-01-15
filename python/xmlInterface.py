@@ -192,7 +192,11 @@ class XMLInterfaceBase(object):
         # results not in the paths explicitly asked for.
         coqs = (
             os.path.abspath(p)
-            for p in (which(coqtop + ext, path=path) for ext in ("", ".opt"))
+            for p in (
+                which(pre + coqtop + ext, path=path)
+                for pre in ("", "coq-prover.")
+                for ext in ("", ".opt")
+            )
             for path in paths
             if p is not None and os.path.dirname(os.path.abspath(p)) in paths
         )

@@ -29,7 +29,13 @@ let s:supported = [
   \ '8.12.*'
 \]
 " Coq binaries to try when checking the version if coqtail_coq_prog is not set.
-let s:default_coqs = ['coqtop.opt', 'coqtop', 'coqidetop.opt', 'coqidetop']
+let s:default_coqs = [
+  \ 'coqtop.opt',
+  \ 'coqtop',
+  \ 'coqidetop.opt',
+  \ 'coqidetop',
+  \ 'coq-prover.coqidetop'
+\]
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
 " Warning/error messages.
@@ -208,6 +214,9 @@ function! s:coqversion() abort
   let l:ok = 0
   for l:coq in l:coqs
     let l:coq = l:coq_path !=# '' ? l:coq_path . '/' . l:coq : exepath(l:coq)
+    if l:coq ==# ''
+      continue
+    endif
     let l:version_raw = split(system(l:coq . ' --version'))
     let l:ok = !v:shell_error && l:version_raw != []
     if l:ok

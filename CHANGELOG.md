@@ -3,6 +3,8 @@
 ## Unreleased ([master])
 
 ### Added
+- Support Coq installed through Snap by checking for the `coq-prover.` prefix
+  as a fallback when looking for `coqidetop`. (PR #180)
 - Support for multiple `_CoqProject` files. **BREAKING**: renamed
   `g:coqtail_project_name` to `g:coqtail_project_names` and
   `b:coqtail_project_file` to `b:coqtail_project_files`. (PR #141)
