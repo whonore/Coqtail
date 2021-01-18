@@ -2,6 +2,9 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Highlight `admit` and `give_up` tactics. (PR #182)
+
 ## [1.3.0]
 
 ### Added
