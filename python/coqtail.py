@@ -1268,7 +1268,7 @@ def _skip_block(
 ):
     # type: (...) -> Optional[Tuple[int, int]]
     """A generic function to skip the next block contained in sstr estr."""
-    assert lines[sline][scol:].startswith(sstr)
+    assert lines[sline].startswith(sstr, scol)
     nesting = 1
     max_line = len(lines)
     scol += len(sstr)
