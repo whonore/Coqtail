@@ -1287,7 +1287,7 @@ def _skip_block(
             blk_start = blk_start if blk_start != -1 else None
         else:
             blk_start = None
-        # Invariant: blk_start is None or blk_end is None or blk_start < blk_end
+        assert blk_start is None or blk_end is None or blk_start < blk_end
 
         # Look for contained blocks to skip
         skip_stop = blk_start if blk_start is not None else blk_end
