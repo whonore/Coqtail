@@ -39,6 +39,9 @@ tests = (
     ("dot3", ["A..."], (0, 3)),
     ("large space", ("A" + ("\n" * 5000) + ".").split("\n"), (5000, 0)),
     ("large comment", ("(*" + ("\n" * 5000) + "*) A.").split("\n"), (5000, 4)),
+    ("attribute word", ["#[A] B."], (0, 6)),
+    ("attribute bullet {", ["#[A] { A. }"], (0, 5)),
+    ("attribute string", ['#[A="B]."] C.'], (0, 12)),
     # Accept (tactic in *)
     ("star paren ok", ["A *) ."], (0, 5)),
     # or a bullet followed by a tactic notation that starts with ')'
@@ -68,6 +71,8 @@ tests = (
     ("unclosed comment", ["A (* ."], (UnmatchedError, (0, 2))),
     ("unclosed comment nest pre", ["(* (* A *) ."], (UnmatchedError, (0, 0))),
     ("unclosed string", ['A " .'], (UnmatchedError, (0, 2))),
+    ("unclosed attribute", ["#[A B."], (UnmatchedError, (0, 0))),
+    ("unclosed string attribute", ['#[A="B] C.'], (UnmatchedError, (0, 0))),
     ("only white", [" "], (NoDotError, None)),
     ("empty", [""], (NoDotError, None)),
 )

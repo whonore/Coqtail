@@ -70,7 +70,7 @@ syn iskeyword clear
 " Coq is case sensitive.
 syn case match
 
-syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqOpaque,coqShow,coqImplicitTypes,coqGeneralizable,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqLtac2Decl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqCanon
+syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqOpaque,coqShow,coqImplicitTypes,coqGeneralizable,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqLtac2Decl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqCanon,coqAttribute
 
 " Various
 syn match   coqError             "\S\+"
@@ -91,7 +91,7 @@ syn region coqModBinder contained contains=coqIdent matchgroup=coqVernacPunctuat
 syn region coqModVal contains=coqIdent,coqTermPunctuation start=":=" end="\.\_s"
 
 " Terms
-syn cluster coqTerm            contains=coqKwd,coqTermPunctuation,coqKwdMatch,coqKwdLet,coqKwdParen,coqString
+syn cluster coqTerm            contains=coqKwd,coqTermPunctuation,coqKwdMatch,coqKwdLet,coqKwdParen,coqString,coqAttribute
 syn region coqKwdMatch         contained contains=@coqTerm matchgroup=coqKwd start="\<match\>" end="\<with\>"
 syn region coqKwdLet           contained contains=@coqTerm matchgroup=coqKwd start="\<let\>"   end=":="
 syn region coqKwdParen         contained contains=@coqTerm matchgroup=coqTermPunctuation start="(" end=")" keepend extend
@@ -112,6 +112,11 @@ syn region coqOpaque  matchgroup=coqVernacCmd start="\<\%(Opaque\|Transparent\)\
 syn region coqShow       matchgroup=coqVernacCmd start="\<Show\_s\+\%(\%(Implicits\|Script\|Tree\|Proof\|Conjectures\|Intros\?\|Existentials\)\>\)\?" end="\.\_s"
 syn region coqImplicitTypes matchgroup=coqVernacCmd start="\<Implicit Types\?" end="\.\_s"
 syn region coqGeneralizable matchgroup=coqVernacCmd start="\<Generalizable\_s\+\%(\%(All\|No\)\_s\+\)\?Variables\?" end="\.\_s"
+
+" Attributes
+syn region coqAttribute contains=coqString,coqAttrBool,coqAttrPunc,coqIdent start="#\[" end="]"
+syn keyword coqAttrBool contained yes no
+syn match coqAttrPunc contained "=\|,\|(\|)"
 
 " Sections
 syn region coqSection contains=coqSection,@coqVernac matchgroup=coqVernacCmd start="\<Section\_s\+\z(\S\+\)\_s*\.\_s" end="\<End\_s\+\z1\_s*\.\_s"
@@ -278,7 +283,7 @@ syn region coqLtac2Notation contained contains=coqProofPunctuation,coqString mat
 " TODO: The \ze in the start match is a terrible hack so coqProofDelim will still
 " be matched and the dot will be highlighted as coqProofDot. I assume there is a
 " better way but I don't know what it is.
-syn region coqProofBody  contains=coqProofPunctuation,coqTactic,coqTacticKwd,coqTacticAdmit,coqProofComment,coqProofKwd,coqProofEnder,coqProofDelim,coqLtac,coqString matchgroup=coqProofDelim start="\<P\zeroof\>" start="\<\%(O\zebligation\_s\+\d\+\)\|\%(N\zeext\_s\+Obligation\)\>" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\.\_s" end="\<Save\>.*\.\_s" keepend
+syn region coqProofBody  contains=coqProofPunctuation,coqTactic,coqTacticKwd,coqTacticAdmit,coqProofComment,coqProofKwd,coqProofEnder,coqProofDelim,coqLtac,coqString,coqAttribute matchgroup=coqProofDelim start="\<P\zeroof\>" start="\<\%(O\zebligation\_s\+\d\+\)\|\%(N\zeext\_s\+Obligation\)\>" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\.\_s" end="\<Save\>.*\.\_s" keepend
 syn region coqProofDelim contained matchgroup=coqProofDelim start="\%(\<P\)\@1<=roof\>" matchgroup=coqProofDot end="\.\_s"
 syn region coqProofDelim contained contains=coqOblOfDelim start="\%(\%(\<O\)\@1<=bligation\_s\+\d\+\)\|\%(\%(\<N\)\@1<=ext\_s\+Obligation\)\>" matchgroup=coqProofDot end="\.\_s" keepend
 syn region coqProofEnder contained matchgroup=coqProofDelim start="\<\%(Qed\|Defined\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
@@ -452,6 +457,11 @@ HiLink coqField             coqConstructor
 " NOTATION SPECIFIC ("at level", "format", etc)
 HiLink coqNotationKwd       Special
 HiLink coqEqnOptions        coqNotationKwd
+
+" ATTRIBUTES
+HiLink coqAttribute         coqVernacular
+HiLink coqAttrBool          Boolean
+HiLink coqAttrPunc          coqAttribute
 
 " USUAL VIM HIGHLIGHTINGS
 " Comments

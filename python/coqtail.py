@@ -24,6 +24,7 @@ import coqtop as CT
 try:
     from typing import (
         Any,
+        Callable,
         DefaultDict,
         Deque,
         Dict,
@@ -1137,11 +1138,18 @@ def _find_next_sentence(lines, sline, scol):
 
         # Skip leading comments
         if first_line.startswith(b"(*"):
-            com_end = _skip_comment(lines, line, col + 2)
+            com_end = _skip_comment(lines, line, col)
             if com_end is None:
                 raise UnmatchedError("(*", (line, col))
 
             sline, col = com_end
+        # Skip leading attributes
+        elif first_line.startswith(b"#["):
+            attr_end = _skip_attribute(lines, line, col)
+            if attr_end is None:
+                raise UnmatchedError("#[", (line, col))
+
+            sline, col = attr_end
         else:
             break
 
@@ -1205,14 +1213,14 @@ def _find_dot_after(lines, sline, scol):
         elif dot_pos == -1 or (0 <= com_pos < dot_pos) or (0 <= str_pos < dot_pos):
             if str_pos == -1 or (0 <= com_pos < str_pos):
                 # We see a comment opening before the next '.'
-                com_end = _skip_comment(lines, sline, scol + com_pos + 2)
+                com_end = _skip_comment(lines, sline, scol + com_pos)
                 if com_end is None:
                     raise UnmatchedError("(*", (sline, scol + com_pos))
 
                 sline, scol = com_end
             else:
                 # We see a string starting before the next '.'
-                str_end = _skip_str(lines, sline, scol + str_pos + 1)
+                str_end = _skip_str(lines, sline, scol + str_pos)
                 if str_end is None:
                     raise UnmatchedError('"', (sline, scol + str_pos))
 
@@ -1235,42 +1243,73 @@ def _find_dot_after(lines, sline, scol):
 def _skip_str(lines, sline, scol):
     # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in " "."""
-    return _skip_block(lines, sline, scol, b'"')
+    return _skip_block(lines, sline, scol, b'"', b'"')
 
 
 def _skip_comment(lines, sline, scol):
     # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
     """Skip the next block contained in (* *)."""
-    return _skip_block(lines, sline, scol, b"*)", b"(*")
+    return _skip_block(lines, sline, scol, b"(*", b"*)")
 
 
-def _skip_block(lines, sline, scol, estr, sstr=None):
-    # type: (Sequence[bytes], int, int, bytes, Optional[bytes]) -> Optional[Tuple[int, int]]
+def _skip_attribute(lines, sline, scol):
+    # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
+    """Skip the next block contained in #[ ]."""
+    return _skip_block(lines, sline, scol, b"#[", b"]", {b'"': _skip_str})
+
+
+def _skip_block(
+    lines,  # type: Sequence[bytes]
+    sline,  # type: int
+    scol,  # type: int
+    sstr,  # type: bytes
+    estr,  # type: bytes
+    skips=None,  # type: Optional[Mapping[bytes, Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]]]
+):
+    # type: (...) -> Optional[Tuple[int, int]]
     """A generic function to skip the next block contained in sstr estr."""
+    assert lines[sline].startswith(sstr, scol)
     nesting = 1
     max_line = len(lines)
+    scol += len(sstr)
+    if skips is None:
+        skips = {}
 
     while nesting > 0:
         if sline >= max_line:
             return None
 
-        line = lines[sline][scol:]
-        blk_end = line.find(estr)
-        if sstr is not None:
-            blk_start = line.find(sstr)
+        line = lines[sline]
+        blk_end = line.find(estr, scol)  # type: Optional[int]
+        blk_end = blk_end if blk_end != -1 else None
+        if sstr != estr:
+            blk_start = line.find(sstr, scol, blk_end)  # type: Optional[int]
+            blk_start = blk_start if blk_start != -1 else None
         else:
-            blk_start = -1
+            blk_start = None
+        assert blk_start is None or blk_end is None or blk_start < blk_end
 
-        if blk_end != -1 and (blk_end < blk_start or blk_start == -1):
+        # Look for contained blocks to skip
+        skip_stop = blk_start if blk_start is not None else blk_end
+        skip_starts = [(line.find(skip, scol, skip_stop), skip) for skip in skips]
+        skip_starts = [(start, skip) for start, skip in skip_starts if start != -1]
+        # TODO: use default= in Python 3
+        skip_start, skip = min(skip_starts) if skip_starts != [] else (None, None)
+        if skip is not None and skip_start is not None:
+            skip_end = skips[skip](lines, sline, skip_start)
+            if skip_end is None:
+                return None
+
+            sline, scol = skip_end
+            continue
+
+        if blk_end is not None and blk_start is None:
             # Found an end and no new start
-            scol += blk_end + len(estr)
+            scol = blk_end + len(estr)
             nesting -= 1
-        elif blk_start != -1:
+        elif blk_start is not None:
             # Found a new start
-            # N.B. mypy complains that 'sstr' might be None, but it won't be if
-            # 'blk_start' != -1
-            assert sstr is not None
-            scol += blk_start + len(sstr)
+            scol = blk_start + len(sstr)
             nesting += 1
         else:
             # Nothing on this line

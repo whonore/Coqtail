@@ -3,6 +3,7 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Highlight attributes and skip them when splitting sentences. (PR #152)
 - Highlight `admit` and `give_up` tactics. (PR #182)
 
 ## [1.3.0]
