@@ -114,7 +114,9 @@ syn region coqImplicitTypes matchgroup=coqVernacCmd start="\<Implicit Types\?" e
 syn region coqGeneralizable matchgroup=coqVernacCmd start="\<Generalizable\_s\+\%(\%(All\|No\)\_s\+\)\?Variables\?" end="\.\_s"
 
 " Attributes
-syn match coqAttribute "#[[[:alpha:][:space:](),]*]"
+syn region coqAttribute contains=coqString,coqAttrBool,coqAttrPunc,coqIdent start="#\[" end="]"
+syn keyword coqAttrBool contained yes no
+syn match coqAttrPunc contained "=\|,\|(\|)"
 
 " Sections
 syn region coqSection contains=coqSection,@coqVernac matchgroup=coqVernacCmd start="\<Section\_s\+\z(\S\+\)\_s*\.\_s" end="\<End\_s\+\z1\_s*\.\_s"
@@ -443,7 +445,6 @@ HiLink coqVernacPunctuation coqVernacular
 HiLink coqHint              coqVernacular
 HiLink coqFeedback          coqVernacular
 HiLink coqTopLevel          coqVernacular
-HiLink coqAttribute         coqVernacular
 
 " DEFINED OBJECTS
 HiLink coqIdent             Identifier
@@ -456,6 +457,11 @@ HiLink coqField             coqConstructor
 " NOTATION SPECIFIC ("at level", "format", etc)
 HiLink coqNotationKwd       Special
 HiLink coqEqnOptions        coqNotationKwd
+
+" ATTRIBUTES
+HiLink coqAttribute         coqVernacular
+HiLink coqAttrBool          Boolean
+HiLink coqAttrPunc          coqAttribute
 
 " USUAL VIM HIGHLIGHTINGS
 " Comments
