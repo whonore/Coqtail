@@ -232,7 +232,7 @@ syn region coqNotationString contained start=+"+ skip=+""+ end=+"+ extend
 " Tactic notations
 syn region coqTacNotation     contains=coqTacNotationDef start="\<Tactic\_s\+Notation\>" end="\.\_s" keepend
 syn region coqTacNotationDef  contained contains=coqNotationString,coqTacNotationKwd,coqTacNotationTerm matchgroup=coqVernacCmd start="Tactic\_s\+Notation" end="\.\_s"
-syn region coqTacNotationTerm contained contains=coqString,coqTactic,coqTacticKwd,coqLtac,coqProofPunctuation matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
+syn region coqTacNotationTerm contained contains=coqString,coqTactic,coqTacticKwd,coqTacticAdmit,coqLtac,coqProofPunctuation matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
 
 syn keyword coqTacNotationKwd contained ident simple_intropattern hyp reference constr integer int_or_var tactic
 syn match   coqTacNotationKwd contained "at level"
@@ -256,7 +256,7 @@ syn region coqGoalTerm  contained contains=@coqTerm,coqProofBody matchgroup=coqV
 syn region coqLtacDecl     contains=coqLtacProfile start="\<Ltac\>" end="\.\_s" keepend
 syn region coqLtacProfile  contained contains=coqLtacIdent,coqVernacPunctuation,coqLtacContents start="Ltac" end="\.\_s"
 syn region coqLtacIdent    contained matchgroup=coqVernacCmd start="Ltac" matchgroup=coqIdent end="[_[:alpha:]][_'[:alnum:]]*"
-syn region coqLtacContents contained contains=coqTactic,coqTacticKwd,coqLtac,coqProofPunctuation matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
+syn region coqLtacContents contained contains=coqTactic,coqTacticKwd,coqTacticAdmit,coqLtac,coqProofPunctuation matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
 
 syn keyword coqLtac contained do info progress repeat try
 syn keyword coqLtac contained abstract constr context end external eval fail first fresh fun goal
@@ -271,14 +271,14 @@ syn region coqLtac2Decl contains=coqIdent matchgroup=coqVernacCmd start="\<Print
 
 syn region coqLtac2Ident contained matchgroup=coqVernacCmd start="\<Ltac2\%(\_sType\)\?\>" matchgroup=coqIdent end="[_[:alpha:]][_'[:alnum:]]*"
 
-syn region coqLtac2Eval  contained contains=coqTerm,coqTactic,coqTacticKwd,coqLtac,coqProofPunctuation matchgroup=coqVernacCmd start="\<Ltac2\_sEval\>" matchgroup=coqIdent end="\.\_s"
+syn region coqLtac2Eval  contained contains=coqTerm,coqTactic,coqTacticKwd,coqTacticAdmit,coqLtac,coqProofPunctuation matchgroup=coqVernacCmd start="\<Ltac2\_sEval\>" matchgroup=coqIdent end="\.\_s"
 syn region coqLtac2Notation contained contains=coqProofPunctuation,coqString matchgroup=coqVernacCmd start="\<Ltac2\_sNotation\>" end="\.\_s"
 
 " Proofs
 " TODO: The \ze in the start match is a terrible hack so coqProofDelim will still
 " be matched and the dot will be highlighted as coqProofDot. I assume there is a
 " better way but I don't know what it is.
-syn region coqProofBody  contains=coqProofPunctuation,coqTactic,coqTacticKwd,coqProofComment,coqProofKwd,coqProofEnder,coqProofDelim,coqLtac,coqString matchgroup=coqProofDelim start="\<P\zeroof\>" start="\<\%(O\zebligation\_s\+\d\+\)\|\%(N\zeext\_s\+Obligation\)\>" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\.\_s" end="\<Save\>.*\.\_s" keepend
+syn region coqProofBody  contains=coqProofPunctuation,coqTactic,coqTacticKwd,coqTacticAdmit,coqProofComment,coqProofKwd,coqProofEnder,coqProofDelim,coqLtac,coqString matchgroup=coqProofDelim start="\<P\zeroof\>" start="\<\%(O\zebligation\_s\+\d\+\)\|\%(N\zeext\_s\+Obligation\)\>" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\.\_s" end="\<Save\>.*\.\_s" keepend
 syn region coqProofDelim contained matchgroup=coqProofDelim start="\%(\<P\)\@1<=roof\>" matchgroup=coqProofDot end="\.\_s"
 syn region coqProofDelim contained contains=coqOblOfDelim start="\%(\%(\<O\)\@1<=bligation\_s\+\d\+\)\|\%(\%(\<N\)\@1<=ext\_s\+Obligation\)\>" matchgroup=coqProofDot end="\.\_s" keepend
 syn region coqProofEnder contained matchgroup=coqProofDelim start="\<\%(Qed\|Defined\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
@@ -296,6 +296,7 @@ syn keyword coqTactic    contained red refine reflexivity rename replace revert 
 syn keyword coqTactic    contained set simpl[e] simplify_eq specialize split subst stepl stepr symmetry
 syn keyword coqTactic    contained transitivity trivial unfold vm_compute
 syn keyword coqTacticKwd contained as by in using with into after until return
+syn keyword coqTacticAdmit contained admit give_up
 
 " The following is just to help other plugins to detect via syntax groups that we are inside a proof
 syn keyword coqProofKwd         contained else end exists exists2 forall fun if in match let struct then where with as return
@@ -420,6 +421,7 @@ HiLink coqTacticKwd         coqTactic
 HiLink coqTacNotationKwd    coqTactic
 HiLink coqEvalFlag          coqTactic
 HiLink coqEqnKwd            coqTactic
+HiLink coqTacticAdmit       coqProofAdmit
 " Exception
 HiLink coqProofDot          coqVernacular
 
