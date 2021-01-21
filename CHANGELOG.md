@@ -5,6 +5,7 @@
 ### Fixed
 - Highlight attributes and skip them when splitting sentences. (PR #152)
 - Highlight `admit` and `give_up` tactics. (PR #182)
+- Match non-ASCII letters in identifier syntax highlighting. (PR #184)
 - Improve syntax highlighting of binders in definitions, theorems, etc. (PR #185)
 
 ## [1.3.0]
