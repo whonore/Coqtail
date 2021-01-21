@@ -46,7 +46,7 @@ syn region coqDeclTerm   contained contains=@coqTerm matchgroup=coqVernacPunctua
 syn region coqThm       contains=coqThmName matchgroup=coqVernacCmd start="\<\%(Program\_s\+\)\?\%(Theorem\|Lemma\|Example\|Corollary\|Remark\)\>" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\.\_s" keepend
 syn region coqThmName   contained contains=coqThmTerm,coqThmBinder matchgroup=coqIdent start="[_[:alpha:]][_'[:alnum:]]*" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\.\_s"
 syn region coqThmTerm   contained contains=@coqTerm,coqProofBody matchgroup=coqVernacCmd start=":" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\>"
-syn region coqThmBinder contained matchgroup=coqVernacPunctuation start="(" end=")" keepend
+syn region coqThmBinder contained contains=@coqTerm matchgroup=coqVernacPunctuation start="(" end=")" keepend
 
 " Modules
 syn region  coqModule     contains=coqIdent,coqDef,coqThm,coqDecl,coqInd,coqModuleEnd,coqStructDef matchgroup=coqTopLevel start="\<Module\>" end="^$"
