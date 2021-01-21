@@ -22,12 +22,12 @@ syn case match
 
 " Various
 syn match   coqVernacPunctuation ":=\|\.\|:"
-syn match   coqIdent             contained "[_[:alpha:]][_'[:alnum:]]*"
+syn match   coqIdent             contained "[[:digit:]']\@!\k\k*"
 syn keyword coqTopLevel          Declare Type Canonical Structure Cd Coercion Derive Drop Existential
 
 " Definitions
 syn match coqDefName          "[_[:alpha:]][\._'[:alnum:]]*\_.\{-}\%(=\|:\)"me=e-1 contains=@coqTerm nextgroup=coqDefContents1,coqDefContents2
-syn region coqDefName2       contained contains=coqDefBinder,coqDefType,coqDefContents1 matchgroup=coqIdent start="[_[:alpha:]][_'[:alnum:]]*" matchgroup=NONE end="\.\_s" end=":="
+syn region coqDefName2       contained contains=coqDefBinder,coqDefType,coqDefContents1 matchgroup=coqIdent start="[[:digit:]']\@!\k\k*" matchgroup=NONE end="\.\_s" end=":="
 syn region coqDefContents1     contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" matchgroup=NONE end="^$" end="^\S"me=e-1
 syn region coqDefContents2     contained contains=@coqTerm matchgroup=coqVernacPunctuation start="=" matchgroup=NONE end="^$"
 
@@ -44,7 +44,7 @@ syn region coqDeclTerm   contained contains=@coqTerm matchgroup=coqVernacPunctua
 
 " Theorems
 syn region coqThm       contains=coqThmName matchgroup=coqVernacCmd start="\<\%(Program\_s\+\)\?\%(Theorem\|Lemma\|Example\|Corollary\|Remark\)\>" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\.\_s" keepend
-syn region coqThmName   contained contains=coqThmTerm,coqThmBinder matchgroup=coqIdent start="[_[:alpha:]][_'[:alnum:]]*" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\.\_s"
+syn region coqThmName   contained contains=coqThmTerm,coqThmBinder matchgroup=coqIdent start="[[:digit:]']\@!\k\k*" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\.\_s"
 syn region coqThmTerm   contained contains=@coqTerm,coqProofBody matchgroup=coqVernacCmd start=":" matchgroup=NONE end="\<\%(Qed\|Defined\|Admitted\|Abort\)\>"
 syn region coqThmBinder contained matchgroup=coqVernacPunctuation start="(" end=")" keepend
 
@@ -68,7 +68,7 @@ syn match coqTermPunctuation   contained ":=\|:>\|:\|;\|,\|||\|\[\|\]\|@\|?\|\<_
 " Sections
 syn match coqSectionDelimiter  "^ >>>>>>>" nextgroup=coqSectionDecl skipwhite skipnl
 syn match coqSectionDecl       contained "Section" nextgroup=coqSectionName skipwhite skipnl
-syn match coqSectionName       contained "[_[:alpha:]][_'[:alnum:]]*"
+syn match coqSectionName       contained "[[:digit:]']\@!\k\k*"
 
 " Obligations
 syn region coqObligation contains=coqIdent   matchgroup=coqVernacCmd start="\<\%(\%(\%(Admit\_s\+\)\?Obligations\)\|\%(Obligation\_s\+\d\+\)\|\%(Next\_s\+Obligation\)\|Preterm\)\%(\_s\+of\)\?\>" end="\.\_s"
@@ -109,7 +109,7 @@ syn region coqIndConsTerm    contained contains=coqIndBody,@coqTerm,coqIndConstr
 syn region coqIndNot         contained contains=coqNotationString,coqIndNotTerm matchgroup=coqVernacCmd start="\<where\>" end="^\S"me=e-1
 syn region coqIndNotTerm     contained contains=@coqTerm,coqIndNotScope,coqIndBody matchgroup=coqVernacPunctuation start=":=" end="^\S"me=e-1
 syn region coqIndNotScope    contained contains=coqIndBody matchgroup=coqVernacPunctuation start=":" end="^\S"me=e-1
-syn match  coqConstructor    contained "[_[:alpha:]][_'[:alnum:]]*"
+syn match  coqConstructor    contained "[[:digit:]']\@!\k\k*"
 
 " Records
 syn region coqRec        contains=coqRecProfile start="\<Record\>" matchgroup=coqVernacPunctuation end="^\S"me=e-1 keepend
@@ -120,7 +120,7 @@ syn region coqRecContent contained contains=coqConstructor,coqRecStart matchgrou
 syn region coqRecStart   contained contains=coqRecField,@coqTerm start="{" matchgroup=coqVernacPunctuation end="}" keepend
 syn region coqRecField   contained contains=coqField matchgroup=coqVernacPunctuation start="{" end=":"
 syn region coqRecField   contained contains=coqField matchgroup=coqVernacPunctuation start=";" end=":"
-syn match coqField       contained "[_[:alpha:]][_'[:alnum:]]*"
+syn match coqField       contained "[[:digit:]']\@!\k\k*"
 
 " Arguments specification
 syn region  coqArgumentSpecification start="^\%(For \_.\{-}:\)\?\s*Argument" end="implicit" contains=@coqTerm,coqArgumentSpecificationKeywords

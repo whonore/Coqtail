@@ -21,7 +21,7 @@ syn case match
 " Various
 " syn match   coqError             "\S\+"
 syn match   coqVernacPunctuation ":=\|\.\|:"
-syn match   coqIdent             contained "[_[:alpha:]][_'[:alnum:]]*"
+syn match   coqIdent             contained "[[:digit:]']\@!\k\k*"
 
 " Number of goals
 syn match   coqNumberGoals       "\d\+ subgoals\?"
@@ -30,8 +30,8 @@ syn match   coqNumberAdmitted    "\d\+ admitted"
 syn match   coqNumberShelved     "\d\+ shelved"
 
 " Hypothesis
-syn region  coqHypothesisBlock  contains=coqHypothesis start="^[_[:alpha:]][_'[:alnum:]]*\s*:" end="^$" keepend
-syn region  coqHypothesis       contained contains=coqHypothesisBody matchgroup=coqIdent start="^\([_[:alpha:]][_'[:alnum:]]*,\s*\)*[_[:alpha:]][_'[:alnum:]]*" matchgroup=NONE end="^\S"me=e-1
+syn region  coqHypothesisBlock  contains=coqHypothesis start="^[[:digit:]']\@!\k\k*\s*:" end="^$" keepend
+syn region  coqHypothesis       contained contains=coqHypothesisBody matchgroup=coqIdent start="^\([[:digit:]']\@!\k\k*,\s*\)*[[:digit:]']\@!\k\k*" matchgroup=NONE end="^\S"me=e-1
 syn region  coqHypothesisBody   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" matchgroup=NONE end="^\S"me=e-1
 
 " Separator
