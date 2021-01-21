@@ -243,8 +243,8 @@ syn keyword coqTacNotationKwd contained ident simple_intropattern hyp reference 
 syn match   coqTacNotationKwd contained "at level"
 
 " Binders
-syn region coqBinder            contained contains=coqBinderTypeParen matchgroup=coqVernacPunctuation start="(" end=")" keepend
-syn region coqBinder            contained contains=coqBinderTypeCurly matchgroup=coqVernacPunctuation start="`\?{" end="}" keepend
+syn region coqBinder            contained contains=coqIdent,coqBinderTypeParen matchgroup=coqVernacPunctuation start="(" end=")" keepend
+syn region coqBinder            contained contains=coqIdent,coqBinderTypeCurly matchgroup=coqVernacPunctuation start="`\?{" end="}" keepend
 syn region coqBinderTypeParen   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" end=")"
 syn region coqBinderTypeCurly   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" end="}"
 

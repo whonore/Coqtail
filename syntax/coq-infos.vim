@@ -26,8 +26,8 @@ syn match   coqIdent             contained "[[:digit:]']\@!\k\k*"
 syn keyword coqTopLevel          Declare Type Canonical Structure Cd Coercion Derive Drop Existential
 
 " Binders
-syn region coqBinder            contained contains=coqBinderTypeParen matchgroup=coqVernacPunctuation start="(" end=")" keepend
-syn region coqBinder            contained contains=coqBinderTypeCurly matchgroup=coqVernacPunctuation start="`\?{" end="}" keepend
+syn region coqBinder            contained contains=coqIdent,coqBinderTypeParen matchgroup=coqVernacPunctuation start="(" end=")" keepend
+syn region coqBinder            contained contains=coqIdent,coqBinderTypeCurly matchgroup=coqVernacPunctuation start="`\?{" end="}" keepend
 syn region coqBinderTypeParen   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" end=")"
 syn region coqBinderTypeCurly   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" end="}"
 
