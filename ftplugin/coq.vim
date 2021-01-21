@@ -18,7 +18,7 @@ endif
 " Follow imports
 setlocal includeexpr=coqtail#findlib(v:fname)
 setlocal suffixesadd=.v
-setlocal include=\\<Require\\>\\(\\s*\\(Import\\\|Export\\)\\>\\)\\?
+setlocal include=\\<Require\\>\\(\\_s*\\(Import\\\|Export\\)\\>\\)\\?
 
 let b:undo_ftplugin = 'setl cms< com< fo< inex< sua< inc<'
 
