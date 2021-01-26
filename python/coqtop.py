@@ -188,7 +188,7 @@ class Coqtop(object):
         return True, msgs, None, err
 
     def rewind(self, steps=1):
-        # type: (int) -> Tuple[bool, int, Text]
+        # type: (int) -> Tuple[bool, Text, Optional[int], Text]
         """Go back 'steps' states."""
         assert self.xml is not None
         self.logger.debug("rewind: %d", steps)
@@ -209,11 +209,12 @@ class Coqtop(object):
             steps -= fake_steps
 
         response, err = self.call(self.xml.edit_at(self.state_id, steps))
-
-        if isinstance(response, Ok):
-            return True, response.val, err
-        else:
-            return False, 0, err
+        return (
+            isinstance(response, Ok),
+            response.msg,
+            response.val if isinstance(response, Ok) else None,
+            err,
+        )
 
     def query(
         self,
@@ -251,10 +252,12 @@ class Coqtop(object):
         self.logger.debug("goals")
         response, err = self.call(self.xml.goal(), timeout=timeout)
 
-        if isinstance(response, Ok):
-            return True, response.msg, response.val, err
-        else:
-            return False, "", None, err
+        return (
+            isinstance(response, Ok),
+            response.msg,
+            response.val if isinstance(response, Ok) else None,
+            err,
+        )
 
     def do_option(
         self,
