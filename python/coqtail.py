@@ -42,12 +42,6 @@ except ImportError:
     pass
 
 
-def unexpected(response, where):
-    # type: (Any, str) -> str
-    """Create a debugging error about an unexpected response."""
-    return "Coqtail received unexpected response {} in {}".format(response, where)
-
-
 def lines_and_highlights(tagged_tokens, line_no):
     # type: (Union[Text, Iterable[Tuple[Text, Optional[Text]]]], int) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]
     """Converts a sequence of tagged tokens into lines and higlight positions.
@@ -132,7 +126,7 @@ class Coqtail(object):
         self.goal_hls = []  # type: List[Tuple[int, int, int, Text]]
 
     def sync(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[str]
+        # type: (Mapping[str, Any]) -> Optional[Text]
         """Check if the buffer has been updated and rewind Coqtop if so."""
         err = None
         newchange = self.changedtick
@@ -225,19 +219,19 @@ class Coqtail(object):
         return err
 
     def rewind(self, steps, opts):
-        # type: (int, Mapping[str, Any]) -> Optional[str]
+        # type: (int, Mapping[str, Any]) -> Optional[Text]
         """Rewind Coq by 'steps' sentences."""
         if steps < 1 or self.endpoints == []:
             return None
 
         try:
-            success, extra_steps, stderr = self.coqtop.rewind(steps)
+            _, msg, extra_steps, stderr = self.coqtop.rewind(steps)
             self.print_stderr(stderr)
         except CT.CoqtopError as e:
             return str(e)
 
-        if not success:
-            return unexpected(success, "rewind()")
+        if extra_steps is None:
+            return msg
 
         self.endpoints = self.endpoints[: -(steps + extra_steps)]
         self.error_at = None
@@ -245,7 +239,7 @@ class Coqtail(object):
         return None
 
     def to_line(self, line, col, opts):
-        # type: (int, int, Mapping[str, Any]) -> Optional[str]
+        # type: (int, int, Mapping[str, Any]) -> Optional[Text]
         """Advance/rewind Coq to the specified position."""
         self.sync(opts=opts)
 
@@ -284,7 +278,7 @@ class Coqtail(object):
             return err
 
     def to_top(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[str]
+        # type: (Mapping[str, Any]) -> Optional[Text]
         """Rewind to the beginning of the file."""
         return self.rewind_to(0, 1, opts=opts)
 
@@ -361,7 +355,7 @@ class Coqtail(object):
         return failed_at, None
 
     def rewind_to(self, line, col, opts):
-        # type: (int, int, Mapping[str, Any]) -> Optional[str]
+        # type: (int, int, Mapping[str, Any]) -> Optional[Text]
         """Rewind to a specific location."""
         # Count the number of endpoints after the specified location
         steps_too_far = sum(pos >= (line, col) for pos in self.endpoints)
@@ -493,15 +487,11 @@ class Coqtail(object):
         # type: (Mapping[str, Any]) -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
         """Get the current goals."""
         try:
-            success, msg, goals, stderr = self.coqtop.goals(timeout=opts["timeout"])
+            _, msg, goals, stderr = self.coqtop.goals(timeout=opts["timeout"])
             self.print_stderr(stderr)
+            return goals, msg
         except CT.CoqtopError as e:
             return None, str(e)
-
-        if not success:
-            return None, unexpected(success, "get_goals()")
-
-        return goals, msg
 
     def pp_goals(self, goals, opts):
         # type: (Tuple[List[Any], List[Any], List[Any], List[Any]], Mapping[str, Any]) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]
