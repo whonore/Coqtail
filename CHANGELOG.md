@@ -3,6 +3,7 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Print Coq error messages when checking goals or rewinding. (PR #187)
 - Highlight attributes and skip them when splitting sentences. (PR #152)
 - Highlight `admit` and `give_up` tactics. (PR #182)
 - Match non-ASCII letters in identifier syntax highlighting. (PR #184)
