@@ -10,13 +10,7 @@ import re
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from xml.dom.minidom import parseString
-
-try:
-    from shutil import which
-except ImportError:
-    from distutils.spawn import find_executable as which  # type: ignore[no-redef]
-
+from shutil import which
 from typing import (
     Any,
     Callable,
@@ -29,6 +23,7 @@ from typing import (
     Union,
     cast,
 )
+from xml.dom.minidom import parseString
 
 
 class FindCoqtopError(Exception):
@@ -267,9 +262,6 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         paths = [os.path.abspath(p) for p in path.split(os.pathsep)]
         coqtop = coq_prog if coq_prog is not None else self.coqtop
 
-        # NOTE: find_executable always checks the current directory so ./coqtop
-        # shadows coq_path/coqtop. This is potentially confusing so filter out
-        # results not in the paths explicitly asked for.
         coqs = (
             os.path.abspath(p)
             for p in (
@@ -278,7 +270,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
                 for ext in ("", ".opt")
             )
             for path in paths
-            if p is not None and os.path.dirname(os.path.abspath(p)) in paths
+            if p is not None
         )
 
         try:
