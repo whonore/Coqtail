@@ -11,7 +11,7 @@ import threading
 import time
 from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
-from typing import IO, Any, Iterator, List, Optional, Tuple, Union
+from typing import IO, TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Union
 
 from xmlInterface import (
     TIMEOUT_ERR,
@@ -22,6 +22,11 @@ from xmlInterface import (
     XMLInterfaceBase,
     prettyxml,
 )
+
+if TYPE_CHECKING:
+    QueueBytes = Queue[bytes]
+else:
+    QueueBytes = Queue
 
 DEFAULT_REF = Err("Default Ref value. Should never be seen.")
 
@@ -426,7 +431,7 @@ class Coqtop:
             break
 
     @staticmethod
-    def drain_queue(q: Queue[bytes]) -> Iterator[bytes]:
+    def drain_queue(q: QueueBytes) -> Iterator[bytes]:
         """Yield data from 'q' until it is empty."""
         while not q.empty():
             try:

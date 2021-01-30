@@ -88,7 +88,7 @@ class NoDotError(Exception):
 class Coqtail:
     """Manage Coqtop interfaces and auxiliary buffers for each Coq file."""
 
-    def __init__(self, handler: CoqtailHandler) -> None:
+    def __init__(self, handler: "CoqtailHandler") -> None:
         """Initialize variables.
 
         coqtop - The Coqtop interface
