@@ -661,19 +661,19 @@ class XMLInterface84(XMLInterfaceBase):
         )
 
     # XML Parsing and Marshalling #
-    def _to_goal(self, xml: ET.Element) -> Goal:
+    def _to_goal(self, xml: ET.Element) -> "Goal":
         """Expect: <goal>string (list string) string</goal>"""
         return self.Goal(*map(self._to_py, xml))
 
-    def _to_goals(self, xml: ET.Element) -> Goals:
+    def _to_goals(self, xml: ET.Element) -> "Goals":
         """Expect: <goals>(list goal) (list (list goal * list goal))</goals>"""
         return self.Goals(*map(self._to_py, xml))
 
-    def _to_evar(self, xml: ET.Element) -> Evar:
+    def _to_evar(self, xml: ET.Element) -> "Evar":
         """Expect: <evar>string</evar>"""
         return self.Evar(self._to_py(xml[0]))
 
-    def _to_option_value(self, xml: ET.Element) -> OptionValue:
+    def _to_option_value(self, xml: ET.Element) -> "OptionValue":
         """Expect: <option_value>bool | option int | string</option_value>"""
         ty = xml.get("val", None)
         if ty is not None:
@@ -700,17 +700,17 @@ class XMLInterface84(XMLInterfaceBase):
 
         return self._build_xml("option_value", opt_ty, opt)
 
-    def _to_option_state(self, xml: ET.Element) -> OptionState:
+    def _to_option_state(self, xml: ET.Element) -> "OptionState":
         """Expect: <option_state>bool bool string option_value</option_state>"""
         return self.OptionState(*map(self._to_py, xml))
 
-    def _to_status(self, xml: ET.Element) -> Status:
+    def _to_status(self, xml: ET.Element) -> "Status":
         """Expect:
         <status>(list string) (option string) (list string) int int</status>
         """
         return self.Status(*map(self._to_py, xml))
 
-    def _to_coq_info(self, xml: ET.Element) -> CoqInfo:
+    def _to_coq_info(self, xml: ET.Element) -> "CoqInfo":
         """Expect: <coq_info>string string string string</coq_info>"""
         return self.CoqInfo(*map(self._to_py, xml))
 
@@ -967,11 +967,11 @@ class XMLInterface85(XMLInterfaceBase):
         )
 
     # XML Parsing and Marshalling #
-    def _to_goal(self, xml: ET.Element) -> Goal:
+    def _to_goal(self, xml: ET.Element) -> "Goal":
         """Expect: <goal>string (list Pp) Pp</goal>"""
         return self.Goal(*map(self._to_py, xml))
 
-    def _to_goals(self, xml: ET.Element) -> Goals:
+    def _to_goals(self, xml: ET.Element) -> "Goals":
         """Expect:
         <goals>
           (list goal) (list (list goal * list goal))
@@ -980,11 +980,11 @@ class XMLInterface85(XMLInterfaceBase):
         """
         return self.Goals(*map(self._to_py, xml))
 
-    def _to_evar(self, xml: ET.Element) -> Evar:
+    def _to_evar(self, xml: ET.Element) -> "Evar":
         """Expect: <evar>string</evar>"""
         return self.Evar(self._to_py(xml[0]))
 
-    def _to_option_value(self, xml: ET.Element) -> OptionValue:
+    def _to_option_value(self, xml: ET.Element) -> "OptionValue":
         """Expect:
         <option_value>bool | option int | string | option string</option_value>
         """
@@ -1022,11 +1022,11 @@ class XMLInterface85(XMLInterfaceBase):
 
         return self._build_xml("option_value", opt_ty, opt)
 
-    def _to_option_state(self, xml: ET.Element) -> OptionState:
+    def _to_option_state(self, xml: ET.Element) -> "OptionState":
         """Expect: <option_state>bool bool string option_value</option_state>"""
         return self.OptionState(*map(self._to_py, xml))
 
-    def _to_state_id(self, xml: ET.Element) -> StateId:
+    def _to_state_id(self, xml: ET.Element) -> "StateId":
         """Expect: <state_id val="int" />"""
         return self.StateId(int(xml.get("val", 0)))
 
@@ -1034,13 +1034,13 @@ class XMLInterface85(XMLInterfaceBase):
         """Expect: StateId(int)"""
         return self._build_xml("state_id", str(val.id))
 
-    def _to_status(self, xml: ET.Element) -> Status:
+    def _to_status(self, xml: ET.Element) -> "Status":
         """Expect:
         <status>(list string) (option string) (list string) int</status>
         """
         return self.Status(*map(self._to_py, xml))
 
-    def _to_coq_info(self, xml: ET.Element) -> CoqInfo:
+    def _to_coq_info(self, xml: ET.Element) -> "CoqInfo":
         """Expect: <coq_info>string string string string</coq_info>"""
         return self.CoqInfo(*map(self._to_py, xml))
 
@@ -1300,7 +1300,7 @@ class XMLInterface87(XMLInterface86):
         self._of_py_funcs.update({"RouteId": self._of_route_id})
 
     # XML Parsing and Marshalling #
-    def _to_route_id(self, xml: ET.Element) -> RouteId:
+    def _to_route_id(self, xml: ET.Element) -> "RouteId":
         """Expect: <route_id val="int" />"""
         return self.RouteId(int(xml.get("val", 0)))
 

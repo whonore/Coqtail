@@ -24,6 +24,7 @@ from xmlInterface import (
 )
 
 if TYPE_CHECKING:
+    # pylint: disable=unsubscriptable-object
     BytesQueue = Queue[bytes]
     CoqtopProcess = subprocess.Popen[bytes]
 else:

@@ -33,6 +33,7 @@ from typing import (
 import coqtop as CT
 
 if TYPE_CHECKING:
+    # pylint: disable=unsubscriptable-object
     ReqQueue = Queue[Tuple[int, int, str, Mapping[str, Any]]]
     ResQueue = Queue[Tuple[int, Any]]
 else:
