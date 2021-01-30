@@ -17,25 +17,18 @@ try:
 except ImportError:
     from distutils.spawn import find_executable as which  # type: ignore[no-redef]
 
-# For Mypy
-# TODO: Replace some of the 'Any's with more specific types. But in order
-# to use type aliases while still avoiding requiring mypy/typing as a
-# requirement need to define dummy replacements for some of the below
-try:
-    from typing import (
-        Any,
-        Callable,
-        Dict,
-        Iterable,
-        List,
-        Optional,
-        Sequence,
-        Text,
-        Tuple,
-        Union,
-    )
-except ImportError:
-    pass
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Text,
+    Tuple,
+    Union,
+)
 
 
 class FindCoqtopError(Exception):
@@ -46,8 +39,7 @@ class FindCoqtopError(Exception):
 class Ok:
     """A response representing success."""
 
-    def __init__(self, val, msg=""):
-        # type: (Any, Text) -> None
+    def __init__(self, val: Any, msg: Text = "") -> None:
         """Initialize values."""
         self.val = val
         self.msg = msg
@@ -56,8 +48,7 @@ class Ok:
 class Err:
     """A response representing failure."""
 
-    def __init__(self, msg, loc=(-1, -1)):
-        # type: (Text, Tuple[int, int]) -> None
+    def __init__(self, msg: Text, loc: Tuple[int, int] = (-1, -1)) -> None:
         """Initialize values."""
         self.msg = msg
         self.loc = loc
@@ -70,15 +61,13 @@ TIMEOUT_ERR = Err(
 
 
 # Helpers #
-def unexpected(expected, got):
-    # type: (Iterable[Any], Any) -> TypeError
+def unexpected(expected: Iterable[Any], got: Any) -> TypeError:
     """Return an exception with a message showing what was expected."""
     expect = " or ".join(map(str, expected))
     return TypeError("Expected {}, but got {}".format(expect, str(got)))
 
 
-def _unescape(cmd):
-    # type: (bytes) -> bytes
+def _unescape(cmd: bytes) -> bytes:
     """Replace escaped characters with the unescaped version."""
     charmap = {b"&nbsp;": b" ", b"&apos;": b"'", b"&#40;": b"(", b"&#41;": b")"}
 
@@ -88,8 +77,12 @@ def _unescape(cmd):
     return cmd
 
 
-def _parse_tagged_tokens(tags, xml, stack=None, inner=False):
-    # type: (Sequence[str], ET.Element, Optional[List[Text]], bool) -> Iterable[Tuple[Text, List[Text]]]
+def _parse_tagged_tokens(
+    tags: Sequence[str],
+    xml: ET.Element,
+    stack: Optional[List[Text]] = None,
+    inner: bool = False,
+) -> Iterable[Tuple[Text, List[Text]]]:
     """Scrape an XML element into a stream of text tokens and stack of tags.
 
     Helper function to parse_tagged_tokens.
@@ -144,8 +137,9 @@ def _parse_tagged_tokens(tags, xml, stack=None, inner=False):
         yield (xml.tail, stack[:])
 
 
-def parse_tagged_tokens(tags, xml):
-    # type: (Sequence[str], ET.Element) -> Iterable[Tuple[Text, Optional[Text]]]
+def parse_tagged_tokens(
+    tags: Sequence[str], xml: ET.Element
+) -> Iterable[Tuple[Text, Optional[Text]]]:
     """Scrape an XML element into a stream of text tokens and accompanying tags.
 
     Written to support richpp markup.
@@ -168,8 +162,7 @@ def parse_tagged_tokens(tags, xml):
     yield (token_acc, last_tag)
 
 
-def join_tagged_tokens(tagged_tokens):
-    # type: (Iterable[Tuple[Text, Optional[Text]]]) -> Text
+def join_tagged_tokens(tagged_tokens: Iterable[Tuple[Text, Optional[Text]]]) -> Text:
     """Join tokens from tagged token stream.
 
     Note:
@@ -180,8 +173,7 @@ def join_tagged_tokens(tagged_tokens):
 
 
 # Debugging #
-def prettyxml(xml):
-    # type: (bytes) -> Text
+def prettyxml(xml: bytes) -> Text:
     """Pretty print XML for debugging."""
     xml = _unescape(xml)
     # No stubs for xml.dom.minidom
@@ -202,8 +194,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
     Inl = namedtuple("Inl", ["val"])
     Inr = namedtuple("Inr", ["val"])
 
-    def __init__(self, versions):
-        # type: (Tuple[int, ...]) -> None
+    def __init__(self, versions: Tuple[int, ...]) -> None:
         """Initialize maps for converting between XML and Python values."""
         self.versions = versions
 
@@ -260,8 +251,13 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         # A command that can safely and quickly be executed just to get a new state id
         self.noop = "Eval lazy in forall x, x."
 
-    def launch(self, coq_path, coq_prog, filename, args):
-        # type: (Optional[str], Optional[str], Text, List[str]) -> Tuple[Union[str, Text], ...]
+    def launch(
+        self,
+        coq_path: Optional[str],
+        coq_prog: Optional[str],
+        filename: Text,
+        args: List[str],
+    ) -> Tuple[Union[str, Text], ...]:
         """The command to launch coqtop with the appropriate arguments."""
         # Include current directory in search if coq_path is not specified
         path = (
@@ -299,13 +295,11 @@ class XMLInterfaceBase(metaclass=ABCMeta):
                 "g:coqtail_coq_path or g:coqtail_coq_prog.".format(coqtop, path)
             )
 
-    def topfile(self, filename, args):
-        # type: (Text, Sequence[Text]) -> Tuple[Text, ...]
+    def topfile(self, filename: Text, args: Sequence[Text]) -> Tuple[Text, ...]:
         """The command to set the top-level module name."""
         return ()
 
-    def valid_module(self, filename):
-        # type: (Text) -> bool
+    def valid_module(self, filename: Text) -> bool:
         """Check if a file name is a valid module name."""
         filename = os.path.splitext(os.path.basename(filename))[0]
         # TODO: use fullmatch in Python 3
@@ -315,18 +309,15 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         )
 
     # XML Parsing and Marshalling #
-    def _to_unit(self, _xml):
-        # type: (ET.Element) -> Tuple[()]
+    def _to_unit(self, _xml: ET.Element) -> Tuple[()]:
         """Expect: <unit />"""
         return ()
 
-    def _of_unit(self, _val):
-        # type: (Tuple[()]) -> ET.Element
+    def _of_unit(self, _val: Tuple[()]) -> ET.Element:
         """Expect: ()"""
         return self._build_xml("unit")
 
-    def _to_bool(self, xml):
-        # type: (ET.Element) -> bool
+    def _to_bool(self, xml: ET.Element) -> bool:
         """Expect: <bool val="true | false" />"""
         val = xml.get("val")
 
@@ -336,57 +327,47 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             return False
         raise unexpected(("true", "false"), val)
 
-    def _of_bool(self, val):
-        # type: (bool) -> ET.Element
+    def _of_bool(self, val: bool) -> ET.Element:
         """Expect: True | False"""
         return self._build_xml("bool", str(val).lower())
 
-    def _to_int(self, xml):
-        # type: (ET.Element) -> int
+    def _to_int(self, xml: ET.Element) -> int:
         """Expect: <int>int</int>"""
         if xml.text is not None:
             return int(xml.text)
         raise unexpected((str,), None)
 
-    def _of_int(self, val):
-        # type: (int) -> ET.Element
+    def _of_int(self, val: int) -> ET.Element:
         """Expect: int"""
         return self._build_xml("int", text=str(val))
 
-    def _to_string(self, xml):
-        # type: (ET.Element) -> Text
+    def _to_string(self, xml: ET.Element) -> Text:
         """Expect: <string>str</string>"""
         # In Python 2 itertext returns Generator[Any, None, None] instead
         # of Generator[str, None, None]
         return "".join(xml.itertext())  # type: ignore[no-any-return]
 
-    def _of_string(self, val):
-        # type: (Text) -> ET.Element
+    def _of_string(self, val: Text) -> ET.Element:
         """Expect: str"""
         return self._build_xml("string", text=val)
 
-    def _to_list(self, xml):
-        # type: (ET.Element) -> List[Any]
+    def _to_list(self, xml: ET.Element) -> List[Any]:
         """Expect: <list>val val ...</list>"""
         return [self._to_py(val) for val in xml]
 
-    def _of_list(self, val):
-        # type: (List[Any]) -> (ET.Element)
+    def _of_list(self, val: List[Any]) -> ET.Element:
         """Expect: [val, val, ...]"""
         return self._build_xml("list", children=val)
 
-    def _to_pair(self, xml):
-        # type: (ET.Element) -> Tuple[Any, Any]
+    def _to_pair(self, xml: ET.Element) -> Tuple[Any, Any]:
         """Expect: <pair>val1 val2</pair>"""
         return (self._to_py(xml[0]), self._to_py(xml[1]))
 
-    def _of_pair(self, val):
-        # type: (Tuple[Any, Any]) -> ET.Element
+    def _of_pair(self, val: Tuple[Any, Any]) -> ET.Element:
         """Expect: (val1, val2)"""
         return self._build_xml("pair", children=[val[0], val[1]])
 
-    def _to_option(self, xml):
-        # type: (ET.Element) -> Union[None, Option]
+    def _to_option(self, xml: ET.Element) -> Union[None, Option]:
         """Expect: <option val="some">val</option> | <option val="none" />"""
         val = xml.get("val")
 
@@ -396,16 +377,14 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             return self.Option(self._to_py(xml[0]))
         raise unexpected(("none", "some"), val)
 
-    def _of_option(self, val):
-        # type: (Union[None, Option]) -> ET.Element
+    def _of_option(self, val: Union[None, Option]) -> ET.Element:
         """Expect: Option(val) | None"""
         if val is not None:
             return self._build_xml("option", "some", val.val)
         else:
             return self._build_xml("option", "none")
 
-    def _to_union(self, xml):
-        # type: (ET.Element) -> Union[Inl, Inr]
+    def _to_union(self, xml: ET.Element) -> Union[Inl, Inr]:
         """Expect: <union val="in_l | in_r">val</union>"""
         val = xml.get("val")
 
@@ -415,8 +394,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             return self.Inr(self._to_py(xml[0]))
         raise unexpected(("in_l", "in_r"), val)
 
-    def _of_union(self, val):
-        # type: (Union[Inl, Inr]) -> ET.Element
+    def _of_union(self, val: Union[Inl, Inr]) -> ET.Element:
         """Expect: Inl(val) | Inr(val)"""
         if isinstance(val, self.Inl):
             return self._build_xml("union", "in_l", val.val)
@@ -424,16 +402,14 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             return self._build_xml("union", "in_r", val.val)
         raise unexpected((self.Inl, self.Inr), val)
 
-    def _to_py(self, xml):
-        # type: (ET.Element) -> object
+    def _to_py(self, xml: ET.Element) -> object:
         """Parse an XML value into a corresponding Python type."""
         try:
             return self._to_py_funcs[xml.tag](xml)
         except KeyError:
             raise unexpected(tuple(self._to_py_funcs), xml.tag)
 
-    def _of_py(self, val):
-        # type: (Any) -> ET.Element
+    def _of_py(self, val: Any) -> ET.Element:
         """Construct an XML element from a corresponding Python type."""
         try:
             return self._of_py_funcs[type(val).__name__](val)
@@ -442,13 +418,12 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     def _build_xml(
         self,
-        tag,  # type: Text
-        val=None,  # type: Optional[Text]
-        children=Void,  # type: Any
-        text=None,  # type: Optional[Text]
-        attrs=None,  # type: Optional[Dict[Text, Text]]
-    ):
-        # type: (...) -> ET.Element
+        tag: Text,
+        val: Optional[Text] = None,
+        children: Any = Void,
+        text: Optional[Text] = None,
+        attrs: Optional[Dict[Text, Text]] = None,
+    ) -> ET.Element:
         """Construct an XML element with a given tag, value, and children."""
         if attrs is None:
             attrs = {}
@@ -472,20 +447,18 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     def _make_call(
         self,
-        encoding,  # type: str
-        cmd,  # type: Text
-        children=Void,  # type: Any
-        arg=None,  # type: Optional[Text]
-        attrs=None,  # type: Optional[Dict[Text, Text]]
-    ):
-        # type: (...) -> bytes
+        encoding: str,
+        cmd: Text,
+        children: Any = Void,
+        arg: Optional[Text] = None,
+        attrs: Optional[Dict[Text, Text]] = None,
+    ) -> bytes:
         """Create a <call> node."""
         elt = self._build_xml("call", val=cmd, children=children, text=arg, attrs=attrs)
         # In Python 3 tostring returns Any instead of bytes
         return ET.tostring(elt, encoding)  # type: ignore[no-any-return]
 
-    def _to_response(self, xml):
-        # type: (ET.Element) -> Union[Ok, Err]
+    def _to_response(self, xml: ET.Element) -> Union[Ok, Err]:
         """Expect:
         <value val="good">val</value> |
         <value val="fail" (loc_s="int")? (loc_e="int")?>msg</value>
@@ -504,13 +477,11 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         raise unexpected(("good", "fail"), val)
 
     @staticmethod
-    def worth_parsing(data):
-        # type: (bytes) -> bool
+    def worth_parsing(data: bytes) -> bool:
         """Check if data contains a complete value node yet."""
         return b"</value>" in data
 
-    def raw_response(self, data):
-        # type: (bytes) -> Optional[Union[Ok, Err]]
+    def raw_response(self, data: bytes) -> Optional[Union[Ok, Err]]:
         """Try to parse an XML response from Coqtop into an Ok or Err."""
         res = None
         msgs = []  # type: List[Text]
@@ -551,8 +522,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
         return res
 
-    def standardize(self, cmd, res):
-        # type: (Text, Union[Ok, Err]) -> Union[Ok, Err]
+    def standardize(self, cmd: Text, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Put the information in 'res' into a version-independent form."""
         # By default return unchanged
         try:
@@ -562,63 +532,65 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     # Coqtop Commands #
     @abstractmethod
-    def init(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def init(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to initialize Coqtop."""
 
     @abstractmethod
-    def add(self, cmd, state, encoding="utf-8"):
-        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
+    def add(
+        self, cmd: Text, state: int, encoding: str = "utf-8"
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to advance Coqtop."""
 
     @abstractmethod
-    def edit_at(self, state, steps, encoding="utf-8"):
-        # type: (int, int, str) -> Tuple[Text, Optional[bytes]]
+    def edit_at(
+        self, state: int, steps: int, encoding: str = "utf-8"
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to move Coqtop to a specific location."""
 
     @abstractmethod
-    def query(self, query, state, encoding="utf-8"):
-        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
+    def query(
+        self, query: Text, state: int, encoding: str = "utf-8"
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to pose a query to Coqtop."""
 
     @abstractmethod
-    def goal(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def goal(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to check the current goal state."""
 
     @abstractmethod
-    def status(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def status(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to check Coqtop's status."""
 
     @abstractmethod
-    def get_options(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def get_options(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to check the state of Coqtop's options."""
 
     @abstractmethod
-    def set_options(self, option, val, encoding="utf-8"):
-        # type: (Text, Union[bool, int, Text, Tuple[None, str]], str) -> Tuple[Text, Optional[bytes]]
+    def set_options(
+        self,
+        option: Text,
+        val: Union[bool, int, Text, Tuple[None, str]],
+        encoding: str = "utf-8",
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to set one of Coqtop's options."""
 
     # Helpers #
-    def is_option(self, cmd):
-        # type: (Text) -> bool
+    def is_option(self, cmd: Text) -> bool:
         """Check if 'cmd' is trying to set/check an option."""
         # Starts with Set, Unset, Test
         # N.B. 'cmd' has been stripped of comments and leading whitespace so
         # just check for option commands at the start
         return re.match("((Uns|S)et|Test)$", cmd.split()[0]) is not None
 
-    def is_query(self, cmd):
-        # type: (Text) -> bool
+    def is_query(self, cmd: Text) -> bool:
         """Check if 'cmd' is a query."""
         re_str = "(" + "|".join(self.queries) + ")$"
         # N.B. see is_option()
         return re.match(re_str, cmd.split()[0].rstrip(".")) is not None
 
-    def parse_option(self, cmd):
-        # type: (Text) -> Tuple[Optional[Iterable[Union[bool, int, Text, Tuple[None, str]]]], Text]
+    def parse_option(
+        self, cmd: Text
+    ) -> Tuple[Optional[Iterable[Union[bool, int, Text, Tuple[None, str]]]], Text]:
         """Parse what option is being set/checked."""
         # Assumes cmd is of the form 'Set|Unset|Test {option_name}'
         opts = cmd.strip(".").split()
@@ -669,8 +641,7 @@ class XMLInterface84(XMLInterfaceBase):
         "CoqInfo", ["coq_version", "protocol_version", "release_data", "compile_data"]
     )
 
-    def __init__(self, versions):
-        # type: (Tuple[int, ...]) -> None
+    def __init__(self, versions: Tuple[int, ...]) -> None:
         """Update conversion maps with new types."""
         super().__init__(versions)
 
@@ -701,23 +672,19 @@ class XMLInterface84(XMLInterfaceBase):
         )
 
     # XML Parsing and Marshalling #
-    def _to_goal(self, xml):
-        # type: (ET.Element) -> Goal
+    def _to_goal(self, xml: ET.Element) -> Goal:
         """Expect: <goal>string (list string) string</goal>"""
         return self.Goal(*map(self._to_py, xml))
 
-    def _to_goals(self, xml):
-        # type: (ET.Element) -> Goals
+    def _to_goals(self, xml: ET.Element) -> Goals:
         """Expect: <goals>(list goal) (list (list goal * list goal))</goals>"""
         return self.Goals(*map(self._to_py, xml))
 
-    def _to_evar(self, xml):
-        # type: (ET.Element) -> Evar
+    def _to_evar(self, xml: ET.Element) -> Evar:
         """Expect: <evar>string</evar>"""
         return self.Evar(self._to_py(xml[0]))
 
-    def _to_option_value(self, xml):
-        # type: (ET.Element) -> OptionValue
+    def _to_option_value(self, xml: ET.Element) -> OptionValue:
         """Expect: <option_value>bool | option int | string</option_value>"""
         ty = xml.get("val", None)
         if ty is not None:
@@ -729,8 +696,7 @@ class XMLInterface84(XMLInterfaceBase):
                 ty = "bool"
         return self.OptionValue(self._to_py(xml[0]), ty)
 
-    def _of_option_value(self, val):
-        # type: (OptionValue) -> ET.Element
+    def _of_option_value(self, val: OptionValue) -> ET.Element:
         """Expect: OptionValue(bool) | OptionValue(int | None) | OptionValue(str)"""
         opt = val.val
 
@@ -745,31 +711,26 @@ class XMLInterface84(XMLInterfaceBase):
 
         return self._build_xml("option_value", opt_ty, opt)
 
-    def _to_option_state(self, xml):
-        # type: (ET.Element) -> OptionState
+    def _to_option_state(self, xml: ET.Element) -> OptionState:
         """Expect: <option_state>bool bool string option_value</option_state>"""
         return self.OptionState(*map(self._to_py, xml))
 
-    def _to_status(self, xml):
-        # type: (ET.Element) -> Status
+    def _to_status(self, xml: ET.Element) -> Status:
         """Expect:
         <status>(list string) (option string) (list string) int int</status>
         """
         return self.Status(*map(self._to_py, xml))
 
-    def _to_coq_info(self, xml):
-        # type: (ET.Element) -> CoqInfo
+    def _to_coq_info(self, xml: ET.Element) -> CoqInfo:
         """Expect: <coq_info>string string string string</coq_info>"""
         return self.CoqInfo(*map(self._to_py, xml))
 
-    def _to_message(self, xml):
-        # type: (ET.Element) -> Text
+    def _to_message(self, xml: ET.Element) -> Text:
         """Expect: <message>message_level string</message>"""
         # xml[1] is a string
         return self._to_py(xml[1])  # type: ignore[return-value]
 
-    def _to_feedback(self, xml):
-        # type: (ET.Element) -> Text
+    def _to_feedback(self, xml: ET.Element) -> Text:
         """Expect:
         <feedback object="?" route="int">feedback_content</feedback>
         <feedback_content val="errormsg">loc string</feedback_content>
@@ -784,23 +745,22 @@ class XMLInterface84(XMLInterfaceBase):
             return ""
 
     # Coqtop Commands #
-    def init(self, _encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def init(self, _encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to initialize Coqtop.
         Not a command in 8.4 so return dummy command.
         """
         return ("Init", None)
 
-    def _standardize_init(self, _res):
-        # type: (Union[Ok, Err]) -> Ok
+    def _standardize_init(self, _res: Union[Ok, Err]) -> Ok:
         """Standardize the info returned by 'Init'.
         Return:
           state_id: int - The current state id (ignored in 8.4)
         """
         return Ok(0)
 
-    def add(self, cmd, state, encoding="utf-8"):
-        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
+    def add(
+        self, cmd: Text, state: int, encoding: str = "utf-8"
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to advance Coqtop.
         Attrs:
           verbose: bool - Verbose output
@@ -818,8 +778,7 @@ class XMLInterface84(XMLInterfaceBase):
             ),
         )
 
-    def _standardize_add(self, res):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+    def _standardize_add(self, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Standardize the info returned by 'Add'.
         Return:
           res_msg: str - Messages produced by 'Add'
@@ -830,8 +789,9 @@ class XMLInterface84(XMLInterfaceBase):
             res.val = {"res_msg": res_msg, "state_id": 0}
         return res
 
-    def edit_at(self, _state, steps, encoding="utf-8"):
-        # type: (int, int, str) -> Tuple[Text, Optional[bytes]]
+    def edit_at(
+        self, _state: int, steps: int, encoding: str = "utf-8"
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to move Coqtop to a specific location.
         Attrs:
           steps: int - The number of steps to rewind
@@ -841,8 +801,9 @@ class XMLInterface84(XMLInterfaceBase):
             self._make_call(encoding, "rewind", attrs={"steps": str(steps)}),
         )
 
-    def query(self, query, state, encoding="utf-8"):
-        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
+    def query(
+        self, query: Text, state: int, encoding: str = "utf-8"
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to pose a query to Coqtop.
         Attrs:
           raw: bool - ?
@@ -861,8 +822,7 @@ class XMLInterface84(XMLInterfaceBase):
             ),
         )
 
-    def _standardize_query(self, res):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+    def _standardize_query(self, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Standardize the info returned by 'Query'.
         Return:
           msg: str - Messages produced by 'Query'
@@ -872,16 +832,14 @@ class XMLInterface84(XMLInterfaceBase):
             res.msg = msg
         return res
 
-    def goal(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def goal(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to check the current goal state.
         Args:
           _: unit - Empty arg
         """
         return ("Goal", self._make_call(encoding, "goal", children=()))
 
-    def _standardize_goal(self, res):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+    def _standardize_goal(self, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Standardize the info returned by 'Goal'.
         Return:
           fg: list Goals - The current goals
@@ -900,24 +858,21 @@ class XMLInterface84(XMLInterfaceBase):
                 res.val = (fg, bg, [], [])
         return res
 
-    def status(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def status(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to check Coqtop's status.
         Args:
           _: unit - Empty arg
         """
         return ("Status", self._make_call(encoding, "status", children=()))
 
-    def get_options(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def get_options(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to check the state of Coqtop's options.
         Args:
           _: unit - Empty arg
         """
         return ("GetOptions", self._make_call(encoding, "getoptions", children=()))
 
-    def _standardize_get_options(self, res):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+    def _standardize_get_options(self, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Standardize the info returned by 'GetOptions'.
         Return:
           opts: list (string * string * ?) - Triples of all option names,
@@ -932,8 +887,12 @@ class XMLInterface84(XMLInterfaceBase):
             res.val = opts
         return res
 
-    def set_options(self, option, val, encoding="utf-8"):
-        # type: (Text, Union[bool, int, Text, Tuple[None, str]], str) -> Tuple[Text, Optional[bytes]]
+    def set_options(
+        self,
+        option: Text,
+        val: Union[bool, int, Text, Tuple[None, str]],
+        encoding: str = "utf-8",
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to set one of Coqtop's options.
         Args:
           options: list (option_name * option_value) - The options to update and
@@ -980,8 +939,7 @@ class XMLInterface85(XMLInterfaceBase):
         "CoqInfo", ["coq_version", "protocol_version", "release_data", "compile_data"]
     )
 
-    def __init__(self, versions):
-        # type: (Tuple[int, ...]) -> None
+    def __init__(self, versions: Tuple[int, ...]) -> None:
         """Update conversion maps with new types."""
         super().__init__(versions)
 
@@ -1022,13 +980,11 @@ class XMLInterface85(XMLInterfaceBase):
         )
 
     # XML Parsing and Marshalling #
-    def _to_goal(self, xml):
-        # type: (ET.Element) -> Goal
+    def _to_goal(self, xml: ET.Element) -> Goal:
         """Expect: <goal>string (list Pp) Pp</goal>"""
         return self.Goal(*map(self._to_py, xml))
 
-    def _to_goals(self, xml):
-        # type: (ET.Element) -> Goals
+    def _to_goals(self, xml: ET.Element) -> Goals:
         """Expect:
         <goals>
           (list goal) (list (list goal * list goal))
@@ -1037,13 +993,11 @@ class XMLInterface85(XMLInterfaceBase):
         """
         return self.Goals(*map(self._to_py, xml))
 
-    def _to_evar(self, xml):
-        # type: (ET.Element) -> Evar
+    def _to_evar(self, xml: ET.Element) -> Evar:
         """Expect: <evar>string</evar>"""
         return self.Evar(self._to_py(xml[0]))
 
-    def _to_option_value(self, xml):
-        # type: (ET.Element) -> OptionValue
+    def _to_option_value(self, xml: ET.Element) -> OptionValue:
         """Expect:
         <option_value>bool | option int | string | option string</option_value>
         """
@@ -1057,8 +1011,7 @@ class XMLInterface85(XMLInterfaceBase):
                 ty = "bool"
         return self.OptionValue(self._to_py(xml[0]), ty)
 
-    def _of_option_value(self, val):
-        # type: (OptionValue) -> ET.Element
+    def _of_option_value(self, val: OptionValue) -> ET.Element:
         """Expect:
         OptionValue(bool) | OptionValue(int | None) | OptionValue(str) |
         OptionValue(str | None)
@@ -1082,41 +1035,34 @@ class XMLInterface85(XMLInterfaceBase):
 
         return self._build_xml("option_value", opt_ty, opt)
 
-    def _to_option_state(self, xml):
-        # type: (ET.Element) -> OptionState
+    def _to_option_state(self, xml: ET.Element) -> OptionState:
         """Expect: <option_state>bool bool string option_value</option_state>"""
         return self.OptionState(*map(self._to_py, xml))
 
-    def _to_state_id(self, xml):
-        # type: (ET.Element) -> StateId
+    def _to_state_id(self, xml: ET.Element) -> StateId:
         """Expect: <state_id val="int" />"""
         return self.StateId(int(xml.get("val", 0)))
 
-    def _of_state_id(self, val):
-        # type: (StateId) -> ET.Element
+    def _of_state_id(self, val: StateId) -> ET.Element:
         """Expect: StateId(int)"""
         return self._build_xml("state_id", str(val.id))
 
-    def _to_status(self, xml):
-        # type: (ET.Element) -> Status
+    def _to_status(self, xml: ET.Element) -> Status:
         """Expect:
         <status>(list string) (option string) (list string) int</status>
         """
         return self.Status(*map(self._to_py, xml))
 
-    def _to_coq_info(self, xml):
-        # type: (ET.Element) -> CoqInfo
+    def _to_coq_info(self, xml: ET.Element) -> CoqInfo:
         """Expect: <coq_info>string string string string</coq_info>"""
         return self.CoqInfo(*map(self._to_py, xml))
 
-    def _to_message(self, xml):
-        # type: (ET.Element) -> Text
+    def _to_message(self, xml: ET.Element) -> Text:
         """Expect: <message>message_level string</message>"""
         # xml[1] is a string
         return self._to_py(xml[1])  # type: ignore[return-value]
 
-    def _to_feedback(self, xml):
-        # type: (ET.Element) -> Text
+    def _to_feedback(self, xml: ET.Element) -> Text:
         """Expect:
         <feedback object="?" route="int">feedback_content</feedback>
         <feedback_content val="errormsg">loc string</feedback_content>
@@ -1131,16 +1077,14 @@ class XMLInterface85(XMLInterfaceBase):
             return ""
 
     # Coqtop Commands #
-    def init(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def init(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to initialize Coqtop.
         Args:
           option string - A Coq file to add to the LoadPath to do ?
         """
         return ("Init", self._make_call(encoding, "Init", children=None))
 
-    def _standardize_init(self, res):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+    def _standardize_init(self, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Standardize the info returned by 'Init'.
         Return:
           state_id: int - The current state id
@@ -1150,8 +1094,9 @@ class XMLInterface85(XMLInterfaceBase):
             res.val = val.id
         return res
 
-    def add(self, cmd, state, encoding="utf-8"):
-        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
+    def add(
+        self, cmd: Text, state: int, encoding: str = "utf-8"
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to advance Coqtop.
         Args:
           cmd: string - The command to evaluate
@@ -1168,8 +1113,7 @@ class XMLInterface85(XMLInterfaceBase):
             ),
         )
 
-    def _standardize_add(self, res):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+    def _standardize_add(self, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Standardize the info returned by 'Add'.
         Return:
           res_msg: str - Messages produced by 'Add'
@@ -1180,8 +1124,9 @@ class XMLInterface85(XMLInterfaceBase):
             res.val = {"res_msg": val[1][1], "state_id": val[0].id}
         return res
 
-    def edit_at(self, state, _steps, encoding="utf-8"):
-        # type: (int, int, str) -> Tuple[Text, Optional[bytes]]
+    def edit_at(
+        self, state: int, _steps: int, encoding: str = "utf-8"
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to move Coqtop to a specific location.
         Args:
           state_id: StateId - The state id to move to
@@ -1191,8 +1136,7 @@ class XMLInterface85(XMLInterfaceBase):
             self._make_call(encoding, "Edit_at", children=self.StateId(state)),
         )
 
-    def _standardize_edit_at(self, res):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+    def _standardize_edit_at(self, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Standardize the info returned by 'Edit_at'.
         Return:
           extra_steps: int - The number of additional steps rewound (ignored in >8.4)
@@ -1201,8 +1145,9 @@ class XMLInterface85(XMLInterfaceBase):
             res.val = 0
         return res
 
-    def query(self, query, state, encoding="utf-8"):
-        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
+    def query(
+        self, query: Text, state: int, encoding: str = "utf-8"
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to pose a query to Coqtop.
         Args:
           query: string - The query to evaluate
@@ -1213,16 +1158,14 @@ class XMLInterface85(XMLInterfaceBase):
             self._make_call(encoding, "Query", children=(query, self.StateId(state))),
         )
 
-    def goal(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def goal(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to check the current goal state.
         Args:
           _: unit - Empty arg
         """
         return ("Goal", self._make_call(encoding, "Goal", children=()))
 
-    def _standardize_goal(self, res):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+    def _standardize_goal(self, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Standardize the info returned by 'Goal'.
         Return:
           fg: list Goals - The current goals
@@ -1243,24 +1186,21 @@ class XMLInterface85(XMLInterfaceBase):
                 res.val = (fg, bg, shelved, given_up)
         return res
 
-    def status(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def status(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to check Coqtop's status.
         Args:
           force: bool - Force all pending evaluations
         """
         return ("Status", self._make_call(encoding, "Status", children=True))
 
-    def get_options(self, encoding="utf-8"):
-        # type: (str) -> Tuple[Text, Optional[bytes]]
+    def get_options(self, encoding: str = "utf-8") -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to check the state of Coqtop's options.
         Args:
           _: unit - Empty arg
         """
         return ("GetOptions", self._make_call(encoding, "GetOptions", children=()))
 
-    def _standardize_get_options(self, res):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+    def _standardize_get_options(self, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Standardize the info returned by 'GetOptions'.
         Return:
           opts: list (string * string * ?) - Triples of all option names,
@@ -1275,8 +1215,12 @@ class XMLInterface85(XMLInterfaceBase):
             res.val = opts
         return res
 
-    def set_options(self, option, val, encoding="utf-8"):
-        # type: (Text, Union[bool, int, Text, Tuple[None, str]], str) -> Tuple[Text, Optional[bytes]]
+    def set_options(
+        self,
+        option: Text,
+        val: Union[bool, int, Text, Tuple[None, str]],
+        encoding: str = "utf-8",
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to set one of Coqtop's options.
         Args:
           options: list (option_name * option_value) - The options to update and
@@ -1315,8 +1259,7 @@ class XMLInterface86(XMLInterface85):
         "diff.removed.bg",
     ]
 
-    def __init__(self, versions):
-        # type: (Tuple[int, ...]) -> None
+    def __init__(self, versions: Tuple[int, ...]) -> None:
         """Update conversion maps with new types."""
         super().__init__(versions)
 
@@ -1329,23 +1272,20 @@ class XMLInterface86(XMLInterface85):
 
         self._to_py_funcs.update({"richpp": self._to_richpp})
 
-    def _to_richpp(self, xml):
-        # type: (ET.Element) -> List[Tuple[Text, Optional[Text]]]
+    def _to_richpp(self, xml: ET.Element) -> List[Tuple[Text, Optional[Text]]]:
         """Expect: <richpp>richpp</richpp>"""
         return list(parse_tagged_tokens(self.richpp_tags, xml))
 
     # XML Parsing and Marshalling #
     # Overrides _to_message() from 8.5
-    def _to_message(self, xml):
-        # type: (ET.Element) -> Text
+    def _to_message(self, xml: ET.Element) -> Text:
         """Expect: <message>message_level (option ?) richpp</message>"""
         # TODO: see if option or message_level are useful
         # xml[2] is a string
         return self._to_py(xml[2])  # type: ignore[return-value]
 
     # Overrides _to_feedback() from 8.5
-    def _to_feedback(self, xml):
-        # type: (ET.Element) -> Text
+    def _to_feedback(self, xml: ET.Element) -> Text:
         """Expect:
         <feedback object="?" route="int">state_id feedback_content</feedback>
         <feedback_content val="message">message</feedback_content>
@@ -1365,8 +1305,7 @@ class XMLInterface87(XMLInterface86):
 
     RouteId = namedtuple("RouteId", ["id"])
 
-    def __init__(self, versions):
-        # type: (Tuple[int, ...]) -> None
+    def __init__(self, versions: Tuple[int, ...]) -> None:
         """Update conversion maps with new types."""
         super().__init__(versions)
 
@@ -1375,20 +1314,19 @@ class XMLInterface87(XMLInterface86):
         self._of_py_funcs.update({"RouteId": self._of_route_id})
 
     # XML Parsing and Marshalling #
-    def _to_route_id(self, xml):
-        # type: (ET.Element) -> RouteId
+    def _to_route_id(self, xml: ET.Element) -> RouteId:
         """Expect: <route_id val="int" />"""
         return self.RouteId(int(xml.get("val", 0)))
 
-    def _of_route_id(self, val):
-        # type: (RouteId) -> ET.Element
+    def _of_route_id(self, val: RouteId) -> ET.Element:
         """Expect: RouteId(int)"""
         return self._build_xml("route_id", str(val.id))
 
     # Coqtop Commands #
     # Overrides query() from 8.6
-    def query(self, query, state, encoding="utf-8"):
-        # type: (Text, int, str) -> Tuple[Text, Optional[bytes]]
+    def query(
+        self, query: Text, state: int, encoding: str = "utf-8"
+    ) -> Tuple[Text, Optional[bytes]]:
         """Create an XML string to pose a query to Coqtop.
         Args:
           route_id: RouteId - The route id ?
@@ -1412,8 +1350,7 @@ class XMLInterface88(XMLInterface87):
 class XMLInterface89(XMLInterface88):
     """The version 8.9.* XML interface."""
 
-    def __init__(self, versions):
-        # type: (Tuple[int, ...]) -> None
+    def __init__(self, versions: Tuple[int, ...]) -> None:
         """Update launch arguments."""
         super().__init__(versions)
 
@@ -1425,8 +1362,7 @@ class XMLInterface89(XMLInterface88):
 class XMLInterface810(XMLInterface89):
     """The version 8.10.* XML interface."""
 
-    def topfile(self, filename, args):
-        # type: (Text, Sequence[Text]) -> Tuple[Text, ...]
+    def topfile(self, filename: Text, args: Sequence[Text]) -> Tuple[Text, ...]:
         """The command to set the top-level module name."""
         return (
             ("-topfile", filename)
@@ -1445,15 +1381,13 @@ class XMLInterface812(XMLInterface811):
 
     OptionState = namedtuple("OptionState", ["sync", "depr", "value"])
 
-    def __init__(self, versions):
-        # type: (Tuple[int, ...]) -> None
+    def __init__(self, versions: Tuple[int, ...]) -> None:
         """Update conversion maps with new types."""
         super().__init__(versions)
 
         self._standardize_funcs.update({"GetOptions": self._standardize_get_options})
 
-    def _standardize_get_options(self, res):
-        # type: (Union[Ok, Err]) -> Union[Ok, Err]
+    def _standardize_get_options(self, res: Union[Ok, Err]) -> Union[Ok, Err]:
         """Standardize the info returned by 'GetOptions'.
         Return:
           opts: list (string * string * ?) - Triples of all option names,
@@ -1476,8 +1410,7 @@ class XMLInterface813(XMLInterface812):
 XMLInterfaceLatest = XMLInterface813
 
 
-def XMLInterface(version):
-    # type: (Text) -> XMLInterfaceBase
+def XMLInterface(version: Text) -> XMLInterfaceBase:
     """Return the appropriate XMLInterface class for the given version."""
     str_versions = version.replace("pl", ".").split(".")
 

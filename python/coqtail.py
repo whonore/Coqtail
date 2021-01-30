@@ -12,33 +12,29 @@ from collections import deque
 from itertools import islice, zip_longest
 from queue import Empty, Queue
 from socketserver import StreamRequestHandler, ThreadingTCPServer
+from typing import (
+    Any,
+    Callable,
+    DefaultDict,
+    Deque,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Text,
+    Tuple,
+    Union,
+)
 
 import coqtop as CT
 
-# For Mypy
-try:
-    from typing import (
-        Any,
-        Callable,
-        DefaultDict,
-        Deque,
-        Dict,
-        Iterable,
-        Iterator,
-        List,
-        Mapping,
-        Optional,
-        Sequence,
-        Text,
-        Tuple,
-        Union,
-    )
-except ImportError:
-    pass
 
-
-def lines_and_highlights(tagged_tokens, line_no):
-    # type: (Union[Text, Iterable[Tuple[Text, Optional[Text]]]], int) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]
+def lines_and_highlights(
+    tagged_tokens: Union[Text, Iterable[Tuple[Text, Optional[Text]]]], line_no: int
+) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]:
     """Converts a sequence of tagged tokens into lines and higlight positions.
 
     Note that matchaddpos()'s highlight positions are 1-indexed,
@@ -78,8 +74,7 @@ def lines_and_highlights(tagged_tokens, line_no):
 class UnmatchedError(Exception):
     """An unmatched comment or string was found."""
 
-    def __init__(self, token, loc):
-        # type: (Text, Tuple[int, int]) -> None
+    def __init__(self, token: Text, loc: Tuple[int, int]) -> None:
         super().__init__("Found unmatched {}.".format(token))
         line, col = loc
         self.range = (loc, (line, col + len(token)))
@@ -93,8 +88,7 @@ class NoDotError(Exception):
 class Coqtail:
     """Manage Coqtop interfaces and auxiliary buffers for each Coq file."""
 
-    def __init__(self, handler):
-        # type: (CoqtailHandler) -> None
+    def __init__(self, handler: CoqtailHandler) -> None:
         """Initialize variables.
 
         coqtop - The Coqtop interface
@@ -120,8 +114,7 @@ class Coqtail:
         self.goal_msg = []  # type: List[Text]
         self.goal_hls = []  # type: List[Tuple[int, int, int, Text]]
 
-    def sync(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[Text]
+    def sync(self, opts: Mapping[str, Any]) -> Optional[Text]:
         """Check if the buffer has been updated and rewind Coqtop if so."""
         err = None
         newchange = self.changedtick
@@ -150,8 +143,14 @@ class Coqtail:
         return err
 
     # Coqtop Interface #
-    def start(self, version, coq_path, coq_prog, args, opts):
-        # type: (str, str, str, List[str], Mapping[str, Any]) -> Optional[Text]
+    def start(
+        self,
+        version: str,
+        coq_path: str,
+        coq_prog: str,
+        args: List[str],
+        opts: Mapping[str, Any],
+    ) -> Optional[Text]:
         """Start a new Coqtop instance."""
         errmsg = []  # type: List[Text]
 
@@ -174,13 +173,11 @@ class Coqtail:
             return "Failed to launch Coq. " + ". ".join(errmsg)
         return None
 
-    def stop(self, opts):
-        # type: (Mapping[str, Any]) -> None
+    def stop(self, opts: Mapping[str, Any]) -> None:
         """Stop Coqtop."""
         self.coqtop.stop()
 
-    def step(self, steps, opts):
-        # type: (int, Mapping[str, Any]) -> Optional[str]
+    def step(self, steps: int, opts: Mapping[str, Any]) -> Optional[str]:
         """Advance Coq by 'steps' sentences."""
         self.sync(opts=opts)
 
@@ -213,8 +210,7 @@ class Coqtail:
 
         return err
 
-    def rewind(self, steps, opts):
-        # type: (int, Mapping[str, Any]) -> Optional[Text]
+    def rewind(self, steps: int, opts: Mapping[str, Any]) -> Optional[Text]:
         """Rewind Coq by 'steps' sentences."""
         if steps < 1 or self.endpoints == []:
             return None
@@ -233,8 +229,7 @@ class Coqtail:
         self.refresh(opts=opts)
         return None
 
-    def to_line(self, line, col, opts):
-        # type: (int, int, Mapping[str, Any]) -> Optional[Text]
+    def to_line(self, line: int, col: int, opts: Mapping[str, Any]) -> Optional[Text]:
         """Advance/rewind Coq to the specified position."""
         self.sync(opts=opts)
 
@@ -272,13 +267,13 @@ class Coqtail:
 
             return err
 
-    def to_top(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[Text]
+    def to_top(self, opts: Mapping[str, Any]) -> Optional[Text]:
         """Rewind to the beginning of the file."""
         return self.rewind_to(0, 1, opts=opts)
 
-    def query(self, args, opts, silent=False):
-        # type: (List[Text], Mapping[str, Any], bool) -> None
+    def query(
+        self, args: List[Text], opts: Mapping[str, Any], silent: bool = False
+    ) -> None:
         """Forward Coq query to Coqtop interface."""
         success, msg, stderr = self.do_query(" ".join(args), opts=opts)
 
@@ -287,8 +282,7 @@ class Coqtail:
         self.print_stderr(stderr)
         self.refresh(goals=False, opts=opts)
 
-    def endpoint(self, opts):
-        # type: (Mapping[str, Any]) -> Tuple[int, int]
+    def endpoint(self, opts: Mapping[str, Any]) -> Tuple[int, int]:
         """Return the end of the Coq checked section."""
         # Get the location of the last '.'
         line, col = self.endpoints[-1] if self.endpoints != [] else (0, 1)
@@ -304,8 +298,9 @@ class Coqtail:
         return None
 
     # Helpers #
-    def send_until_fail(self, buffer, opts):
-        # type: (Sequence[bytes], Mapping[str, Any]) -> Tuple[Optional[Tuple[int, int]], Optional[str]]
+    def send_until_fail(
+        self, buffer: Sequence[bytes], opts: Mapping[str, Any]
+    ) -> Tuple[Optional[Tuple[int, int]], Optional[str]]:
         """Send all sentences in 'send_queue' until an error is encountered."""
         scroll = len(self.send_queue) > 1
         failed_at = None
@@ -358,15 +353,13 @@ class Coqtail:
         self.refresh(opts=opts, scroll=scroll)
         return failed_at, None
 
-    def rewind_to(self, line, col, opts):
-        # type: (int, int, Mapping[str, Any]) -> Optional[Text]
+    def rewind_to(self, line: int, col: int, opts: Mapping[str, Any]) -> Optional[Text]:
         """Rewind to a specific location."""
         # Count the number of endpoints after the specified location
         steps_too_far = sum(pos >= (line, col) for pos in self.endpoints)
         return self.rewind(steps_too_far, opts=opts)
 
-    def do_query(self, query, opts):
-        # type: (Text, Mapping[str, Any]) -> Tuple[bool, Text, Text]
+    def do_query(self, query: Text, opts: Mapping[str, Any]) -> Tuple[bool, Text, Text]:
         """Execute a query and return the reply."""
         # Ensure that the query ends in '.'
         if not query.endswith("."):
@@ -384,8 +377,9 @@ class Coqtail:
 
         return success, msg, stderr
 
-    def qual_name(self, target, opts):
-        # type: (Text, Mapping[str, Any]) -> Optional[Tuple[Text, Text]]
+    def qual_name(
+        self, target: Text, opts: Mapping[str, Any]
+    ) -> Optional[Tuple[Text, Text]]:
         """Find the fully qualified name of 'target' using 'Locate'."""
         success, locate, _ = self.do_query("Locate {}.".format(target), opts=opts)
         if not success:
@@ -416,8 +410,7 @@ class Coqtail:
 
         return qual_tgt, tgt_type
 
-    def find_lib(self, lib, opts):
-        # type: (Text, Mapping[str, Any]) -> Optional[Text]
+    def find_lib(self, lib: Text, opts: Mapping[str, Any]) -> Optional[Text]:
         """Find the path to the .v file corresponding to the libary 'lib'."""
         success, locate, _ = self.do_query("Locate Library {}.".format(lib), opts=opts)
         if not success:
@@ -426,8 +419,9 @@ class Coqtail:
         path = re.search(r"file\s+(.*)\.vo", locate)
         return path.group(1) if path is not None else None
 
-    def find_qual(self, qual_tgt, tgt_type, opts):
-        # type: (Text, Text, Mapping[str, Any]) -> Optional[Tuple[Text, Text]]
+    def find_qual(
+        self, qual_tgt: Text, tgt_type: Text, opts: Mapping[str, Any]
+    ) -> Optional[Tuple[Text, Text]]:
         """Find the Coq file containing the qualified name 'qual_tgt'."""
         qual_comps = qual_tgt.split(".")
         base_name = qual_comps[-1]
@@ -446,8 +440,9 @@ class Coqtail:
 
         return None
 
-    def find_def(self, target, opts):
-        # type: (Text, Mapping[str, Any]) -> Optional[Tuple[Text, List[Text]]]
+    def find_def(
+        self, target: Text, opts: Mapping[str, Any]
+    ) -> Optional[Tuple[Text, List[Text]]]:
         """Create patterns to jump to the definition of 'target'."""
         # Get the fully qualified version of 'target'
         qual = self.qual_name(target, opts=opts)
@@ -463,8 +458,7 @@ class Coqtail:
 
         return tgt_file, get_searches(tgt_type, tgt_name)
 
-    def next_bullet(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[Text]
+    def next_bullet(self, opts: Mapping[str, Any]) -> Optional[Text]:
         """Check the bullet expected for the next subgoal."""
         success, show, _ = self.do_query("Show.", opts=opts)
         if not success:
@@ -474,8 +468,13 @@ class Coqtail:
         return bmatch.group(1) if bmatch is not None else None
 
     # Goals and Infos #
-    def refresh(self, opts, goals=True, force=True, scroll=False):
-        # type: (Mapping[str, Any], bool, bool, bool) -> None
+    def refresh(
+        self,
+        opts: Mapping[str, Any],
+        goals: bool = True,
+        force: bool = True,
+        scroll: bool = False,
+    ) -> None:
         """Refresh the auxiliary panels."""
         if goals:
             newgoals, newinfo = self.get_goals(opts=opts)
@@ -487,8 +486,9 @@ class Coqtail:
                 self.set_goal(clear=True)
         self.handler.refresh(goals=goals, force=force, scroll=scroll)
 
-    def get_goals(self, opts):
-        # type: (Mapping[str, Any]) -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
+    def get_goals(
+        self, opts: Mapping[str, Any]
+    ) -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]:
         """Get the current goals."""
         try:
             _, msg, goals, stderr = self.coqtop.goals(timeout=opts["timeout"])
@@ -497,8 +497,11 @@ class Coqtail:
         except CT.CoqtopError as e:
             return None, str(e)
 
-    def pp_goals(self, goals, opts):
-        # type: (Tuple[List[Any], List[Any], List[Any], List[Any]], Mapping[str, Any]) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]
+    def pp_goals(
+        self,
+        goals: Tuple[List[Any], List[Any], List[Any], List[Any]],
+        opts: Mapping[str, Any],
+    ) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]:
         """Pretty print the goals."""
         lines = []  # type: List[Text]
         highlights = []  # type: List[Tuple[int, int, int, Text]]
@@ -567,16 +570,18 @@ class Coqtail:
 
         return lines, highlights
 
-    def set_goal(self, msg=None, clear=False):
-        # type: (Optional[Tuple[List[Text], List[Tuple[int, int, int, Text]]]], bool) -> None
+    def set_goal(
+        self,
+        msg: Optional[Tuple[List[Text], List[Tuple[int, int, int, Text]]]] = None,
+        clear: bool = False,
+    ) -> None:
         """Update the goal message."""
         if msg is not None:
             self.goal_msg, self.goal_hls = msg
         if clear or "".join(self.goal_msg) == "":
             self.goal_msg, self.goal_hls = ["No goals."], []
 
-    def set_info(self, msg=None, reset=True):
-        # type: (Optional[Text], bool) -> None
+    def set_info(self, msg: Optional[Text] = None, reset: bool = True) -> None:
         """Update the info message."""
         if msg is not None:
             info = msg.split("\n")
@@ -585,15 +590,13 @@ class Coqtail:
             else:
                 self.info_msg += [""] + info
 
-    def print_stderr(self, err):
-        # type: (Text) -> None
+    def print_stderr(self, err: Text) -> None:
         """Display a message from Coqtop stderr."""
         if err != "":
             self.set_info("From stderr: " + err, reset=False)
 
     @property
-    def highlights(self):
-        # type: () -> Dict[str, Optional[str]]
+    def highlights(self) -> Dict[str, Optional[str]]:
         """Vim match patterns for highlighting."""
         matches = {
             "coqtail_checked": None,
@@ -616,8 +619,9 @@ class Coqtail:
 
         return matches
 
-    def panels(self, goals=True):
-        # type: (bool) -> Mapping[str, Tuple[List[Text], List[Tuple[int, int, int, Text]]]]
+    def panels(
+        self, goals: bool = True
+    ) -> Mapping[str, Tuple[List[Text], List[Tuple[int, int, int, Text]]]]:
         """The auxiliary panel content."""
         panels = {
             "info": (self.info_msg, [])
@@ -626,8 +630,14 @@ class Coqtail:
             panels["goal"] = (self.goal_msg, self.goal_hls)
         return panels
 
-    def splash(self, version, width, height, deprecated, opts):
-        # type: (Text, int, int, bool, Mapping[str, Any]) -> None
+    def splash(
+        self,
+        version: Text,
+        width: int,
+        height: int,
+        deprecated: bool,
+        opts: Mapping[str, Any],
+    ) -> None:
         """Display the logo in the info panel."""
         msg = [
             "~~~~~~~~~~~~~~~~~~~~~~~",
@@ -658,8 +668,7 @@ class Coqtail:
         top_pad = [""] * ((height // 2) - (len(msg) // 2 + 1))
         self.info_msg = top_pad + msg
 
-    def toggle_debug(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[str]
+    def toggle_debug(self, opts: Mapping[str, Any]) -> Optional[str]:
         """Enable or disable logging of debug messages."""
         log = self.coqtop.toggle_debug()
         if log is None:
@@ -675,26 +684,22 @@ class Coqtail:
 
     # Vim Helpers #
     @property
-    def changedtick(self):
-        # type: () -> int
+    def changedtick(self) -> int:
         """The value of changedtick for this buffer."""
         return self.handler.vimvar("changedtick")  # type: ignore
 
     @property
-    def log(self):
-        # type: () -> Text
+    def log(self) -> Text:
         """The name of this buffer's debug log."""
         return self.handler.vimvar("coqtail_log_name")  # type: ignore[no-any-return]
 
     @log.setter
-    def log(self, log):
-        # type: (Text) -> None
+    def log(self, log: Text) -> None:
         """The name of this buffer's debug log."""
         self.handler.vimvar("coqtail_log_name", log)
 
     @property
-    def buffer(self):
-        # type: () -> Sequence[bytes]
+    def buffer(self) -> Sequence[bytes]:
         """The contents of this buffer."""
         lines = self.handler.vimcall(
             "getbufline",
@@ -724,8 +729,7 @@ class CoqtailHandler(StreamRequestHandler):
     # Is the client synchronous
     sync = False
 
-    def parse_msgs(self):
-        # type: () -> None
+    def parse_msgs(self) -> None:
         """Parse messages sent over a Vim channel."""
         while not self.closed:
             try:
@@ -749,8 +753,7 @@ class CoqtailHandler(StreamRequestHandler):
                 with self.resp_lk:
                     self.resps[-msg_id].put((msg_id, data))
 
-    def get_msg(self, msg_id=None):
-        # type: (Optional[int]) -> Sequence[Any]
+    def get_msg(self, msg_id: Optional[int] = None) -> Sequence[Any]:
         """Check for any pending messages from Vim."""
         if msg_id is None:
             queue = self.reqs  # type: Queue[Any]
@@ -764,8 +767,7 @@ class CoqtailHandler(StreamRequestHandler):
                 pass
         raise EOFError
 
-    def handle(self):
-        # type: () -> None
+    def handle(self) -> None:
         """Forward requests from Vim to the appropriate Coqtail function."""
         self.coq = Coqtail(self)
         self.closed = False
@@ -820,8 +822,7 @@ class CoqtailHandler(StreamRequestHandler):
             if func == "stop":
                 break
 
-    def vimeval(self, expr, wait=True):
-        # type: (List[Any], bool) -> Any
+    def vimeval(self, expr: List[Any], wait: bool = True) -> Any:
         """Send Vim a request."""
         if wait:
             expr += [-self.msg_id]
@@ -833,21 +834,20 @@ class CoqtailHandler(StreamRequestHandler):
             return res
         return None
 
-    def vimcall(self, expr, wait, *args):
-        # type: (str, bool, *Any) -> Any
+    def vimcall(self, expr: str, wait: bool, *args: Any) -> Any:
         """Request Vim to evaluate a function call."""
         return self.vimeval(["call", expr, args], wait=wait)
 
-    def vimvar(self, var, val=None):
-        # type: (str, Optional[Any]) -> Any
+    def vimvar(self, var: str, val: Optional[Any] = None) -> Any:
         """Get or set the value of a Vim variable."""
         if val is None:
             return self.vimcall("getbufvar", True, self.bnum, var)
         else:
             return self.vimcall("setbufvar", True, self.bnum, var, val)
 
-    def refresh(self, goals=True, force=True, scroll=False):
-        # type: (bool, bool, bool) -> None
+    def refresh(
+        self, goals: bool = True, force: bool = True, scroll: bool = False
+    ) -> None:
         """Refresh the highlighting and auxiliary panels."""
         if not force:
             cur_time = time.time()
@@ -863,8 +863,7 @@ class CoqtailHandler(StreamRequestHandler):
                 scroll,
             )
 
-    def interrupt(self):
-        # type: () -> None
+    def interrupt(self) -> None:
         """Interrupt Coqtop and clear the request queue."""
         if self.working:
             self.working = False
@@ -884,8 +883,7 @@ class CoqtailServer:
     serv = None
 
     @staticmethod
-    def start_server(sync):
-        # type: (bool) -> int
+    def start_server(sync: bool) -> int:
         """Start the TCP server."""
         # N.B. port = 0 chooses any arbitrary open one
         CoqtailHandler.sync = sync
@@ -900,8 +898,7 @@ class CoqtailServer:
         return port
 
     @staticmethod
-    def stop_server():
-        # type: () -> None
+    def stop_server() -> None:
         """Stop the TCP server."""
         if CoqtailServer.serv is not None:
             CoqtailServer.serv.shutdown()
@@ -919,8 +916,7 @@ class ChannelManager:
     msg_id = 1
 
     @staticmethod
-    def open(address):
-        # type: (str) -> int
+    def open(address: str) -> int:
         """Open a channel."""
         ch_id = ChannelManager.next_id
         ChannelManager.next_id += 1
@@ -932,8 +928,7 @@ class ChannelManager:
         return ch_id
 
     @staticmethod
-    def close(handle):
-        # type: (int) -> None
+    def close(handle: int) -> None:
         """Close a channel."""
         try:
             ChannelManager.channels[handle].close()
@@ -944,14 +939,18 @@ class ChannelManager:
             pass
 
     @staticmethod
-    def status(handle):
-        # type: (int) -> str
+    def status(handle: int) -> str:
         """Check if a channel is open."""
         return "open" if handle in ChannelManager.channels else "closed"
 
     @staticmethod
-    def send(handle, session, expr, reply=None, returns=True):
-        # type: (int, Optional[int], str, Optional[int], bool) -> bool
+    def send(
+        handle: int,
+        session: Optional[int],
+        expr: str,
+        reply: Optional[int] = None,
+        returns: bool = True,
+    ) -> bool:
         """Send a command request or reply on a channel."""
         try:
             ch = ChannelManager.channels[handle]
@@ -979,14 +978,12 @@ class ChannelManager:
         return True
 
     @staticmethod
-    def poll(handle):
-        # type: (int) -> Optional[Text]
+    def poll(handle: int) -> Optional[Text]:
         """Wait for a response on a channel."""
         return ChannelManager.results[handle]
 
     @staticmethod
-    def _recv(handle):
-        # type: (int) -> None
+    def _recv(handle: int) -> None:
         """Wait for a response on a channel."""
         data = []
         while True:
@@ -1009,8 +1006,7 @@ class ChannelManager:
 # TODO: could search more intelligently by searching only within relevant
 # section/module, or sometimes by looking at the type (for constructors for
 # example, or record projections)
-def get_searches(tgt_type, tgt_name):
-    # type: (Text, Text) -> List[Text]
+def get_searches(tgt_type: Text, tgt_name: Text) -> List[Text]:
     """Construct a search expression given an object type and name."""
     auto_names = [
         ("Constructor", "Inductive", "Build_(.*)", 1),
@@ -1065,8 +1061,7 @@ def get_searches(tgt_type, tgt_name):
 
 
 # Finding Start and End of Coq Chunks #
-def _pos_from_offset(col, msg, offset):
-    # type: (int, bytes, int) -> Tuple[int, int]
+def _pos_from_offset(col: int, msg: bytes, offset: int) -> Tuple[int, int]:
     """Calculate the line and column of a given offset."""
     msg = msg[:offset]
     lines = msg.split(b"\n")
@@ -1077,8 +1072,9 @@ def _pos_from_offset(col, msg, offset):
     return (line, col)
 
 
-def _between(buf, start, end):
-    # type: (Sequence[bytes], Tuple[int, int], Tuple[int, int]) -> bytes
+def _between(
+    buf: Sequence[bytes], start: Tuple[int, int], end: Tuple[int, int]
+) -> bytes:
     """Return the text between a given start and end point."""
     sline, scol = start
     eline, ecol = end
@@ -1092,15 +1088,17 @@ def _between(buf, start, end):
     return b"\n".join(lines)
 
 
-def _get_message_range(lines, after):
-    # type: (Sequence[bytes], Tuple[int, int]) -> Mapping[str, Tuple[int, int]]
+def _get_message_range(
+    lines: Sequence[bytes], after: Tuple[int, int]
+) -> Mapping[str, Tuple[int, int]]:
     """Return the next sentence to send after a given point."""
     end_pos = _find_next_sentence(lines, *after)
     return {"start": after, "stop": end_pos}
 
 
-def _find_next_sentence(lines, sline, scol):
-    # type: (Sequence[bytes], int, int) -> Tuple[int, int]
+def _find_next_sentence(
+    lines: Sequence[bytes], sline: int, scol: int
+) -> Tuple[int, int]:
     """Find the next sentence to send to Coq."""
     bullets = (ord("{"), ord("}"), ord("-"), ord("+"), ord("*"))
 
@@ -1176,8 +1174,7 @@ def _find_next_sentence(lines, sline, scol):
     return _find_dot_after(lines, line, col)
 
 
-def _find_dot_after(lines, sline, scol):
-    # type: (Sequence[bytes], int, int) -> Tuple[int, int]
+def _find_dot_after(lines: Sequence[bytes], sline: int, scol: int) -> Tuple[int, int]:
     """Find the next '.' after a given point."""
     max_line = len(lines)
 
@@ -1221,33 +1218,37 @@ def _find_dot_after(lines, sline, scol):
     raise NoDotError()
 
 
-def _skip_str(lines, sline, scol):
-    # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
+def _skip_str(
+    lines: Sequence[bytes], sline: int, scol: int
+) -> Optional[Tuple[int, int]]:
     """Skip the next block contained in " "."""
     return _skip_block(lines, sline, scol, b'"', b'"')
 
 
-def _skip_comment(lines, sline, scol):
-    # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
+def _skip_comment(
+    lines: Sequence[bytes], sline: int, scol: int
+) -> Optional[Tuple[int, int]]:
     """Skip the next block contained in (* *)."""
     return _skip_block(lines, sline, scol, b"(*", b"*)")
 
 
-def _skip_attribute(lines, sline, scol):
-    # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
+def _skip_attribute(
+    lines: Sequence[bytes], sline: int, scol: int
+) -> Optional[Tuple[int, int]]:
     """Skip the next block contained in #[ ]."""
     return _skip_block(lines, sline, scol, b"#[", b"]", {b'"': _skip_str})
 
 
 def _skip_block(
-    lines,  # type: Sequence[bytes]
-    sline,  # type: int
-    scol,  # type: int
-    sstr,  # type: bytes
-    estr,  # type: bytes
-    skips=None,  # type: Optional[Mapping[bytes, Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]]]
-):
-    # type: (...) -> Optional[Tuple[int, int]]
+    lines: Sequence[bytes],
+    sline: int,
+    scol: int,
+    sstr: bytes,
+    estr: bytes,
+    skips: Optional[
+        Mapping[bytes, Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]]
+    ] = None,
+) -> Optional[Tuple[int, int]]:
     """A generic function to skip the next block contained in sstr estr."""
     assert lines[sline].startswith(sstr, scol)
     nesting = 1
@@ -1307,8 +1308,7 @@ class Matcher:
     class _Matcher:
         """Construct regexes for a row or column."""
 
-        def __getitem__(self, key):
-            # type: (Tuple[Union[int, slice], str]) -> str
+        def __getitem__(self, key: Tuple[Union[int, slice], str]) -> str:
             """Construct the regex."""
             range, type = key
             match = []
@@ -1321,13 +1321,11 @@ class Matcher:
                 match.append(r"\%{}{}".format(range, type))
             return "".join(match)
 
-    def __init__(self):
-        # type: () -> None
+    def __init__(self) -> None:
         """Initialize the row/column matcher."""
         self._matcher = Matcher._Matcher()
 
-    def __getitem__(self, key):
-        # type: (Tuple[slice, slice]) -> str
+    def __getitem__(self, key: Tuple[slice, slice]) -> str:
         """Construct the regex.
 
         'key' is [line-start : line-end, col-start : col-end]
@@ -1358,8 +1356,7 @@ class Matcher:
         )
 
     @staticmethod
-    def shift_slice(s):
-        # type: (slice) -> slice
+    def shift_slice(s: slice) -> slice:
         """Shift a 0-indexed to 1-indexed slice."""
         return slice(
             s.start + 1 if s.start is not None else 1,
@@ -1371,8 +1368,7 @@ matcher = Matcher()
 
 
 # Misc #
-def _strip_comments(msg):
-    # type: (bytes) -> Tuple[bytes, List[List[int]]]
+def _strip_comments(msg: bytes) -> Tuple[bytes, List[List[int]]]:
     """Remove all comments from 'msg'."""
     # N.B. Coqtop will ignore comments, but it makes it easier to inspect
     # commands in Coqtail (e.g. options in coqtop.do_option) if we remove
@@ -1408,8 +1404,9 @@ def _strip_comments(msg):
     return b" ".join(nocom), com_pos
 
 
-def _find_diff(x, y, stop=None):
-    # type: (Sequence[Any], Sequence[Any], Optional[int]) -> Optional[int]
+def _find_diff(
+    x: Sequence[Any], y: Sequence[Any], stop: Optional[int] = None
+) -> Optional[int]:
     """Locate the first differing element in 'x' and 'y' up to 'stop'."""
     seq = enumerate(zip_longest(x, y))  # type: Iterator[Tuple[int, Any]]
     if stop is not None:
@@ -1417,11 +1414,9 @@ def _find_diff(x, y, stop=None):
     return next((i for i, vs in seq if vs[0] != vs[1]), None)
 
 
-def _char_isdigit(c):
-    # type: (int) -> bool
+def _char_isdigit(c: int) -> bool:
     return ord("0") <= c <= ord("9")
 
 
-def _char_isspace(c):
-    # type: (int) -> bool
+def _char_isspace(c: int) -> bool:
     return c in b" \t\n\r\x0b\f"  # type: ignore[operator]
