@@ -105,9 +105,7 @@ class Coqtop:
 
             # Spawn threads to monitor Coqtop's stdout and stderr
             for f in (self.capture_out, self.capture_err, self.capture_dead):
-                read_thread = threading.Thread(target=f)
-                read_thread.daemon = True
-                read_thread.start()
+                threading.Thread(target=f, daemon=True).start()
 
             # Initialize Coqtop
             response, err = self.call(self.xml.init(), timeout=timeout)
@@ -372,14 +370,18 @@ class Coqtop:
         got_response = threading.Event()
         timed_out = threading.Event()
         timeout_thread = threading.Thread(
-            target=self.timeout_thread, args=(timeout, got_response, timed_out)
+            target=self.timeout_thread,
+            args=(timeout, got_response, timed_out),
+            daemon=True,
         )
-        timeout_thread.daemon = True
 
         # Start a thread to get Coqtop's response
         res_ref = Ref()
-        answer_thread = threading.Thread(target=self.get_answer, args=(res_ref,))
-        answer_thread.daemon = True
+        answer_thread = threading.Thread(
+            target=self.get_answer,
+            args=(res_ref,),
+            daemon=True,
+        )
 
         # Start threads and wait for Coqtop to finish
         timeout_thread.start()

@@ -785,9 +785,7 @@ class CoqtailHandler(StreamRequestHandler):
         self.resps: DefaultDict[int, ResQueue] = ddict(Queue)
         self.resp_lk = threading.Lock()
 
-        read_thread = threading.Thread(target=self.parse_msgs)
-        read_thread.daemon = True
-        read_thread.start()
+        threading.Thread(target=self.parse_msgs, daemon=True).start()
 
         while not self.closed:
             try:
@@ -902,9 +900,7 @@ class CoqtailServer:
         CoqtailServer.serv.daemon_threads = True
         _, port = CoqtailServer.serv.server_address
 
-        serv_thread = threading.Thread(target=CoqtailServer.serv.serve_forever)
-        serv_thread.daemon = True
-        serv_thread.start()
+        threading.Thread(target=CoqtailServer.serv.serve_forever, daemon=True).start()
 
         return port
 
@@ -983,9 +979,11 @@ class ChannelManager:
 
         if returns:
             ChannelManager.results[handle] = None
-            recv_thread = threading.Thread(target=ChannelManager._recv, args=(handle,))
-            recv_thread.daemon = True
-            recv_thread.start()
+            threading.Thread(
+                target=ChannelManager._recv,
+                args=(handle,),
+                daemon=True,
+            ).start()
         return True
 
     @staticmethod
