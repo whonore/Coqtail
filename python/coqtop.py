@@ -11,7 +11,7 @@ import threading
 import time
 from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
-from typing import IO, Any, Iterator, List, Optional, Text, Tuple, Union
+from typing import IO, Any, Iterator, List, Optional, Tuple, Union
 
 from xmlInterface import (
     TIMEOUT_ERR,
@@ -63,7 +63,7 @@ class Coqtop:
         self.stopping = False
 
         # Debugging
-        self.log = None  # type: Optional[IO[Text]]
+        self.log = None  # type: Optional[IO[str]]
         self.handler = logging.NullHandler()  # type: logging.Handler
         self.logger = logging.getLogger(str(id(self)))
         self.logger.addHandler(self.handler)
@@ -75,10 +75,10 @@ class Coqtop:
         version: str,
         coq_path: Optional[str],
         coq_prog: Optional[str],
-        filename: Text,
+        filename: str,
         args: List[str],
         timeout: Optional[int] = None,
-    ) -> Tuple[Optional[Text], Text]:
+    ) -> Tuple[Optional[str], str]:
         """Launch the Coqtop process."""
         assert self.coqtop is None
 
@@ -147,10 +147,10 @@ class Coqtop:
 
     def advance(
         self,
-        cmd: Text,
+        cmd: str,
         encoding: str = "utf-8",
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, Text, Optional[Tuple[int, int]], Text]:
+    ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
         """Advance Coqtop by sending 'cmd'."""
         assert self.xml is not None
         self.logger.debug("advance: %s", cmd)
@@ -183,7 +183,7 @@ class Coqtop:
 
         return True, msgs, None, err
 
-    def rewind(self, steps: int = 1) -> Tuple[bool, Text, Optional[int], Text]:
+    def rewind(self, steps: int = 1) -> Tuple[bool, str, Optional[int], str]:
         """Go back 'steps' states."""
         assert self.xml is not None
         self.logger.debug("rewind: %d", steps)
@@ -213,11 +213,11 @@ class Coqtop:
 
     def query(
         self,
-        cmd: Text,
+        cmd: str,
         in_script: bool,
         encoding: str = "utf-8",
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, Text, Optional[Tuple[int, int]], Text]:
+    ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
         """Query Coqtop with 'cmd'."""
         assert self.xml is not None
         self.logger.debug("query: %s", cmd)
@@ -242,7 +242,7 @@ class Coqtop:
     def goals(
         self, timeout: Optional[int] = None
     ) -> Tuple[
-        bool, Text, Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text
+        bool, str, Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], str
     ]:
         """Get the current set of hypotheses and goals."""
         assert self.xml is not None
@@ -258,11 +258,11 @@ class Coqtop:
 
     def do_option(
         self,
-        cmd: Text,
+        cmd: str,
         in_script: bool,
         encoding: str = "utf-8",
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, Text, Optional[Tuple[int, int]], Text]:
+    ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
         """Set or get an option."""
         assert self.xml is not None
         self.logger.debug("do_option: %s", cmd)
@@ -279,7 +279,7 @@ class Coqtop:
                 ]
 
                 if optval != []:
-                    ret = "{}: {}".format(optval[0][1], optval[0][0])  # type: Text
+                    ret = "{}: {}".format(optval[0][1], optval[0][0])  # type: str
                 else:
                     ret = "Invalid option name"
         else:
@@ -306,12 +306,12 @@ class Coqtop:
 
     def dispatch(
         self,
-        cmd: Text,
-        cmd_no_comment: Optional[Text] = None,
+        cmd: str,
+        cmd_no_comment: Optional[str] = None,
         in_script: bool = True,
         encoding: str = "utf-8",
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, Text, Optional[Tuple[int, int]], Text]:
+    ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
         """Decide whether 'cmd' is setting/getting an option, a query, or a
         regular command.
         """
@@ -330,8 +330,8 @@ class Coqtop:
 
     # Interacting with Coqtop #
     def call(
-        self, cmdtype_msg: Tuple[Text, Optional[bytes]], timeout: Optional[int] = None
-    ) -> Tuple[Union[Ok, Err], Text]:
+        self, cmdtype_msg: Tuple[str, Optional[bytes]], timeout: Optional[int] = None
+    ) -> Tuple[Union[Ok, Err], str]:
         """Send 'msg' to the Coqtop process and wait for the response."""
         assert self.xml is not None
         # Check if Coqtop has stopped
@@ -439,7 +439,7 @@ class Coqtop:
         for _ in Coqtop.drain_queue(self.out_q):
             pass
 
-    def collect_err(self) -> Text:
+    def collect_err(self) -> str:
         """Pop and concatenate everything in 'err_q'."""
         return b"".join(Coqtop.drain_queue(self.err_q)).decode("utf-8")
 
@@ -511,7 +511,7 @@ class Coqtop:
             # Create unique log file
             pre = "coqtop_{}_".format(datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
             fmt = logging.Formatter("%(asctime)s: %(message)s")
-            # Python 2 says _TemporaryFileWrapper is incompatible with IO[Text]
+            # Python 2 says _TemporaryFileWrapper is incompatible with IO[str]
             self.log = NamedTemporaryFile(mode="w", prefix=pre, delete=False)  # type: ignore[assignment]
             self.handler = logging.StreamHandler(self.log)
             self.handler.setFormatter(fmt)

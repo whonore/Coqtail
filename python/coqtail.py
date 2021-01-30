@@ -24,7 +24,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Text,
     Tuple,
     Union,
 )
@@ -33,8 +32,8 @@ import coqtop as CT
 
 
 def lines_and_highlights(
-    tagged_tokens: Union[Text, Iterable[Tuple[Text, Optional[Text]]]], line_no: int
-) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]:
+    tagged_tokens: Union[str, Iterable[Tuple[str, Optional[str]]]], line_no: int
+) -> Tuple[List[str], List[Tuple[int, int, int, str]]]:
     """Converts a sequence of tagged tokens into lines and higlight positions.
 
     Note that matchaddpos()'s highlight positions are 1-indexed,
@@ -45,8 +44,8 @@ def lines_and_highlights(
     if isinstance(tagged_tokens, str):
         return tagged_tokens.splitlines(), []
 
-    lines = []  # type: List[Text]
-    highlights = []  # type: List[Tuple[int, int, int, Text]]
+    lines = []  # type: List[str]
+    highlights = []  # type: List[Tuple[int, int, int, str]]
     line_no += 1  # Convert to 1-indexed per matchaddpos()'s spec
     line, index = "", 1
 
@@ -74,7 +73,7 @@ def lines_and_highlights(
 class UnmatchedError(Exception):
     """An unmatched comment or string was found."""
 
-    def __init__(self, token: Text, loc: Tuple[int, int]) -> None:
+    def __init__(self, token: str, loc: Tuple[int, int]) -> None:
         super().__init__("Found unmatched {}.".format(token))
         line, col = loc
         self.range = (loc, (line, col + len(token)))
@@ -110,11 +109,11 @@ class Coqtail:
         self.endpoints = []  # type: List[Tuple[int, int]]
         self.send_queue = deque()  # type: Deque[Mapping[str, Tuple[int, int]]]
         self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
-        self.info_msg = []  # type: List[Text]
-        self.goal_msg = []  # type: List[Text]
-        self.goal_hls = []  # type: List[Tuple[int, int, int, Text]]
+        self.info_msg = []  # type: List[str]
+        self.goal_msg = []  # type: List[str]
+        self.goal_hls = []  # type: List[Tuple[int, int, int, str]]
 
-    def sync(self, opts: Mapping[str, Any]) -> Optional[Text]:
+    def sync(self, opts: Mapping[str, Any]) -> Optional[str]:
         """Check if the buffer has been updated and rewind Coqtop if so."""
         err = None
         newchange = self.changedtick
@@ -150,9 +149,9 @@ class Coqtail:
         coq_prog: str,
         args: List[str],
         opts: Mapping[str, Any],
-    ) -> Optional[Text]:
+    ) -> Optional[str]:
         """Start a new Coqtop instance."""
-        errmsg = []  # type: List[Text]
+        errmsg = []  # type: List[str]
 
         try:
             err, stderr = self.coqtop.start(
@@ -210,7 +209,7 @@ class Coqtail:
 
         return err
 
-    def rewind(self, steps: int, opts: Mapping[str, Any]) -> Optional[Text]:
+    def rewind(self, steps: int, opts: Mapping[str, Any]) -> Optional[str]:
         """Rewind Coq by 'steps' sentences."""
         if steps < 1 or self.endpoints == []:
             return None
@@ -229,7 +228,7 @@ class Coqtail:
         self.refresh(opts=opts)
         return None
 
-    def to_line(self, line: int, col: int, opts: Mapping[str, Any]) -> Optional[Text]:
+    def to_line(self, line: int, col: int, opts: Mapping[str, Any]) -> Optional[str]:
         """Advance/rewind Coq to the specified position."""
         self.sync(opts=opts)
 
@@ -267,12 +266,12 @@ class Coqtail:
 
             return err
 
-    def to_top(self, opts: Mapping[str, Any]) -> Optional[Text]:
+    def to_top(self, opts: Mapping[str, Any]) -> Optional[str]:
         """Rewind to the beginning of the file."""
         return self.rewind_to(0, 1, opts=opts)
 
     def query(
-        self, args: List[Text], opts: Mapping[str, Any], silent: bool = False
+        self, args: List[str], opts: Mapping[str, Any], silent: bool = False
     ) -> None:
         """Forward Coq query to Coqtop interface."""
         success, msg, stderr = self.do_query(" ".join(args), opts=opts)
@@ -353,13 +352,13 @@ class Coqtail:
         self.refresh(opts=opts, scroll=scroll)
         return failed_at, None
 
-    def rewind_to(self, line: int, col: int, opts: Mapping[str, Any]) -> Optional[Text]:
+    def rewind_to(self, line: int, col: int, opts: Mapping[str, Any]) -> Optional[str]:
         """Rewind to a specific location."""
         # Count the number of endpoints after the specified location
         steps_too_far = sum(pos >= (line, col) for pos in self.endpoints)
         return self.rewind(steps_too_far, opts=opts)
 
-    def do_query(self, query: Text, opts: Mapping[str, Any]) -> Tuple[bool, Text, Text]:
+    def do_query(self, query: str, opts: Mapping[str, Any]) -> Tuple[bool, str, str]:
         """Execute a query and return the reply."""
         # Ensure that the query ends in '.'
         if not query.endswith("."):
@@ -378,8 +377,8 @@ class Coqtail:
         return success, msg, stderr
 
     def qual_name(
-        self, target: Text, opts: Mapping[str, Any]
-    ) -> Optional[Tuple[Text, Text]]:
+        self, target: str, opts: Mapping[str, Any]
+    ) -> Optional[Tuple[str, str]]:
         """Find the fully qualified name of 'target' using 'Locate'."""
         success, locate, _ = self.do_query("Locate {}.".format(target), opts=opts)
         if not success:
@@ -403,14 +402,14 @@ class Coqtail:
             info = match.split()
             # Special case for Module Type
             if info[0] == "Module" and info[1] == "Type":
-                tgt_type = "Module Type"  # type: Text
+                tgt_type = "Module Type"  # type: str
                 qual_tgt = info[2]
             else:
                 tgt_type, qual_tgt = info[:2]
 
         return qual_tgt, tgt_type
 
-    def find_lib(self, lib: Text, opts: Mapping[str, Any]) -> Optional[Text]:
+    def find_lib(self, lib: str, opts: Mapping[str, Any]) -> Optional[str]:
         """Find the path to the .v file corresponding to the libary 'lib'."""
         success, locate, _ = self.do_query("Locate Library {}.".format(lib), opts=opts)
         if not success:
@@ -420,8 +419,8 @@ class Coqtail:
         return path.group(1) if path is not None else None
 
     def find_qual(
-        self, qual_tgt: Text, tgt_type: Text, opts: Mapping[str, Any]
-    ) -> Optional[Tuple[Text, Text]]:
+        self, qual_tgt: str, tgt_type: str, opts: Mapping[str, Any]
+    ) -> Optional[Tuple[str, str]]:
         """Find the Coq file containing the qualified name 'qual_tgt'."""
         qual_comps = qual_tgt.split(".")
         base_name = qual_comps[-1]
@@ -441,8 +440,8 @@ class Coqtail:
         return None
 
     def find_def(
-        self, target: Text, opts: Mapping[str, Any]
-    ) -> Optional[Tuple[Text, List[Text]]]:
+        self, target: str, opts: Mapping[str, Any]
+    ) -> Optional[Tuple[str, List[str]]]:
         """Create patterns to jump to the definition of 'target'."""
         # Get the fully qualified version of 'target'
         qual = self.qual_name(target, opts=opts)
@@ -458,7 +457,7 @@ class Coqtail:
 
         return tgt_file, get_searches(tgt_type, tgt_name)
 
-    def next_bullet(self, opts: Mapping[str, Any]) -> Optional[Text]:
+    def next_bullet(self, opts: Mapping[str, Any]) -> Optional[str]:
         """Check the bullet expected for the next subgoal."""
         success, show, _ = self.do_query("Show.", opts=opts)
         if not success:
@@ -488,7 +487,7 @@ class Coqtail:
 
     def get_goals(
         self, opts: Mapping[str, Any]
-    ) -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]:
+    ) -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], str]:
         """Get the current goals."""
         try:
             _, msg, goals, stderr = self.coqtop.goals(timeout=opts["timeout"])
@@ -501,10 +500,10 @@ class Coqtail:
         self,
         goals: Tuple[List[Any], List[Any], List[Any], List[Any]],
         opts: Mapping[str, Any],
-    ) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]:
+    ) -> Tuple[List[str], List[Tuple[int, int, int, str]]]:
         """Pretty print the goals."""
-        lines = []  # type: List[Text]
-        highlights = []  # type: List[Tuple[int, int, int, Text]]
+        lines = []  # type: List[str]
+        highlights = []  # type: List[Tuple[int, int, int, str]]
         fg, bg, shelved, given_up = goals
         bg_joined = [pre + post for pre, post in bg]
 
@@ -572,7 +571,7 @@ class Coqtail:
 
     def set_goal(
         self,
-        msg: Optional[Tuple[List[Text], List[Tuple[int, int, int, Text]]]] = None,
+        msg: Optional[Tuple[List[str], List[Tuple[int, int, int, str]]]] = None,
         clear: bool = False,
     ) -> None:
         """Update the goal message."""
@@ -581,7 +580,7 @@ class Coqtail:
         if clear or "".join(self.goal_msg) == "":
             self.goal_msg, self.goal_hls = ["No goals."], []
 
-    def set_info(self, msg: Optional[Text] = None, reset: bool = True) -> None:
+    def set_info(self, msg: Optional[str] = None, reset: bool = True) -> None:
         """Update the info message."""
         if msg is not None:
             info = msg.split("\n")
@@ -590,7 +589,7 @@ class Coqtail:
             else:
                 self.info_msg += [""] + info
 
-    def print_stderr(self, err: Text) -> None:
+    def print_stderr(self, err: str) -> None:
         """Display a message from Coqtop stderr."""
         if err != "":
             self.set_info("From stderr: " + err, reset=False)
@@ -621,18 +620,18 @@ class Coqtail:
 
     def panels(
         self, goals: bool = True
-    ) -> Mapping[str, Tuple[List[Text], List[Tuple[int, int, int, Text]]]]:
+    ) -> Mapping[str, Tuple[List[str], List[Tuple[int, int, int, str]]]]:
         """The auxiliary panel content."""
         panels = {
             "info": (self.info_msg, [])
-        }  # type: Dict[str, Tuple[List[Text], List[Tuple[int, int, int, Text]]]]
+        }  # type: Dict[str, Tuple[List[str], List[Tuple[int, int, int, str]]]]
         if goals:
             panels["goal"] = (self.goal_msg, self.goal_hls)
         return panels
 
     def splash(
         self,
-        version: Text,
+        version: str,
         width: int,
         height: int,
         deprecated: bool,
@@ -689,12 +688,12 @@ class Coqtail:
         return self.handler.vimvar("changedtick")  # type: ignore
 
     @property
-    def log(self) -> Text:
+    def log(self) -> str:
         """The name of this buffer's debug log."""
         return self.handler.vimvar("coqtail_log_name")  # type: ignore[no-any-return]
 
     @log.setter
-    def log(self, log: Text) -> None:
+    def log(self, log: str) -> None:
         """The name of this buffer's debug log."""
         self.handler.vimvar("coqtail_log_name", log)
 
@@ -707,7 +706,7 @@ class Coqtail:
             self.handler.bnum,
             1,
             "$",
-        )  # type: Sequence[Text]
+        )  # type: Sequence[str]
         return [line.encode("utf-8") for line in lines]
 
 
@@ -910,7 +909,7 @@ class ChannelManager:
     """Emulate Vim's ch_* functions with sockets."""
 
     channels = {}  # type: Dict[int, socket.socket]
-    results = {}  # type: Dict[int, Optional[Text]]
+    results = {}  # type: Dict[int, Optional[str]]
     sessions = {}  # type: Dict[int, int]
     next_id = 1
     msg_id = 1
@@ -978,7 +977,7 @@ class ChannelManager:
         return True
 
     @staticmethod
-    def poll(handle: int) -> Optional[Text]:
+    def poll(handle: int) -> Optional[str]:
         """Wait for a response on a channel."""
         return ChannelManager.results[handle]
 
@@ -1006,7 +1005,7 @@ class ChannelManager:
 # TODO: could search more intelligently by searching only within relevant
 # section/module, or sometimes by looking at the type (for constructors for
 # example, or record projections)
-def get_searches(tgt_type: Text, tgt_name: Text) -> List[Text]:
+def get_searches(tgt_type: str, tgt_name: str) -> List[str]:
     """Construct a search expression given an object type and name."""
     auto_names = [
         ("Constructor", "Inductive", "Build_(.*)", 1),
@@ -1036,7 +1035,7 @@ def get_searches(tgt_type: Text, tgt_name: Text) -> List[Text]:
         "Ltac": ["Ltac"],
         "Module": ["Module"],
         "Module Type": ["Module Type"],
-    }  # type: Mapping[Text, List[Text]]
+    }  # type: Mapping[str, List[str]]
 
     # Look for some implicitly generated names
     search_names = [tgt_name]
