@@ -151,7 +151,7 @@ def parse_tagged_tokens(tags, xml):
     Written to support richpp markup.
     Only considers tags specified by the tags parameter.
     """
-    token_acc, last_tag = u"", None
+    token_acc, last_tag = "", None
 
     # Recursive helper _parse_tagged_tokens gives us tag stacks
     for token, tag_list in _parse_tagged_tokens(tags, xml):
@@ -358,7 +358,7 @@ class XMLInterfaceBase(object, metaclass=ABCMeta):
         """Expect: <string>str</string>"""
         # In Python 2 itertext returns Generator[Any, None, None] instead
         # of Generator[str, None, None]
-        return u"".join(xml.itertext())  # type: ignore[no-any-return]
+        return "".join(xml.itertext())  # type: ignore[no-any-return]
 
     def _of_string(self, val):
         # type: (Text) -> ET.Element
@@ -781,7 +781,7 @@ class XMLInterface84(XMLInterfaceBase):
             return self._to_py(content[1])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
-            return u""
+            return ""
 
     # Coqtop Commands #
     def init(self, _encoding="utf-8"):
@@ -1128,7 +1128,7 @@ class XMLInterface85(XMLInterfaceBase):
             return self._to_py(content[1])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
-            return u""
+            return ""
 
     # Coqtop Commands #
     def init(self, encoding="utf-8"):
@@ -1357,7 +1357,7 @@ class XMLInterface86(XMLInterface85):
             return self._to_py(content[0])  # type: ignore[return-value]
         else:
             # TODO: maybe make use of this info?
-            return u""
+            return ""
 
 
 class XMLInterface87(XMLInterface86):

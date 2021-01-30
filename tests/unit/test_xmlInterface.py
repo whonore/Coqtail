@@ -67,7 +67,7 @@ class ToOfTests(object):
         return PyXML("abc", mkXML("string", text="abc"), True)
 
     def abc_u(self):
-        return PyXML(u"abc", self.abc().xml, True)
+        return PyXML("abc", self.abc().xml, True)
 
     def abc_richpp(self):
         if self.xi.versions >= (8, 6, 0):
@@ -361,7 +361,7 @@ def test_valid_module(xmlInt):
     assert xmlInt.valid_module("C.v")
     assert xmlInt.valid_module("_c.v")
     assert xmlInt.valid_module("c3.v")
-    assert xmlInt.valid_module(u"ç.v")
+    assert xmlInt.valid_module("ç.v")
     assert not xmlInt.valid_module("")
     assert not xmlInt.valid_module("c.v.v")
     assert not xmlInt.valid_module("1.v")

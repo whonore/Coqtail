@@ -52,7 +52,7 @@ def lines_and_highlights(tagged_tokens, line_no):
     lines = []  # type: List[Text]
     highlights = []  # type: List[Tuple[int, int, int, Text]]
     line_no += 1  # Convert to 1-indexed per matchaddpos()'s spec
-    line, index = u"", 1
+    line, index = "", 1
 
     for token, tag in tagged_tokens:
         # NOTE: Can't use splitlines or else tokens like ' =\n' won't properly
@@ -583,7 +583,7 @@ class Coqtail(object):
             if reset or self.info_msg == [] or self.info_msg == [""]:
                 self.info_msg = info
             else:
-                self.info_msg += [u""] + info
+                self.info_msg += [""] + info
 
     def print_stderr(self, err):
         # type: (Text) -> None
@@ -630,32 +630,32 @@ class Coqtail(object):
         # type: (Text, int, int, bool, Mapping[str, Any]) -> None
         """Display the logo in the info panel."""
         msg = [
-            u"~~~~~~~~~~~~~~~~~~~~~~~",
-            u"λ                     /",
-            u" λ      Coqtail      / ",
-            u"  λ                 /  ",
-            u"   λ{}/    ".format(("Coq " + version).center(15)),
-            u"    λ             /    ",
-            u"     λ           /     ",
-            u"      λ         /      ",
-            u"       λ       /       ",
-            u"        λ     /        ",
-            u"         λ   /         ",
-            u"          λ /          ",
-            u"           ‖           ",
-            u"           ‖           ",
-            u"           ‖           ",
-            u"          / λ          ",
-            u"         /___λ         ",
+            "~~~~~~~~~~~~~~~~~~~~~~~",
+            "λ                     /",
+            " λ      Coqtail      / ",
+            "  λ                 /  ",
+            "   λ{}/    ".format(("Coq " + version).center(15)),
+            "    λ             /    ",
+            "     λ           /     ",
+            "      λ         /      ",
+            "       λ       /       ",
+            "        λ     /        ",
+            "         λ   /         ",
+            "          λ /          ",
+            "           ‖           ",
+            "           ‖           ",
+            "           ‖           ",
+            "          / λ          ",
+            "         /___λ         ",
         ]
         msg_maxw = max(len(line) for line in msg)
         msg = [line.center(width - msg_maxw // 2) for line in msg]
 
         if deprecated:
-            depr_msg = u"Support for Python 2 is deprecated and will be dropped in an upcoming version."
-            msg += [u"", depr_msg.center(width - msg_maxw // 2)]
+            depr_msg = "Support for Python 2 is deprecated and will be dropped in an upcoming version."
+            msg += ["", depr_msg.center(width - msg_maxw // 2)]
 
-        top_pad = [u""] * ((height // 2) - (len(msg) // 2 + 1))
+        top_pad = [""] * ((height // 2) - (len(msg) // 2 + 1))
         self.info_msg = top_pad + msg
 
     def toggle_debug(self, opts):
