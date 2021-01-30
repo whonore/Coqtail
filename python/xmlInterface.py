@@ -672,7 +672,7 @@ class XMLInterface84(XMLInterfaceBase):
     def __init__(self, versions):
         # type: (Tuple[int, ...]) -> None
         """Update conversion maps with new types."""
-        super(XMLInterface84, self).__init__(versions)
+        super().__init__(versions)
 
         self._to_py_funcs.update(
             {
@@ -983,7 +983,7 @@ class XMLInterface85(XMLInterfaceBase):
     def __init__(self, versions):
         # type: (Tuple[int, ...]) -> None
         """Update conversion maps with new types."""
-        super(XMLInterface85, self).__init__(versions)
+        super().__init__(versions)
 
         self.launch_args += ["-main-channel", "stdfds", "-async-proofs", "on"]
         self.queries += ["SearchHead"]
@@ -1318,7 +1318,7 @@ class XMLInterface86(XMLInterface85):
     def __init__(self, versions):
         # type: (Tuple[int, ...]) -> None
         """Update conversion maps with new types."""
-        super(XMLInterface86, self).__init__(versions)
+        super().__init__(versions)
 
         self.launch_args += [
             "-async-proofs-command-error-resilience",
@@ -1368,7 +1368,7 @@ class XMLInterface87(XMLInterface86):
     def __init__(self, versions):
         # type: (Tuple[int, ...]) -> None
         """Update conversion maps with new types."""
-        super(XMLInterface87, self).__init__(versions)
+        super().__init__(versions)
 
         self._to_py_funcs.update({"route_id": self._to_route_id})
 
@@ -1415,7 +1415,7 @@ class XMLInterface89(XMLInterface88):
     def __init__(self, versions):
         # type: (Tuple[int, ...]) -> None
         """Update launch arguments."""
-        super(XMLInterface89, self).__init__(versions)
+        super().__init__(versions)
 
         # Coq 8.9 split 'coqtop -ideslave' into a separate coqidetop binary
         self.coqtop = "coqidetop"
@@ -1448,7 +1448,7 @@ class XMLInterface812(XMLInterface811):
     def __init__(self, versions):
         # type: (Tuple[int, ...]) -> None
         """Update conversion maps with new types."""
-        super(XMLInterface812, self).__init__(versions)
+        super().__init__(versions)
 
         self._standardize_funcs.update({"GetOptions": self._standardize_get_options})
 

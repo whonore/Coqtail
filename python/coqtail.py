@@ -80,7 +80,7 @@ class UnmatchedError(Exception):
 
     def __init__(self, token, loc):
         # type: (Text, Tuple[int, int]) -> None
-        super(UnmatchedError, self).__init__("Found unmatched {}.".format(token))
+        super().__init__("Found unmatched {}.".format(token))
         line, col = loc
         self.range = (loc, (line, col + len(token)))
 
