@@ -4,8 +4,6 @@
 and provide a uniform interface.
 """
 
-from __future__ import absolute_import, division, print_function
-
 # xml.dom.minidom only needed for pretty printing. No stubs for xml.dom.minidom
 import os
 import re

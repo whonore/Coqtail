@@ -2,8 +2,6 @@
 # Author: Wolf Honore
 """Sentence parsing unit tests."""
 
-from __future__ import absolute_import, division, print_function
-
 import pytest
 
 from coqtail import NoDotError, UnmatchedError, _get_message_range, _strip_comments

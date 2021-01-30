@@ -2,8 +2,6 @@
 # Author: Wolf Honore
 """Coqtop interface with functions to send commands and parse responses."""
 
-from __future__ import absolute_import, division, print_function
-
 import datetime
 import logging
 import os

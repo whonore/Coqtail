@@ -2,8 +2,6 @@
 # Author: Wolf Honore
 """Classes and functions for managing auxiliary panels and Coqtop interfaces."""
 
-from __future__ import absolute_import, division, print_function
-
 import json
 import re
 import socket

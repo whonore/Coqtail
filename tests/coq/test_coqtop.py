@@ -2,8 +2,6 @@
 # Author: Wolf Honore
 """Coq integration tests."""
 
-from __future__ import absolute_import, division, print_function
-
 from subprocess import check_output
 
 import pytest
