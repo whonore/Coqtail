@@ -211,7 +211,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         ]
 
         # Map from Python types to appropriate XML marshalling function
-        self._to_py_funcs = {
+        self._to_py_funcs: Dict[str, Callable[[ET.Element], object]] = {
             "unit": self._to_unit,
             "bool": self._to_bool,
             "int": self._to_int,
@@ -220,10 +220,10 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             "pair": self._to_pair,
             "option": self._to_option,
             "union": self._to_union,
-        }  # type: Dict[str, Callable[[ET.Element], object]]
+        }
 
         # Inverse map
-        self._of_py_funcs = {
+        self._of_py_funcs: Dict[str, Callable[[Any], ET.Element]] = {
             # Special case for tuple, must distinguish between 'unit' and
             # 'pair' by checking for '()'
             "tuple": lambda v: self._of_pair(v) if v else self._of_unit(v),
@@ -235,12 +235,12 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             "NoneType": self._of_option,
             "Inl": self._of_union,
             "Inr": self._of_union,
-        }  # type: Dict[str, Callable[[Any], ET.Element]]
+        }
 
         # Map from coqtop command to standardization function
-        self._standardize_funcs = (
-            {}
-        )  # type: Dict[str, Callable[[Union[Ok, Err]], Union[Ok, Err]]]
+        self._standardize_funcs: Dict[
+            str, Callable[[Union[Ok, Err]], Union[Ok, Err]]
+        ] = {}
 
         # A command that can safely and quickly be executed just to get a new state id
         self.noop = "Eval lazy in forall x, x."
@@ -473,7 +473,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
     def raw_response(self, data: bytes) -> Optional[Union[Ok, Err]]:
         """Try to parse an XML response from Coqtop into an Ok or Err."""
         res = None
-        msgs = []  # type: List[str]
+        msgs: List[str] = []
 
         try:
             xmls = ET.fromstring(b"<coqtoproot>" + _unescape(data) + b"</coqtoproot>")
@@ -585,13 +585,13 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         opts = cmd.strip(".").split()
         ty = opts[0]
 
+        val: Union[bool, int, str]
+        vals: Optional[Iterable[Union[bool, int, str, Tuple[None, str]]]]
         if ty == "Test":
-            vals = (
-                None
-            )  # type: Optional[Iterable[Union[bool, int, str, Tuple[None, str]]]]
+            vals = None
         elif ty == "Set":
             if opts[-1][0].isdigit():
-                val = int(opts[-1])  # type: Union[bool, int, str]
+                val = int(opts[-1])
                 opts = opts[:-1]
             elif opts[-1][-1] == '"':
                 for idx, opt in enumerate(opts):
@@ -774,7 +774,7 @@ class XMLInterface84(XMLInterfaceBase):
           state_id: int - The new state id (ignored in 8.4)
         """
         if isinstance(res, Ok):
-            res_msg = res.val  # type: str
+            res_msg: str = res.val
             res.val = {"res_msg": res_msg, "state_id": 0}
         return res
 
@@ -817,7 +817,7 @@ class XMLInterface84(XMLInterfaceBase):
           msg: str - Messages produced by 'Query'
         """
         if isinstance(res, Ok):
-            msg = res.val  # type: str
+            msg: str = res.val
             res.msg = msg
         return res
 
@@ -837,13 +837,13 @@ class XMLInterface84(XMLInterfaceBase):
           given_up: list Goals - Admitted goals (dummy value in 8.4)
         """
         if isinstance(res, Ok):
-            opt_goals = res.val  # type: Union[None, XMLInterfaceBase.Option]
+            opt_goals: Union[None, XMLInterfaceBase.Option] = res.val
             if opt_goals is not None:
-                goals = opt_goals.val  # type: XMLInterface84.Goals
-                fg = goals.fg  # type: List[XMLInterface84.Goal]
-                bg = (
-                    goals.bg
-                )  # type: List[Tuple[List[XMLInterface84.Goal], List[XMLInterface84.Goal]]]
+                goals: XMLInterface84.Goals = opt_goals.val
+                fg: List[XMLInterface84.Goal] = goals.fg
+                bg: List[
+                    Tuple[List[XMLInterface84.Goal], List[XMLInterface84.Goal]]
+                ] = goals.bg
                 res.val = (fg, bg, [], [])
         return res
 
@@ -868,11 +868,11 @@ class XMLInterface84(XMLInterfaceBase):
                                              descriptions, and current values
         """
         if isinstance(res, Ok):
-            raw_opts = res.val  # type: List[Tuple[str, XMLInterface84.OptionState]]
-            opts = [
+            raw_opts: List[Tuple[str, XMLInterface84.OptionState]] = res.val
+            opts: List[Tuple[str, str, Any]] = [
                 (" ".join(name), state.name, state.value.val)
                 for name, state in raw_opts
-            ]  # type: List[Tuple[str, str, Any]]
+            ]
             res.val = opts
         return res
 
@@ -887,10 +887,9 @@ class XMLInterface84(XMLInterfaceBase):
           options: list (option_name * option_value) - The options to update and
                                                        the values to set them to
         """
+        optval: Optional[Union[bool, str, XMLInterfaceBase.Option]]
         if isinstance(val, int) and not isinstance(val, bool):
-            optval = self.Option(
-                val
-            )  # type: Optional[Union[bool, str, XMLInterfaceBase.Option]]
+            optval = self.Option(val)
         elif isinstance(val, tuple):
             optval = None
         else:
@@ -950,13 +949,12 @@ class XMLInterface85(XMLInterfaceBase):
             }
         )
 
-        # Need to declare separately or Mypy infers the type as
-        # Dict[str, Callable[[OptionValue], ET.Element]]
-        new_of = {
-            "OptionValue": self._of_option_value,
-            "StateId": self._of_state_id,
-        }  # type: Dict[str, Callable[[Any], ET.Element]]
-        self._of_py_funcs.update(new_of)
+        self._of_py_funcs.update(
+            {
+                "OptionValue": self._of_option_value,
+                "StateId": self._of_state_id,
+            }
+        )
 
         self._standardize_funcs.update(
             {
@@ -1079,7 +1077,7 @@ class XMLInterface85(XMLInterfaceBase):
           state_id: int - The current state id
         """
         if isinstance(res, Ok):
-            val = res.val  # type: XMLInterface85.StateId
+            val: XMLInterface85.StateId = res.val
             res.val = val.id
         return res
 
@@ -1109,7 +1107,7 @@ class XMLInterface85(XMLInterfaceBase):
           state_id: int - The new state id
         """
         if isinstance(res, Ok):
-            val = res.val  # type: Tuple[XMLInterface85.StateId, Tuple[Any, str]]
+            val: Tuple[XMLInterface85.StateId, Tuple[Any, str]] = res.val
             res.val = {"res_msg": val[1][1], "state_id": val[0].id}
         return res
 
@@ -1163,15 +1161,15 @@ class XMLInterface85(XMLInterfaceBase):
           given_up: list Goals - Admitted goals
         """
         if isinstance(res, Ok):
-            opt_goals = res.val  # type: Union[None, XMLInterfaceBase.Option]
+            opt_goals: Union[None, XMLInterfaceBase.Option] = res.val
             if opt_goals is not None:
-                goals = opt_goals.val  # type: XMLInterface85.Goals
-                fg = goals.fg  # type: List[XMLInterface85.Goal]
-                bg = (
-                    goals.bg
-                )  # type: List[Tuple[List[XMLInterface85.Goal], List[XMLInterface85.Goal]]]
-                shelved = goals.shelved  # type: List[XMLInterface85.Goal]
-                given_up = goals.given_up  # type: List[XMLInterface85.Goal]
+                goals: XMLInterface85.Goals = opt_goals.val
+                fg: List[XMLInterface85.Goal] = goals.fg
+                bg: List[
+                    Tuple[List[XMLInterface85.Goal], List[XMLInterface85.Goal]]
+                ] = goals.bg
+                shelved: List[XMLInterface85.Goal] = goals.shelved
+                given_up: List[XMLInterface85.Goal] = goals.given_up
                 res.val = (fg, bg, shelved, given_up)
         return res
 
@@ -1196,11 +1194,11 @@ class XMLInterface85(XMLInterfaceBase):
                                              descriptions, and current values
         """
         if isinstance(res, Ok):
-            raw_opts = res.val  # type: List[Tuple[str, XMLInterface85.OptionState]]
-            opts = [
+            raw_opts: List[Tuple[str, XMLInterface85.OptionState]] = res.val
+            opts: List[Tuple[str, str, Any]] = [
                 (" ".join(name), state.name, state.value.val)
                 for name, state in raw_opts
-            ]  # type: List[Tuple[str, str, Any]]
+            ]
             res.val = opts
         return res
 
@@ -1216,10 +1214,9 @@ class XMLInterface85(XMLInterfaceBase):
                                                        the values to set them to
         """
         ty = None
+        optval: Optional[Union[bool, str, XMLInterfaceBase.Option]]
         if isinstance(val, int) and not isinstance(val, bool):
-            optval = self.Option(
-                val
-            )  # type: Optional[Union[bool, str, XMLInterfaceBase.Option]]
+            optval = self.Option(val)
         elif isinstance(val, tuple):
             optval, ty = val
         else:
@@ -1383,11 +1380,11 @@ class XMLInterface812(XMLInterface811):
                                              descriptions, and current values
         """
         if isinstance(res, Ok):
-            raw_opts = res.val  # type: List[Tuple[str, XMLInterface812.OptionState]]
-            opts = [
+            raw_opts: List[Tuple[str, XMLInterface812.OptionState]] = res.val
+            opts: List[Tuple[str, str, Any]] = [
                 (" ".join(name), " ".join(name), state.value.val)
                 for name, state in raw_opts
-            ]  # type: List[Tuple[str, str, Any]]
+            ]
             res.val = opts
         return res
 
@@ -1404,7 +1401,7 @@ def XMLInterface(version: str) -> XMLInterfaceBase:
     str_versions = version.replace("pl", ".").split(".")
 
     # Strip any trailing text (e.g. '+beta1')
-    versions = ()  # type: Tuple[int, ...]
+    versions: Tuple[int, ...] = ()
     for ver in (re.match("[0-9]+", v) for v in str_versions):
         if ver is None:
             raise ValueError("Invalid version: {}".format(version))

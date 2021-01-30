@@ -13,6 +13,7 @@ from itertools import islice, zip_longest
 from queue import Empty, Queue
 from socketserver import StreamRequestHandler, ThreadingTCPServer
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     DefaultDict,
@@ -31,6 +32,13 @@ from typing import (
 
 import coqtop as CT
 
+if TYPE_CHECKING:
+    ReqQueue = Queue[Tuple[int, int, str, Mapping[str, Any]]]
+    ResQueue = Queue[Tuple[int, Any]]
+else:
+    ReqQueue = Queue
+    ResQueue = Queue
+
 
 def lines_and_highlights(
     tagged_tokens: Union[str, Iterable[Tuple[str, Optional[str]]]], line_no: int
@@ -45,8 +53,8 @@ def lines_and_highlights(
     if isinstance(tagged_tokens, str):
         return tagged_tokens.splitlines(), []
 
-    lines = []  # type: List[str]
-    highlights = []  # type: List[Tuple[int, int, int, str]]
+    lines: List[str] = []
+    highlights: List[Tuple[int, int, int, str]] = []
     line_no += 1  # Convert to 1-indexed per matchaddpos()'s spec
     line, index = "", 1
 
@@ -106,13 +114,13 @@ class Coqtail:
         self.coqtop = CT.Coqtop()
         self.handler = handler
         self.oldchange = 0
-        self.oldbuf = []  # type: Sequence[bytes]
-        self.endpoints = []  # type: List[Tuple[int, int]]
-        self.send_queue = deque()  # type: Deque[Mapping[str, Tuple[int, int]]]
-        self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
-        self.info_msg = []  # type: List[str]
-        self.goal_msg = []  # type: List[str]
-        self.goal_hls = []  # type: List[Tuple[int, int, int, str]]
+        self.oldbuf: Sequence[bytes] = []
+        self.endpoints: List[Tuple[int, int]] = []
+        self.send_queue: Deque[Mapping[str, Tuple[int, int]]] = deque()
+        self.error_at: Optional[Tuple[Tuple[int, int], Tuple[int, int]]] = None
+        self.info_msg: List[str] = []
+        self.goal_msg: List[str] = []
+        self.goal_hls: List[Tuple[int, int, int, str]] = []
 
     def sync(self, opts: Mapping[str, Any]) -> Optional[str]:
         """Check if the buffer has been updated and rewind Coqtop if so."""
@@ -152,7 +160,7 @@ class Coqtail:
         opts: Mapping[str, Any],
     ) -> Optional[str]:
         """Start a new Coqtop instance."""
-        errmsg = []  # type: List[str]
+        errmsg: List[str] = []
 
         try:
             err, stderr = self.coqtop.start(
@@ -403,7 +411,7 @@ class Coqtail:
             info = match.split()
             # Special case for Module Type
             if info[0] == "Module" and info[1] == "Type":
-                tgt_type = "Module Type"  # type: str
+                tgt_type = "Module Type"
                 qual_tgt = info[2]
             else:
                 tgt_type, qual_tgt = info[:2]
@@ -503,8 +511,8 @@ class Coqtail:
         opts: Mapping[str, Any],
     ) -> Tuple[List[str], List[Tuple[int, int, int, str]]]:
         """Pretty print the goals."""
-        lines = []  # type: List[str]
-        highlights = []  # type: List[Tuple[int, int, int, str]]
+        lines: List[str] = []
+        highlights: List[Tuple[int, int, int, str]] = []
         fg, bg, shelved, given_up = goals
         bg_joined = [pre + post for pre, post in bg]
 
@@ -598,11 +606,11 @@ class Coqtail:
     @property
     def highlights(self) -> Dict[str, Optional[str]]:
         """Vim match patterns for highlighting."""
-        matches = {
+        matches: Dict[str, Optional[str]] = {
             "coqtail_checked": None,
             "coqtail_sent": None,
             "coqtail_error": None,
-        }  # type: Dict[str, Optional[str]]
+        }
 
         if self.endpoints != []:
             line, col = self.endpoints[-1]
@@ -623,9 +631,9 @@ class Coqtail:
         self, goals: bool = True
     ) -> Mapping[str, Tuple[List[str], List[Tuple[int, int, int, str]]]]:
         """The auxiliary panel content."""
-        panels = {
+        panels: Dict[str, Tuple[List[str], List[Tuple[int, int, int, str]]]] = {
             "info": (self.info_msg, [])
-        }  # type: Dict[str, Tuple[List[str], List[Tuple[int, int, int, str]]]]
+        }
         if goals:
             panels["goal"] = (self.goal_msg, self.goal_hls)
         return panels
@@ -701,13 +709,13 @@ class Coqtail:
     @property
     def buffer(self) -> Sequence[bytes]:
         """The contents of this buffer."""
-        lines = self.handler.vimcall(
+        lines: Sequence[str] = self.handler.vimcall(
             "getbufline",
             True,
             self.handler.bnum,
             1,
             "$",
-        )  # type: Sequence[str]
+        )
         return [line.encode("utf-8") for line in lines]
 
 
@@ -733,7 +741,7 @@ class CoqtailHandler(StreamRequestHandler):
         """Parse messages sent over a Vim channel."""
         while not self.closed:
             try:
-                msg = self.rfile.readline()  # type: bytes
+                msg = self.rfile.readline()
                 msg_id, data = json.loads(msg)
             # Python 2 doesn't have ConnectionError
             except (ValueError, socket.error):
@@ -755,8 +763,9 @@ class CoqtailHandler(StreamRequestHandler):
 
     def get_msg(self, msg_id: Optional[int] = None) -> Sequence[Any]:
         """Check for any pending messages from Vim."""
+        queue: Union[ReqQueue, ResQueue]
         if msg_id is None:
-            queue = self.reqs  # type: Queue[Any]
+            queue = self.reqs
         else:
             with self.resp_lk:
                 queue = self.resps[msg_id]
@@ -771,8 +780,8 @@ class CoqtailHandler(StreamRequestHandler):
         """Forward requests from Vim to the appropriate Coqtail function."""
         self.coq = Coqtail(self)
         self.closed = False
-        self.reqs = Queue()  # type: Queue[Tuple[int, int, str, Mapping[str, Any]]]
-        self.resps = ddict(Queue)  # type: DefaultDict[int, Queue[Tuple[int, Any]]]
+        self.reqs: ReqQueue = Queue()
+        self.resps: DefaultDict[int, ResQueue] = ddict(Queue)
         self.resp_lk = threading.Lock()
 
         read_thread = threading.Thread(target=self.parse_msgs)
@@ -788,7 +797,7 @@ class CoqtailHandler(StreamRequestHandler):
             except EOFError:
                 break
 
-            handlers = {
+            handlers: Mapping[str, Callable[..., object]] = {
                 "start": self.coq.start,
                 "stop": self.coq.stop,
                 "step": self.coq.step,
@@ -804,7 +813,7 @@ class CoqtailHandler(StreamRequestHandler):
                 "find_def": self.coq.find_def,
                 "find_lib": self.coq.find_lib,
                 "refresh": self.coq.refresh,
-            }  # type: Mapping[str, Callable[..., object]]
+            }
             handler = handlers.get(func, None)
 
             try:
@@ -910,9 +919,9 @@ class CoqtailServer:
 class ChannelManager:
     """Emulate Vim's ch_* functions with sockets."""
 
-    channels = {}  # type: Dict[int, socket.socket]
-    results = {}  # type: Dict[int, Optional[str]]
-    sessions = {}  # type: Dict[int, int]
+    channels: Dict[int, socket.socket] = {}
+    results: Dict[int, Optional[str]] = {}
+    sessions: Dict[int, int] = {}
     next_id = 1
     msg_id = 1
 
@@ -1037,7 +1046,7 @@ def get_searches(tgt_type: str, tgt_name: str) -> List[str]:
         "Ltac": ["Ltac"],
         "Module": ["Module"],
         "Module Type": ["Module Type"],
-    }  # type: Mapping[str, List[str]]
+    }
 
     # Look for some implicitly generated names
     search_names = [tgt_name]
@@ -1080,7 +1089,7 @@ def _between(
     sline, scol = start
     eline, ecol = end
 
-    lines = []  # type: List[bytes]
+    lines: List[bytes] = []
     for idx, line in enumerate(buf[sline : eline + 1]):
         lcol = scol if idx == 0 else 0
         rcol = ecol + 1 if idx == eline - sline else len(line)
@@ -1261,10 +1270,10 @@ def _skip_block(
             return None
 
         line = lines[sline]
-        blk_end = line.find(estr, scol)  # type: Optional[int]
+        blk_end = line.find(estr, scol)
         blk_end = blk_end if blk_end != -1 else None
         if sstr != estr:
-            blk_start = line.find(sstr, scol, blk_end)  # type: Optional[int]
+            blk_start = line.find(sstr, scol, blk_end)
             blk_start = blk_start if blk_start != -1 else None
         else:
             blk_start = None
@@ -1406,7 +1415,7 @@ def _find_diff(
     x: Sequence[Any], y: Sequence[Any], stop: Optional[int] = None
 ) -> Optional[int]:
     """Locate the first differing element in 'x' and 'y' up to 'stop'."""
-    seq = enumerate(zip_longest(x, y))  # type: Iterator[Tuple[int, Any]]
+    seq: Iterator[Tuple[int, Any]] = enumerate(zip_longest(x, y))
     if stop is not None:
         seq = islice(seq, stop)
     return next((i for i, vs in seq if vs[0] != vs[1]), None)

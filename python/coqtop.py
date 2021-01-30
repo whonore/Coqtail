@@ -24,9 +24,11 @@ from xmlInterface import (
 )
 
 if TYPE_CHECKING:
-    QueueBytes = Queue[bytes]
+    BytesQueue = Queue[bytes]
+    CoqtopProcess = subprocess.Popen[bytes]
 else:
-    QueueBytes = Queue
+    BytesQueue = Queue
+    CoqtopProcess = subprocess.Popen
 
 DEFAULT_REF = Err("Default Ref value. Should never be seen.")
 
@@ -58,18 +60,18 @@ class Coqtop:
         err_q - A thread-safe queue of error messages read from Coqtop
         xml - The XML interface for the given version
         """
-        self.coqtop = None  # type: Optional[subprocess.Popen[bytes]]
-        self.xml = None  # type: Optional[XMLInterfaceBase]
-        self.states = []  # type: List[int]
+        self.coqtop: Optional[CoqtopProcess] = None
+        self.xml: Optional[XMLInterfaceBase] = None
+        self.states: List[int] = []
         self.state_id = -1
         self.root_state = -1
-        self.out_q = Queue()  # type: Queue[bytes]
-        self.err_q = Queue()  # type: Queue[bytes]
+        self.out_q: BytesQueue = Queue()
+        self.err_q: BytesQueue = Queue()
         self.stopping = False
 
         # Debugging
-        self.log = None  # type: Optional[IO[str]]
-        self.handler = logging.NullHandler()  # type: logging.Handler
+        self.log: Optional[IO[str]] = None
+        self.handler: logging.Handler = logging.NullHandler()
         self.logger = logging.getLogger(str(id(self)))
         self.logger.addHandler(self.handler)
         self.logger.setLevel(logging.INFO)
@@ -284,7 +286,7 @@ class Coqtop:
                 ]
 
                 if optval != []:
-                    ret = "{}: {}".format(optval[0][1], optval[0][0])  # type: str
+                    ret = "{}: {}".format(optval[0][1], optval[0][0])
                 else:
                     ret = "Invalid option name"
         else:
@@ -431,7 +433,7 @@ class Coqtop:
             break
 
     @staticmethod
-    def drain_queue(q: QueueBytes) -> Iterator[bytes]:
+    def drain_queue(q: BytesQueue) -> Iterator[bytes]:
         """Yield data from 'q' until it is empty."""
         while not q.empty():
             try:
