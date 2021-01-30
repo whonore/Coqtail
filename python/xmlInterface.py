@@ -224,7 +224,6 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             "bool": self._of_bool,
             "int": self._of_int,
             "str": self._of_string,
-            "unicode": self._of_string,
             "list": self._of_list,
             "Option": self._of_option,
             "NoneType": self._of_option,
