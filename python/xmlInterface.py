@@ -19,8 +19,6 @@ try:
 except ImportError:
     from distutils.spawn import find_executable as which  # type: ignore[no-redef]
 
-from six import add_metaclass, string_types, text_type
-
 # For Mypy
 # TODO: Replace some of the 'Any's with more specific types. But in order
 # to use type aliases while still avoiding requiring mypy/typing as a
@@ -192,9 +190,7 @@ def prettyxml(xml):
     return parseString(xml).toprettyxml()  # type: ignore[no-any-return]
 
 
-# Mypy doesn't know the type of add_metaclass since it comes from the local six.py
-@add_metaclass(ABCMeta)  # type: ignore[no-untyped-call]
-class XMLInterfaceBase(object):
+class XMLInterfaceBase(object, metaclass=ABCMeta):
     """Provide methods and types common to all XML interface versions."""
 
     # Coqtop Types #
@@ -352,7 +348,7 @@ class XMLInterfaceBase(object):
         """Expect: <int>int</int>"""
         if xml.text is not None:
             return int(xml.text)
-        raise unexpected(string_types, None)
+        raise unexpected((str,), None)
 
     def _of_int(self, val):
         # type: (int) -> ET.Element
@@ -539,8 +535,8 @@ class XMLInterfaceBase(object):
                     msg = join_tagged_tokens(msg)
 
                 # Sanity check
-                if not isinstance(msg, text_type):
-                    raise unexpected((text_type,), type(msg))
+                if not isinstance(msg, str):
+                    raise unexpected((str,), type(msg))
 
                 msgs.append(msg.strip())
             else:
@@ -744,10 +740,10 @@ class XMLInterface84(XMLInterfaceBase):
             opt_ty = "boolvalue"
         elif (isinstance(opt, self.Option) and isinstance(opt.val, int)) or opt is None:
             opt_ty = "intvalue"
-        elif isinstance(opt, string_types):
+        elif isinstance(opt, str):
             opt_ty = "stringvalue"
         else:
-            raise unexpected((bool, self.Option, None) + string_types, type(opt))
+            raise unexpected((bool, self.Option, None, str), type(opt))
 
         return self._build_xml("option_value", opt_ty, opt)
 
@@ -1073,18 +1069,18 @@ class XMLInterface85(XMLInterfaceBase):
 
         if isinstance(opt, bool):
             opt_ty = "boolvalue"
-        elif isinstance(opt, string_types):
+        elif isinstance(opt, str):
             opt_ty = "stringvalue"
         elif (isinstance(opt, self.Option) and isinstance(opt.val, int)) or (
             opt is None and val.type == "int"
         ):
             opt_ty = "intvalue"
-        elif (isinstance(opt, self.Option) and isinstance(opt.val, string_types)) or (
+        elif (isinstance(opt, self.Option) and isinstance(opt.val, str)) or (
             opt is None and val.type == "str"
         ):
             opt_ty = "stringoptvalue"
         else:
-            raise unexpected((bool, self.Option, None) + string_types, type(opt))
+            raise unexpected((bool, self.Option, None, str), type(opt))
 
         return self._build_xml("option_value", opt_ty, opt)
 

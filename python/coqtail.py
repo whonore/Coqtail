@@ -11,12 +11,9 @@ import threading
 import time
 from collections import defaultdict as ddict
 from collections import deque
-from itertools import islice
-
-from six import indexbytes, iterbytes, string_types
-from six.moves import zip_longest
-from six.moves.queue import Empty, Queue
-from six.moves.socketserver import StreamRequestHandler, ThreadingTCPServer
+from itertools import islice, zip_longest
+from queue import Empty, Queue
+from socketserver import StreamRequestHandler, ThreadingTCPServer
 
 import coqtop as CT
 
@@ -51,7 +48,7 @@ def lines_and_highlights(tagged_tokens, line_no):
     """
     # If tagged_tokens turns out to already be a string (which is the case for
     # older versions of Coq), just return it as is, with no highlights.
-    if isinstance(tagged_tokens, string_types):
+    if isinstance(tagged_tokens, str):
         return tagged_tokens.splitlines(), []
 
     lines = []  # type: List[Text]
@@ -1140,20 +1137,20 @@ def _find_next_sentence(lines, sline, scol):
             break
 
     # Check if the first character of the sentence is a bullet
-    if indexbytes(first_line, 0) in bullets:  # type: ignore[no-untyped-call]
+    if first_line[0] in bullets:  # type: ignore[no-untyped-call]
         # '-', '+', '*' can be repeated
-        for c in iterbytes(first_line[1:]):
-            if c in bullets[2:] and c == indexbytes(first_line, 0):  # type: ignore[no-untyped-call]
+        for c in first_line[1:]:
+            if c in bullets[2:] and c == first_line[0]:  # type: ignore[no-untyped-call]
                 col += 1
             else:
                 break
         return (line, col)
 
     # Check if this is a bracketed goal selector
-    if _char_isdigit(indexbytes(first_line, 0)):  # type: ignore[no-untyped-call]
+    if _char_isdigit(first_line[0]):  # type: ignore[no-untyped-call]
         state = "digit"
         selcol = col
-        for c in iterbytes(first_line[1:]):
+        for c in first_line[1:]:
             # Hack to silence mypy complaints in Python 2
             assert isinstance(c, int)
             if state == "digit" and _char_isdigit(c):
@@ -1429,4 +1426,4 @@ def _char_isdigit(c):
 
 def _char_isspace(c):
     # type: (int) -> bool
-    return c in iterbytes(b" \t\n\r\x0b\f")  # type: ignore[operator]
+    return c in b" \t\n\r\x0b\f"  # type: ignore[operator]

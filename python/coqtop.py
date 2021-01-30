@@ -11,10 +11,8 @@ import signal
 import subprocess
 import threading
 import time
+from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
-
-from six import ensure_text
-from six.moves.queue import Empty, Queue
 
 from xmlInterface import (
     TIMEOUT_ERR,
@@ -325,10 +323,6 @@ class Coqtop(object):
         assert self.xml is not None
         if cmd_no_comment is None:
             cmd_no_comment = cmd
-        # Make sure 'cmd' is a string format that supports unicode
-        cmd = ensure_text(cmd, encoding)  # type: ignore[no-untyped-call]
-        cmd_no_comment = ensure_text(cmd_no_comment, encoding)  # type: ignore[no-untyped-call]
-        assert cmd_no_comment is not None
 
         if self.xml.is_option(cmd_no_comment):
             return self.do_option(cmd_no_comment, in_script, encoding, timeout)
