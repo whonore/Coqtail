@@ -26,6 +26,7 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    cast,
 )
 
 import coqtop as CT
@@ -685,12 +686,12 @@ class Coqtail:
     @property
     def changedtick(self) -> int:
         """The value of changedtick for this buffer."""
-        return self.handler.vimvar("changedtick")  # type: ignore
+        return cast(int, self.handler.vimvar("changedtick"))
 
     @property
     def log(self) -> str:
         """The name of this buffer's debug log."""
-        return self.handler.vimvar("coqtail_log_name")  # type: ignore[no-any-return]
+        return cast(str, self.handler.vimvar("coqtail_log_name"))
 
     @log.setter
     def log(self, log: str) -> None:
@@ -761,7 +762,7 @@ class CoqtailHandler(StreamRequestHandler):
                 queue = self.resps[msg_id]
         while not self.closed:
             try:
-                return queue.get(timeout=self.check_close_rate)  # type: ignore
+                return cast(Sequence[Any], queue.get(timeout=self.check_close_rate))
             except Empty:
                 pass
         raise EOFError
@@ -787,7 +788,7 @@ class CoqtailHandler(StreamRequestHandler):
             except EOFError:
                 break
 
-            handler = {
+            handlers = {
                 "start": self.coq.start,
                 "stop": self.coq.stop,
                 "step": self.coq.step,
@@ -803,10 +804,11 @@ class CoqtailHandler(StreamRequestHandler):
                 "find_def": self.coq.find_def,
                 "find_lib": self.coq.find_lib,
                 "refresh": self.coq.refresh,
-            }.get(func, None)
+            }  # type: Mapping[str, Callable[..., object]]
+            handler = handlers.get(func, None)
 
             try:
-                ret = handler(**args) if handler is not None else None  # type: ignore
+                ret = handler(**args) if handler is not None else None
                 msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
                 self.wfile.write(json.dumps(msg).encode("utf-8") + b"\n")
             # Python 2 doesn't have BrokenPipeError
@@ -1132,22 +1134,20 @@ def _find_next_sentence(
             break
 
     # Check if the first character of the sentence is a bullet
-    if first_line[0] in bullets:  # type: ignore[no-untyped-call]
+    if first_line[0] in bullets:
         # '-', '+', '*' can be repeated
         for c in first_line[1:]:
-            if c in bullets[2:] and c == first_line[0]:  # type: ignore[no-untyped-call]
+            if c in bullets[2:] and c == first_line[0]:
                 col += 1
             else:
                 break
         return (line, col)
 
     # Check if this is a bracketed goal selector
-    if _char_isdigit(first_line[0]):  # type: ignore[no-untyped-call]
+    if _char_isdigit(first_line[0]):
         state = "digit"
         selcol = col
         for c in first_line[1:]:
-            # Hack to silence mypy complaints in Python 2
-            assert isinstance(c, int)
             if state == "digit" and _char_isdigit(c):
                 selcol += 1
             elif state == "digit" and _char_isspace(c):
@@ -1418,4 +1418,4 @@ def _char_isdigit(c: int) -> bool:
 
 
 def _char_isspace(c: int) -> bool:
-    return c in b" \t\n\r\x0b\f"  # type: ignore[operator]
+    return c in b" \t\n\r\x0b\f"

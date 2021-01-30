@@ -13,11 +13,22 @@ from collections import namedtuple
 from xml.dom.minidom import parseString
 
 try:
-    from shutil import which  # type: ignore[attr-defined]
+    from shutil import which
 except ImportError:
     from distutils.spawn import find_executable as which  # type: ignore[no-redef]
 
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 
 class FindCoqtopError(Exception):
@@ -166,7 +177,7 @@ def prettyxml(xml: bytes) -> str:
     """Pretty print XML for debugging."""
     xml = _unescape(xml)
     # No stubs for xml.dom.minidom
-    return parseString(xml).toprettyxml()  # type: ignore[no-any-return]
+    return cast(str, parseString(xml).toprettyxml())
 
 
 class XMLInterfaceBase(metaclass=ABCMeta):
@@ -331,9 +342,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     def _to_string(self, xml: ET.Element) -> str:
         """Expect: <string>str</string>"""
-        # In Python 2 itertext returns Generator[Any, None, None] instead
-        # of Generator[str, None, None]
-        return "".join(xml.itertext())  # type: ignore[no-any-return]
+        return "".join(xml.itertext())
 
     def _of_string(self, val: str) -> ET.Element:
         """Expect: str"""
@@ -444,7 +453,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         """Create a <call> node."""
         elt = self._build_xml("call", val=cmd, children=children, text=arg, attrs=attrs)
         # In Python 3 tostring returns Any instead of bytes
-        return ET.tostring(elt, encoding)  # type: ignore[no-any-return]
+        return cast(bytes, ET.tostring(elt, encoding))
 
     def _to_response(self, xml: ET.Element) -> Union[Ok, Err]:
         """Expect:
@@ -716,7 +725,7 @@ class XMLInterface84(XMLInterfaceBase):
     def _to_message(self, xml: ET.Element) -> str:
         """Expect: <message>message_level string</message>"""
         # xml[1] is a string
-        return self._to_py(xml[1])  # type: ignore[return-value]
+        return cast(str, self._to_py(xml[1]))
 
     def _to_feedback(self, xml: ET.Element) -> str:
         """Expect:
@@ -727,7 +736,7 @@ class XMLInterface84(XMLInterfaceBase):
 
         if content.get("val") == "errormsg":
             # content[1] is a string
-            return self._to_py(content[1])  # type: ignore[return-value]
+            return cast(str, self._to_py(content[1]))
         else:
             # TODO: maybe make use of this info?
             return ""
@@ -1048,7 +1057,7 @@ class XMLInterface85(XMLInterfaceBase):
     def _to_message(self, xml: ET.Element) -> str:
         """Expect: <message>message_level string</message>"""
         # xml[1] is a string
-        return self._to_py(xml[1])  # type: ignore[return-value]
+        return cast(str, self._to_py(xml[1]))
 
     def _to_feedback(self, xml: ET.Element) -> str:
         """Expect:
@@ -1059,7 +1068,7 @@ class XMLInterface85(XMLInterfaceBase):
 
         if content.get("val") == "errormsg":
             # content[1] is a string
-            return self._to_py(content[1])  # type: ignore[return-value]
+            return cast(str, self._to_py(content[1]))
         else:
             # TODO: maybe make use of this info?
             return ""
@@ -1270,7 +1279,7 @@ class XMLInterface86(XMLInterface85):
         """Expect: <message>message_level (option ?) richpp</message>"""
         # TODO: see if option or message_level are useful
         # xml[2] is a string
-        return self._to_py(xml[2])  # type: ignore[return-value]
+        return cast(str, self._to_py(xml[2]))
 
     # Overrides _to_feedback() from 8.5
     def _to_feedback(self, xml: ET.Element) -> str:
@@ -1282,7 +1291,7 @@ class XMLInterface86(XMLInterface85):
 
         if content.get("val") == "message":
             # content[0] is a string
-            return self._to_py(content[0])  # type: ignore[return-value]
+            return cast(str, self._to_py(content[0]))
         else:
             # TODO: maybe make use of this info?
             return ""

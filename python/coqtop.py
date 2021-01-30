@@ -511,13 +511,12 @@ class Coqtop:
             # Create unique log file
             pre = "coqtop_{}_".format(datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
             fmt = logging.Formatter("%(asctime)s: %(message)s")
-            # Python 2 says _TemporaryFileWrapper is incompatible with IO[str]
-            self.log = NamedTemporaryFile(mode="w", prefix=pre, delete=False)  # type: ignore[assignment]
+            self.log = NamedTemporaryFile(mode="w", prefix=pre, delete=False)
             self.handler = logging.StreamHandler(self.log)
             self.handler.setFormatter(fmt)
             self.logger.addHandler(self.handler)
             self.logger.setLevel(logging.DEBUG)
-            return self.log.name  # type: ignore[no-any-return, attr-defined] # (see above)
+            return self.log.name
         else:
             # Clean up old logging
             self.log.close()
