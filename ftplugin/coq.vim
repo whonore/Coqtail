@@ -10,8 +10,8 @@ call coqtail#register()
 if has('comments')
   setlocal commentstring=(*%s*)
   setlocal comments=srn:(*,mb:*,exn:*)
-  " N.B. The 'r' and 'o' flags mistake the '*' bullet as a middle comment
-  " and will automatically add an extra one after <Enter>, 'o' or 'O'.
+  " NOTE: The 'r' and 'o' flags mistake the '*' bullet as a middle comment and
+  " will automatically add an extra one after <Enter>, 'o' or 'O'.
   setlocal formatoptions-=tro formatoptions+=cql
 endif
 

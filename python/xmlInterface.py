@@ -567,14 +567,14 @@ class XMLInterfaceBase(metaclass=ABCMeta):
     def is_option(self, cmd: str) -> bool:
         """Check if 'cmd' is trying to set/check an option."""
         # Starts with Set, Unset, Test
-        # N.B. 'cmd' has been stripped of comments and leading whitespace so
+        # NOTE: 'cmd' has been stripped of comments and leading whitespace so
         # just check for option commands at the start
         return re.match("((Uns|S)et|Test)$", cmd.split()[0]) is not None
 
     def is_query(self, cmd: str) -> bool:
         """Check if 'cmd' is a query."""
         re_str = "(" + "|".join(self.queries) + ")$"
-        # N.B. see is_option()
+        # NOTE: see is_option()
         return re.match(re_str, cmd.split()[0].rstrip(".")) is not None
 
     def parse_option(

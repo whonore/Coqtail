@@ -87,7 +87,7 @@ endfunction
 " Indent pairs
 function! s:indent_of_previous_pair(pstart, pmid, pend, usecol, syns) abort
   let l:skip = s:matchsyn('line(".")', 'col(".")', a:syns)
-  " N.B. Match when cursor is inside the match. See ':h searchpair'.
+  " NOTE: Match when cursor is inside the match. See ':h searchpair'.
   let l:pend = len(a:pend) > 1 ? a:pend . '\zs' : a:pend
   let [l:line, l:col] = searchpairpos(a:pstart, a:pmid, l:pend, 'bWn', l:skip)
   return a:usecol && l:line != 0 ? l:col - 1 : indent(l:line)
@@ -265,7 +265,7 @@ function! GetCoqIndent() abort
   endif
 
   " } at end of previous line
-  " N.B. must come after the bullet cases
+  " NOTE: must come after the bullet cases
   if l:previousline =~# '}\s*$'
     call search('}', 'bW')
     return s:indent_of_previous_pair('{', '', '}', 0, ['string', 'comment'])

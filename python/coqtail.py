@@ -748,8 +748,8 @@ class CoqtailHandler(StreamRequestHandler):
                 else:
                     self.reqs.put((msg_id, bnum, func, args))
             else:
-                # N.B. Accessing self.resps concurrently creates a race condition
-                # where defaultdict could construct a Queue twice
+                # NOTE: Accessing self.resps concurrently creates a race
+                # condition where defaultdict could construct a Queue twice
                 with self.resp_lk:
                     self.resps[-msg_id].put((msg_id, data))
 
@@ -886,7 +886,7 @@ class CoqtailServer:
     @staticmethod
     def start_server(sync: bool) -> int:
         """Start the TCP server."""
-        # N.B. port = 0 chooses any arbitrary open one
+        # NOTE: port = 0 chooses any arbitrary open one
         CoqtailHandler.sync = sync
         CoqtailServer.serv = ThreadingTCPServer(("localhost", 0), CoqtailHandler)
         CoqtailServer.serv.daemon_threads = True
@@ -990,8 +990,8 @@ class ChannelManager:
         while True:
             try:
                 data.append(ChannelManager.channels[handle].recv(4096).decode("utf-8"))
-                # N.B. Some older Vims can't convert expressions with None
-                # to Vim values so just return a string
+                # NOTE: Some older Vims can't convert expressions with None to
+                # Vim values so just return a string
                 res = "".join(data)
                 _ = json.loads(res)
                 ChannelManager.results[handle] = res
@@ -1369,9 +1369,8 @@ matcher = Matcher()
 # Misc #
 def _strip_comments(msg: bytes) -> Tuple[bytes, List[List[int]]]:
     """Remove all comments from 'msg'."""
-    # N.B. Coqtop will ignore comments, but it makes it easier to inspect
-    # commands in Coqtail (e.g. options in coqtop.do_option) if we remove
-    # them.
+    # NOTE: Coqtop will ignore comments, but it makes it easier to inspect
+    # commands in Coqtail (e.g. options in coqtop.do_option) if we remove them.
     nocom = []
     com_pos = []  # Remember comment offset and length
     off = 0

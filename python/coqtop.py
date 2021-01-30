@@ -348,7 +348,7 @@ class Coqtop:
 
         # 'msg' can be None if a command does not exist for a particular
         # version and is being faked.
-        # N.B. It is important that the '_standardize' function being called
+        # NOTE: It is important that the '_standardize' function being called
         # does not depend on the value it is passed since it is None
         cmd, msg = cmdtype_msg
         if msg is None:

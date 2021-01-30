@@ -49,7 +49,7 @@ if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight
   endfunction
 
   call s:CoqtailHighlight()
-  " N.B. Setting a colorscheme usually calls 'syntax clear' so have to set
+  " NOTE: Setting a colorscheme usually calls 'syntax clear' so have to set
   " Coqtail highlighting colors again
   augroup coqtail_highlight
     autocmd!
@@ -63,7 +63,7 @@ if exists('b:current_syntax') || get(g:, 'coqtail_nosyntax', 0)
   finish
 endif
 
-" N.B. Must be here and not in ftplugin. The Verilog syntax file resets it and
+" NOTE: Must be here and not in ftplugin. The Verilog syntax file resets it and
 " ftplugin is only sourced once so it is lost when a buffer is reloaded.
 " Keywords are alphanumeric, _, and '
 setlocal iskeyword=@,48-57,192-255,_,'
