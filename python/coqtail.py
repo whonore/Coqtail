@@ -90,7 +90,7 @@ class NoDotError(Exception):
 
 
 # Coqtail Server #
-class Coqtail(object):
+class Coqtail:
     """Manage Coqtop interfaces and auxiliary buffers for each Coq file."""
 
     def __init__(self, handler):
@@ -878,7 +878,7 @@ class CoqtailHandler(StreamRequestHandler):
             self.coq.coqtop.interrupt()
 
 
-class CoqtailServer(object):
+class CoqtailServer:
     """A server through which Vim and Coqtail communicate."""
 
     serv = None
@@ -909,7 +909,7 @@ class CoqtailServer(object):
             CoqtailServer.serv = None
 
 
-class ChannelManager(object):
+class ChannelManager:
     """Emulate Vim's ch_* functions with sockets."""
 
     channels = {}  # type: Dict[int, socket.socket]
@@ -1301,10 +1301,10 @@ def _skip_block(
 
 
 # Region Highlighting #
-class Matcher(object):
+class Matcher:
     """Construct Vim regexes to pass to 'matchadd()' for an arbitrary region."""
 
-    class _Matcher(object):
+    class _Matcher:
         """Construct regexes for a row or column."""
 
         def __getitem__(self, key):

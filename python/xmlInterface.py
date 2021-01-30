@@ -43,7 +43,7 @@ class FindCoqtopError(Exception):
 
 
 # Coqtop Response Types #
-class Ok(object):
+class Ok:
     """A response representing success."""
 
     def __init__(self, val, msg=""):
@@ -53,7 +53,7 @@ class Ok(object):
         self.msg = msg
 
 
-class Err(object):
+class Err:
     """A response representing failure."""
 
     def __init__(self, msg, loc=(-1, -1)):
@@ -188,7 +188,7 @@ def prettyxml(xml):
     return parseString(xml).toprettyxml()  # type: ignore[no-any-return]
 
 
-class XMLInterfaceBase(object, metaclass=ABCMeta):
+class XMLInterfaceBase(metaclass=ABCMeta):
     """Provide methods and types common to all XML interface versions."""
 
     # Coqtop Types #

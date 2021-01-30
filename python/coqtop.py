@@ -31,7 +31,7 @@ except ImportError:
 DEFAULT_REF = Err("Default Ref value. Should never be seen.")
 
 
-class Ref(object):
+class Ref:
     """A mutable value to be passed between threads."""
 
     __slots__ = ("val",)
@@ -45,7 +45,7 @@ class CoqtopError(Exception):
     """An exception for when Coqtop stops unexpectedly."""
 
 
-class Coqtop(object):
+class Coqtop:
     """Provide an interface to the background Coqtop process."""
 
     def __init__(self):

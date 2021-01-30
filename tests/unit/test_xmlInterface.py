@@ -32,7 +32,7 @@ def mkXML(tag, text="", attrs=None, children=None):
     return xml
 
 
-class ToOfTests(object):
+class ToOfTests:
     """Methods return test cases for _of_py and _to_py as PyXML objects."""
 
     @staticmethod
