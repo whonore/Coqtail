@@ -11,13 +11,15 @@ import threading
 import time
 from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
-from typing import IO, TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Union
+from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Tuple
 
 from xmlInterface import (
     TIMEOUT_ERR,
     Err,
     FindCoqtopError,
+    Goals,
     Ok,
+    Result,
     XMLInterface,
     XMLInterfaceBase,
     prettyxml,
@@ -39,7 +41,7 @@ class Ref:
 
     __slots__ = ("val",)
 
-    def __init__(self, val: Union[Ok, Err] = DEFAULT_REF) -> None:
+    def __init__(self, val: Result = DEFAULT_REF) -> None:
         self.val = val
 
 
@@ -246,10 +248,9 @@ class Coqtop:
             return False, response.msg, response.loc, err
 
     def goals(
-        self, timeout: Optional[int] = None
-    ) -> Tuple[
-        bool, str, Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], str
-    ]:
+        self,
+        timeout: Optional[int] = None,
+    ) -> Tuple[bool, str, Optional[Goals], str]:
         """Get the current set of hypotheses and goals."""
         assert self.xml is not None
         self.logger.debug("goals")
@@ -336,8 +337,10 @@ class Coqtop:
 
     # Interacting with Coqtop #
     def call(
-        self, cmdtype_msg: Tuple[str, Optional[bytes]], timeout: Optional[int] = None
-    ) -> Tuple[Union[Ok, Err], str]:
+        self,
+        cmdtype_msg: Tuple[str, Optional[bytes]],
+        timeout: Optional[int] = None,
+    ) -> Tuple[Result, str]:
         """Send 'msg' to the Coqtop process and wait for the response."""
         assert self.xml is not None
         # Check if Coqtop has stopped
@@ -401,7 +404,10 @@ class Coqtop:
         return self.xml.standardize(cmd, response), self.collect_err()
 
     def timeout_thread(
-        self, timeout: int, got_response: threading.Event, timed_out: threading.Event
+        self,
+        timeout: int,
+        got_response: threading.Event,
+        timed_out: threading.Event,
     ) -> None:
         """Wait on the 'got_response' Event for timeout seconds and set
         'timed_out' and interrupt the Coqtop process if it is not set in
