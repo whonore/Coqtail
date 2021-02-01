@@ -105,7 +105,7 @@ class UnmatchedError(Exception):
     """An unmatched comment or string was found."""
 
     def __init__(self, token: str, loc: Tuple[int, int]) -> None:
-        super().__init__("Found unmatched {}.".format(token))
+        super().__init__(f"Found unmatched {token}.")
         line, col = loc
         self.range = (loc, (line, col + len(token)))
 
@@ -409,7 +409,7 @@ class Coqtail:
 
     def qual_name(self, target: str, opts: VimOptions) -> Optional[Tuple[str, str]]:
         """Find the fully qualified name of 'target' using 'Locate'."""
-        success, locate, _ = self.do_query("Locate {}.".format(target), opts=opts)
+        success, locate, _ = self.do_query(f"Locate {target}.", opts=opts)
         if not success:
             return None
 
@@ -440,7 +440,7 @@ class Coqtail:
 
     def find_lib(self, lib: str, opts: VimOptions) -> Optional[str]:
         """Find the path to the .v file corresponding to the libary 'lib'."""
-        success, locate, _ = self.do_query("Locate Library {}.".format(lib), opts=opts)
+        success, locate, _ = self.do_query(f"Locate Library {lib}.", opts=opts)
         if not success:
             return None
 
@@ -543,16 +543,15 @@ class Coqtail:
         nadmit = len(goals.given_up)
 
         # Information about number of remaining goals
-        plural = "" if ngoals == 1 else "s"
-        lines.append("{} subgoal{}".format(ngoals, plural))
+        lines.append(f"{ngoals} subgoal{'' if ngoals == 1 else 's'}")
         if 0 < nhidden:
-            lines.append("({} unfocused at this level)".format(nhidden))
+            lines.append(f"({nhidden} unfocused at this level)")
         if 0 < nshelved or 0 < nadmit:
             line = []
             if 0 < nshelved:
-                line.append("{} shelved".format(nshelved))
+                line.append(f"{nshelved} shelved")
             if 0 < nadmit:
-                line.append("{} admitted".format(nadmit))
+                line.append(f"{nadmit} admitted")
             lines.append(" ".join(line))
 
         lines.append("")
@@ -567,11 +566,11 @@ class Coqtail:
                     if bullet == "}":
                         bullet_info = "end this goal with '}'"
                     else:
-                        bullet_info = "use bullet '{}'".format(bullet)
+                        bullet_info = f"use bullet '{bullet}'"
 
                 next_info = "Next goal"
                 if bullet_info != "":
-                    next_info += " ({})".format(bullet_info)
+                    next_info += " ({bullet_info})"
                 next_info += ":"
 
                 lines += [next_info, ""]
@@ -591,7 +590,7 @@ class Coqtail:
                     lines += ls
                     highlights += hls
 
-            hbar = "{:=>25} ({} / {})".format("", idx + 1, ngoals)
+            hbar = f"{'':=>25} ({idx + 1} / {ngoals})"
             lines += ["", hbar, ""]
 
             ls, hls = lines_and_highlights(goal.ccl, len(lines))
@@ -675,7 +674,7 @@ class Coqtail:
             "λ                     /",
             " λ      Coqtail      / ",
             "  λ                 /  ",
-            "   λ{}/    ".format(("Coq " + version).center(15)),
+            f"   λ{('Coq ' + version).center(15)}/    ",
             "    λ             /    ",
             "     λ           /     ",
             "      λ         /      ",
@@ -706,7 +705,7 @@ class Coqtail:
             msg = "Debugging disabled."
             self.log = ""
         else:
-            msg = "Debugging enabled. Log: {}.".format(log)
+            msg = f"Debugging enabled. Log: {log}."
             self.log = log
 
         self.set_info(msg, reset=True)
@@ -1097,8 +1096,8 @@ def get_searches(tgt_type: str, tgt_name: str) -> List[str]:
     )
 
     return [
-        r"<({})>\s*\zs<({})>".format(search_vernac, search_name),
-        r"<({})>".format(search_name),
+        rf"<({search_vernac})>\s*\zs<({search_name})>",
+        rf"<({search_name})>",
     ]
 
 
@@ -1363,11 +1362,11 @@ class Matcher:
             match = []
             if isinstance(range, slice):
                 if range.start is not None and range.start > 1:
-                    match.append(r"\%>{}{}".format(range.start - 1, type))
+                    match.append(rf"\%>{range.start - 1}{type}")
                 if range.stop is not None:
-                    match.append(r"\%<{}{}".format(range.stop, type))
+                    match.append(rf"\%<{range.stop}{type}")
             else:
-                match.append(r"\%{}{}".format(range, type))
+                match.append(rf"\%{range}{type}")
             return "".join(match)
 
     def __init__(self) -> None:

@@ -286,7 +286,7 @@ class Coqtop:
                 ]
 
                 if optval != []:
-                    ret = "{}: {}".format(optval[0][1], optval[0][0])
+                    ret = f"{optval[0][1]}: {optval[0][0]}"
                 else:
                     ret = "Invalid option name"
         else:
@@ -525,7 +525,7 @@ class Coqtop:
 
         if self.log is None:
             # Create unique log file
-            pre = "coqtop_{}_".format(datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
+            pre = f"coqtop_{datetime.datetime.now().strftime('%y%m%d_%H%M%S')}_"
             fmt = logging.Formatter("%(asctime)s: %(message)s")
             self.log = NamedTemporaryFile(mode="w", prefix=pre, delete=False)
             self.handler = logging.StreamHandler(self.log)

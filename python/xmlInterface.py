@@ -80,7 +80,7 @@ TIMEOUT_ERR = Err(
 def unexpected(expected: Iterable[Any], got: Any) -> TypeError:
     """Return an exception with a message showing what was expected."""
     expect = " or ".join(map(str, expected))
-    return TypeError("Expected {}, but got {}".format(expect, str(got)))
+    return TypeError(f"Expected {expect}, but got {str(got)}")
 
 
 def _unescape(cmd: bytes) -> bytes:
@@ -306,8 +306,8 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             )
         except StopIteration:
             raise FindCoqtopError(
-                "Could not find {} in {}. Perhaps you need to set "
-                "g:coqtail_coq_path or g:coqtail_coq_prog.".format(coqtop, path)
+                f"Could not find {coqtop} in {path}. Perhaps you need to set "
+                "g:coqtail_coq_path or g:coqtail_coq_prog."
             )
 
     def topfile(self, filename: str, args: Sequence[str]) -> Tuple[str, ...]:
@@ -1514,7 +1514,7 @@ def XMLInterface(version: str) -> XMLInterfaceBase:
     versions: Tuple[int, ...] = ()
     for ver in (re.match("[0-9]+", v) for v in str_versions):
         if ver is None:
-            raise ValueError("Invalid version: {}".format(version))
+            raise ValueError(f"Invalid version: {version}")
         versions += (int(ver.group(0)),)
 
     # Pad to at least 3 digits
