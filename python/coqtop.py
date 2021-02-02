@@ -11,7 +11,7 @@ import threading
 import time
 from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
-from typing import IO, TYPE_CHECKING, Iterator, List, Optional, Tuple
+from typing import IO, TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
 
 from xmlInterface import (
     TIMEOUT_ERR,
@@ -86,7 +86,7 @@ class Coqtop:
         coq_path: Optional[str],
         coq_prog: Optional[str],
         filename: str,
-        args: List[str],
+        args: Iterable[str],
         timeout: Optional[int] = None,
     ) -> Tuple[Optional[str], str]:
         """Launch the Coqtop process."""

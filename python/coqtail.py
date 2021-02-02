@@ -136,7 +136,7 @@ class Coqtail:
         self.coqtop = CT.Coqtop()
         self.handler = handler
         self.oldchange = 0
-        self.oldbuf: Sequence[bytes] = []
+        self.oldbuf: List[bytes] = []
         self.endpoints: List[Tuple[int, int]] = []
         self.send_queue: Deque[Mapping[str, Tuple[int, int]]] = deque()
         self.error_at: Optional[Tuple[Tuple[int, int], Tuple[int, int]]] = None
@@ -178,7 +178,7 @@ class Coqtail:
         version: str,
         coq_path: str,
         coq_prog: str,
-        args: List[str],
+        args: Iterable[str],
         opts: VimOptions,
     ) -> Optional[str]:
         """Start a new Coqtop instance."""
@@ -301,7 +301,12 @@ class Coqtail:
         """Rewind to the beginning of the file."""
         return self.rewind_to(0, 1, opts=opts)
 
-    def query(self, args: List[str], opts: VimOptions, silent: bool = False) -> None:
+    def query(
+        self,
+        args: Iterable[str],
+        opts: VimOptions,
+        silent: bool = False,
+    ) -> None:
         """Forward Coq query to Coqtop interface."""
         success, msg, stderr = self.do_query(" ".join(args), opts=opts)
 
@@ -729,9 +734,9 @@ class Coqtail:
         self.handler.vimvar("coqtail_log_name", log)
 
     @property
-    def buffer(self) -> Sequence[bytes]:
+    def buffer(self) -> List[bytes]:
         """The contents of this buffer."""
-        lines: Sequence[str] = self.handler.vimcall(
+        lines: List[str] = self.handler.vimcall(
             "getbufline",
             True,
             self.handler.bnum,
@@ -1416,7 +1421,7 @@ matcher = Matcher()
 
 
 # Misc #
-def _strip_comments(msg: bytes) -> Tuple[bytes, List[List[int]]]:
+def _strip_comments(msg: bytes) -> Tuple[bytes, List[Tuple[int, int]]]:
     """Remove all comments from 'msg'."""
     # NOTE: Coqtop will ignore comments, but it makes it easier to inspect
     # commands in Coqtail (e.g. options in coqtop.do_option) if we remove them.
@@ -1436,7 +1441,7 @@ def _strip_comments(msg: bytes) -> Tuple[bytes, List[List[int]]]:
             # New nested comment
             if nesting == 0:
                 nocom.append(msg[:start])
-                com_pos.append([off + start, 0])
+                com_pos.append((off + start, 0))
             msg = msg[start + 2 :]
             off += start + 2
             nesting += 1
@@ -1446,14 +1451,14 @@ def _strip_comments(msg: bytes) -> Tuple[bytes, List[List[int]]]:
             off += end + 2
             nesting -= 1
             if nesting == 0:
-                com_pos[-1][1] = off - com_pos[-1][0]
+                com_pos[-1] = (com_pos[-1][0], off - com_pos[-1][0])
 
     return b" ".join(nocom), com_pos
 
 
 def _find_diff(
-    x: Sequence[T],
-    y: Sequence[T],
+    x: Iterable[T],
+    y: Iterable[T],
     stop: Optional[int] = None,
 ) -> Optional[int]:
     """Locate the first differing element in 'x' and 'y' up to 'stop'."""

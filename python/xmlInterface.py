@@ -13,8 +13,10 @@ from shutil import which
 from typing import (
     Any,
     Callable,
+    Container,
     Dict,
     Iterable,
+    Iterator,
     List,
     NamedTuple,
     Optional,
@@ -94,11 +96,11 @@ def _unescape(cmd: bytes) -> bytes:
 
 
 def _parse_tagged_tokens(
-    tags: Sequence[PPTag],
+    tags: Container[PPTag],
     xml: ET.Element,
     stack: Optional[List[PPTag]] = None,
     inner: bool = False,
-) -> Iterable[Tuple[str, List[PPTag]]]:
+) -> Iterator[Tuple[str, List[PPTag]]]:
     """Scrape an XML element into a stream of text tokens and stack of tags.
 
     Helper function to parse_tagged_tokens.
@@ -154,9 +156,9 @@ def _parse_tagged_tokens(
 
 
 def parse_tagged_tokens(
-    tags: Sequence[PPTag],
+    tags: Container[PPTag],
     xml: ET.Element,
-) -> Iterable[TaggedToken]:
+) -> Iterator[TaggedToken]:
     """Scrape an XML element into a stream of text tokens and accompanying tags.
 
     Written to support richpp markup.
@@ -274,7 +276,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         coq_path: Optional[str],
         coq_prog: Optional[str],
         filename: str,
-        args: List[str],
+        args: Iterable[str],
     ) -> Tuple[str, ...]:
         """The command to launch coqtop with the appropriate arguments."""
         # Include current directory in search if coq_path is not specified
@@ -310,7 +312,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
                 "g:coqtail_coq_path or g:coqtail_coq_prog."
             )
 
-    def topfile(self, filename: str, args: Sequence[str]) -> Tuple[str, ...]:
+    def topfile(self, filename: str, args: Iterable[str]) -> Tuple[str, ...]:
         """The command to set the top-level module name."""
         return ()
 
@@ -610,13 +612,13 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         # NOTE: see is_option()
         return re.match(re_str, cmd.split()[0].rstrip(".")) is not None
 
-    def parse_option(self, cmd: str) -> Tuple[Optional[Iterable[OptionArg]], str]:
+    def parse_option(self, cmd: str) -> Tuple[Optional[Sequence[OptionArg]], str]:
         """Parse what option is being set/checked."""
         # Assumes cmd is of the form 'Set|Unset|Test {option_name}'
         opts = cmd.strip(".").split()
         ty = opts[0]
 
-        vals: Optional[Iterable[XMLInterfaceBase.OptionArg]]
+        vals: Optional[Sequence[XMLInterfaceBase.OptionArg]]
         if ty == "Test":
             vals = None
         elif ty == "Set":
@@ -1451,7 +1453,7 @@ class XMLInterface89(XMLInterface88):
 class XMLInterface810(XMLInterface89):
     """The version 8.10.* XML interface."""
 
-    def topfile(self, filename: str, args: Sequence[str]) -> Tuple[str, ...]:
+    def topfile(self, filename: str, args: Iterable[str]) -> Tuple[str, ...]:
         """The command to set the top-level module name."""
         return (
             ("-topfile", filename)
