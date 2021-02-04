@@ -144,8 +144,7 @@ def _parse_tagged_tokens(
 
     # Recurse on children, with modified stack
     for child in xml:
-        for tt in _parse_tagged_tokens(tags, child, stack, True):
-            yield tt
+        yield from _parse_tagged_tokens(tags, child, stack, True)
 
     if pop_after is not None:
         stack.remove(pop_after)
