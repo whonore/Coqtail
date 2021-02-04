@@ -322,11 +322,8 @@ class XMLInterfaceBase(metaclass=ABCMeta):
     def valid_module(filename: str) -> bool:
         """Check if a file name is a valid module name."""
         filename = os.path.splitext(os.path.basename(filename))[0]
-        # TODO: use fullmatch in Python 3
-        return (
-            re.match(r"\w+$", filename, re.UNICODE) is not None
-            and re.match(r"\d", filename, re.UNICODE) is None
-        )
+        # Any string of word characters that doesn't start with a digit
+        return re.fullmatch(r"(?=\D)\w+", filename) is not None
 
     # XML Parsing and Marshalling #
     def _to_unit(self, _xml: ET.Element) -> Tuple[()]:
@@ -617,13 +614,13 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         # Starts with Set, Unset, Test
         # NOTE: 'cmd' has been stripped of comments and leading whitespace so
         # just check for option commands at the start
-        return re.match("((Uns|S)et|Test)$", cmd.split()[0]) is not None
+        return re.fullmatch("((Uns|S)et|Test)", cmd.split()[0]) is not None
 
     def is_query(self, cmd: str) -> bool:
         """Check if 'cmd' is a query."""
-        re_str = "(" + "|".join(self.queries) + ")$"
+        re_str = "(" + "|".join(self.queries) + ")"
         # NOTE: see is_option()
-        return re.match(re_str, cmd.split()[0].rstrip(".")) is not None
+        return re.fullmatch(re_str, cmd.split()[0].rstrip(".")) is not None
 
     @staticmethod
     def parse_option(cmd: str) -> Tuple[Optional[Sequence[OptionArg]], str]:
