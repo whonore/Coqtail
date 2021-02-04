@@ -30,7 +30,7 @@ jobs:
       - name: Install Coq ${{ matrix.coq_version }}
         run: nix-env -j auto -i -f ci/coq.nix --argstr version ${{ matrix.coq_version }}
       - name: Install Python ${{ matrix.py_version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.py_version }}
       - name: Install dependencies
@@ -53,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install Python ${{ matrix.py_version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.py_version }}
       - name: Install dependencies
