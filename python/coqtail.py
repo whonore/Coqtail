@@ -47,6 +47,7 @@ SkipFun = Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]
 
 if TYPE_CHECKING:
     # pylint: disable=unsubscriptable-object
+    # Queue is only subscriptable during type checking.
     from typing_extensions import TypedDict
 
     ReqQueue = Queue[Req]
@@ -205,6 +206,8 @@ class Coqtail:
 
     def stop(self, opts: VimOptions) -> None:
         """Stop Coqtop."""
+        # pylint: disable=unused-argument
+        # opts is always passed by handle().
         self.coqtop.stop()
 
     def step(self, steps: int, opts: VimOptions) -> Optional[str]:
@@ -269,33 +272,33 @@ class Coqtail:
         # Check if should rewind or advance
         if (line, col) < (eline, ecol):
             return self.rewind_to(line, col + 2, opts=opts)
-        else:
-            unmatched = None
-            buffer = self.buffer
-            while True:
-                try:
-                    to_send = _get_message_range(buffer, (eline, ecol))
-                except UnmatchedError as e:
-                    # Only report unmatched if it occurs after the desired position
-                    if e.range[0] <= (line, col):
-                        unmatched = e
-                    break
-                except NoDotError:
-                    break
-                if (line, col) < to_send["stop"]:
-                    break
-                eline, ecol = to_send["stop"]
-                ecol += 1
-                self.send_queue.append(to_send)
 
-            failed_at, err = self.send_until_fail(buffer, opts=opts)
-            if unmatched is not None and failed_at is None:
-                # Only report unmatched if no other errors occurred first
-                self.set_info(str(unmatched), reset=False)
-                self.error_at = unmatched.range
-                self.refresh(goals=False, opts=opts)
+        unmatched = None
+        buffer = self.buffer
+        while True:
+            try:
+                to_send = _get_message_range(buffer, (eline, ecol))
+            except UnmatchedError as e:
+                # Only report unmatched if it occurs after the desired position
+                if e.range[0] <= (line, col):
+                    unmatched = e
+                break
+            except NoDotError:
+                break
+            if (line, col) < to_send["stop"]:
+                break
+            eline, ecol = to_send["stop"]
+            ecol += 1
+            self.send_queue.append(to_send)
 
-            return err
+        failed_at, err = self.send_until_fail(buffer, opts=opts)
+        if unmatched is not None and failed_at is None:
+            # Only report unmatched if no other errors occurred first
+            self.set_info(str(unmatched), reset=False)
+            self.error_at = unmatched.range
+            self.refresh(goals=False, opts=opts)
+
+        return err
 
     def to_top(self, opts: VimOptions) -> Optional[str]:
         """Rewind to the beginning of the file."""
@@ -317,6 +320,8 @@ class Coqtail:
 
     def endpoint(self, opts: VimOptions) -> Tuple[int, int]:
         """Return the end of the Coq checked section."""
+        # pylint: disable=unused-argument
+        # opts is always passed by handle().
         # Get the location of the last '.'
         line, col = self.endpoints[-1] if self.endpoints != [] else (0, 1)
         return (line + 1, col)
@@ -426,20 +431,20 @@ class Coqtail:
         match = locate.split("\n")[0]
         if "No object of basename" in match:
             return None
-        else:
-            # Look for alias
-            alias = re.search(r"\(alias of (.*)\)", match)
-            if alias is not None:
-                # Found an alias, search again using that
-                return self.qual_name(alias.group(1), opts=opts)
 
-            info = match.split()
-            # Special case for Module Type
-            if info[0] == "Module" and info[1] == "Type":
-                tgt_type = "Module Type"
-                qual_tgt = info[2]
-            else:
-                tgt_type, qual_tgt = info[:2]
+        # Look for alias
+        alias = re.search(r"\(alias of (.*)\)", match)
+        if alias is not None:
+            # Found an alias, search again using that
+            return self.qual_name(alias.group(1), opts=opts)
+
+        info = match.split()
+        # Special case for Module Type
+        if info[0] == "Module" and info[1] == "Type":
+            tgt_type = "Module Type"
+            qual_tgt = info[2]
+        else:
+            tgt_type, qual_tgt = info[:2]
 
         return qual_tgt, tgt_type
 
@@ -549,13 +554,13 @@ class Coqtail:
 
         # Information about number of remaining goals
         lines.append(f"{ngoals} subgoal{'' if ngoals == 1 else 's'}")
-        if 0 < nhidden:
+        if nhidden > 0:
             lines.append(f"({nhidden} unfocused at this level)")
-        if 0 < nshelved or 0 < nadmit:
+        if nshelved > 0 or nadmit > 0:
             line = []
-            if 0 < nshelved:
+            if nshelved > 0:
                 line.append(f"{nshelved} shelved")
-            if 0 < nadmit:
+            if nadmit > 0:
                 line.append(f"{nadmit} admitted")
             lines.append(" ".join(line))
 
@@ -674,6 +679,8 @@ class Coqtail:
         opts: VimOptions,
     ) -> None:
         """Display the logo in the info panel."""
+        # pylint: disable=unused-argument
+        # opts is always passed by handle().
         msg = [
             "~~~~~~~~~~~~~~~~~~~~~~~",
             "λ                     /",
@@ -703,7 +710,7 @@ class Coqtail:
         top_pad = [""] * ((height // 2) - (len(msg) // 2 + 1))
         self.info_msg = top_pad + msg
 
-    def toggle_debug(self, opts: VimOptions) -> Optional[str]:
+    def toggle_debug(self, opts: VimOptions) -> None:
         """Enable or disable logging of debug messages."""
         log = self.coqtop.toggle_debug()
         if log is None:
@@ -715,7 +722,6 @@ class Coqtail:
 
         self.set_info(msg, reset=True)
         self.refresh(goals=False, opts=opts)
-        return None
 
     # Vim Helpers #
     @property
@@ -883,10 +889,11 @@ class CoqtailHandler(StreamRequestHandler):
 
     def vimvar(self, var: str, val: Optional[Any] = None) -> Any:
         """Get or set the value of a Vim variable."""
-        if val is None:
-            return self.vimcall("getbufvar", True, self.bnum, var)
-        else:
-            return self.vimcall("setbufvar", True, self.bnum, var, val)
+        return (
+            self.vimcall("getbufvar", True, self.bnum, var)
+            if val is None
+            else self.vimcall("setbufvar", True, self.bnum, var, val)
+        )
 
     def refresh(
         self,
@@ -895,6 +902,8 @@ class CoqtailHandler(StreamRequestHandler):
         scroll: bool = False,
     ) -> None:
         """Refresh the highlighting and auxiliary panels."""
+        # pylint: disable=attribute-defined-outside-init
+        # refresh_time is defined in handle() when the connection is opened.
         if not force:
             cur_time = time.time()
             force = cur_time - self.refresh_time > self.refresh_rate
@@ -1004,8 +1013,7 @@ class ChannelManager:
         if reply is None and session is not None:
             if ChannelManager.sessions[handle] == session:
                 return True
-            else:
-                ChannelManager.sessions[handle] = session
+            ChannelManager.sessions[handle] = session
 
         if reply is None:
             msg_id = ChannelManager.msg_id
@@ -1363,15 +1371,15 @@ class Matcher:
 
         def __getitem__(self, key: Tuple[Union[int, slice], str]) -> str:
             """Construct the regex."""
-            range, type = key
+            match_range, match_type = key
             match = []
-            if isinstance(range, slice):
-                if range.start is not None and range.start > 1:
-                    match.append(rf"\%>{range.start - 1}{type}")
-                if range.stop is not None:
-                    match.append(rf"\%<{range.stop}{type}")
+            if isinstance(match_range, slice):
+                if match_range.start is not None and match_range.start > 1:
+                    match.append(rf"\%>{match_range.start - 1}{match_type}")
+                if match_range.stop is not None:
+                    match.append(rf"\%<{match_range.stop}{match_type}")
             else:
-                match.append(rf"\%{range}{type}")
+                match.append(rf"\%{match_range}{match_type}")
             return "".join(match)
 
     def __init__(self) -> None:
@@ -1423,6 +1431,7 @@ matcher = Matcher()
 # Misc #
 def _strip_comments(msg: bytes) -> Tuple[bytes, List[Tuple[int, int]]]:
     """Remove all comments from 'msg'."""
+    # pylint: disable=no-else-break
     # NOTE: Coqtop will ignore comments, but it makes it easier to inspect
     # commands in Coqtail (e.g. options in coqtop.do_option) if we remove them.
     nocom = []

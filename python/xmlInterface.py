@@ -306,17 +306,21 @@ class XMLInterfaceBase(metaclass=ABCMeta):
                 + self.topfile(filename, args)
                 + tuple(args)
             )
-        except StopIteration:
+        except StopIteration as e:
             raise FindCoqtopError(
                 f"Could not find {coqtop} in {path}. Perhaps you need to set "
                 "g:coqtail_coq_path or g:coqtail_coq_prog."
-            )
+            ) from e
 
-    def topfile(self, filename: str, args: Iterable[str]) -> Tuple[str, ...]:
+    @staticmethod
+    def topfile(filename: str, args: Iterable[str]) -> Tuple[str, ...]:
         """The command to set the top-level module name."""
+        # pylint: disable=unused-argument
+        # The arguments are only used in XMLInterface810 and greater.
         return ()
 
-    def valid_module(self, filename: str) -> bool:
+    @staticmethod
+    def valid_module(filename: str) -> bool:
         """Check if a file name is a valid module name."""
         filename = os.path.splitext(os.path.basename(filename))[0]
         # TODO: use fullmatch in Python 3
@@ -328,6 +332,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
     # XML Parsing and Marshalling #
     def _to_unit(self, _xml: ET.Element) -> Tuple[()]:
         """Expect: <unit />"""
+        # pylint: disable=no-self-use
         return ()
 
     def _of_unit(self, _val: Tuple[()]) -> ET.Element:
@@ -336,6 +341,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     def _to_bool(self, xml: ET.Element) -> bool:
         """Expect: <bool val="true | false" />"""
+        # pylint: disable=no-else-return,no-self-use
         val = xml.get("val")
 
         if val == "true":
@@ -350,6 +356,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     def _to_int(self, xml: ET.Element) -> int:
         """Expect: <int>int</int>"""
+        # pylint: disable=no-self-use
         if xml.text is not None:
             return int(xml.text)
         raise unexpected((str,), None)
@@ -360,6 +367,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     def _to_string(self, xml: ET.Element) -> str:
         """Expect: <string>str</string>"""
+        # pylint: disable=no-self-use
         return "".join(xml.itertext())
 
     def _of_string(self, val: str) -> ET.Element:
@@ -384,6 +392,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     def _to_option(self, xml: ET.Element) -> "CoqOption":
         """Expect: <option val="some">val</option> | <option val="none" />"""
+        # pylint: disable=no-else-return
         val = xml.get("val")
 
         if val == "none":
@@ -394,6 +403,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     def _of_option(self, val: CoqOption) -> ET.Element:
         """Expect: Some(val) | None"""
+        # pylint: disable=no-else-return
         if val is not None:
             return self._build_xml("option", "some", val.val)
         else:
@@ -401,6 +411,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     def _to_union(self, xml: ET.Element) -> "CoqUnion":
         """Expect: <union val="in_l | in_r">val</union>"""
+        # pylint: disable=no-else-return
         val = xml.get("val")
 
         if val == "in_l":
@@ -411,6 +422,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     def _of_union(self, val: CoqUnion) -> ET.Element:
         """Expect: Inl(val) | Inr(val)"""
+        # pylint: disable=no-else-return
         if isinstance(val, self.Inl):
             return self._build_xml("union", "in_l", val.val)
         elif isinstance(val, self.Inr):
@@ -421,15 +433,15 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         """Parse an XML value into a corresponding Python type."""
         try:
             return self._to_py_funcs[xml.tag](xml)
-        except KeyError:
-            raise unexpected(tuple(self._to_py_funcs), xml.tag)
+        except KeyError as e:
+            raise unexpected(tuple(self._to_py_funcs), xml.tag) from e
 
     def _of_py(self, val: Any) -> ET.Element:
         """Construct an XML element from a corresponding Python type."""
         try:
             return self._of_py_funcs[type(val).__name__](val)
-        except KeyError:
-            raise unexpected(tuple(self._of_py_funcs), type(val).__name__)
+        except KeyError as e:
+            raise unexpected(tuple(self._of_py_funcs), type(val).__name__) from e
 
     def _build_xml(
         self,
@@ -478,6 +490,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         <value val="good">val</value> |
         <value val="fail" (loc_s="int")? (loc_e="int")?>msg</value>
         """
+        # pylint: disable=no-else-return
         val = xml.get("val")
 
         if val == "good":
@@ -599,7 +612,8 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         """Create an XML string to set one of Coqtop's options."""
 
     # Helpers #
-    def is_option(self, cmd: str) -> bool:
+    @staticmethod
+    def is_option(cmd: str) -> bool:
         """Check if 'cmd' is trying to set/check an option."""
         # Starts with Set, Unset, Test
         # NOTE: 'cmd' has been stripped of comments and leading whitespace so
@@ -612,7 +626,8 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         # NOTE: see is_option()
         return re.match(re_str, cmd.split()[0].rstrip(".")) is not None
 
-    def parse_option(self, cmd: str) -> Tuple[Optional[Sequence[OptionArg]], str]:
+    @staticmethod
+    def parse_option(cmd: str) -> Tuple[Optional[Sequence[OptionArg]], str]:
         """Parse what option is being set/checked."""
         # Assumes cmd is of the form 'Set|Unset|Test {option_name}'
         opts = cmd.strip(".").split()
@@ -781,6 +796,7 @@ class XMLInterface84(XMLInterfaceBase):
         <feedback object="?" route="int">feedback_content</feedback>
         <feedback_content val="errormsg">loc string</feedback_content>
         """
+        # pylint: disable=no-else-return
         content = xml[0]
 
         if content.get("val") == "errormsg":
@@ -802,6 +818,7 @@ class XMLInterface84(XMLInterfaceBase):
         Return:
           state_id: int - The current state id (ignored in 8.4)
         """
+        # pylint: disable=no-self-use
         return Ok(0)
 
     def add(
@@ -833,6 +850,7 @@ class XMLInterface84(XMLInterfaceBase):
           res_msg: str - Messages produced by 'Add'
           state_id: int - The new state id (ignored in 8.4)
         """
+        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             res_msg: str = res.val
             res.val = {"res_msg": res_msg, "state_id": 0}
@@ -882,6 +900,7 @@ class XMLInterface84(XMLInterfaceBase):
         Return:
           msg: str - Messages produced by 'Query'
         """
+        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             msg: str = res.val
             res.msg = msg
@@ -902,6 +921,7 @@ class XMLInterface84(XMLInterfaceBase):
           shelved: list Goal - Shelved goals (dummy value in 8.4)
           given_up: list Goal - Admitted goals (dummy value in 8.4)
         """
+        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             opt_goals: XMLInterfaceBase.CoqOption = res.val
             if opt_goals is not None:
@@ -937,6 +957,7 @@ class XMLInterface84(XMLInterfaceBase):
           opts: list (string * string * ?) - Triples of all option names,
                                              descriptions, and current values
         """
+        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             raw_opts: List[Tuple[str, XMLInterface84.CoqOptionState]] = res.val
             opts: List[Tuple[str, str, Any]] = [
@@ -1155,6 +1176,7 @@ class XMLInterface85(XMLInterfaceBase):
         <feedback object="?" route="int">feedback_content</feedback>
         <feedback_content val="errormsg">loc string</feedback_content>
         """
+        # pylint: disable=no-else-return
         content = xml[0]
 
         if content.get("val") == "errormsg":
@@ -1177,6 +1199,7 @@ class XMLInterface85(XMLInterfaceBase):
         Return:
           state_id: int - The current state id
         """
+        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             val: XMLInterface85.CoqStateId = res.val
             res.val = val.id
@@ -1207,6 +1230,7 @@ class XMLInterface85(XMLInterfaceBase):
           res_msg: str - Messages produced by 'Add'
           state_id: int - The new state id
         """
+        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             val: Tuple[XMLInterface85.CoqStateId, Tuple[Any, str]] = res.val
             res.val = {"res_msg": val[1][1], "state_id": val[0].id}
@@ -1229,6 +1253,7 @@ class XMLInterface85(XMLInterfaceBase):
         Return:
           extra_steps: int - The number of additional steps rewound (ignored in >8.4)
         """
+        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             res.val = 0
         return res
@@ -1263,6 +1288,7 @@ class XMLInterface85(XMLInterfaceBase):
           shelved: list Goal - Shelved goals
           given_up: list Goal - Admitted goals
         """
+        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             opt_goals: XMLInterfaceBase.CoqOption = res.val
             if opt_goals is not None:
@@ -1298,6 +1324,7 @@ class XMLInterface85(XMLInterfaceBase):
           opts: list (string * string * ?) - Triples of all option names,
                                              descriptions, and current values
         """
+        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             raw_opts: List[Tuple[str, XMLInterface85.CoqOptionState]] = res.val
             opts: List[Tuple[str, str, Any]] = [
@@ -1381,6 +1408,7 @@ class XMLInterface86(XMLInterface85):
         <feedback object="?" route="int">state_id feedback_content</feedback>
         <feedback_content val="message">message</feedback_content>
         """
+        # pylint: disable=no-else-return
         content = xml[1]
 
         if content.get("val") == "message":
@@ -1453,12 +1481,13 @@ class XMLInterface89(XMLInterface88):
 class XMLInterface810(XMLInterface89):
     """The version 8.10.* XML interface."""
 
-    def topfile(self, filename: str, args: Iterable[str]) -> Tuple[str, ...]:
+    @staticmethod
+    def topfile(filename: str, args: Iterable[str]) -> Tuple[str, ...]:
         """The command to set the top-level module name."""
         return (
             ("-topfile", filename)
             if all(arg not in args for arg in ("-top", "-topfile"))
-            and self.valid_module(filename)
+            and XMLInterfaceBase.valid_module(filename)
             else ()
         )
 
@@ -1510,6 +1539,7 @@ XMLInterfaceLatest = XMLInterface813
 
 def XMLInterface(version: str) -> XMLInterfaceBase:
     """Return the appropriate XMLInterface class for the given version."""
+    # pylint: disable=no-else-return
     str_versions = version.replace("pl", ".").split(".")
 
     # Strip any trailing text (e.g. '+beta1')

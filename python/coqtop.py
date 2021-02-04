@@ -233,19 +233,22 @@ class Coqtop:
             self.xml.query(cmd, self.state_id, encoding=encoding), timeout=timeout
         )
 
-        if isinstance(response, Ok):
+        if isinstance(response, Ok) and in_script:
             # If the query was called from within the script we need to record
             # the state id so rewinding will work properly. Since 8.4 uses
             # number of steps rather than state ids, record '-1' to indicate
             # that no rewind should actually be done
-            if in_script:
-                if self.xml.versions >= (8, 5, 0):
-                    self.states.append(self.state_id)
-                else:
-                    self.states.append(-1)
-            return True, response.msg, None, err
-        else:
-            return False, response.msg, response.loc, err
+            if self.xml.versions >= (8, 5, 0):
+                self.states.append(self.state_id)
+            else:
+                self.states.append(-1)
+
+        return (
+            isinstance(response, Ok),
+            response.msg,
+            None if isinstance(response, Ok) else response.loc,
+            err,
+        )
 
     def goals(
         self,
@@ -301,15 +304,19 @@ class Coqtop:
                     break
             err = "".join(errs)
 
-        if isinstance(response, Ok):
+        if isinstance(response, Ok) and in_script:
             # Hack to associate setting an option with a new state id by
             # executing a noop so it works correctly with rewinding
             if in_script:
                 success, _, _, _ = self.advance(self.xml.noop, encoding)
                 assert success
-            return True, ret, None, err
-        else:
-            return False, response.msg, response.loc, err
+
+        return (
+            isinstance(response, Ok),
+            ret if isinstance(response, Ok) else response.msg,
+            None if isinstance(response, Ok) else response.loc,
+            err,
+        )
 
     def dispatch(
         self,
@@ -322,6 +329,7 @@ class Coqtop:
         """Decide whether 'cmd' is setting/getting an option, a query, or a
         regular command.
         """
+        # pylint: disable=no-else-return
         assert self.xml is not None
         if cmd_no_comment is None:
             cmd_no_comment = cmd
@@ -532,7 +540,6 @@ class Coqtop:
             self.handler.setFormatter(fmt)
             self.logger.addHandler(self.handler)
             self.logger.setLevel(logging.DEBUG)
-            return self.log.name
         else:
             # Clean up old logging
             self.log.close()
@@ -542,4 +549,4 @@ class Coqtop:
             self.handler = logging.NullHandler()
             self.logger.addHandler(self.handler)
             self.logger.setLevel(logging.CRITICAL)
-            return None
+        return self.log.name if self.log is not None else None
