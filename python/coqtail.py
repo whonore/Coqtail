@@ -1159,7 +1159,8 @@ def _find_next_sentence(
     scol: int,
 ) -> Tuple[int, int]:
     """Find the next sentence to send to Coq."""
-    bullets = (ord("{"), ord("}"), ord("-"), ord("+"), ord("*"))
+    braces = {ord(c) for c in "{}"}
+    bullets = {ord(c) for c in "-+*"}
 
     line, col = (sline, scol)
     while True:
@@ -1192,10 +1193,10 @@ def _find_next_sentence(
             break
 
     # Check if the first character of the sentence is a bullet
-    if first_line[0] in bullets:
+    if first_line[0] in braces | bullets:
         # '-', '+', '*' can be repeated
         for c in first_line[1:]:
-            if c in bullets[2:] and c == first_line[0]:
+            if c in bullets and c == first_line[0]:
                 col += 1
             else:
                 break
