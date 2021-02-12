@@ -585,7 +585,6 @@ class Coqtail:
 
                 lines += [next_info, ""]
 
-                print(next_goal.ccl)
                 ls, hls = lines_and_highlights(next_goal.ccl, len(lines))
                 lines += ls
                 highlights += hls
