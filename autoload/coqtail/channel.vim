@@ -132,18 +132,16 @@ else
   let s:session = 0
 
   function! s:open(address) dict abort
-    let self.handle = coqtail#compat#pyeval(printf(
-      \ 'ChannelManager.open("%s")', a:address
-    \))
+    let self.handle = py3eval(printf('ChannelManager.open("%s")', a:address))
     return self.handle
   endfunction
 
   function! s:close() dict abort
-    return coqtail#compat#pyeval(printf('ChannelManager.close(%d)', self.handle))
+    return py3eval(printf('ChannelManager.close(%d)', self.handle))
   endfunction
 
   function! s:status() dict abort
-    return coqtail#compat#pyeval(printf('ChannelManager.status(%d)', self.handle))
+    return py3eval(printf('ChannelManager.status(%d)', self.handle))
   endfunction
 
   function! s:sendexpr(expr, options) dict abort
@@ -161,7 +159,7 @@ else
       let a:expr[2].opts.filename = ''
     endif
 
-    call coqtail#compat#pyeval(printf(
+    call py3eval(printf(
       \ 'ChannelManager.send(%d, %s, %s, reply=%s, returns=bool(%s))',
       \ a:handle,
       \ l:returns ? a:session : 'None',
@@ -173,7 +171,7 @@ else
     " Continually check if Coqtail is done computing
     let l:poll = printf('ChannelManager.poll(%d)', a:handle)
     while l:returns
-      let l:res = json_decode(coqtail#compat#pyeval(l:poll))
+      let l:res = json_decode(py3eval(l:poll))
       if type(l:res) == g:coqtail#compat#t_list
         return l:res
       endif

@@ -18,27 +18,14 @@ else
   endfunction
 endif
 
-" Python compatibility.
-if has('python3')
-  command! -nargs=1 Py py3 <args>
-  function! coqtail#compat#pyeval(expr) abort
-    return py3eval(a:expr)
-  endfunction
-elseif has('python')
-  command! -nargs=1 Py py <args>
-  function! coqtail#compat#pyeval(expr) abort
-    return pyeval(a:expr)
-  endfunction
-endif
-
 function! coqtail#compat#init(python_dir) abort
-  if !exists('*coqtail#compat#pyeval')
+  if !(has('python3') && py3eval('sys.version_info[:2] >= (3, 6)'))
     return 0
   endif
 
   " Add python directory to path so Python functions can be called.
-  Py import sys, vim
-  Py if not vim.eval('a:python_dir') in sys.path:
+  py3 import vim
+  py3 if not vim.eval('a:python_dir') in sys.path:
     \    sys.path.insert(0, vim.eval('a:python_dir'))
   return 1
 endfunction

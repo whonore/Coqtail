@@ -4,7 +4,11 @@ if exists('b:did_ftplugin')
 endif
 let b:did_ftplugin = 1
 
-call coqtail#register()
+let b:undo_ftplugin = []
+
+if g:coqtail#supported
+  call coqtail#register()
+endif
 
 " Comments
 if has('comments')
@@ -13,19 +17,21 @@ if has('comments')
   " NOTE: The 'r' and 'o' flags mistake the '*' bullet as a middle comment and
   " will automatically add an extra one after <Enter>, 'o' or 'O'.
   setlocal formatoptions-=tro formatoptions+=cql
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'setl cms< com< fo<')
 endif
 
 " Follow imports
-setlocal includeexpr=coqtail#findlib(v:fname)
-setlocal suffixesadd=.v
-setlocal include=\\<Require\\>\\(\\_s*\\(Import\\\|Export\\)\\>\\)\\?
-
-let b:undo_ftplugin = 'setl cms< com< fo< inex< sua< inc<'
+if g:coqtail#supported
+  setlocal includeexpr=coqtail#findlib(v:fname)
+  setlocal suffixesadd=.v
+  setlocal include=\\<Require\\>\\(\\_s*\\(Import\\\|Export\\)\\>\\)\\?
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'setl inex< sua< inc<')
+endif
 
 " Tags
-if exists('+tagfunc')
+if exists('+tagfunc') && g:coqtail#supported
   setlocal tagfunc=coqtail#gettags
-  let b:undo_ftplugin .= ' | setl tfu<'
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'setl tfu<')
 endif
 
 " matchit/matchup patterns
@@ -42,7 +48,7 @@ if (exists('g:loaded_matchit') || exists('g:loaded_matchup')) && !exists('b:matc
     \ '\%(\<Section\>\|\<Module\>\):\<End\>',
     \ s:proof_start . ':' . s:proof_end
   \], ',')
-  let b:undo_ftplugin .= ' | unlet! b:match_ignorecase b:match_words'
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'unlet! b:match_ignorecase b:match_words')
 endif
 
 " endwise
@@ -54,5 +60,9 @@ if exists('g:loaded_endwise')
   let b:endwise_pattern = '\%(' . s:section_pat . '\|' . s:match_pat . '\)'
   let b:endwise_syngroups = 'coqVernacCmd,coqKwd,coqLtac'
   unlet! b:endwise_end_pattern
-  let b:undo_ftplugin .= ' | unlet! b:endwise_addition b:endwise_words b:endwise_pattern b:endwise_syngroups'
+  let b:undo_ftplugin = add(
+    \ b:undo_ftplugin,
+    \ 'unlet! b:endwise_addition b:endwise_words b:endwise_pattern b:endwise_syngroups')
 endif
+
+let b:undo_ftplugin = join(b:undo_ftplugin, ' | ')

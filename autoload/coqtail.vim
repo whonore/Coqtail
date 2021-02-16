@@ -8,12 +8,13 @@ endif
 let g:loaded_coqtail = 1
 
 let s:python_dir = expand('<sfile>:p:h:h') . '/python'
-if !coqtail#compat#init(s:python_dir)
-  echoerr 'Coqtail requires Python support.'
+let g:coqtail#supported = coqtail#compat#init(s:python_dir)
+if !g:coqtail#supported
+  call coqtail#util#warn('Coqtail requires Python 3.6 or later.')
   finish
 endif
 
-Py from coqtail import ChannelManager, Coqtail, CoqtailServer
+py3 from coqtail import ChannelManager, Coqtail, CoqtailServer
 
 " Initialize global variables.
 " Supported Coq versions.
@@ -322,12 +323,13 @@ endfunction
 " Initialize Python interface.
 function! coqtail#init() abort
   if s:port == -1
-    let s:port = coqtail#compat#pyeval(printf(
-      \ 'CoqtailServer.start_server(bool(%d))', !g:coqtail#compat#has_channel))
+    let s:port = py3eval(printf(
+      \ 'CoqtailServer.start_server(bool(%d))',
+      \ !g:coqtail#compat#has_channel))
     augroup coqtail#StopServer
       autocmd! *
       autocmd VimLeavePre *
-        \ call coqtail#compat#pyeval('CoqtailServer.stop_server()') | let s:port = -1
+        \ call py3eval('CoqtailServer.stop_server()') | let s:port = -1
     augroup END
   endif
 
@@ -404,8 +406,7 @@ function! coqtail#start(...) abort
     call s:call('splash', 'sync', 0, {
       \ 'version': b:coqtail_version,
       \ 'width': winwidth(l:info_win),
-      \ 'height': winheight(l:info_win),
-      \ 'deprecated': has('python')})
+      \ 'height': winheight(l:info_win)})
     call s:call('refresh', '', 0, {})
 
     call s:init_proof_diffs(b:coqtail_version)

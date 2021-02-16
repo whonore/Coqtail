@@ -674,7 +674,6 @@ class Coqtail:
         version: str,
         width: int,
         height: int,
-        deprecated: bool,
         opts: VimOptions,
     ) -> None:
         """Display the logo in the info panel."""
@@ -701,10 +700,6 @@ class Coqtail:
         ]
         msg_maxw = max(len(line) for line in msg)
         msg = [line.center(width - msg_maxw // 2) for line in msg]
-
-        if deprecated:
-            depr_msg = "Support for Python 2 is deprecated and will be dropped in an upcoming version."
-            msg += ["", depr_msg.center(width - msg_maxw // 2)]
 
         top_pad = [""] * ((height // 2) - (len(msg) // 2 + 1))
         self.info_msg = top_pad + msg
