@@ -4,6 +4,7 @@
 
 ### Fixed
 - Print Coq error messages when checking goals or rewinding. (PR #187)
+- Improve highlighting inside sections and modules. (PR #191)
 - Correctly highlight `..` in recursive notations. (PR #190)
 - Highlight attributes and skip them when splitting sentences. (PR #152)
 - Highlight `admit` and `give_up` tactics. (PR #182)
