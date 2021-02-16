@@ -70,8 +70,6 @@ syn iskeyword clear
 " Coq is case sensitive.
 syn case match
 
-syn cluster coqVernac contains=coqRequire,coqCheckCompute,coqOpaque,coqShow,coqImplicitTypes,coqGeneralizable,coqEval,coqNotation,coqTacNotation,coqDecl,coqThm,coqGoal,coqLtacDecl,coqLtac2Decl,coqDef,coqCoercion,coqFix,coqInd,coqRec,coqCls,coqIns,coqCanon,coqAttribute
-
 " Various
 syn match   coqError             "\S\+"
 syn match   coqVernacPunctuation ":=\|\.\|:"
@@ -85,9 +83,9 @@ syn region coqPrint matchgroup=coqVernacCmd start="\<\%(Print\%(\_s\+Assumptions
 syn region coqPrintUniversesSubgraph matchgroup=coqVernacCmd start="\<Print\_s\+Universes\_s\+Subgraph\>" contains=coqIdent end="\.\_s"
 
 " Modules
-syn region coqModule contains=coqModule,coqSection,coqVernacPunctuation,coqModBinder,@coqVernac matchgroup=coqVernacCmd start="\<Module\%(\_s\+Type\)\?\_s\+\z([[:digit:]']\@!\k\k*\)\%([^=]*\.\_s\)\@=" end="\<End\_s\+\z1\_s*\.\_s"
-syn region coqModule contains=coqVernacPunctuation,coqModBinder matchgroup=coqVernacCmd start="\<Module\%(\_s\+Type\)\?\_s\+\z([[:digit:]']\@!\k\k*\)\%(.*:=\)\@=" end=":="me=e-2 nextgroup=coqModVal
-syn region coqModBinder contained contains=coqIdent matchgroup=coqVernacPunctuation start="(" end=")" keepend
+syn region coqModule contains=TOP matchgroup=coqVernacCmd start="\<Module\%(\_s\+Type\)\?\_s\+\z([[:digit:]']\@!\k\k*\)\%([^=]*\.\_s\)\@=" end="\<End\_s\+\z1\_s*\.\_s"
+syn region coqModule contains=TOP matchgroup=coqVernacCmd start="\<Module\%(\_s\+Type\)\?\_s\+\z([[:digit:]']\@!\k\k*\)\%(.*:=\)\@=" end=":="me=e-2 nextgroup=coqModVal
+syn region coqModBinder containedin=coqModule contains=coqIdent matchgroup=coqVernacPunctuation start="(" end=")" keepend
 syn region coqModVal contains=coqIdent,coqTermPunctuation start=":=" end="\.\_s"
 
 " Terms
@@ -119,7 +117,7 @@ syn keyword coqAttrBool contained yes no
 syn match coqAttrPunc contained "=\|,\|(\|)"
 
 " Sections
-syn region coqSection contains=coqSection,@coqVernac matchgroup=coqVernacCmd start="\<Section\_s\+\z(\S\+\)\_s*\.\_s" end="\<End\_s\+\z1\_s*\.\_s"
+syn region coqSection contains=TOP matchgroup=coqVernacCmd start="\<Section\_s\+\z(\S\+\)\_s*\.\_s" end="\<End\_s\+\z1\_s*\.\_s"
 
 " Obligations
 syn region coqObligation contains=coqOblOf   matchgroup=coqVernacCmd start="\<\%(Obligations\)\|\%(Preterm\)\>" end="\.\_s" keepend
