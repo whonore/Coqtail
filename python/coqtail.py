@@ -2,6 +2,7 @@
 # Author: Wolf Honore
 """Classes and functions for managing auxiliary panels and Coqtop interfaces."""
 
+import concurrent.futures as futures
 import json
 import re
 import socket
@@ -47,7 +48,7 @@ SkipFun = Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]
 
 if TYPE_CHECKING:
     # pylint: disable=unsubscriptable-object
-    # Queue is only subscriptable during type checking.
+    # Some types are only subscriptable during type checking.
     from typing_extensions import TypedDict
 
     ReqQueue = Queue[Req]
@@ -56,10 +57,12 @@ if TYPE_CHECKING:
         "VimOptions",
         {"encoding": str, "timeout": int, "filename": str},
     )
+    ResFuture = futures.Future[Optional[str]]
 else:
     ReqQueue = Queue
     ResQueue = Queue
     VimOptions = Mapping[str, Any]
+    ResFuture = futures.Future
 
 
 def lines_and_highlights(
@@ -954,8 +957,9 @@ class CoqtailServer:
 class ChannelManager:
     """Emulate Vim's ch_* functions with sockets."""
 
+    pool = futures.ThreadPoolExecutor()
     channels: Dict[int, socket.socket] = {}
-    results: Dict[int, Optional[str]] = {}
+    results: Dict[int, ResFuture] = {}
     sessions: Dict[int, int] = {}
     next_id = 1
     msg_id = 1
@@ -1015,36 +1019,36 @@ class ChannelManager:
         ch.sendall((json.dumps([msg_id, expr]) + "\n").encode("utf-8"))
 
         if returns:
-            ChannelManager.results[handle] = None
-            threading.Thread(
-                target=ChannelManager._recv,
-                args=(handle,),
-                daemon=True,
-            ).start()
+            ChannelManager.results[handle] = ChannelManager.pool.submit(
+                ChannelManager._recv,
+                ChannelManager.channels[handle],
+            )
         return True
 
     @staticmethod
     def poll(handle: int) -> Optional[str]:
         """Wait for a response on a channel."""
-        return ChannelManager.results[handle]
+        try:
+            return ChannelManager.results[handle].result(timeout=0)
+        except futures.TimeoutError:
+            return None
 
     @staticmethod
-    def _recv(handle: int) -> None:
+    def _recv(channel: socket.socket) -> Optional[str]:
         """Wait for a response on a channel."""
         data = []
         while True:
             try:
-                data.append(ChannelManager.channels[handle].recv(4096).decode("utf-8"))
+                data.append(channel.recv(4096).decode("utf-8"))
                 # NOTE: Some older Vims can't convert expressions with None to
                 # Vim values so just return a string
                 res = "".join(data)
                 _ = json.loads(res)
-                ChannelManager.results[handle] = res
-                break
+                return res
             except json.JSONDecodeError:
                 pass
             except (KeyError, ConnectionError):
-                break
+                return None
 
 
 # Searching for Coq Definitions #
