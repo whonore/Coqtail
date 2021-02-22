@@ -1328,8 +1328,7 @@ def _skip_block(
         skip_stop = blk_start if blk_start is not None else blk_end
         skip_starts = [(line.find(skip, scol, skip_stop), skip) for skip in skips]
         skip_starts = [(start, skip) for start, skip in skip_starts if start != -1]
-        # TODO: use default= in Python 3
-        skip_start, skip = min(skip_starts) if skip_starts != [] else (None, None)
+        skip_start, skip = min(skip_starts, default=(None, None))
         if skip is not None and skip_start is not None:
             skip_end = skips[skip](lines, sline, skip_start)
             if skip_end is None:
