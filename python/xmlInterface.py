@@ -9,6 +9,7 @@ import os
 import re
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
+from pathlib import Path
 from shutil import which
 from typing import (
     Any,
@@ -284,11 +285,11 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             if coq_path is not None
             else os.pathsep.join((os.curdir, os.environ["PATH"]))
         )
-        paths = [os.path.abspath(p) for p in path.split(os.pathsep)]
+        paths = [Path(p).resolve() for p in path.split(os.pathsep)]
         coqtop = coq_prog if coq_prog is not None else self.coqtop
 
         coqs = (
-            os.path.abspath(p)
+            Path(p).resolve()
             for p in (
                 which(pre + coqtop + ext, path=path)
                 for pre in ("", "coq-prover.")
@@ -300,7 +301,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
         try:
             return (
-                (next(coqs),)
+                (str(next(coqs)),)
                 + tuple(self.launch_args)
                 + self.topfile(filename, args)
                 + tuple(args)
@@ -321,9 +322,8 @@ class XMLInterfaceBase(metaclass=ABCMeta):
     @staticmethod
     def valid_module(filename: str) -> bool:
         """Check if a file name is a valid module name."""
-        filename = os.path.splitext(os.path.basename(filename))[0]
         # Any string of word characters that doesn't start with a digit
-        return re.fullmatch(r"(?=\D)\w+", filename) is not None
+        return re.fullmatch(r"(?=\D)\w+", Path(filename).stem) is not None
 
     # XML Parsing and Marshalling #
     def _to_unit(self, _xml: ET.Element) -> Tuple[()]:
