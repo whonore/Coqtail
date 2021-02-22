@@ -2,6 +2,7 @@
 # Author: Wolf Honore
 """Coqtop interface with functions to send commands and parse responses."""
 
+import concurrent.futures as futures
 import datetime
 import logging
 import os
@@ -32,17 +33,6 @@ if TYPE_CHECKING:
 else:
     BytesQueue = Queue
     CoqtopProcess = subprocess.Popen
-
-DEFAULT_REF = Err("Default Ref value. Should never be seen.")
-
-
-class Ref:
-    """A mutable value to be passed between threads."""
-
-    __slots__ = ("val",)
-
-    def __init__(self, val: Result = DEFAULT_REF) -> None:
-        self.val = val
 
 
 class CoqtopError(Exception):
@@ -371,64 +361,17 @@ class Coqtop:
             self.logger.debug(prettyxml(msg))
         self.send_cmd(msg)
 
-        if timeout == 0:
-            timeout = None
+        with futures.ThreadPoolExecutor(1) as pool:
+            try:
+                timeout = timeout if timeout != 0 else None
+                response = pool.submit(self.get_answer).result(timeout)
+            except futures.TimeoutError:
+                self.interrupt()
+                response = TIMEOUT_ERR
 
-        # TODO: simplify this
-        # The got_response event tells the timeout_thread that get_answer()
-        # returned normally, while timed_out will be set by timeout_thread if
-        # time runs out without receiving a response
-        got_response = threading.Event()
-        timed_out = threading.Event()
-        timeout_thread = threading.Thread(
-            target=self.timeout_thread,
-            args=(timeout, got_response, timed_out),
-            daemon=True,
-        )
+            return self.xml.standardize(cmd, response), self.collect_err()
 
-        # Start a thread to get Coqtop's response
-        res_ref = Ref()
-        answer_thread = threading.Thread(
-            target=self.get_answer,
-            args=(res_ref,),
-            daemon=True,
-        )
-
-        # Start threads and wait for Coqtop to finish
-        timeout_thread.start()
-        answer_thread.start()
-
-        # Notify timeout_thread that a response is received and wait for
-        # threads to finish
-        got_response.set()
-        timeout_thread.join()
-        answer_thread.join()
-
-        # Check for user interrupt or timeout
-        response = res_ref.val
-        if isinstance(response, Err) and timed_out.is_set():
-            response = TIMEOUT_ERR
-
-        return self.xml.standardize(cmd, response), self.collect_err()
-
-    def timeout_thread(
-        self,
-        timeout: int,
-        got_response: threading.Event,
-        timed_out: threading.Event,
-    ) -> None:
-        """Wait on the 'got_response' Event for timeout seconds and set
-        'timed_out' and interrupt the Coqtop process if it is not set in
-        time.
-        """
-        if self.coqtop is None:
-            raise CoqtopError("coqtop must not be None in timeout_thread()")
-
-        if not got_response.wait(timeout):
-            self.interrupt()
-            timed_out.set()
-
-    def get_answer(self, res_ref: Ref) -> None:
+    def get_answer(self) -> Result:
         """Read from 'out_q' and wait until a full response is received."""
         assert self.xml is not None
         data = []
@@ -446,8 +389,7 @@ class Coqtop:
             # Don't bother doing prettyxml if debugging isn't on
             if self.logger.isEnabledFor(logging.DEBUG):
                 self.logger.debug(prettyxml(b"<response>" + xml + b"</response>"))
-            res_ref.val = response
-            break
+            return response
 
     @staticmethod
     def drain_queue(q: BytesQueue) -> Iterator[bytes]:
