@@ -10,7 +10,7 @@ import threading
 import time
 from collections import defaultdict as ddict
 from collections import deque
-from itertools import islice, zip_longest
+from itertools import count, islice, zip_longest
 from queue import Empty, Queue
 from socketserver import StreamRequestHandler, ThreadingTCPServer
 from typing import (
@@ -961,19 +961,15 @@ class ChannelManager:
     channels: Dict[int, socket.socket] = {}
     results: Dict[int, ResFuture] = {}
     sessions: Dict[int, int] = {}
-    next_id = 1
-    msg_id = 1
+    ch_id = count(1)
+    msg_id = count(1)
 
     @staticmethod
     def open(address: str) -> int:
         """Open a channel."""
-        ch_id = ChannelManager.next_id
-        ChannelManager.next_id += 1
-
+        ch_id = next(ChannelManager.ch_id)
         host, port = address.split(":")
         ChannelManager.channels[ch_id] = socket.create_connection((host, int(port)))
-        ChannelManager.sessions[ch_id] = -1
-
         return ch_id
 
     @staticmethod
@@ -997,7 +993,7 @@ class ChannelManager:
         handle: int,
         session: Optional[int],
         expr: str,
-        reply: Optional[int] = None,
+        reply_id: Optional[int] = None,
         returns: bool = True,
     ) -> bool:
         """Send a command request or reply on a channel."""
@@ -1006,16 +1002,12 @@ class ChannelManager:
         except KeyError:
             return False
 
-        if reply is None and session is not None:
-            if ChannelManager.sessions[handle] == session:
+        if reply_id is None and session is not None:
+            if ChannelManager.sessions.get(handle, None) == session:
                 return True
             ChannelManager.sessions[handle] = session
 
-        if reply is None:
-            msg_id = ChannelManager.msg_id
-            ChannelManager.msg_id += 1
-        else:
-            msg_id = reply
+        msg_id = reply_id if reply_id is not None else next(ChannelManager.msg_id)
         ch.sendall((json.dumps([msg_id, expr]) + "\n").encode("utf-8"))
 
         if returns:

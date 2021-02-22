@@ -149,7 +149,7 @@ else
   endfunction
 
   " Send a command to Coqtail and wait for the response.
-  function! s:send_wait(handle, session, expr, reply) abort
+  function! s:send_wait(handle, session, expr, reply_id) abort
     let l:response = a:expr[0] == -1
     let l:returns = l:response || a:expr[1] !=# 'interrupt'
 
@@ -160,11 +160,11 @@ else
     endif
 
     call py3eval(printf(
-      \ 'ChannelManager.send(%d, %s, %s, reply=%s, returns=bool(%s))',
+      \ 'ChannelManager.send(%d, %s, %s, reply_id=%s, returns=bool(%s))',
       \ a:handle,
       \ l:returns ? a:session : 'None',
       \ json_encode(l:response ? a:expr[1] : a:expr),
-      \ a:reply != 0 ? a:reply : 'None',
+      \ a:reply_id != 0 ? a:reply_id : 'None',
       \ l:returns
     \))
 
