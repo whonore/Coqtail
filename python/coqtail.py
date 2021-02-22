@@ -770,8 +770,7 @@ class CoqtailHandler(StreamRequestHandler):
             try:
                 msg = self.rfile.readline()
                 msg_id, data = json.loads(msg)
-            # Python 2 doesn't have ConnectionError
-            except (ValueError, socket.error):
+            except (json.JSONDecodeError, ConnectionError):
                 # Check if channel closed
                 self.closed = True
                 break
@@ -853,8 +852,7 @@ class CoqtailHandler(StreamRequestHandler):
                 ret = handler(**args) if handler is not None else None
                 msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
                 self.wfile.write(json.dumps(msg).encode("utf-8") + b"\n")
-            # Python 2 doesn't have BrokenPipeError
-            except (EOFError, OSError):
+            except (EOFError, ConnectionError):
                 break
 
             try:
@@ -1043,10 +1041,9 @@ class ChannelManager:
                 _ = json.loads(res)
                 ChannelManager.results[handle] = res
                 break
-            # Python 2 doesn't have json.JSONDecodeError
-            except ValueError:
+            except json.JSONDecodeError:
                 pass
-            except KeyError:
+            except (KeyError, ConnectionError):
                 break
 
 
