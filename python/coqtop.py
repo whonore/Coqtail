@@ -89,8 +89,10 @@ class Coqtop(object):
         self.xml = XMLInterface(version)
         self.logger.debug("start")
         try:
+            launch = self.xml.launch(coq_path, coq_prog, filename, args)
+            self.logger.debug(launch)
             self.coqtop = subprocess.Popen(
-                self.xml.launch(coq_path, coq_prog, filename, args),
+                launch,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
