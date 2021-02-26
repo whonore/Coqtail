@@ -10,7 +10,10 @@ let g:loaded_coqtail = 1
 let s:python_dir = expand('<sfile>:p:h:h') . '/python'
 let g:coqtail#supported = coqtail#compat#init(s:python_dir)
 if !g:coqtail#supported
-  call coqtail#util#warn('Coqtail requires Python 3.6 or later.')
+  call coqtail#util#warn(
+    \ 'Coqtail requires Python 3.6 or later. ' .
+    \ 'See https://github.com/whonore/Coqtail/blob/master/README.md#python-2-support.'
+  \)
   finish
 endif
 
