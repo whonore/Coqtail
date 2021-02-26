@@ -313,6 +313,7 @@ class Coqtop(object):
     def dispatch(
         self,
         cmd,  # type: Text
+        cmd_no_comment=None,  # type: Optional[Text]
         in_script=True,  # type: bool
         encoding="utf-8",  # type: str
         timeout=None,  # type: Optional[int]
@@ -322,12 +323,16 @@ class Coqtop(object):
         regular command.
         """
         assert self.xml is not None
+        if cmd_no_comment is None:
+            cmd_no_comment = cmd
         # Make sure 'cmd' is a string format that supports unicode
         cmd = ensure_text(cmd, encoding)  # type: ignore[no-untyped-call]
+        cmd_no_comment = ensure_text(cmd_no_comment, encoding)  # type: ignore[no-untyped-call]
+        assert cmd_no_comment is not None
 
-        if self.xml.is_option(cmd):
-            return self.do_option(cmd, in_script, encoding, timeout)
-        elif self.xml.is_query(cmd):
+        if self.xml.is_option(cmd_no_comment):
+            return self.do_option(cmd_no_comment, in_script, encoding, timeout)
+        elif self.xml.is_query(cmd_no_comment):
             return self.query(cmd, in_script, encoding, timeout)
         elif in_script:
             return self.advance(cmd, encoding, timeout)

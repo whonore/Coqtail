@@ -311,10 +311,11 @@ class Coqtail(object):
             self.refresh(goals=False, force=False, scroll=scroll, opts=opts)
             to_send = self.send_queue.popleft()
             message = _between(buffer, to_send["start"], to_send["stop"])
-            no_comments, com_pos = _strip_comments(message)
+            no_comments, _ = _strip_comments(message)
 
             try:
                 success, msg, err_loc, stderr = self.coqtop.dispatch(
+                    message.decode("utf-8"),
                     no_comments.decode("utf-8"),
                     encoding=opts["encoding"],
                     timeout=opts["timeout"],
@@ -343,7 +344,6 @@ class Coqtail(object):
                     self.error_at = (to_send["start"], to_send["stop"])
                 else:
                     line, col = to_send["start"]
-                    loc_s, loc_e = _adjust_offset(loc_s, loc_e, com_pos)
                     sline, scol = _pos_from_offset(col, message, loc_s)
                     eline, ecol = _pos_from_offset(col, message, loc_e)
                     self.error_at = ((line + sline, scol), (line + eline, ecol))
@@ -1060,20 +1060,6 @@ def get_searches(tgt_type, tgt_name):
 
 
 # Finding Start and End of Coq Chunks #
-def _adjust_offset(start, end, com_pos):
-    # type: (int, int, List[List[int]]) -> Tuple[int, int]
-    """Adjust offsets by taking the stripped comments into account."""
-    # Move start and end forward by the length of the preceding comments
-    for coff, clen in com_pos:
-        if coff <= start:
-            # N.B. Subtract one because comments are replaced by " ", not ""
-            start += clen - 1
-        if coff <= end:
-            end += clen - 1
-
-    return (start, end)
-
-
 def _pos_from_offset(col, msg, offset):
     # type: (int, bytes, int) -> Tuple[int, int]
     """Calculate the line and column of a given offset."""
