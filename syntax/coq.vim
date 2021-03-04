@@ -29,8 +29,10 @@
 " Define Coqtail-specific highlighting groups.
 if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight
   function! s:CoqtailHighlight() abort
-    " Use user-defined colors if they exist
     if exists('*g:CoqtailHighlight')
+      " Use user-defined colors if they exist.
+      " NOTE: This is only for backwards compatability. Use
+      " `autocmd ColorScheme` instead.
       call g:CoqtailHighlight()
     elseif &t_Co > 16
       hi def CoqtailChecked ctermbg=17 guibg=LightGreen
@@ -47,7 +49,7 @@ if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight
   endfunction
 
   call s:CoqtailHighlight()
-  " N.B. Setting a colorscheme usually calls 'syntax reset' so have to set
+  " N.B. Setting a colorscheme usually calls 'syntax clear' so have to set
   " Coqtail highlighting colors again
   augroup coqtail_highlight
     autocmd!

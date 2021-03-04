@@ -272,14 +272,6 @@ g:coqtail_indent_on_dot	If true then trigger auto-indentation when a '.' is
 
 			Default: 0
 
-							  *g:CoqtailHighlight()*
-g:CoqtailHighlight()	Optional function to override the default highlighting
-			for CoqtailChecked and CoqtailSent. E.g.  >
-		    function! g:CoqtailHighlight()
-		      hi def CoqtailChecked ctermbg=19
-		      hi def CoqtailSent ctermbg=62
-		    endfunction
-<
 						*g:coqtail_auto_set_proof_diffs*
 						*b:coqtail_auto_set_proof_diffs*
 							   *coqtail-proof-diffs*

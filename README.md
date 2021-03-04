@@ -131,6 +131,38 @@ These scripts are used by default but can be disabled by setting
 `g:coqtail_nosyntax = 1` and `g:coqtail_noindent = 1` respectively.
 Formatting of comments can be disabled with `g:coqtail_noindent_comment`.
 
+In addition to the Coq syntax, Coqtail defines highlighting groups for the
+sentences that are currently or have already been checked by Coq (`CoqtailSent`
+and `CoqtailChecked`) as well as any lines that raised an error (`CoqtailError`).
+By default these are defined as:
+
+```vim
+if &t_Co > 16
+  hi def CoqtailChecked ctermbg=17 guibg=LightGreen
+  hi def CoqtailSent    ctermbg=60 guibg=LimeGreen
+else
+  hi def CoqtailChecked ctermbg=4 guibg=LightGreen
+  hi def CoqtailSent    ctermbg=7 guibg=LimeGreen
+endif
+hi def link CoqtailError Error
+```
+
+To override these defaults simply set your own highlighting (`:help :hi`) before
+`syntax/coq.vim` is sourced (e.g., in your `.vimrc`).
+Note, however, that many colorschemes call `syntax clear`, which clears
+user-defined highlighting, so it is recommended to place your settings in a
+`ColorScheme` autocommand.
+For example:
+
+```vim
+augroup CoqtailHighlights
+  autocmd!
+  autocmd ColorScheme *
+    \  hi def CoqtailChecked ctermbg=236
+    \| hi def CoqtailSent    ctermbg=237
+augroup END
+```
+
 ### Proof Diffs
 
 Since 8.9, Coq can generate [proof diffs] to highlight the differences in the
@@ -148,10 +180,12 @@ hi def link CoqtailDiffRemoved DiffDelete
 hi def link CoqtailDiffRemovedBg DiffDelete
 ```
 
-To override these settings simply set your own colors for these highlighting
-groups before `syntax/coq.vim` is sourced (e.g., in your `.vimrc`).
+See the [above instructions](#syntax-highlighting-and-indentation) on how to
+override these defaults.
 
-See `:help coqtail-configuration` for more configuration variables.
+### More Options
+
+See `:help coqtail-configuration` for a description of all the configuration options.
 
 ## Vim Plugin Interoperability
 
