@@ -439,15 +439,17 @@ function! coqtail#toline(line) abort
     \ 'col': (a:line == 0 ? col('.') : len(getline(a:line))) - 1})
 endfunction
 
-" Move the cursor to the end of the region checked by Coq.
-function! coqtail#jumptoend() abort
+" Move the cursor to the specified target:
+" - "endpoint": the end of the region checked by Coq
+" - "errorpoint": the end of the error region
+function! coqtail#jumpto(target) abort
   let l:panel = coqtail#panels#switch(g:coqtail#panels#main)
   if l:panel == g:coqtail#panels#none
     " Failed to switch to main panel
     return
   endif
 
-  let [l:ok, l:pos] = s:call('endpoint', 'sync', 0, {})
+  let [l:ok, l:pos] = s:call(a:target, 'sync', 0, {})
   if l:ok
     mark '
     call cursor(l:pos)
@@ -464,6 +466,7 @@ let s:cmd_opts = {
   \ 'CoqToLine': '-bar -count=0',
   \ 'CoqToTop': '-bar',
   \ 'CoqJumpToEnd': '-bar',
+  \ 'CoqJumpToError': '-bar',
   \ 'CoqGotoDef': '-bang -nargs=1',
   \ 'Coq': '-nargs=+ -complete=custom,s:querycomplete',
   \ 'CoqRestorePanels': '-bar',
@@ -492,7 +495,8 @@ function! coqtail#define_commands() abort
   call s:cmddef('CoqUndo', 'call s:call("rewind", "", 0, {"steps": <count>})', 's')
   call s:cmddef('CoqToLine', 'call coqtail#toline(<count>)', 's')
   call s:cmddef('CoqToTop', 'call s:call("to_top", "", 0, {})', 's')
-  call s:cmddef('CoqJumpToEnd', 'call coqtail#jumptoend()', 's')
+  call s:cmddef('CoqJumpToEnd', 'call coqtail#jumpto("endpoint")', 's')
+  call s:cmddef('CoqJumpToError', 'call coqtail#jumpto("errorpoint")', 's')
   call s:cmddef('CoqGotoDef', 'call coqtail#gotodef(<f-args>, <bang>0)', 's')
   call s:cmddef('Coq', 'call s:call("query", "", 0, {"args": [<f-args>]})', 's')
   call s:cmddef('CoqRestorePanels',
@@ -513,11 +517,13 @@ function! coqtail#define_mappings() abort
   nnoremap <buffer> <silent> <Plug>CoqToLine :<C-U>execute v:count 'CoqToLine'<CR>
   nnoremap <buffer> <silent> <Plug>CoqToTop :CoqToTop<CR>
   nnoremap <buffer> <silent> <Plug>CoqJumpToEnd :CoqJumpToEnd<CR>
+  nnoremap <buffer> <silent> <Plug>CoqJumpToError :CoqJumpToError<CR>
   inoremap <buffer> <silent> <Plug>CoqNext <C-\><C-o>:CoqNext<CR>
   inoremap <buffer> <silent> <Plug>CoqUndo <C-\><C-o>:CoqUndo<CR>
   inoremap <buffer> <silent> <Plug>CoqToLine <C-\><C-o>:CoqToLine<CR>
   inoremap <buffer> <silent> <Plug>CoqToTop <C-\><C-o>:CoqToTop<CR>
   inoremap <buffer> <silent> <Plug>CoqJumpToEnd <C-\><C-o>:CoqJumpToEnd<CR>
+  inoremap <buffer> <silent> <Plug>CoqJumpToError <C-\><C-o>:CoqJumpToError<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoDef :CoqGotoDef <C-r>=coqtail#util#getcurword()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqSearch :Coq Search <C-r>=coqtail#util#getcurword()<CR><CR>
   nnoremap <buffer> <silent> <Plug>CoqCheck :Coq Check <C-r>=coqtail#util#getcurword()<CR><CR>
@@ -557,6 +563,7 @@ function! coqtail#define_mappings() abort
     \ ['ToLine', 'l', 'ni'],
     \ ['ToTop', 'T', 'ni'],
     \ ['JumpToEnd', 'G', 'ni'],
+    \ ['JumpToError', 'E', 'ni'],
     \ ['GotoDef', 'g', 'n'],
     \ ['Search', 's', 'nx'],
     \ ['Check', 'h', 'nx'],
