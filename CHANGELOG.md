@@ -5,6 +5,7 @@
 ### Fixed
 - Correctly ignore `(*` and `*)` inside strings. (PR #193)
 - Print Coq error messages when checking goals or rewinding. (PR #187)
+- Highlight `Module Import` and `Module Export`. (PR #195)
 - Improve highlighting inside sections and modules. (PR #191)
 - Correctly highlight `..` in recursive notations. (PR #190)
 - Highlight attributes and skip them when splitting sentences. (PR #152)
