@@ -583,7 +583,7 @@ class Coqtail:
 
                 next_info = "Next goal"
                 if bullet_info != "":
-                    next_info += " ({bullet_info})"
+                    next_info += f" ({bullet_info})"
                 next_info += ":"
 
                 lines += [next_info, ""]
