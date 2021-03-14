@@ -68,7 +68,7 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | `{n}CoqToLine` | `<leader>cl` | Send/rewind all sentences up to line `n` (cursor position by default). `n` can also be `$` to check the entire buffer. |
 | `CoqToTop` | `<leader>cT` | Rewind to the beginning of the file. |
 | `CoqJumpToEnd` | `<leader>cG` | Move the cursor to the end of the checked region. |
-| `CoqJumpToError` | `<leader>cE` | Move the cursor to the end of the error region. |
+| `CoqJumpToError` | `<leader>cE` | Move the cursor to the start of the error region. |
 | `CoqGotoDef[!] <arg>` | `<leader>cg` | Populate the quickfix list with possible locations of the definition of `<arg>` and try to jump to the first one. If your Vim supports `'tagfunc'` you can also use `CTRL-]`, `:tag`, and friends. |
 | **Queries** | |
 | `Coq <args>` | | Send arbitrary queries to Coq (e.g. `Check`, `About`, `Print`, etc.). |

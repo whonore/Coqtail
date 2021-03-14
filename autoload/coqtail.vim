@@ -441,7 +441,7 @@ endfunction
 
 " Move the cursor to the specified target:
 " - "endpoint": the end of the region checked by Coq
-" - "errorpoint": the end of the error region
+" - "errorpoint": the start of the error region
 function! coqtail#jumpto(target) abort
   let l:panel = coqtail#panels#switch(g:coqtail#panels#main)
   if l:panel == g:coqtail#panels#none

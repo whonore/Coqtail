@@ -81,7 +81,7 @@ Movement Commands					      *coqtail-movement*
 						    *<leader>cE* *:CoqJumpToError*
 							 *coqtail-jump-to-error*
 :CoqJumpToError	or
-<leader>cE		Move the cursor to the end of the error region. This
+<leader>cE		Move the cursor to the start of the error region. This
 			does not move the checked region.
 
 				       *<leader>cg* *:CoqGotoDef* *coqtail-goto-def*
