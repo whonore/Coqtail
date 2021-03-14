@@ -450,7 +450,7 @@ function! coqtail#jumpto(target) abort
   endif
 
   let [l:ok, l:pos] = s:call(a:target, 'sync', 0, {})
-  if l:ok
+  if l:ok && type(l:pos) == g:coqtail#compat#t_list
     mark '
     call cursor(l:pos)
   endif

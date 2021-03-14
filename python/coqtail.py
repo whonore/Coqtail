@@ -302,7 +302,7 @@ class Coqtail(object):
     def errorpoint(self, opts):
         # type: (Mapping[str, Any]) -> Optional[Tuple[int, int]]
         """Return the end of the error region."""
-        if self.error_at:
+        if self.error_at is not None:
             line, col = self.error_at[1]
             return (line + 1, col)
 
