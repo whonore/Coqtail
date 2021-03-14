@@ -299,6 +299,15 @@ class Coqtail(object):
         line, col = self.endpoints[-1] if self.endpoints != [] else (0, 1)
         return (line + 1, col)
 
+    def errorpoint(self, opts):
+        # type: (Mapping[str, Any]) -> Optional[Tuple[int, int]]
+        """Return the start of the error region."""
+        if self.error_at is not None:
+            line, col = self.error_at[0]
+            return (line + 1, col + 1)
+
+        return None
+
     # Helpers #
     def send_until_fail(self, buffer, opts):
         # type: (Sequence[bytes], Mapping[str, Any]) -> Tuple[Optional[Tuple[int, int]], Optional[str]]
@@ -791,6 +800,7 @@ class CoqtailHandler(StreamRequestHandler):
                 "to_top": self.coq.to_top,
                 "query": self.coq.query,
                 "endpoint": self.coq.endpoint,
+                "errorpoint": self.coq.errorpoint,
                 "toggle_debug": self.coq.toggle_debug,
                 "splash": self.coq.splash,
                 "sync": self.coq.sync,
