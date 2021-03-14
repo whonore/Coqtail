@@ -189,7 +189,7 @@ function! s:clearhl(win) abort
   for [l:var, l:_] in s:hlgroups
     let l:val = getwinvar(a:win, l:var, -1)
     if l:val != -1
-      call matchdelete(l:val)
+      call matchdelete(l:val, a:win)
       call setwinvar(a:win, l:var, -1)
     endif
   endfor
@@ -221,10 +221,9 @@ function! coqtail#panels#hide() abort
 endfunction
 
 " Replace the contents of 'panel' with 'txt'.
+" Calls to function must be wrapped inside `win_execute()`.
 function! s:replace(buf, panel, txt, richpp, scroll) abort
-  if s:switch_from(a:buf, a:panel) == g:coqtail#panels#none
-    return
-  endif
+  let l:panel_buf = get(getbufvar(a:buf, 'coqtail_panel_bufs', {}), a:panel, -1)
 
   " Save the view
   let l:view = winsaveview()
@@ -269,13 +268,11 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
 
     " Update highlighting
     for l:win in l:wins
-      call win_gotoid(l:win)
-
       call s:clearhl(l:win)
       for [l:var, l:grp] in s:hlgroups
         let l:hl = a:highlights[l:var]
         if l:hl != v:null
-          call setwinvar(l:win, l:var, matchadd(l:grp, l:hl, -10))
+          call setwinvar(l:win, l:var, matchadd(l:grp, l:hl, -10, -1, {'window': l:win}))
         endif
       endfor
     endfor
@@ -283,12 +280,11 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
     " Update panels
     for [l:panel, l:panel_data] in items(a:panels)
       let [l:txt, l:richpp] = l:panel_data
-      call s:replace(a:buf, l:panel, l:txt, l:richpp, a:scroll)
+      let l:panel_win = bufwinid(get(getbufvar(a:buf, 'coqtail_panel_bufs', {}), l:panel, -1))
+      call win_execute(l:panel_win, 'call s:replace(a:buf, l:panel, l:txt, l:richpp, a:scroll)')
     endfor
   catch /^Vim:Interrupt$/
   finally
-    " l:cur_win might not exist yet
-    silent! call win_gotoid(l:cur_win)
     call setbufvar(a:buf, 'coqtail_refreshing', 0)
     redraw
   endtry
