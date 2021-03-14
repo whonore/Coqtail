@@ -2,6 +2,10 @@
 
 ## Unreleased ([master])
 
+### Added
+- `:CoqJumpToError` command that moves the cursor to the location of the error
+  reported by Coq, if any. (PR #196)
+
 ### Fixed
 - Correctly ignore `(*` and `*)` inside strings. (PR #193)
 - Print Coq error messages when checking goals or rewinding. (PR #187)
