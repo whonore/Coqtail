@@ -235,7 +235,7 @@ function! s:replace(buf, panel, txt, richpp, scroll) abort
   endfor
 
   " Update buffer text
-  silent %delete _
+  call coqtail#compat#deleteline(1, '$')
   call append(0, a:txt)
 
   " Set new highlights
