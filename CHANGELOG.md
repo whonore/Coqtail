@@ -7,6 +7,8 @@
   reported by Coq, if any. (PR #196)
 
 ### Fixed
+- Use `deletebufline` instead of `:delete` when possible to avoid leaving visual
+  mode while updating the Goal and Info panels. (PR #198)
 - Correctly ignore `(*` and `*)` inside strings. (PR #193)
 - Print Coq error messages when checking goals or rewinding. (PR #187)
 - Highlight `Module Import` and `Module Export`. (PR #195)
