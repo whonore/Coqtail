@@ -7,6 +7,17 @@ let g:coqtail#compat#t_list = type([])
 let g:coqtail#compat#nvim = has('nvim')
 let g:coqtail#compat#has_channel = (has('channel') && has('patch-8.0.0001')) || g:coqtail#compat#nvim
 
+" Use `deletebufline` when available because `:delete` forces vim to exit visual mode.
+if exists('*deletebufline')
+  function! coqtail#compat#deleteline(first, last) abort
+    call deletebufline('%', a:first, a:last)
+  endfunction
+else
+  function! coqtail#compat#deleteline(first, last) abort
+    execute 'silent' a:first ',' a:last 'delete _'
+  endfunction
+endif
+
 " Python compatibility.
 if has('python3')
   command! -nargs=1 Py py3 <args>
