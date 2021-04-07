@@ -329,9 +329,10 @@ class Coqtail:
         line, col = self.endpoints[-1] if self.endpoints != [] else (0, 1)
         return (line + 1, col)
 
-    def errorpoint(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[Tuple[int, int]]
+    def errorpoint(self, opts: VimOptions) -> Optional[Tuple[int, int]]:
         """Return the start of the error region."""
+        # pylint: disable=unused-argument
+        # opts is always passed by handle().
         if self.error_at is not None:
             line, col = self.error_at[0]
             return (line + 1, col + 1)
