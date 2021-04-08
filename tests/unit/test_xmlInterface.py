@@ -4,7 +4,6 @@
 
 from collections import namedtuple
 from inspect import getmembers, isfunction, ismethod
-from subprocess import check_output
 from xml.etree.ElementTree import Element, tostring
 
 import pytest
@@ -228,6 +227,7 @@ class ToOfTests:
                 mkXML("option_value", attrs={"val": "stringoptvalue"}, children=[none]),
                 True,
             )
+        return None
 
     def option_state(self):
         true = self.true()
