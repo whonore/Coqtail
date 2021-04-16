@@ -184,7 +184,7 @@ def parse_tagged_tokens(
 def join_tagged_tokens(tagged_tokens: Iterable[TaggedToken]) -> str:
     """Join tokens from tagged token stream.
 
-    Note:
+    NOTE:
       forall xml tags,
         join_tagged_tokens(parse_tagged_token(tags, xml)) = "".join(xml.itertext())
     """
