@@ -71,8 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # TODO: Figure out why 8.* versions don't work
-        version: ['7.4', '8.0']
+        version: ['7.4', '8.0', '8.1', '8.2']
     steps:
       - uses: actions/checkout@v2
       - name: Install Nix
