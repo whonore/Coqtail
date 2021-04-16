@@ -22,7 +22,7 @@ let
     };
   }.${version};
 in stdenv.mkDerivation {
-  name = "vim";
+  name = "vim-${version}.${vimSrc.patch}";
 
   src = with vimSrc;
     fetchTarball {
