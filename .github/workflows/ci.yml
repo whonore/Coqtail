@@ -28,7 +28,7 @@ jobs:
           name: coq
           skipPush: true
       - name: Install Coq ${{ matrix.coq_version }}
-        run: nix-env -j auto -i -f ci/coq.nix --argstr version ${{ matrix.coq_version }}
+        run: nix-env -j auto --cores 0 -i -f ci/coq.nix --argstr version ${{ matrix.coq_version }}
       - name: Install Python ${{ matrix.py_version }}
         uses: actions/setup-python@v2
         with:
@@ -85,7 +85,7 @@ jobs:
           name: whonore-vim
           skipPush: true
       - name: Install Vim ${{ matrix.version }}
-        run: nix-env -j auto -i -f ci/vim.nix --argstr version ${{ matrix.version }}
+        run: nix-env -j --cores 0 auto -i -f ci/vim.nix --argstr version ${{ matrix.version }}
       - name: Install Vader
         uses: actions/checkout@v2
         with:
