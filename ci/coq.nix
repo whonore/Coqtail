@@ -12,10 +12,10 @@ let
     (filter (s: s != "") (match "coq([0-9]|master)([0-9]*)-.*" tox_version));
   coq = "coq_" + replaceStrings [ "." ] [ "_" ] dot_version;
   coqpkgs =
-    if dot_version == "8.4" then (import (fetchTarball url_8_4) { }) else pkgs;
+    if dot_version == "8.4" then import (fetchTarball url_8_4) { } else pkgs;
 in if hasAttr coq coqpkgs then
   getAttr coq coqpkgs
 else if dot_version == "master" then
-  (import (fetchTarball url_master) { })
+  import (fetchTarball url_master) { }
 else
   abort "Invalid version ${dot_version}"
