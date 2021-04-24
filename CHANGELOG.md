@@ -2,6 +2,8 @@
 
 ## Unreleased ([master])
 
+## [1.3.1]
+
 ### Added
 - `:CoqJumpToError` command that moves the cursor to the location of the error
   reported by Coq, if any. (PR #196)
@@ -137,6 +139,7 @@
 - Interoperability with [matchup] and [endwise].
 
 [master]: https://github.com/whonore/Coqtail
+[1.3.1]: https://github.com/whonore/Coqtail/tree/v1.3.1
 [1.3.0]: https://github.com/whonore/Coqtail/tree/v1.3.0
 [1.2.0]: https://github.com/whonore/Coqtail/tree/v1.2.0
 [1.1.0]: https://github.com/whonore/Coqtail/tree/v1.1.0
