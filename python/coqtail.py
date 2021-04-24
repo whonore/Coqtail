@@ -2,8 +2,7 @@
 # Author: Wolf Honore
 """Classes and functions for managing auxiliary panels and Coqtop interfaces."""
 
-from __future__ import absolute_import, division, print_function
-
+import concurrent.futures as futures
 import json
 import re
 import socket
@@ -11,39 +10,65 @@ import threading
 import time
 from collections import defaultdict as ddict
 from collections import deque
-from itertools import islice
-
-from six import indexbytes, iterbytes, string_types
-from six.moves import zip_longest
-from six.moves.queue import Empty, Queue
-from six.moves.socketserver import StreamRequestHandler, ThreadingTCPServer
+from itertools import count, islice, zip_longest
+from queue import Empty, Queue
+from socketserver import StreamRequestHandler, ThreadingTCPServer
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    DefaultDict,
+    Deque,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 import coqtop as CT
+from xmlInterface import Goals, PPTag, TaggedToken
 
-# For Mypy
-try:
-    from typing import (
-        Any,
-        Callable,
-        DefaultDict,
-        Deque,
-        Dict,
-        Iterable,
-        Iterator,
-        List,
-        Mapping,
-        Optional,
-        Sequence,
-        Text,
-        Tuple,
-        Union,
+T = TypeVar("T")
+Highlight = NamedTuple(
+    "Highlight",
+    [("line_no", int), ("index", int), ("tok_len", int), ("tag", PPTag)],
+)
+Req = Tuple[int, int, str, Mapping[str, Any]]
+Res = Tuple[int, Any]
+SkipFun = Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]
+
+if TYPE_CHECKING:
+    # pylint: disable=unsubscriptable-object
+    # Some types are only subscriptable during type checking.
+    from typing_extensions import TypedDict
+
+    ReqQueue = Queue[Req]
+    ResQueue = Queue[Res]
+    VimOptions = TypedDict(
+        "VimOptions",
+        {"encoding": str, "timeout": int, "filename": str},
     )
-except ImportError:
-    pass
+    ResFuture = futures.Future[Optional[str]]
+else:
+    ReqQueue = Queue
+    ResQueue = Queue
+    VimOptions = Mapping[str, Any]
+    ResFuture = futures.Future
 
 
-def lines_and_highlights(tagged_tokens, line_no):
-    # type: (Union[Text, Iterable[Tuple[Text, Optional[Text]]]], int) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]
+def lines_and_highlights(
+    tagged_tokens: Union[str, Iterable[TaggedToken]],
+    line_no: int,
+) -> Tuple[List[str], List[Highlight]]:
     """Converts a sequence of tagged tokens into lines and higlight positions.
 
     Note that matchaddpos()'s highlight positions are 1-indexed,
@@ -51,13 +76,13 @@ def lines_and_highlights(tagged_tokens, line_no):
     """
     # If tagged_tokens turns out to already be a string (which is the case for
     # older versions of Coq), just return it as is, with no highlights.
-    if isinstance(tagged_tokens, string_types):
+    if isinstance(tagged_tokens, str):
         return tagged_tokens.splitlines(), []
 
-    lines = []  # type: List[Text]
-    highlights = []  # type: List[Tuple[int, int, int, Text]]
+    lines: List[str] = []
+    highlights: List[Highlight] = []
     line_no += 1  # Convert to 1-indexed per matchaddpos()'s spec
-    line, index = u"", 1
+    line, index = "", 1
 
     for token, tag in tagged_tokens:
         # NOTE: Can't use splitlines or else tokens like ' =\n' won't properly
@@ -71,7 +96,7 @@ def lines_and_highlights(tagged_tokens, line_no):
 
             tok_len = len(tok.encode("utf-8"))
             if tag is not None:
-                highlights.append((line_no, index, tok_len, tag))
+                highlights.append(Highlight(line_no, index, tok_len, tag))
 
             line += tok
             index += tok_len
@@ -83,9 +108,8 @@ def lines_and_highlights(tagged_tokens, line_no):
 class UnmatchedError(Exception):
     """An unmatched comment or string was found."""
 
-    def __init__(self, token, loc):
-        # type: (Text, Tuple[int, int]) -> None
-        super(UnmatchedError, self).__init__("Found unmatched {}.".format(token))
+    def __init__(self, token: str, loc: Tuple[int, int]) -> None:
+        super().__init__(f"Found unmatched {token}.")
         line, col = loc
         self.range = (loc, (line, col + len(token)))
 
@@ -95,11 +119,10 @@ class NoDotError(Exception):
 
 
 # Coqtail Server #
-class Coqtail(object):
+class Coqtail:
     """Manage Coqtop interfaces and auxiliary buffers for each Coq file."""
 
-    def __init__(self, handler):
-        # type: (CoqtailHandler) -> None
+    def __init__(self, handler: "CoqtailHandler") -> None:
         """Initialize variables.
 
         coqtop - The Coqtop interface
@@ -117,16 +140,15 @@ class Coqtail(object):
         self.coqtop = CT.Coqtop()
         self.handler = handler
         self.oldchange = 0
-        self.oldbuf = []  # type: Sequence[bytes]
-        self.endpoints = []  # type: List[Tuple[int, int]]
-        self.send_queue = deque()  # type: Deque[Mapping[str, Tuple[int, int]]]
-        self.error_at = None  # type: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
-        self.info_msg = []  # type: List[Text]
-        self.goal_msg = []  # type: List[Text]
-        self.goal_hls = []  # type: List[Tuple[int, int, int, Text]]
+        self.oldbuf: List[bytes] = []
+        self.endpoints: List[Tuple[int, int]] = []
+        self.send_queue: Deque[Mapping[str, Tuple[int, int]]] = deque()
+        self.error_at: Optional[Tuple[Tuple[int, int], Tuple[int, int]]] = None
+        self.info_msg: List[str] = []
+        self.goal_msg: List[str] = []
+        self.goal_hls: List[Highlight] = []
 
-    def sync(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[Text]
+    def sync(self, opts: VimOptions) -> Optional[str]:
         """Check if the buffer has been updated and rewind Coqtop if so."""
         err = None
         newchange = self.changedtick
@@ -155,10 +177,16 @@ class Coqtail(object):
         return err
 
     # Coqtop Interface #
-    def start(self, version, coq_path, coq_prog, args, opts):
-        # type: (str, str, str, List[str], Mapping[str, Any]) -> Optional[Text]
+    def start(
+        self,
+        version: str,
+        coq_path: str,
+        coq_prog: str,
+        args: Iterable[str],
+        opts: VimOptions,
+    ) -> Optional[str]:
         """Start a new Coqtop instance."""
-        errmsg = []  # type: List[Text]
+        errmsg: List[str] = []
 
         try:
             err, stderr = self.coqtop.start(
@@ -179,13 +207,13 @@ class Coqtail(object):
             return "Failed to launch Coq. " + ". ".join(errmsg)
         return None
 
-    def stop(self, opts):
-        # type: (Mapping[str, Any]) -> None
+    def stop(self, opts: VimOptions) -> None:
         """Stop Coqtop."""
+        # pylint: disable=unused-argument
+        # opts is always passed by handle().
         self.coqtop.stop()
 
-    def step(self, steps, opts):
-        # type: (int, Mapping[str, Any]) -> Optional[str]
+    def step(self, steps: int, opts: VimOptions) -> Optional[str]:
         """Advance Coq by 'steps' sentences."""
         self.sync(opts=opts)
 
@@ -218,8 +246,7 @@ class Coqtail(object):
 
         return err
 
-    def rewind(self, steps, opts):
-        # type: (int, Mapping[str, Any]) -> Optional[Text]
+    def rewind(self, steps: int, opts: VimOptions) -> Optional[str]:
         """Rewind Coq by 'steps' sentences."""
         if steps < 1 or self.endpoints == []:
             return None
@@ -238,8 +265,7 @@ class Coqtail(object):
         self.refresh(opts=opts)
         return None
 
-    def to_line(self, line, col, opts):
-        # type: (int, int, Mapping[str, Any]) -> Optional[Text]
+    def to_line(self, line: int, col: int, opts: VimOptions) -> Optional[str]:
         """Advance/rewind Coq to the specified position."""
         self.sync(opts=opts)
 
@@ -249,41 +275,44 @@ class Coqtail(object):
         # Check if should rewind or advance
         if (line, col) < (eline, ecol):
             return self.rewind_to(line, col + 2, opts=opts)
-        else:
-            unmatched = None
-            buffer = self.buffer
-            while True:
-                try:
-                    to_send = _get_message_range(buffer, (eline, ecol))
-                except UnmatchedError as e:
-                    # Only report unmatched if it occurs after the desired position
-                    if e.range[0] <= (line, col):
-                        unmatched = e
-                    break
-                except NoDotError:
-                    break
-                if (line, col) < to_send["stop"]:
-                    break
-                eline, ecol = to_send["stop"]
-                ecol += 1
-                self.send_queue.append(to_send)
 
-            failed_at, err = self.send_until_fail(buffer, opts=opts)
-            if unmatched is not None and failed_at is None:
-                # Only report unmatched if no other errors occurred first
-                self.set_info(str(unmatched), reset=False)
-                self.error_at = unmatched.range
-                self.refresh(goals=False, opts=opts)
+        unmatched = None
+        buffer = self.buffer
+        while True:
+            try:
+                to_send = _get_message_range(buffer, (eline, ecol))
+            except UnmatchedError as e:
+                # Only report unmatched if it occurs after the desired position
+                if e.range[0] <= (line, col):
+                    unmatched = e
+                break
+            except NoDotError:
+                break
+            if (line, col) < to_send["stop"]:
+                break
+            eline, ecol = to_send["stop"]
+            ecol += 1
+            self.send_queue.append(to_send)
 
-            return err
+        failed_at, err = self.send_until_fail(buffer, opts=opts)
+        if unmatched is not None and failed_at is None:
+            # Only report unmatched if no other errors occurred first
+            self.set_info(str(unmatched), reset=False)
+            self.error_at = unmatched.range
+            self.refresh(goals=False, opts=opts)
 
-    def to_top(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[Text]
+        return err
+
+    def to_top(self, opts: VimOptions) -> Optional[str]:
         """Rewind to the beginning of the file."""
         return self.rewind_to(0, 1, opts=opts)
 
-    def query(self, args, opts, silent=False):
-        # type: (List[Text], Mapping[str, Any], bool) -> None
+    def query(
+        self,
+        args: Iterable[str],
+        opts: VimOptions,
+        silent: bool = False,
+    ) -> None:
         """Forward Coq query to Coqtop interface."""
         success, msg, stderr = self.do_query(" ".join(args), opts=opts)
 
@@ -292,16 +321,18 @@ class Coqtail(object):
         self.print_stderr(stderr)
         self.refresh(goals=False, opts=opts)
 
-    def endpoint(self, opts):
-        # type: (Mapping[str, Any]) -> Tuple[int, int]
+    def endpoint(self, opts: VimOptions) -> Tuple[int, int]:
         """Return the end of the Coq checked section."""
+        # pylint: disable=unused-argument
+        # opts is always passed by handle().
         # Get the location of the last '.'
         line, col = self.endpoints[-1] if self.endpoints != [] else (0, 1)
         return (line + 1, col)
 
-    def errorpoint(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[Tuple[int, int]]
+    def errorpoint(self, opts: VimOptions) -> Optional[Tuple[int, int]]:
         """Return the start of the error region."""
+        # pylint: disable=unused-argument
+        # opts is always passed by handle().
         if self.error_at is not None:
             line, col = self.error_at[0]
             return (line + 1, col + 1)
@@ -309,8 +340,11 @@ class Coqtail(object):
         return None
 
     # Helpers #
-    def send_until_fail(self, buffer, opts):
-        # type: (Sequence[bytes], Mapping[str, Any]) -> Tuple[Optional[Tuple[int, int]], Optional[str]]
+    def send_until_fail(
+        self,
+        buffer: Sequence[bytes],
+        opts: VimOptions,
+    ) -> Tuple[Optional[Tuple[int, int]], Optional[str]]:
         """Send all sentences in 'send_queue' until an error is encountered."""
         scroll = len(self.send_queue) > 1
         failed_at = None
@@ -363,15 +397,13 @@ class Coqtail(object):
         self.refresh(opts=opts, scroll=scroll)
         return failed_at, None
 
-    def rewind_to(self, line, col, opts):
-        # type: (int, int, Mapping[str, Any]) -> Optional[Text]
+    def rewind_to(self, line: int, col: int, opts: VimOptions) -> Optional[str]:
         """Rewind to a specific location."""
         # Count the number of endpoints after the specified location
         steps_too_far = sum(pos >= (line, col) for pos in self.endpoints)
         return self.rewind(steps_too_far, opts=opts)
 
-    def do_query(self, query, opts):
-        # type: (Text, Mapping[str, Any]) -> Tuple[bool, Text, Text]
+    def do_query(self, query: str, opts: VimOptions) -> Tuple[bool, str, str]:
         """Execute a query and return the reply."""
         # Ensure that the query ends in '.'
         if not query.endswith("."):
@@ -389,10 +421,9 @@ class Coqtail(object):
 
         return success, msg, stderr
 
-    def qual_name(self, target, opts):
-        # type: (Text, Mapping[str, Any]) -> Optional[Tuple[Text, Text]]
+    def qual_name(self, target: str, opts: VimOptions) -> Optional[Tuple[str, str]]:
         """Find the fully qualified name of 'target' using 'Locate'."""
-        success, locate, _ = self.do_query("Locate {}.".format(target), opts=opts)
+        success, locate, _ = self.do_query(f"Locate {target}.", opts=opts)
         if not success:
             return None
 
@@ -404,35 +435,38 @@ class Coqtail(object):
         match = locate.split("\n")[0]
         if "No object of basename" in match:
             return None
-        else:
-            # Look for alias
-            alias = re.search(r"\(alias of (.*)\)", match)
-            if alias is not None:
-                # Found an alias, search again using that
-                return self.qual_name(alias.group(1), opts=opts)
 
-            info = match.split()
-            # Special case for Module Type
-            if info[0] == "Module" and info[1] == "Type":
-                tgt_type = "Module Type"  # type: Text
-                qual_tgt = info[2]
-            else:
-                tgt_type, qual_tgt = info[:2]
+        # Look for alias
+        alias = re.search(r"\(alias of (.*)\)", match)
+        if alias is not None:
+            # Found an alias, search again using that
+            return self.qual_name(alias.group(1), opts=opts)
+
+        info = match.split()
+        # Special case for Module Type
+        if info[0] == "Module" and info[1] == "Type":
+            tgt_type = "Module Type"
+            qual_tgt = info[2]
+        else:
+            tgt_type, qual_tgt = info[:2]
 
         return qual_tgt, tgt_type
 
-    def find_lib(self, lib, opts):
-        # type: (Text, Mapping[str, Any]) -> Optional[Text]
+    def find_lib(self, lib: str, opts: VimOptions) -> Optional[str]:
         """Find the path to the .v file corresponding to the libary 'lib'."""
-        success, locate, _ = self.do_query("Locate Library {}.".format(lib), opts=opts)
+        success, locate, _ = self.do_query(f"Locate Library {lib}.", opts=opts)
         if not success:
             return None
 
         path = re.search(r"file\s+(.*)\.vo", locate)
         return path.group(1) if path is not None else None
 
-    def find_qual(self, qual_tgt, tgt_type, opts):
-        # type: (Text, Text, Mapping[str, Any]) -> Optional[Tuple[Text, Text]]
+    def find_qual(
+        self,
+        qual_tgt: str,
+        tgt_type: str,
+        opts: VimOptions,
+    ) -> Optional[Tuple[str, str]]:
         """Find the Coq file containing the qualified name 'qual_tgt'."""
         qual_comps = qual_tgt.split(".")
         base_name = qual_comps[-1]
@@ -451,8 +485,11 @@ class Coqtail(object):
 
         return None
 
-    def find_def(self, target, opts):
-        # type: (Text, Mapping[str, Any]) -> Optional[Tuple[Text, List[Text]]]
+    def find_def(
+        self,
+        target: str,
+        opts: VimOptions,
+    ) -> Optional[Tuple[str, List[str]]]:
         """Create patterns to jump to the definition of 'target'."""
         # Get the fully qualified version of 'target'
         qual = self.qual_name(target, opts=opts)
@@ -468,8 +505,7 @@ class Coqtail(object):
 
         return tgt_file, get_searches(tgt_type, tgt_name)
 
-    def next_bullet(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[Text]
+    def next_bullet(self, opts: VimOptions) -> Optional[str]:
         """Check the bullet expected for the next subgoal."""
         success, show, _ = self.do_query("Show.", opts=opts)
         if not success:
@@ -479,8 +515,13 @@ class Coqtail(object):
         return bmatch.group(1) if bmatch is not None else None
 
     # Goals and Infos #
-    def refresh(self, opts, goals=True, force=True, scroll=False):
-        # type: (Mapping[str, Any], bool, bool, bool) -> None
+    def refresh(
+        self,
+        opts: VimOptions,
+        goals: bool = True,
+        force: bool = True,
+        scroll: bool = False,
+    ) -> None:
         """Refresh the auxiliary panels."""
         if goals:
             newgoals, newinfo = self.get_goals(opts=opts)
@@ -492,8 +533,7 @@ class Coqtail(object):
                 self.set_goal(clear=True)
         self.handler.refresh(goals=goals, force=force, scroll=scroll)
 
-    def get_goals(self, opts):
-        # type: (Mapping[str, Any]) -> Tuple[Optional[Tuple[List[Any], List[Any], List[Any], List[Any]]], Text]
+    def get_goals(self, opts: VimOptions) -> Tuple[Optional[Goals], str]:
         """Get the current goals."""
         try:
             _, msg, goals, stderr = self.coqtop.goals(timeout=opts["timeout"])
@@ -502,37 +542,37 @@ class Coqtail(object):
         except CT.CoqtopError as e:
             return None, str(e)
 
-    def pp_goals(self, goals, opts):
-        # type: (Tuple[List[Any], List[Any], List[Any], List[Any]], Mapping[str, Any]) -> Tuple[List[Text], List[Tuple[int, int, int, Text]]]
+    def pp_goals(
+        self,
+        goals: Goals,
+        opts: VimOptions,
+    ) -> Tuple[List[str], List[Highlight]]:
         """Pretty print the goals."""
-        lines = []  # type: List[Text]
-        highlights = []  # type: List[Tuple[int, int, int, Text]]
-        fg, bg, shelved, given_up = goals
-        bg_joined = [pre + post for pre, post in bg]
+        lines: List[str] = []
+        highlights: List[Highlight] = []
 
-        ngoals = len(fg)
-        nhidden = len(bg_joined[0]) if bg_joined != [] else 0
-        nshelved = len(shelved)
-        nadmit = len(given_up)
+        ngoals = len(goals.fg)
+        nhidden = len(goals.bg[0]) if goals.bg != [] else 0
+        nshelved = len(goals.shelved)
+        nadmit = len(goals.given_up)
 
         # Information about number of remaining goals
-        plural = "" if ngoals == 1 else "s"
-        lines.append("{} subgoal{}".format(ngoals, plural))
-        if 0 < nhidden:
-            lines.append("({} unfocused at this level)".format(nhidden))
-        if 0 < nshelved or 0 < nadmit:
+        lines.append(f"{ngoals} subgoal{'' if ngoals == 1 else 's'}")
+        if nhidden > 0:
+            lines.append(f"({nhidden} unfocused at this level)")
+        if nshelved > 0 or nadmit > 0:
             line = []
-            if 0 < nshelved:
-                line.append("{} shelved".format(nshelved))
-            if 0 < nadmit:
-                line.append("{} admitted".format(nadmit))
+            if nshelved > 0:
+                line.append(f"{nshelved} shelved")
+            if nadmit > 0:
+                line.append(f"{nadmit} admitted")
             lines.append(" ".join(line))
 
         lines.append("")
 
         # When a subgoal is finished
         if ngoals == 0:
-            next_goal = next((bgs[0] for bgs in bg_joined if bgs != []), None)
+            next_goal = next((bgs[0] for bgs in goals.bg if bgs != []), None)
             if next_goal is not None:
                 bullet = self.next_bullet(opts=opts)
                 bullet_info = ""
@@ -540,11 +580,11 @@ class Coqtail(object):
                     if bullet == "}":
                         bullet_info = "end this goal with '}'"
                     else:
-                        bullet_info = "use bullet '{}'".format(bullet)
+                        bullet_info = f"use bullet '{bullet}'"
 
                 next_info = "Next goal"
                 if bullet_info != "":
-                    next_info += " ({})".format(bullet_info)
+                    next_info += f" ({bullet_info})"
                 next_info += ":"
 
                 lines += [next_info, ""]
@@ -555,7 +595,7 @@ class Coqtail(object):
             else:
                 lines.append("All goals completed.")
 
-        for idx, goal in enumerate(fg):
+        for idx, goal in enumerate(goals.fg):
             if idx == 0:
                 # Print the environment only for the current goal
                 for hyp in goal.hyp:
@@ -563,7 +603,7 @@ class Coqtail(object):
                     lines += ls
                     highlights += hls
 
-            hbar = "{:=>25} ({} / {})".format("", idx + 1, ngoals)
+            hbar = f"{'':=>25} ({idx + 1} / {ngoals})"
             lines += ["", hbar, ""]
 
             ls, hls = lines_and_highlights(goal.ccl, len(lines))
@@ -572,39 +612,39 @@ class Coqtail(object):
 
         return lines, highlights
 
-    def set_goal(self, msg=None, clear=False):
-        # type: (Optional[Tuple[List[Text], List[Tuple[int, int, int, Text]]]], bool) -> None
+    def set_goal(
+        self,
+        msg: Optional[Tuple[List[str], List[Highlight]]] = None,
+        clear: bool = False,
+    ) -> None:
         """Update the goal message."""
         if msg is not None:
             self.goal_msg, self.goal_hls = msg
         if clear or "".join(self.goal_msg) == "":
             self.goal_msg, self.goal_hls = ["No goals."], []
 
-    def set_info(self, msg=None, reset=True):
-        # type: (Optional[Text], bool) -> None
+    def set_info(self, msg: Optional[str] = None, reset: bool = True) -> None:
         """Update the info message."""
         if msg is not None:
             info = msg.split("\n")
             if reset or self.info_msg == [] or self.info_msg == [""]:
                 self.info_msg = info
             else:
-                self.info_msg += [u""] + info
+                self.info_msg += [""] + info
 
-    def print_stderr(self, err):
-        # type: (Text) -> None
+    def print_stderr(self, err: str) -> None:
         """Display a message from Coqtop stderr."""
         if err != "":
             self.set_info("From stderr: " + err, reset=False)
 
     @property
-    def highlights(self):
-        # type: () -> Dict[str, Optional[str]]
+    def highlights(self) -> Dict[str, Optional[str]]:
         """Vim match patterns for highlighting."""
-        matches = {
+        matches: Dict[str, Optional[str]] = {
             "coqtail_checked": None,
             "coqtail_sent": None,
             "coqtail_error": None,
-        }  # type: Dict[str, Optional[str]]
+        }
 
         if self.endpoints != []:
             line, col = self.endpoints[-1]
@@ -621,93 +661,92 @@ class Coqtail(object):
 
         return matches
 
-    def panels(self, goals=True):
-        # type: (bool) -> Mapping[str, Tuple[List[Text], List[Tuple[int, int, int, Text]]]]
+    def panels(
+        self,
+        goals: bool = True,
+    ) -> Mapping[str, Tuple[List[str], List[Highlight]]]:
         """The auxiliary panel content."""
-        panels = {
+        panels: Dict[str, Tuple[List[str], List[Highlight]]] = {
             "info": (self.info_msg, [])
-        }  # type: Dict[str, Tuple[List[Text], List[Tuple[int, int, int, Text]]]]
+        }
         if goals:
             panels["goal"] = (self.goal_msg, self.goal_hls)
         return panels
 
-    def splash(self, version, width, height, deprecated, opts):
-        # type: (Text, int, int, bool, Mapping[str, Any]) -> None
+    def splash(
+        self,
+        version: str,
+        width: int,
+        height: int,
+        opts: VimOptions,
+    ) -> None:
         """Display the logo in the info panel."""
+        # pylint: disable=unused-argument
+        # opts is always passed by handle().
         msg = [
-            u"~~~~~~~~~~~~~~~~~~~~~~~",
-            u"λ                     /",
-            u" λ      Coqtail      / ",
-            u"  λ                 /  ",
-            u"   λ{}/    ".format(("Coq " + version).center(15)),
-            u"    λ             /    ",
-            u"     λ           /     ",
-            u"      λ         /      ",
-            u"       λ       /       ",
-            u"        λ     /        ",
-            u"         λ   /         ",
-            u"          λ /          ",
-            u"           ‖           ",
-            u"           ‖           ",
-            u"           ‖           ",
-            u"          / λ          ",
-            u"         /___λ         ",
+            "~~~~~~~~~~~~~~~~~~~~~~~",
+            "λ                     /",
+            " λ      Coqtail      / ",
+            "  λ                 /  ",
+            f"   λ{('Coq ' + version).center(15)}/    ",
+            "    λ             /    ",
+            "     λ           /     ",
+            "      λ         /      ",
+            "       λ       /       ",
+            "        λ     /        ",
+            "         λ   /         ",
+            "          λ /          ",
+            "           ‖           ",
+            "           ‖           ",
+            "           ‖           ",
+            "          / λ          ",
+            "         /___λ         ",
         ]
         msg_maxw = max(len(line) for line in msg)
         msg = [line.center(width - msg_maxw // 2) for line in msg]
 
-        if deprecated:
-            depr_msg = u"Support for Python 2 is deprecated and will be dropped in an upcoming version."
-            msg += [u"", depr_msg.center(width - msg_maxw // 2)]
-
-        top_pad = [u""] * ((height // 2) - (len(msg) // 2 + 1))
+        top_pad = [""] * ((height // 2) - (len(msg) // 2 + 1))
         self.info_msg = top_pad + msg
 
-    def toggle_debug(self, opts):
-        # type: (Mapping[str, Any]) -> Optional[str]
+    def toggle_debug(self, opts: VimOptions) -> None:
         """Enable or disable logging of debug messages."""
         log = self.coqtop.toggle_debug()
         if log is None:
             msg = "Debugging disabled."
             self.log = ""
         else:
-            msg = "Debugging enabled. Log: {}.".format(log)
+            msg = f"Debugging enabled. Log: {log}."
             self.log = log
 
         self.set_info(msg, reset=True)
         self.refresh(goals=False, opts=opts)
-        return None
 
     # Vim Helpers #
     @property
-    def changedtick(self):
-        # type: () -> int
+    def changedtick(self) -> int:
         """The value of changedtick for this buffer."""
-        return self.handler.vimvar("changedtick")  # type: ignore
+        return cast(int, self.handler.vimvar("changedtick"))
 
     @property
-    def log(self):
-        # type: () -> Text
+    def log(self) -> str:
         """The name of this buffer's debug log."""
-        return self.handler.vimvar("coqtail_log_name")  # type: ignore[no-any-return]
+        return cast(str, self.handler.vimvar("coqtail_log_name"))
 
     @log.setter
-    def log(self, log):
-        # type: (Text) -> None
+    def log(self, log: str) -> None:
         """The name of this buffer's debug log."""
         self.handler.vimvar("coqtail_log_name", log)
 
     @property
-    def buffer(self):
-        # type: () -> Sequence[bytes]
+    def buffer(self) -> List[bytes]:
         """The contents of this buffer."""
-        lines = self.handler.vimcall(
+        lines: List[str] = self.handler.vimcall(
             "getbufline",
             True,
             self.handler.bnum,
             1,
             "$",
-        )  # type: Sequence[Text]
+        )
         return [line.encode("utf-8") for line in lines]
 
 
@@ -729,15 +768,13 @@ class CoqtailHandler(StreamRequestHandler):
     # Is the client synchronous
     sync = False
 
-    def parse_msgs(self):
-        # type: () -> None
+    def parse_msgs(self) -> None:
         """Parse messages sent over a Vim channel."""
         while not self.closed:
             try:
-                msg = self.rfile.readline()  # type: bytes
+                msg = self.rfile.readline()
                 msg_id, data = json.loads(msg)
-            # Python 2 doesn't have ConnectionError
-            except (ValueError, socket.error):
+            except (json.JSONDecodeError, ConnectionError):
                 # Check if channel closed
                 self.closed = True
                 break
@@ -749,38 +786,43 @@ class CoqtailHandler(StreamRequestHandler):
                 else:
                     self.reqs.put((msg_id, bnum, func, args))
             else:
-                # N.B. Accessing self.resps concurrently creates a race condition
-                # where defaultdict could construct a Queue twice
+                # NOTE: Accessing self.resps concurrently creates a race
+                # condition where defaultdict could construct a Queue twice
                 with self.resp_lk:
                     self.resps[-msg_id].put((msg_id, data))
 
-    def get_msg(self, msg_id=None):
-        # type: (Optional[int]) -> Sequence[Any]
+    @overload
+    def get_msg(self, msg_id: None = ...) -> Req:
+        ...
+
+    @overload
+    def get_msg(self, msg_id: int) -> Res:
+        ...
+
+    def get_msg(self, msg_id: Optional[int] = None) -> Union[Res, Req]:
         """Check for any pending messages from Vim."""
+        queue: Union[ReqQueue, ResQueue]
         if msg_id is None:
-            queue = self.reqs  # type: Queue[Any]
+            queue = self.reqs
         else:
             with self.resp_lk:
                 queue = self.resps[msg_id]
         while not self.closed:
             try:
-                return queue.get(timeout=self.check_close_rate)  # type: ignore
+                return queue.get(timeout=self.check_close_rate)
             except Empty:
                 pass
         raise EOFError
 
-    def handle(self):
-        # type: () -> None
+    def handle(self) -> None:
         """Forward requests from Vim to the appropriate Coqtail function."""
         self.coq = Coqtail(self)
         self.closed = False
-        self.reqs = Queue()  # type: Queue[Tuple[int, int, str, Mapping[str, Any]]]
-        self.resps = ddict(Queue)  # type: DefaultDict[int, Queue[Tuple[int, Any]]]
+        self.reqs: ReqQueue = Queue()
+        self.resps: DefaultDict[int, ResQueue] = ddict(Queue)
         self.resp_lk = threading.Lock()
 
-        read_thread = threading.Thread(target=self.parse_msgs)
-        read_thread.daemon = True
-        read_thread.start()
+        threading.Thread(target=self.parse_msgs, daemon=True).start()
 
         while not self.closed:
             try:
@@ -791,7 +833,7 @@ class CoqtailHandler(StreamRequestHandler):
             except EOFError:
                 break
 
-            handler = {
+            handlers: Mapping[str, Callable[..., object]] = {
                 "start": self.coq.start,
                 "stop": self.coq.stop,
                 "step": self.coq.step,
@@ -807,14 +849,14 @@ class CoqtailHandler(StreamRequestHandler):
                 "find_def": self.coq.find_def,
                 "find_lib": self.coq.find_lib,
                 "refresh": self.coq.refresh,
-            }.get(func, None)
+            }
+            handler = handlers.get(func, None)
 
             try:
-                ret = handler(**args) if handler is not None else None  # type: ignore
+                ret = handler(**args) if handler is not None else None
                 msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
                 self.wfile.write(json.dumps(msg).encode("utf-8") + b"\n")
-            # Python 2 doesn't have BrokenPipeError
-            except (EOFError, OSError):
+            except (EOFError, ConnectionError):
                 break
 
             try:
@@ -825,8 +867,7 @@ class CoqtailHandler(StreamRequestHandler):
             if func == "stop":
                 break
 
-    def vimeval(self, expr, wait=True):
-        # type: (List[Any], bool) -> Any
+    def vimeval(self, expr: List[Any], wait: bool = True) -> Any:
         """Send Vim a request."""
         if wait:
             expr += [-self.msg_id]
@@ -838,22 +879,27 @@ class CoqtailHandler(StreamRequestHandler):
             return res
         return None
 
-    def vimcall(self, expr, wait, *args):
-        # type: (str, bool, *Any) -> Any
+    def vimcall(self, expr: str, wait: bool, *args: Any) -> Any:
         """Request Vim to evaluate a function call."""
         return self.vimeval(["call", expr, args], wait=wait)
 
-    def vimvar(self, var, val=None):
-        # type: (str, Optional[Any]) -> Any
+    def vimvar(self, var: str, val: Optional[Any] = None) -> Any:
         """Get or set the value of a Vim variable."""
-        if val is None:
-            return self.vimcall("getbufvar", True, self.bnum, var)
-        else:
-            return self.vimcall("setbufvar", True, self.bnum, var, val)
+        return (
+            self.vimcall("getbufvar", True, self.bnum, var)
+            if val is None
+            else self.vimcall("setbufvar", True, self.bnum, var, val)
+        )
 
-    def refresh(self, goals=True, force=True, scroll=False):
-        # type: (bool, bool, bool) -> None
+    def refresh(
+        self,
+        goals: bool = True,
+        force: bool = True,
+        scroll: bool = False,
+    ) -> None:
         """Refresh the highlighting and auxiliary panels."""
+        # pylint: disable=attribute-defined-outside-init
+        # refresh_time is defined in handle() when the connection is opened.
         if not force:
             cur_time = time.time()
             force = cur_time - self.refresh_time > self.refresh_rate
@@ -868,8 +914,7 @@ class CoqtailHandler(StreamRequestHandler):
                 scroll,
             )
 
-    def interrupt(self):
-        # type: () -> None
+    def interrupt(self) -> None:
         """Interrupt Coqtop and clear the request queue."""
         if self.working:
             self.working = False
@@ -883,30 +928,26 @@ class CoqtailHandler(StreamRequestHandler):
             self.coq.coqtop.interrupt()
 
 
-class CoqtailServer(object):
+class CoqtailServer:
     """A server through which Vim and Coqtail communicate."""
 
     serv = None
 
     @staticmethod
-    def start_server(sync):
-        # type: (bool) -> int
+    def start_server(sync: bool) -> int:
         """Start the TCP server."""
-        # N.B. port = 0 chooses any arbitrary open one
+        # NOTE: port = 0 chooses any arbitrary open one
         CoqtailHandler.sync = sync
         CoqtailServer.serv = ThreadingTCPServer(("localhost", 0), CoqtailHandler)
         CoqtailServer.serv.daemon_threads = True
         _, port = CoqtailServer.serv.server_address
 
-        serv_thread = threading.Thread(target=CoqtailServer.serv.serve_forever)
-        serv_thread.daemon = True
-        serv_thread.start()
+        threading.Thread(target=CoqtailServer.serv.serve_forever, daemon=True).start()
 
         return port
 
     @staticmethod
-    def stop_server():
-        # type: () -> None
+    def stop_server() -> None:
         """Stop the TCP server."""
         if CoqtailServer.serv is not None:
             CoqtailServer.serv.shutdown()
@@ -914,31 +955,26 @@ class CoqtailServer(object):
             CoqtailServer.serv = None
 
 
-class ChannelManager(object):
+class ChannelManager:
     """Emulate Vim's ch_* functions with sockets."""
 
-    channels = {}  # type: Dict[int, socket.socket]
-    results = {}  # type: Dict[int, Optional[Text]]
-    sessions = {}  # type: Dict[int, int]
-    next_id = 1
-    msg_id = 1
+    pool = futures.ThreadPoolExecutor()  # pylint: disable=consider-using-with
+    channels: Dict[int, socket.socket] = {}
+    results: Dict[int, ResFuture] = {}
+    sessions: Dict[int, int] = {}
+    ch_id = count(1)
+    msg_id = count(1)
 
     @staticmethod
-    def open(address):
-        # type: (str) -> int
+    def open(address: str) -> int:
         """Open a channel."""
-        ch_id = ChannelManager.next_id
-        ChannelManager.next_id += 1
-
+        ch_id = next(ChannelManager.ch_id)
         host, port = address.split(":")
         ChannelManager.channels[ch_id] = socket.create_connection((host, int(port)))
-        ChannelManager.sessions[ch_id] = -1
-
         return ch_id
 
     @staticmethod
-    def close(handle):
-        # type: (int) -> None
+    def close(handle: int) -> None:
         """Close a channel."""
         try:
             ChannelManager.channels[handle].close()
@@ -949,73 +985,70 @@ class ChannelManager(object):
             pass
 
     @staticmethod
-    def status(handle):
-        # type: (int) -> str
+    def status(handle: int) -> str:
         """Check if a channel is open."""
         return "open" if handle in ChannelManager.channels else "closed"
 
     @staticmethod
-    def send(handle, session, expr, reply=None, returns=True):
-        # type: (int, Optional[int], str, Optional[int], bool) -> bool
+    def send(
+        handle: int,
+        session: Optional[int],
+        expr: str,
+        reply_id: Optional[int] = None,
+        returns: bool = True,
+    ) -> bool:
         """Send a command request or reply on a channel."""
         try:
             ch = ChannelManager.channels[handle]
         except KeyError:
             return False
 
-        if reply is None and session is not None:
-            if ChannelManager.sessions[handle] == session:
+        if reply_id is None and session is not None:
+            if ChannelManager.sessions.get(handle, None) == session:
                 return True
-            else:
-                ChannelManager.sessions[handle] = session
+            ChannelManager.sessions[handle] = session
 
-        if reply is None:
-            msg_id = ChannelManager.msg_id
-            ChannelManager.msg_id += 1
-        else:
-            msg_id = reply
+        msg_id = reply_id if reply_id is not None else next(ChannelManager.msg_id)
         ch.sendall((json.dumps([msg_id, expr]) + "\n").encode("utf-8"))
 
         if returns:
-            ChannelManager.results[handle] = None
-            recv_thread = threading.Thread(target=ChannelManager._recv, args=(handle,))
-            recv_thread.daemon = True
-            recv_thread.start()
+            ChannelManager.results[handle] = ChannelManager.pool.submit(
+                ChannelManager._recv,
+                ChannelManager.channels[handle],
+            )
         return True
 
     @staticmethod
-    def poll(handle):
-        # type: (int) -> Optional[Text]
+    def poll(handle: int) -> Optional[str]:
         """Wait for a response on a channel."""
-        return ChannelManager.results[handle]
+        try:
+            return ChannelManager.results[handle].result(timeout=0)
+        except futures.TimeoutError:
+            return None
 
     @staticmethod
-    def _recv(handle):
-        # type: (int) -> None
+    def _recv(channel: socket.socket) -> Optional[str]:
         """Wait for a response on a channel."""
         data = []
         while True:
             try:
-                data.append(ChannelManager.channels[handle].recv(4096).decode("utf-8"))
-                # N.B. Some older Vims can't convert expressions with None
-                # to Vim values so just return a string
+                data.append(channel.recv(4096).decode("utf-8"))
+                # NOTE: Some older Vims can't convert expressions with None to
+                # Vim values so just return a string
                 res = "".join(data)
                 _ = json.loads(res)
-                ChannelManager.results[handle] = res
-                break
-            # Python 2 doesn't have json.JSONDecodeError
-            except ValueError:
+                return res
+            except json.JSONDecodeError:
                 pass
-            except KeyError:
-                break
+            except (KeyError, ConnectionError):
+                return None
 
 
 # Searching for Coq Definitions #
 # TODO: could search more intelligently by searching only within relevant
 # section/module, or sometimes by looking at the type (for constructors for
 # example, or record projections)
-def get_searches(tgt_type, tgt_name):
-    # type: (Text, Text) -> List[Text]
+def get_searches(tgt_type: str, tgt_name: str) -> List[str]:
     """Construct a search expression given an object type and name."""
     auto_names = [
         ("Constructor", "Inductive", "Build_(.*)", 1),
@@ -1045,7 +1078,7 @@ def get_searches(tgt_type, tgt_name):
         "Ltac": ["Ltac"],
         "Module": ["Module"],
         "Module Type": ["Module Type"],
-    }  # type: Mapping[Text, List[Text]]
+    }
 
     # Look for some implicitly generated names
     search_names = [tgt_name]
@@ -1064,14 +1097,13 @@ def get_searches(tgt_type, tgt_name):
     )
 
     return [
-        r"<({})>\s*\zs<({})>".format(search_vernac, search_name),
-        r"<({})>".format(search_name),
+        rf"<({search_vernac})>\s*\zs<({search_name})>",
+        rf"<({search_name})>",
     ]
 
 
 # Finding Start and End of Coq Chunks #
-def _pos_from_offset(col, msg, offset):
-    # type: (int, bytes, int) -> Tuple[int, int]
+def _pos_from_offset(col: int, msg: bytes, offset: int) -> Tuple[int, int]:
     """Calculate the line and column of a given offset."""
     msg = msg[:offset]
     lines = msg.split(b"\n")
@@ -1082,13 +1114,16 @@ def _pos_from_offset(col, msg, offset):
     return (line, col)
 
 
-def _between(buf, start, end):
-    # type: (Sequence[bytes], Tuple[int, int], Tuple[int, int]) -> bytes
+def _between(
+    buf: Sequence[bytes],
+    start: Tuple[int, int],
+    end: Tuple[int, int],
+) -> bytes:
     """Return the text between a given start and end point."""
     sline, scol = start
     eline, ecol = end
 
-    lines = []  # type: List[bytes]
+    lines: List[bytes] = []
     for idx, line in enumerate(buf[sline : eline + 1]):
         lcol = scol if idx == 0 else 0
         rcol = ecol + 1 if idx == eline - sline else len(line)
@@ -1097,17 +1132,23 @@ def _between(buf, start, end):
     return b"\n".join(lines)
 
 
-def _get_message_range(lines, after):
-    # type: (Sequence[bytes], Tuple[int, int]) -> Mapping[str, Tuple[int, int]]
+def _get_message_range(
+    lines: Sequence[bytes],
+    after: Tuple[int, int],
+) -> Mapping[str, Tuple[int, int]]:
     """Return the next sentence to send after a given point."""
     end_pos = _find_next_sentence(lines, *after)
     return {"start": after, "stop": end_pos}
 
 
-def _find_next_sentence(lines, sline, scol):
-    # type: (Sequence[bytes], int, int) -> Tuple[int, int]
+def _find_next_sentence(
+    lines: Sequence[bytes],
+    sline: int,
+    scol: int,
+) -> Tuple[int, int]:
     """Find the next sentence to send to Coq."""
-    bullets = (ord("{"), ord("}"), ord("-"), ord("+"), ord("*"))
+    braces = {ord(c) for c in "{}"}
+    bullets = {ord(c) for c in "-+*"}
 
     line, col = (sline, scol)
     while True:
@@ -1140,22 +1181,20 @@ def _find_next_sentence(lines, sline, scol):
             break
 
     # Check if the first character of the sentence is a bullet
-    if indexbytes(first_line, 0) in bullets:  # type: ignore[no-untyped-call]
+    if first_line[0] in braces | bullets:
         # '-', '+', '*' can be repeated
-        for c in iterbytes(first_line[1:]):
-            if c in bullets[2:] and c == indexbytes(first_line, 0):  # type: ignore[no-untyped-call]
+        for c in first_line[1:]:
+            if c in bullets and c == first_line[0]:
                 col += 1
             else:
                 break
         return (line, col)
 
     # Check if this is a bracketed goal selector
-    if _char_isdigit(indexbytes(first_line, 0)):  # type: ignore[no-untyped-call]
+    if _char_isdigit(first_line[0]):
         state = "digit"
         selcol = col
-        for c in iterbytes(first_line[1:]):
-            # Hack to silence mypy complaints in Python 2
-            assert isinstance(c, int)
+        for c in first_line[1:]:
             if state == "digit" and _char_isdigit(c):
                 selcol += 1
             elif state == "digit" and _char_isspace(c):
@@ -1181,8 +1220,7 @@ def _find_next_sentence(lines, sline, scol):
     return _find_dot_after(lines, line, col)
 
 
-def _find_dot_after(lines, sline, scol):
-    # type: (Sequence[bytes], int, int) -> Tuple[int, int]
+def _find_dot_after(lines: Sequence[bytes], sline: int, scol: int) -> Tuple[int, int]:
     """Find the next '.' after a given point."""
     max_line = len(lines)
 
@@ -1226,33 +1264,41 @@ def _find_dot_after(lines, sline, scol):
     raise NoDotError()
 
 
-def _skip_str(lines, sline, scol):
-    # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
+def _skip_str(
+    lines: Sequence[bytes],
+    sline: int,
+    scol: int,
+) -> Optional[Tuple[int, int]]:
     """Skip the next block contained in " "."""
     return _skip_block(lines, sline, scol, b'"', b'"')
 
 
-def _skip_comment(lines, sline, scol):
-    # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
+def _skip_comment(
+    lines: Sequence[bytes],
+    sline: int,
+    scol: int,
+) -> Optional[Tuple[int, int]]:
     """Skip the next block contained in (* *)."""
     return _skip_block(lines, sline, scol, b"(*", b"*)")
 
 
-def _skip_attribute(lines, sline, scol):
-    # type: (Sequence[bytes], int, int) -> Optional[Tuple[int, int]]
+def _skip_attribute(
+    lines: Sequence[bytes],
+    sline: int,
+    scol: int,
+) -> Optional[Tuple[int, int]]:
     """Skip the next block contained in #[ ]."""
     return _skip_block(lines, sline, scol, b"#[", b"]", {b'"': _skip_str})
 
 
 def _skip_block(
-    lines,  # type: Sequence[bytes]
-    sline,  # type: int
-    scol,  # type: int
-    sstr,  # type: bytes
-    estr,  # type: bytes
-    skips=None,  # type: Optional[Mapping[bytes, Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]]]
-):
-    # type: (...) -> Optional[Tuple[int, int]]
+    lines: Sequence[bytes],
+    sline: int,
+    scol: int,
+    sstr: bytes,
+    estr: bytes,
+    skips: Optional[Mapping[bytes, SkipFun]] = None,
+) -> Optional[Tuple[int, int]]:
     """A generic function to skip the next block contained in sstr estr."""
     assert lines[sline].startswith(sstr, scol)
     nesting = 1
@@ -1266,10 +1312,10 @@ def _skip_block(
             return None
 
         line = lines[sline]
-        blk_end = line.find(estr, scol)  # type: Optional[int]
+        blk_end = line.find(estr, scol)
         blk_end = blk_end if blk_end != -1 else None
         if sstr != estr:
-            blk_start = line.find(sstr, scol, blk_end)  # type: Optional[int]
+            blk_start = line.find(sstr, scol, blk_end)
             blk_start = blk_start if blk_start != -1 else None
         else:
             blk_start = None
@@ -1279,8 +1325,7 @@ def _skip_block(
         skip_stop = blk_start if blk_start is not None else blk_end
         skip_starts = [(line.find(skip, scol, skip_stop), skip) for skip in skips]
         skip_starts = [(start, skip) for start, skip in skip_starts if start != -1]
-        # TODO: use default= in Python 3
-        skip_start, skip = min(skip_starts) if skip_starts != [] else (None, None)
+        skip_start, skip = min(skip_starts, default=(None, None))
         if skip is not None and skip_start is not None:
             skip_end = skips[skip](lines, sline, skip_start)
             if skip_end is None:
@@ -1306,33 +1351,30 @@ def _skip_block(
 
 
 # Region Highlighting #
-class Matcher(object):
+class Matcher:
     """Construct Vim regexes to pass to 'matchadd()' for an arbitrary region."""
 
-    class _Matcher(object):
+    class _Matcher:
         """Construct regexes for a row or column."""
 
-        def __getitem__(self, key):
-            # type: (Tuple[Union[int, slice], str]) -> str
+        def __getitem__(self, key: Tuple[Union[int, slice], str]) -> str:
             """Construct the regex."""
-            range, type = key
+            match_range, match_type = key
             match = []
-            if isinstance(range, slice):
-                if range.start is not None and range.start > 1:
-                    match.append(r"\%>{}{}".format(range.start - 1, type))
-                if range.stop is not None:
-                    match.append(r"\%<{}{}".format(range.stop, type))
+            if isinstance(match_range, slice):
+                if match_range.start is not None and match_range.start > 1:
+                    match.append(rf"\%>{match_range.start - 1}{match_type}")
+                if match_range.stop is not None:
+                    match.append(rf"\%<{match_range.stop}{match_type}")
             else:
-                match.append(r"\%{}{}".format(range, type))
+                match.append(rf"\%{match_range}{match_type}")
             return "".join(match)
 
-    def __init__(self):
-        # type: () -> None
+    def __init__(self) -> None:
         """Initialize the row/column matcher."""
         self._matcher = Matcher._Matcher()
 
-    def __getitem__(self, key):
-        # type: (Tuple[slice, slice]) -> str
+    def __getitem__(self, key: Tuple[slice, slice]) -> str:
         """Construct the regex.
 
         'key' is [line-start : line-end, col-start : col-end]
@@ -1363,8 +1405,7 @@ class Matcher(object):
         )
 
     @staticmethod
-    def shift_slice(s):
-        # type: (slice) -> slice
+    def shift_slice(s: slice) -> slice:
         """Shift a 0-indexed to 1-indexed slice."""
         return slice(
             s.start + 1 if s.start is not None else 1,
@@ -1376,12 +1417,11 @@ matcher = Matcher()
 
 
 # Misc #
-def _strip_comments(msg):
-    # type: (bytes) -> Tuple[bytes, List[List[int]]]
+def _strip_comments(msg: bytes) -> Tuple[bytes, List[Tuple[int, int]]]:
     """Remove all comments from 'msg'."""
-    # N.B. Coqtop will ignore comments, but it makes it easier to inspect
-    # commands in Coqtail (e.g. options in coqtop.do_option) if we remove
-    # them.
+    # pylint: disable=no-else-break
+    # NOTE: Coqtop will ignore comments, but it makes it easier to inspect
+    # commands in Coqtail (e.g. options in coqtop.do_option) if we remove them.
     nocom = []
     com_pos = []  # Remember comment offset and length
     off = 0
@@ -1398,7 +1438,7 @@ def _strip_comments(msg):
             # New nested comment
             if nesting == 0:
                 nocom.append(msg[:start])
-                com_pos.append([off + start, 0])
+                com_pos.append((off + start, 0))
             msg = msg[start + 2 :]
             off += start + 2
             nesting += 1
@@ -1408,25 +1448,26 @@ def _strip_comments(msg):
             off += end + 2
             nesting -= 1
             if nesting == 0:
-                com_pos[-1][1] = off - com_pos[-1][0]
+                com_pos[-1] = (com_pos[-1][0], off - com_pos[-1][0])
 
     return b" ".join(nocom), com_pos
 
 
-def _find_diff(x, y, stop=None):
-    # type: (Sequence[Any], Sequence[Any], Optional[int]) -> Optional[int]
+def _find_diff(
+    x: Iterable[T],
+    y: Iterable[T],
+    stop: Optional[int] = None,
+) -> Optional[int]:
     """Locate the first differing element in 'x' and 'y' up to 'stop'."""
-    seq = enumerate(zip_longest(x, y))  # type: Iterator[Tuple[int, Any]]
+    seq: Iterator[Tuple[int, Tuple[T, T]]] = enumerate(zip_longest(x, y))
     if stop is not None:
         seq = islice(seq, stop)
     return next((i for i, vs in seq if vs[0] != vs[1]), None)
 
 
-def _char_isdigit(c):
-    # type: (int) -> bool
+def _char_isdigit(c: int) -> bool:
     return ord("0") <= c <= ord("9")
 
 
-def _char_isspace(c):
-    # type: (int) -> bool
-    return c in iterbytes(b" \t\n\r\x0b\f")  # type: ignore[operator]
+def _char_isspace(c: int) -> bool:
+    return c in b" \t\n\r\x0b\f"

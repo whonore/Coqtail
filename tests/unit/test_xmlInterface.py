@@ -2,11 +2,8 @@
 # Author: Wolf Honore
 """XMLInterface marshalling unit tests."""
 
-from __future__ import absolute_import, division, print_function
-
 from collections import namedtuple
 from inspect import getmembers, isfunction, ismethod
-from subprocess import check_output
 from xml.etree.ElementTree import Element, tostring
 
 import pytest
@@ -14,7 +11,7 @@ import pytest
 from xmlInterface import XMLInterface
 
 # Test Values #
-VERSIONS = ("8.{}.0".format(v) for v in range(4, 13))
+VERSIONS = (f"8.{v}.0" for v in range(4, 13))
 
 
 # Pairs of Python values and the corresponding XML representation. Parametrized
@@ -34,7 +31,7 @@ def mkXML(tag, text="", attrs=None, children=None):
     return xml
 
 
-class ToOfTests(object):
+class ToOfTests:
     """Methods return test cases for _of_py and _to_py as PyXML objects."""
 
     @staticmethod
@@ -69,7 +66,7 @@ class ToOfTests(object):
         return PyXML("abc", mkXML("string", text="abc"), True)
 
     def abc_u(self):
-        return PyXML(u"abc", self.abc().xml, True)
+        return PyXML("abc", self.abc().xml, True)
 
     def abc_richpp(self):
         if self.xi.versions >= (8, 6, 0):
@@ -93,7 +90,7 @@ class ToOfTests(object):
     def some(self):
         false = self.false()
         return PyXML(
-            self.xi.Option(false.py),
+            self.xi.Some(false.py),
             mkXML("option", attrs={"val": "some"}, children=[false]),
             True,
         )
@@ -119,7 +116,7 @@ class ToOfTests(object):
 
     def evar(self):
         abc = self.abc()
-        return PyXML(self.xi.Evar(abc.py), mkXML("evar", children=[abc]), False)
+        return PyXML(self.xi.CoqEvar(abc.py), mkXML("evar", children=[abc]), False)
 
     def coq_info(self):
         abc = self.abc()
@@ -137,7 +134,7 @@ class ToOfTests(object):
             abc_rich = self.abc_richpp()
         abc_list = PyXML([abc_rich.py], mkXML("list", children=[abc_rich]), True)
         return PyXML(
-            self.xi.Goal(abc.py, abc_list.py, abc_rich.py),
+            self.xi.CoqGoal(abc.py, abc_list.py, abc_rich.py),
             mkXML("goal", children=[abc, abc_list, abc_rich]),
             False,
         )
@@ -155,13 +152,13 @@ class ToOfTests(object):
         )
         if self.xi.versions < (8, 5, 0):
             return PyXML(
-                self.xi.Goals(goal_list.py, goal_pair_list.py),
+                self.xi.CoqGoals(goal_list.py, goal_pair_list.py),
                 mkXML("goals", children=[goal_list, goal_pair_list]),
                 False,
             )
         else:
             return PyXML(
-                self.xi.Goals(
+                self.xi.CoqGoals(
                     goal_list.py, goal_pair_list.py, goal_list.py, goal_list.py
                 ),
                 mkXML(
@@ -173,7 +170,7 @@ class ToOfTests(object):
     def option_value_bool(self):
         true = self.true()
         return PyXML(
-            self.xi.OptionValue(true.py, "bool"),
+            self.xi.CoqOptionValue(true.py, "bool"),
             mkXML("option_value", attrs={"val": "boolvalue"}, children=[true]),
             True,
         )
@@ -181,12 +178,12 @@ class ToOfTests(object):
     def option_value_int(self):
         one = self.one()
         opt = PyXML(
-            self.xi.Option(one.py),
+            self.xi.Some(one.py),
             mkXML("option", attrs={"val": "some"}, children=[one]),
             True,
         )
         return PyXML(
-            self.xi.OptionValue(opt.py, "int"),
+            self.xi.CoqOptionValue(opt.py, "int"),
             mkXML("option_value", attrs={"val": "intvalue"}, children=[opt]),
             True,
         )
@@ -194,7 +191,7 @@ class ToOfTests(object):
     def option_value_string(self):
         abc = self.abc()
         return PyXML(
-            self.xi.OptionValue(abc.py, "str"),
+            self.xi.CoqOptionValue(abc.py, "str"),
             mkXML("option_value", attrs={"val": "stringvalue"}, children=[abc]),
             True,
         )
@@ -202,13 +199,13 @@ class ToOfTests(object):
     def option_value_string_opt(self):
         abc = self.abc()
         opt = PyXML(
-            self.xi.Option(abc.py),
+            self.xi.Some(abc.py),
             mkXML("option", attrs={"val": "some"}, children=[abc]),
             True,
         )
         if self.xi.versions >= (8, 5, 0):
             return PyXML(
-                self.xi.OptionValue(opt.py, "str"),
+                self.xi.CoqOptionValue(opt.py, "str"),
                 mkXML("option_value", attrs={"val": "stringoptvalue"}, children=[opt]),
                 True,
             )
@@ -217,7 +214,7 @@ class ToOfTests(object):
     def option_value_int_none(self):
         none = self.none()
         return PyXML(
-            self.xi.OptionValue(None, "int"),
+            self.xi.CoqOptionValue(None, "int"),
             mkXML("option_value", attrs={"val": "intvalue"}, children=[none]),
             True,
         )
@@ -226,10 +223,11 @@ class ToOfTests(object):
         none = self.none()
         if self.xi.versions >= (8, 5, 0):
             return PyXML(
-                self.xi.OptionValue(None, "str"),
+                self.xi.CoqOptionValue(None, "str"),
                 mkXML("option_value", attrs={"val": "stringoptvalue"}, children=[none]),
                 True,
             )
+        return None
 
     def option_state(self):
         true = self.true()
@@ -237,13 +235,13 @@ class ToOfTests(object):
         opt = self.option_value_bool()
         if self.xi.versions < (8, 12, 0):
             return PyXML(
-                self.xi.OptionState(true.py, true.py, abc.py, opt.py),
+                self.xi.CoqOptionState(true.py, true.py, abc.py, opt.py),
                 mkXML("option_state", children=[true, true, abc, opt]),
                 False,
             )
         else:
             return PyXML(
-                self.xi.OptionState(true.py, true.py, opt.py),
+                self.xi.CoqOptionState(true.py, true.py, opt.py),
                 mkXML("option_state", children=[true, true, opt]),
                 False,
             )
@@ -253,19 +251,19 @@ class ToOfTests(object):
         abc = self.abc()
         abc_list = PyXML([abc.py], mkXML("list", children=[abc]), True)
         abc_opt = PyXML(
-            self.xi.Option(abc.py),
+            self.xi.Some(abc.py),
             mkXML("option", attrs={"val": "some"}, children=[abc]),
             True,
         )
         if self.xi.versions < (8, 5, 0):
             return PyXML(
-                self.xi.Status(abc_list.py, abc_opt.py, abc_list.py, one.py, one.py),
+                self.xi.CoqStatus(abc_list.py, abc_opt.py, abc_list.py, one.py, one.py),
                 mkXML("status", children=[abc_list, abc_opt, abc_list, one, one]),
                 False,
             )
         else:
             return PyXML(
-                self.xi.Status(abc_list.py, abc_opt.py, abc_list.py, one.py),
+                self.xi.CoqStatus(abc_list.py, abc_opt.py, abc_list.py, one.py),
                 mkXML("status", children=[abc_list, abc_opt, abc_list, one]),
                 False,
             )
@@ -313,7 +311,7 @@ class ToOfTests(object):
         one = self.one()
         if self.xi.versions >= (8, 5, 0):
             return PyXML(
-                self.xi.StateId(one.py),
+                self.xi.CoqStateId(one.py),
                 mkXML("state_id", attrs={"val": str(one.py)}),
                 True,
             )
@@ -323,7 +321,7 @@ class ToOfTests(object):
         one = self.one()
         if self.xi.versions >= (8, 7, 0):
             return PyXML(
-                self.xi.RouteId(one.py),
+                self.xi.CoqRouteId(one.py),
                 mkXML("route_id", attrs={"val": str(one.py)}),
                 True,
             )
@@ -363,7 +361,7 @@ def test_valid_module(xmlInt):
     assert xmlInt.valid_module("C.v")
     assert xmlInt.valid_module("_c.v")
     assert xmlInt.valid_module("c3.v")
-    assert xmlInt.valid_module(u"ç.v")
+    assert xmlInt.valid_module("ç.v")
     assert not xmlInt.valid_module("")
     assert not xmlInt.valid_module("c.v.v")
     assert not xmlInt.valid_module("1.v")

@@ -2,99 +2,147 @@
 
 ## Unreleased ([master])
 
+### Removed
+- Support for Python <3.6.
+  See [YouCompleteMe] for help with building Vim with Python 3 support.
+  If you are unable to upgrade to Python 3, use the [python2] branch.
+  Nearly all of the changes to the code are internal cleanup so there should be
+  no observable changes in behavior.
+  Please [open an issue] to report any regressions.
+  See [here](https://github.com/whonore/Coqtail/issues/159) for the full list of
+  changes.
+  (PR #188)
+
 ## [1.3.1]
 
 ### Added
 - `:CoqJumpToError` command that moves the cursor to the location of the error
-  reported by Coq, if any. (PR #196)
+  reported by Coq, if any.
+  (PR #196)
 
 ### Fixed
 - Use `deletebufline` instead of `:delete` when possible to avoid leaving visual
-  mode while updating the Goal and Info panels. (PR #198)
-- Correctly ignore `(*` and `*)` inside strings. (PR #193)
-- Print Coq error messages when checking goals or rewinding. (PR #187)
-- Highlight `Module Import` and `Module Export`. (PRs #195, #202)
-- Improve highlighting inside sections and modules. (PR #191)
-- Correctly highlight `..` in recursive notations. (PR #190)
-- Highlight attributes and skip them when splitting sentences. (PR #152)
-- Highlight `admit` and `give_up` tactics. (PR #182)
-- Match non-ASCII letters in identifier syntax highlighting. (PR #184)
-- Improve syntax highlighting of binders in definitions, theorems, etc. (PR #185)
+  mode while updating the Goal and Info panels.
+  (PR #198)
+- Correctly ignore `(*` and `*)` inside strings.
+  (PR #193)
+- Print Coq error messages when checking goals or rewinding.
+  (PR #187)
+- Highlight `Module Import` and `Module Export`.
+  (PRs #195, #202)
+- Improve highlighting inside sections and modules.
+  (PR #191)
+- Correctly highlight `..` in recursive notations.
+  (PR #190)
+- Highlight attributes and skip them when splitting sentences.
+  (PR #152)
+- Highlight `admit` and `give_up` tactics.
+  (PR #182)
+- Match non-ASCII letters in identifier syntax highlighting.
+  (PR #184)
+- Improve syntax highlighting of binders in definitions, theorems, etc.
+  (PR #185)
 
 ## [1.3.0]
 
 ### Added
 - Support for highlighting proof diffs.
   `g:coqtail_auto_set_proof_diffs` can be used to automatically enable diffs on
-  `:CoqStart`. (PR #169)
-- Support for Coq 8.13. (PR #181)
+  `:CoqStart`.
+  (PR #169)
+- Support for Coq 8.13.
+  (PR #181)
 - Support for Coq installed through Snap by checking for the `coq-prover.`
-  prefix as a fallback when looking for `coqidetop`. (PR #180)
-- Support for multiple `_CoqProject` files. **BREAKING**: renamed
-  `g:coqtail_project_name` to `g:coqtail_project_names` and
-  `b:coqtail_project_file` to `b:coqtail_project_files`. (PR #141)
-- Match CoqIDE behavior and set the top-level module name based on the file
-  name with `-topfile` (Coq >=8.10 only). (PR #145)
-- Improved comment autoformatting. Disable with `g:coqtail_noindent_comment`. (PR #146)
+  prefix as a fallback when looking for `coqidetop`.
+  (PR #180)
+- Support for multiple `_CoqProject` files.
+  **BREAKING**: renamed `g:coqtail_project_name` to `g:coqtail_project_names`
+  and `b:coqtail_project_file` to `b:coqtail_project_files`.
+  (PR #141)
+- Match CoqIDE behavior and set the top-level module name based on the file name
+  with `-topfile` (Coq >=8.10 only).
+  (PR #145)
+- Improved comment autoformatting.
+  Disable with `g:coqtail_noindent_comment`.
+  (PR #146)
 - Debugging can be enabled with `:CoqToggleDebug` without calling `:CoqStart`.
   (PR #148)
 
 ### Fixed
-- Correctly handle highlighting of multibyte characters (for real this time). (PR #177)
-- Preserve jumplist and alternate file when opening Info and Goal panels. (PR #150)
-- Don't list Info and Goal panel buffers. (PR #151)
+- Correctly handle highlighting of multibyte characters (for real this time).
+  (PR #177)
+- Preserve jumplist and alternate file when opening Info and Goal panels.
+  (PR #150)
+- Don't list Info and Goal panel buffers.
+  (PR #151)
 - Catch exception in `CoqtailServer` when the connection is reset by the peer.
   (PR #155)
-- Remember the cursor position in the jumplist before moving it with
-  `:CoqJumpToEnd`. (PR #173)
+- Remember the cursor position in the jumplist before moving it with `:CoqJumpToEnd`.
+  (PR #173)
 - Various syntax highlighting improvements including basic support for Ltac2.
   (PRs #139, #143, #149, #153, #156, #172)
 
 ### Removed
-- Dependency on `distutils` if `shutil.which` is available (Python >=3.3). (PR #161)
+- Dependency on `distutils` if `shutil.which` is available (Python >=3.3).
+  (PR #161)
 
 ## [1.2.0]
 
 ### Added
-- Support for Coq 8.12. (PR #120)
+- Support for Coq 8.12.
+  (PR #120)
 - `g:coqtail_noimap`, `g:coqtail_map_prefix`, `g:coqtail_imap_prefix`
-  configuration options to control insert-mode mappings. (PR #122)
+  configuration options to control insert-mode mappings.
+  (PR #122)
 - Mappings for query commands (`<leader>cs`, `<leader>ch`, etc) now work on the
-  highlighted range in Visual mode. (PR #131)
-- Commands and mappings now work when called in the Goal and Info panels. (PR #132)
+  highlighted range in Visual mode.
+  (PR #131)
+- Commands and mappings now work when called in the Goal and Info panels.
+  (PR #132)
 
 ### Fixed
 - `g:coqtail_coq_path` is now checked on `:CoqStart` instead of on buffer load.
   (PR #123)
 - `:CoqStart` no longer fails when the Coq executable is in the current directory.
   (PR #123)
-- Various syntax highlighting/indentation improvements. (PRs #124, #126, #127)
-- No longer crash when checking Coq version if `coqtop.opt` does not exist. (PR #129)
-- No longer crash on `:CoqStart` when a buffer has no associated file. (PR #137)
+- Various syntax highlighting/indentation improvements.
+  (PRs #124, #126, #127)
+- No longer crash when checking Coq version if `coqtop.opt` does not exist.
+  (PR #129)
+- No longer crash on `:CoqStart` when a buffer has no associated file.
+  (PR #137)
 - Improved interrupt-handling logic, which should reduce the frequency of the
   case where pending commands are not cleared and `nomodifiable` is set after
-  every command. (PR #130)
+  every command.
+  (PR #130)
 
 ## [1.1.0]
 
 ### Added
-- Support for NeoVim >=0.3. (PR #103)
-- `b:coqtail_coq_prog`/`g:coqtail_coq_prog` configuration option to override
-  the name of the Coq executable. (PR #119)
+- Support for NeoVim >=0.3.
+  (PR #103)
+- `b:coqtail_coq_prog`/`g:coqtail_coq_prog` configuration option to override the
+  name of the Coq executable.
+  (PR #119)
 
 ### Fixed
 - Lowered priority of Coqtail-related highlighting (`CoqtailChecked`,
   `CoqtailSent`, `CoqtailError`) so they don't cover existing highlighting, e.g.
-  from `'hlsearch'`. (PR #104)
+  from `'hlsearch'`.
+  (PR #104)
 - Only call `coqtail#stop` on `:quit` if it would close the last visible
-  instance of the buffer. (PR #105)
-- Coqtail highlighting correctly handles multibyte characters. (PR #109)
+  instance of the buffer.
+  (PR #105)
+- Coqtail highlighting correctly handles multibyte characters.
+  (PR #109)
 - All pending sentences waiting to be checked by Coq (`CoqtailSent`) are
-  highlighted instead of just the next one. (PR #109)
-- `:Coq` and `:CoqGotoDef` do not treat arguments containing `"` as comments
-  by removing `-bar` option. (PR #111)
-- Respect the `$PATH` order when choosing between `coq(ide)top` and
-  `coq(ide)top.opt`. (PR #114).
+  highlighted instead of just the next one.
+  (PR #109)
+- `:Coq` and `:CoqGotoDef` do not treat arguments containing `"` as comments by
+  removing `-bar` option.
+  (PR #111)
+- Respect the `$PATH` order when choosing between `coq(ide)top` and `coq(ide)top.opt`.
+  (PR #114)
 - No longer crash ("E803: ID not found") after `:split`ting the main Coq window.
   (PR #118)
 
@@ -106,21 +154,22 @@
 - `CoqInterrupt` command that forwards `SIGINT` to the Coq process.
 - `CoqRestorePanels` command that re-opens the Goal and Info panels in their
   original positions.
-- This changelog. Begin using semantic (more or less) versioning.
+- This changelog.
+  Begin using semantic (more or less) versioning.
 
 ### Removed
 - Dependency on `vim` module in Python code.
 - Dependency on [vimbufsync].
 - `CoqMakeMatch` command.
   It wasn't well thought out and didn't seem very useful.
-  Please [open an issue](https://github.com/whonore/Coqtail/issues) if you'd
-  like it to be re-added.
+  Please [open an issue] if you'd like it to be re-added.
 
 ### Fixed
 - Commands no longer crash when called while Goal or Info panels are closed.
 
 ### Deprecated
-- Python 2 support. See [YouCompleteMe] for help building Vim with Python 3 support.
+- Python 2 support.
+  See [YouCompleteMe] for help building Vim with Python 3 support.
 
 ## [pre-1.0]
 
@@ -139,12 +188,14 @@
 - Interoperability with [matchup] and [endwise].
 
 [master]: https://github.com/whonore/Coqtail
+[python2]: https://github.com/whonore/Coqtail/tree/python2
 [1.3.1]: https://github.com/whonore/Coqtail/tree/v1.3.1
 [1.3.0]: https://github.com/whonore/Coqtail/tree/v1.3.0
 [1.2.0]: https://github.com/whonore/Coqtail/tree/v1.2.0
 [1.1.0]: https://github.com/whonore/Coqtail/tree/v1.1.0
 [1.0.0]: https://github.com/whonore/Coqtail/tree/v1.0.0
 [pre-1.0]: https://github.com/whonore/Coqtail/tree/pre-1.0
+[open an issue]: https://github.com/whonore/Coqtail/issues
 [vimbufsync]: https://github.com/let-def/vimbufsync
 [matchup]: https://github.com/andymass/vim-matchup
 [endwise]: https://github.com/tpope/vim-endwise

@@ -10,7 +10,7 @@ Coqtail enables interactive Coq proof development in Vim similar to [CoqIDE] or
 
 It supports:
 - [Coq 8.4 - 8.13]
-- Python 2<sup>[1](#python2)</sup> and 3
+- Python >=3.6 (see [here](#python-2-support) for older versions)
 - Vim >=7.4 and Neovim >=0.3
 - Simultaneous Coq sessions in different buffers
 - Non-blocking communication between Vim and Coq (Vim >=8.0 and NeoVim only)
@@ -43,14 +43,14 @@ vim +PlugInstall +qa
 ```
 
 Requirements:
-- Vim compiled with either `+python`<sup>[1](#python2)</sup> or `+python3`
-- Vim configuration options `filetype plugin on`, and optionally
-  `filetype indent on` and `syntax on` (e.g. in `.vimrc`)
+- Vim compiled with `+python3` (3.6 or later)
+- Vim configuration options `filetype plugin on`, and optionally `filetype
+  indent on` and `syntax on` (e.g. in `.vimrc`)
 - [Coq 8.4 - 8.13]
 
-Newer versions of Coq have not yet been tested, but should still work as long
-as there are no major changes made to the XML protocol Coqtail uses to
-communicate with `coqtop`.
+Newer versions of Coq have not yet been tested, but should still work as long as
+there are no major changes made to the XML protocol Coqtail uses to communicate
+with `coqtop`.
 
 ## Usage
 
@@ -126,8 +126,8 @@ let g:coqtail_project_files = ['_CoqProject', '_CoqProject.local']
 
 ### Syntax Highlighting and Indentation
 
-Coqtail also comes with an ftdetect script for Coq, as well as modified
-versions of Vincent Aravantinos' [syntax] and [indent] scripts for Coq.
+Coqtail also comes with an ftdetect script for Coq, as well as modified versions
+of Vincent Aravantinos' [syntax] and [indent] scripts for Coq.
 These scripts are used by default but can be disabled by setting
 `g:coqtail_nosyntax = 1` and `g:coqtail_noindent = 1` respectively.
 Formatting of comments can be disabled with `g:coqtail_noindent_comment`.
@@ -168,8 +168,7 @@ augroup END
 
 Since 8.9, Coq can generate [proof diffs] to highlight the differences in the
 proof context between successive steps.
-To enable proof diffs manually, use `:Coq Set Diffs "on"` or `:Coq Set Diffs
-"removed"`.
+To enable proof diffs manually, use `:Coq Set Diffs "on"` or `:Coq Set Diffs "removed"`.
 To automatically enable proof diffs on every `:CoqStart`, set
 `g:coqtail_auto_set_proof_diffs = 'on'` (or `= 'removed'`).
 By default, Coqtail highlights these diffs as follows:
@@ -192,8 +191,8 @@ See `:help coqtail-configuration` for a description of all the configuration opt
 
 ### Jumping between matches
 
-Coqtail defines `b:match_words` patterns to support jumping between matched
-text with `%` using the [matchup] or [matchit] plugins.
+Coqtail defines `b:match_words` patterns to support jumping between matched text
+with `%` using the [matchup] or [matchit] plugins.
 
 ### Automatically closing blocks
 
@@ -208,14 +207,15 @@ License, Copyright (c) 2013, Thomas Refis).
 
 ---
 
-#### <a name="python2">Python 2 Support</a>
-Because Python 2 has reached its [end-of-life](https://pythonclock.org/) and
-supporting it alongside Python 3 makes it difficult to improve and maintain the
-code, Coqtail will drop support for Python 2 in the near future.
-At that time a stable version will be tagged and all future versions will be
-Python 3-only.
-See [YouCompleteMe] for help building Vim with Python 3 support.
+#### Python 2 Support
 
+Python 2 and 3.5 have reached their [end-of-life](https://pythonclock.org/) so
+Coqtail no longer supports them in order to simplify the code and take advantage
+of newer features.
+See [YouCompleteMe] for help building Vim with Python 3 support.
+If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
+
+[python2]: https://github.com/whonore/Coqtail/tree/python2
 [Coq 8.4 - 8.13]: https://coq.inria.fr/download
 [CoqIDE]: https://coq.inria.fr/refman/practical-tools/coqide.html
 [ProofGeneral]: https://proofgeneral.github.io/

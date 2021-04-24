@@ -2,8 +2,6 @@
 # Author: Wolf Honore
 """Sentence parsing unit tests."""
 
-from __future__ import absolute_import, division, print_function
-
 import pytest
 
 from coqtail import NoDotError, UnmatchedError, _get_message_range, _strip_comments
@@ -105,31 +103,31 @@ def test_parse(_name, lines, start, stop):
 
 com_tests = (
     ("no comment", b"abc", (b"abc", [])),
-    ("pre", b"(*abc*)def", (b" def", [[0, 7]])),
-    ("mid", b"ab(* c *)de", (b"ab de", [[2, 7]])),
-    ("post", b"abc(*def *)", (b"abc", [[3, 8]])),
+    ("pre", b"(*abc*)def", (b" def", [(0, 7)])),
+    ("mid", b"ab(* c *)de", (b"ab de", [(2, 7)])),
+    ("post", b"abc(*def *)", (b"abc", [(3, 8)])),
     (
         "multi",
         b"abc (* com1 *)  def (*com2 *) g",
-        (b"abc    def   g", [[4, 10], [20, 9]]),
+        (b"abc    def   g", [(4, 10), (20, 9)]),
     ),
-    ("nested", b"abc (* c1 (*c2 (*c3*) (*c4*) *) *)def", (b"abc  def", [[4, 30]])),
+    ("nested", b"abc (* c1 (*c2 (*c3*) (*c4*) *) *)def", (b"abc  def", [(4, 30)])),
     ("no comment newline", b"\nabc\n\n", (b"\nabc\n\n", [])),
-    ("pre newline", b"(*ab\nc*)d\nef", (b" d\nef", [[0, 8]])),
-    ("mid newline", b"ab(* c *)\nde", (b"ab \nde", [[2, 7]])),
-    ("post newline", b"abc\n(*def *)\n", (b"abc\n \n", [[4, 8]])),
+    ("pre newline", b"(*ab\nc*)d\nef", (b" d\nef", [(0, 8)])),
+    ("mid newline", b"ab(* c *)\nde", (b"ab \nde", [(2, 7)])),
+    ("post newline", b"abc\n(*def *)\n", (b"abc\n \n", [(4, 8)])),
     (
         "multi newline",
         b"abc (* com1 *)\n def \n(*\ncom2 *) g",
-        (b"abc  \n def \n  g", [[4, 10], [21, 10]]),
+        (b"abc  \n def \n  g", [(4, 10), (21, 10)]),
     ),
     (
         "nested newline",
         b"\nabc (* c1 (*c2 \n\n(*c3\n*) (*c4*) *) *)def\n",
-        (b"\nabc  def\n", [[5, 33]]),
+        (b"\nabc  def\n", [(5, 33)]),
     ),
     ("star paren", b"abc *)", (b"abc *)", [])),
-    ("star paren post comment", b"(*abc*) *)", (b"  *)", [[0, 7]])),
+    ("star paren post comment", b"(*abc*) *)", (b"  *)", [(0, 7)])),
 )
 
 

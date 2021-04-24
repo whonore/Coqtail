@@ -1,7 +1,7 @@
 " Author: Wolf Honore
 " Locate and parse _CoqProject files.
 
-Py import shlex
+py3 import shlex
 
 " Parse a _CoqProject file into options that can be passed to Coqtop.
 function! coqtail#coqproject#parse(file) abort
@@ -9,7 +9,7 @@ function! coqtail#coqproject#parse(file) abort
   let l:dir_opts = {'-R': 2, '-Q': 2, '-I': 1, '-include': 1}
 
   let l:txt = join(readfile(a:file))
-  let l:raw_args = coqtail#compat#pyeval(printf('shlex.split(r%s)', string(l:txt)))
+  let l:raw_args = py3eval(printf('shlex.split(r%s)', string(l:txt)))
 
   let l:proj_args = []
   let l:idx = 0

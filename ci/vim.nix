@@ -1,7 +1,8 @@
-{ pkgs ? import <nixpkgs> {}, version }:
+{ pkgs ? import <nixpkgs> { }, version }:
 with pkgs;
 
 let
+  python = python36;
   vimSrc = {
     "7.4" = {
       patch = "2367";
@@ -21,25 +22,26 @@ let
     };
   }.${version};
 in stdenv.mkDerivation {
-  name = "vim";
+  name = "vim-${version}.${vimSrc.patch}";
 
-  src = with vimSrc; fetchTarball {
-    url = "https://github.com/vim/vim/archive/v${version}.${patch}.tar.gz";
-    inherit sha256;
-  };
+  src = with vimSrc;
+    fetchTarball {
+      url = "https://github.com/vim/vim/archive/v${version}.${patch}.tar.gz";
+      inherit sha256;
+    };
 
-  buildInputs = [ncurses python36];
+  buildInputs = [ ncurses python ];
 
   configureFlags = [
     "--with-features=huge"
     "--enable-python3interp=yes"
-    "--with-python3-config-dir=${python36}/lib"
-    "--with-python3-command=${python36}/bin/python"
+    "--with-python3-config-dir=${python}/lib"
+    "--with-python3-command=${python}/bin/python"
     "--disable-pythoninterp"
     "--disable-gui"
     "--enable-fail-if-missing"
   ];
 
   enableParallelBuilding = true;
-  hardeningDisable = ["fortify"];
+  hardeningDisable = [ "fortify" ];
 }
