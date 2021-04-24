@@ -958,7 +958,7 @@ class CoqtailServer:
 class ChannelManager:
     """Emulate Vim's ch_* functions with sockets."""
 
-    pool = futures.ThreadPoolExecutor()
+    pool = futures.ThreadPoolExecutor()  # pylint: disable=consider-using-with
     channels: Dict[int, socket.socket] = {}
     results: Dict[int, ResFuture] = {}
     sessions: Dict[int, int] = {}

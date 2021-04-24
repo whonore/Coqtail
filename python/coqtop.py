@@ -87,7 +87,7 @@ class Coqtop:
         try:
             launch = self.xml.launch(coq_path, coq_prog, filename, args)
             self.logger.debug(launch)
-            self.coqtop = subprocess.Popen(
+            self.coqtop = subprocess.Popen(  # pylint: disable=consider-using-with
                 launch,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
@@ -475,9 +475,12 @@ class Coqtop:
 
         if self.log is None:
             # Create unique log file
-            pre = f"coqtop_{datetime.datetime.now().strftime('%y%m%d_%H%M%S')}_"
             fmt = logging.Formatter("%(asctime)s: %(message)s")
-            self.log = NamedTemporaryFile(mode="w", prefix=pre, delete=False)
+            self.log = NamedTemporaryFile(  # pylint: disable=consider-using-with
+                mode="w",
+                prefix=f"coqtop_{datetime.datetime.now().strftime('%y%m%d_%H%M%S')}_",
+                delete=False,
+            )
             self.handler = logging.StreamHandler(self.log)
             self.handler.setFormatter(fmt)
             self.logger.addHandler(self.handler)
