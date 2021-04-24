@@ -369,7 +369,7 @@ class Coqtop:
                 self.interrupt()
                 response = TIMEOUT_ERR
 
-            return self.xml.standardize(cmd, response), self.collect_err()
+        return self.xml.standardize(cmd, response), self.collect_err()
 
     def get_answer(self) -> Result:
         """Read from 'out_q' and wait until a full response is received."""

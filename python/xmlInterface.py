@@ -1202,7 +1202,10 @@ class XMLInterface85(XMLInterfaceBase):
         return res
 
     def add(
-        self, cmd: str, state: int, encoding: str = "utf-8"
+        self,
+        cmd: str,
+        state: int,
+        encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
         """Create an XML string to advance Coqtop.
         Args:
@@ -1233,7 +1236,10 @@ class XMLInterface85(XMLInterfaceBase):
         return res
 
     def edit_at(
-        self, state: int, _steps: int, encoding: str = "utf-8"
+        self,
+        state: int,
+        _steps: int,
+        encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
         """Create an XML string to move Coqtop to a specific location.
         Args:
@@ -1255,7 +1261,10 @@ class XMLInterface85(XMLInterfaceBase):
         return res
 
     def query(
-        self, query: str, state: int, encoding: str = "utf-8"
+        self,
+        query: str,
+        state: int,
+        encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
         """Create an XML string to pose a query to Coqtop.
         Args:
@@ -1440,7 +1449,10 @@ class XMLInterface87(XMLInterface86):
     # Coqtop Commands #
     # Overrides query() from 8.6
     def query(
-        self, query: str, state: int, encoding: str = "utf-8"
+        self,
+        query: str,
+        state: int,
+        encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
         """Create an XML string to pose a query to Coqtop.
         Args:
