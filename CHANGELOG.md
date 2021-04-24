@@ -2,6 +2,17 @@
 
 ## Unreleased ([master])
 
+### Removed
+- Support for Python <3.6.
+  See [YouCompleteMe] for help with building Vim with Python 3 support.
+  If you are unable to upgrade to Python 3, use the [python2] branch.
+  Nearly all of the changes to the code are internal cleanup so there should be
+  no observable changes in behavior.
+  Please [open an issue] to report any regressions.
+  See [here](https://github.com/whonore/Coqtail/issues/159) for the full list of
+  changes.
+  (PR #188)
+
 ## [1.3.1]
 
 ### Added
@@ -151,8 +162,7 @@
 - Dependency on [vimbufsync].
 - `CoqMakeMatch` command.
   It wasn't well thought out and didn't seem very useful.
-  Please [open an issue](https://github.com/whonore/Coqtail/issues) if you'd
-  like it to be re-added.
+  Please [open an issue] if you'd like it to be re-added.
 
 ### Fixed
 - Commands no longer crash when called while Goal or Info panels are closed.
@@ -178,12 +188,14 @@
 - Interoperability with [matchup] and [endwise].
 
 [master]: https://github.com/whonore/Coqtail
+[python2]: https://github.com/whonore/Coqtail/tree/python2
 [1.3.1]: https://github.com/whonore/Coqtail/tree/v1.3.1
 [1.3.0]: https://github.com/whonore/Coqtail/tree/v1.3.0
 [1.2.0]: https://github.com/whonore/Coqtail/tree/v1.2.0
 [1.1.0]: https://github.com/whonore/Coqtail/tree/v1.1.0
 [1.0.0]: https://github.com/whonore/Coqtail/tree/v1.0.0
 [pre-1.0]: https://github.com/whonore/Coqtail/tree/pre-1.0
+[open an issue]: https://github.com/whonore/Coqtail/issues
 [vimbufsync]: https://github.com/let-def/vimbufsync
 [matchup]: https://github.com/andymass/vim-matchup
 [endwise]: https://github.com/tpope/vim-endwise
