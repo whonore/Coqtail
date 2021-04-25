@@ -21,7 +21,7 @@ endif
 function! coqtail#compat#init(python_dir) abort
   " Workaround for a NeoVim bug where py3eval returns v:null the first time
   " it's called.
-  " TODO: link github issue
+  " See: https://github.com/neovim/neovim/issues/14438
   silent! call py3eval('0')
   if !(has('python3') && py3eval('sys.version_info[:2] >= (3, 6)'))
     return 0
