@@ -2,6 +2,13 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Work around a NeoVim bug with `py3eval` that caused Coqtail to incorrectly
+  detect a lack of Python 3 support.
+  (PR #204)
+- Display the "Requires Python 3" warning message even if `shortmess+=F` is set.
+  (PR #204)
+
 ## [1.4.0]
 
 ### Removed
