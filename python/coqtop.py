@@ -5,7 +5,6 @@
 import concurrent.futures as futures
 import datetime
 import logging
-import os
 import signal
 import subprocess
 import threading
@@ -95,9 +94,25 @@ class Coqtop:
                 bufsize=0,
             )
 
+            # Ensure that Coqtop spawned correctly
+            try:
+                self.coqtop.wait(timeout=0.1)
+                assert self.coqtop.stderr is not None
+                return self.coqtop.stderr.read().decode("utf8"), ""
+            except subprocess.TimeoutExpired:
+                pass
+
             # Spawn threads to monitor Coqtop's stdout and stderr
-            for f in (self.capture_out, self.capture_err, self.capture_dead):
-                threading.Thread(target=f, daemon=True).start()
+            for buf, stream in (
+                (self.out_q, self.coqtop.stdout),
+                (self.err_q, self.coqtop.stderr),
+            ):
+                threading.Thread(
+                    target=self.capture_out,
+                    args=(buf, stream),
+                    daemon=True,
+                ).start()
+            threading.Thread(target=self.capture_dead, daemon=True).start()
 
             # Initialize Coqtop
             response, err = self.call(self.xml.init(), timeout=timeout)
@@ -409,32 +424,11 @@ class Coqtop:
         """Pop and concatenate everything in 'err_q'."""
         return b"".join(Coqtop.drain_queue(self.err_q)).decode("utf-8")
 
-    def capture_out(self) -> None:
-        """Continually read data from Coqtop's stdout into 'out_q'."""
-        if self.coqtop is None:
-            raise CoqtopError("coqtop must not be None in capture_out()")
-        if self.coqtop.stdout is None:
-            raise CoqtopError("coqtop stdout must not be None in capture_out()")
-        fd = self.coqtop.stdout.fileno()
-
+    def capture_out(self, buffer: BytesQueue, stream: IO[bytes]) -> None:
+        """Continually read data from 'stream' into 'buffer'."""
         while not self.stopping:
             try:
-                self.out_q.put(os.read(fd, 0x10000))
-            except (AttributeError, OSError, ValueError):
-                # Coqtop died
-                return
-
-    def capture_err(self) -> None:
-        """Continually read data from Coqtop's stderr into 'err_q'."""
-        if self.coqtop is None:
-            raise CoqtopError("coqtop must not be None in capture_err()")
-        if self.coqtop.stderr is None:
-            raise CoqtopError("coqtop stderr must not be None in capture_err()")
-        fd = self.coqtop.stderr.fileno()
-
-        while not self.stopping:
-            try:
-                self.err_q.put(os.read(fd, 0x10000))
+                buffer.put(stream.read(0x10000))
             except (AttributeError, OSError, ValueError):
                 # Coqtop died
                 return

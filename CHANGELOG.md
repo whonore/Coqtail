@@ -3,6 +3,9 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Detect when Coqtop crashes on `:CoqStart` and print the error message instead
+  of hanging.
+  (PR #205)
 - Work around a NeoVim bug with `py3eval` that caused Coqtail to incorrectly
   detect a lack of Python 3 support.
   (PR #204)

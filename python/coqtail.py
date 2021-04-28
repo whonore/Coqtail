@@ -204,7 +204,7 @@ class Coqtail:
             errmsg.append(str(e))
 
         if errmsg != []:
-            return "Failed to launch Coq. " + ". ".join(errmsg)
+            return "Failed to launch Coq.\n" + "\n".join(errmsg)
         return None
 
     def stop(self, opts: VimOptions) -> None:

@@ -11,7 +11,7 @@ let s:python_dir = expand('<sfile>:p:h:h') . '/python'
 let g:coqtail#supported = coqtail#compat#init(s:python_dir)
 if !g:coqtail#supported
   call coqtail#util#warn(
-    \ 'Coqtail requires Python 3.6 or later. ' .
+    \ "Coqtail requires Python 3.6 or later.\n" .
     \ 'See https://github.com/whonore/Coqtail/blob/master/README.md#python-2-support.'
   \)
   finish
@@ -45,7 +45,7 @@ let s:default_coqs = [
 let s:goal_lines = 5
 " Warning/error messages.
 let s:unsupported_msg =
-  \ 'Coqtail does not officially support your version of Coq (%s). ' .
+  \ "Coqtail does not officially support your version of Coq (%s).\n" .
   \ 'Continuing with the interface for the latest supported version (' .
   \ s:supported[-1] . ').'
 " Server port.
@@ -375,8 +375,8 @@ function! coqtail#start(...) abort
     if !l:supported
       if b:coqtail_version == -1
         call coqtail#util#err(printf(
-          \ 'No %s binary found. Check that it exists in your $PATH, or set ' .
-          \ 'b:coqtail_coq_path.',
+          \ "No %s binary found.\n" .
+          \ 'Check that it exists in your $PATH, or set b:coqtail_coq_path.',
           \ coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', 'coqtop')))
         call coqtail#stop()
         return 0

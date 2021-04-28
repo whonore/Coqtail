@@ -1,17 +1,26 @@
 " Author: Wolf Honore
 " Utility functions.
 
-" Print a message with warning highlighting.
+" Print a message with the specified highlighting.
 " NOTE: Without 'unsilent' messages triggered during autocmds don't display in
 " NeoVim because 'shortmess+=F' is set by default.
 " See: https://github.com/neovim/neovim/issues/8675
+function! s:echom(msg, hl) abort
+  execute 'echohl' a:hl
+  for l:line in split(a:msg, '\n')
+    unsilent echom l:line
+  endfor
+  echohl None
+endfunction
+
+" Print a message with warning highlighting.
 function! coqtail#util#warn(msg) abort
-  echohl WarningMsg | unsilent echom a:msg | echohl None
+  call s:echom(a:msg, 'WarningMsg')
 endfunction
 
 " Print a message with error highlighting.
 function! coqtail#util#err(msg) abort
-  echohl ErrorMsg | unsilent echom a:msg | echohl None
+  call s:echom(a:msg, 'ErrorMsg')
 endfunction
 
 " Get the word under the cursor using the special '<cword>' variable. First
