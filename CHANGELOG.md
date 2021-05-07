@@ -3,6 +3,8 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Highlight `Existing Instances`.
+  (PR #207)
 - Detect when Coqtop crashes on `:CoqStart` and print the error message instead
   of hanging.
   (PR #205)
