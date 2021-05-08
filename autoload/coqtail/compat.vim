@@ -7,6 +7,9 @@ let g:coqtail#compat#t_list = type([])
 let g:coqtail#compat#nvim = has('nvim')
 let g:coqtail#compat#has_channel = (has('channel') && has('patch-8.0.0001')) || g:coqtail#compat#nvim
 
+" Has a stable version of win_execute.
+let g:coqtail#compat#has_win_execute = has('patch-8.2.0137') || has('nvim-0.5')
+
 " Use `deletebufline` when available because `:delete` forces vim to exit visual mode.
 if exists('*deletebufline')
   function! coqtail#compat#deleteline(first, last) abort
