@@ -185,11 +185,12 @@ function! s:scroll() abort
 endfunction
 
 " Clear Coqtop highlighting.
+" This function must be called in the context of the given window.
 function! s:clearhl(win) abort
   for [l:var, l:_] in s:hlgroups
     let l:val = getwinvar(a:win, l:var, -1)
     if l:val != -1
-      call matchdelete(l:val, a:win)
+      call matchdelete(l:val)
       call setwinvar(a:win, l:var, -1)
     endif
   endfor
@@ -221,9 +222,8 @@ function! coqtail#panels#hide() abort
 endfunction
 
 " Replace the contents of 'panel' with 'txt'.
-" Calls to function must be wrapped inside `win_execute()`.
-function! s:replace(buf, panel, txt, richpp, scroll) abort
-  let l:panel_buf = get(getbufvar(a:buf, 'coqtail_panel_bufs', {}), a:panel, -1)
+" This function must be called in the context of the panel's window.
+function! s:replace(panel, txt, richpp, scroll) abort
 
   " Save the view
   let l:view = winsaveview()
@@ -254,41 +254,80 @@ function! s:replace(buf, panel, txt, richpp, scroll) abort
   call s:scroll()
 endfunction
 
-" Refresh the highlighting and auxiliary panels.
-function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
-  " Catch interrupt instead of aborting
-  try
-    let l:wins = win_findbuf(a:buf)
-    let l:refreshing = getbufvar(a:buf, 'coqtail_refreshing', 0)
-    if l:wins == [] || l:refreshing
-      return
+" Update highlighting of 'win'.
+" This function must be called in the context of the given window.
+function! s:updatehl(win, highlights)
+  call s:clearhl(a:win)
+  for [l:var, l:grp] in s:hlgroups
+    let l:hl = a:highlights[l:var]
+    if l:hl != v:null
+      call setwinvar(a:win, l:var, matchadd(l:grp, l:hl, -10))
     endif
-    call setbufvar(a:buf, 'coqtail_refreshing', 1)
-    let l:cur_win = win_getid()
+  endfor
+endfunction
 
-    " Update highlighting
-    for l:win in l:wins
-      call s:clearhl(l:win)
-      for [l:var, l:grp] in s:hlgroups
-        let l:hl = a:highlights[l:var]
-        if l:hl != v:null
-          call setwinvar(l:win, l:var, matchadd(l:grp, l:hl, -10, -1, {'window': l:win}))
+" Refresh the highlighting and auxiliary panels.
+if g:coqtail#compat#has_win_execute
+  function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
+    try
+      let l:wins = win_findbuf(a:buf)
+      let l:refreshing = getbufvar(a:buf, 'coqtail_refreshing', 0)
+      if l:wins == [] || l:refreshing
+        return
+      endif
+      call setbufvar(a:buf, 'coqtail_refreshing', 1)
+
+      " Update highlighting
+      for l:win in l:wins
+        call win_execute(l:win, 'call s:updatehl(l:win, a:highlights)')
+      endfor
+
+      " Update panels
+      for [l:panel, l:panel_data] in items(a:panels)
+        let l:panel_win = bufwinid(get(getbufvar(a:buf, 'coqtail_panel_bufs', {}), l:panel, -1))
+        let [l:txt, l:richpp] = l:panel_data
+        call win_execute(l:panel_win, 'call s:replace(l:panel, l:txt, l:richpp, a:scroll)')
+      endfor
+    catch /^Vim:Interrupt$/
+    finally
+      call setbufvar(a:buf, 'coqtail_refreshing', 0)
+      redraw
+    endtry
+  endfunction
+else
+  function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
+    " Catch interrupt instead of aborting
+    try
+      let l:wins = win_findbuf(a:buf)
+      let l:refreshing = getbufvar(a:buf, 'coqtail_refreshing', 0)
+      if l:wins == [] || l:refreshing
+        return
+      endif
+      call setbufvar(a:buf, 'coqtail_refreshing', 1)
+      let l:cur_win = win_getid()
+
+      " Update highlighting
+      for l:win in l:wins
+        call win_gotoid(l:win)
+        call s:updatehl(l:win, a:highlights)
+      endfor
+
+      " Update panels
+      for [l:panel, l:panel_data] in items(a:panels)
+        let [l:txt, l:richpp] = l:panel_data
+        if s:switch_from(a:buf, l:panel) != g:coqtail#panels#none
+          call s:replace(l:panel, l:txt, l:richpp, a:scroll)
         endif
       endfor
-    endfor
-
-    " Update panels
-    for [l:panel, l:panel_data] in items(a:panels)
-      let [l:txt, l:richpp] = l:panel_data
-      let l:panel_win = bufwinid(get(getbufvar(a:buf, 'coqtail_panel_bufs', {}), l:panel, -1))
-      call win_execute(l:panel_win, 'call s:replace(a:buf, l:panel, l:txt, l:richpp, a:scroll)')
-    endfor
-  catch /^Vim:Interrupt$/
-  finally
-    call setbufvar(a:buf, 'coqtail_refreshing', 0)
-    redraw
-  endtry
-endfunction
+    catch /^Vim:Interrupt$/
+    finally
+      " l:cur_win might not exist yet
+      silent! call win_gotoid(l:cur_win)
+      call setbufvar(a:buf, 'coqtail_refreshing', 0)
+      redraw
+    endtry
+  endfunction
+endif
 
 " Delete panel variables and clear highlighting.
 function! coqtail#panels#cleanup() abort
