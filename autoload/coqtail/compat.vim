@@ -7,8 +7,37 @@ let g:coqtail#compat#t_list = type([])
 let g:coqtail#compat#nvim = has('nvim')
 let g:coqtail#compat#has_channel = (has('channel') && has('patch-8.0.0001')) || g:coqtail#compat#nvim
 
-" Has a stable version of win_execute.
+" Has a stable version of `win_execute`.
+" If `return` is true then the function must jump back to original window
+" before returning. It can be set to false to avoid unnecessary jumps in the
+" compatibility fallback (e.g., if `win_execute` is called in a loop).
 let g:coqtail#compat#has_win_execute = has('patch-8.2.0137') || has('nvim-0.5')
+if g:coqtail#compat#has_win_execute
+  function! s:win_execute(id, cmd, return) abort
+    call win_execute(a:id, a:cmd, '')
+  endfunction
+else
+  function! s:win_execute(id, cmd, return) abort
+    if a:return
+      let l:cur_win = win_getid()
+    endif
+    call win_gotoid(a:id)
+    call execute(a:cmd, '')
+    if a:return
+      call win_gotoid(l:cur_win)
+    endif
+  endfunction
+endif
+
+" Call a function using a compatible version of `win_execute`. Calling
+" `s:win_execute` directly doesn't work because variables are expanded in the
+" function rather than at the call site.
+" E.g., `call s:win_execute(1000, 'call s:f(l:x)', 0)` would fail because `s:f`
+" and `l:x` don't exist.
+function! coqtail#compat#win_call(id, func, args, return) abort
+  let l:cmd = printf('call call(%s, %s)', string(a:func), a:args)
+  call s:win_execute(a:id, l:cmd, a:return)
+endfunction
 
 " Use `deletebufline` when available because `:delete` forces vim to exit visual mode.
 if exists('*deletebufline')
