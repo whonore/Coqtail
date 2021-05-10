@@ -1672,7 +1672,12 @@ class XMLInterface814(XMLInterface813):
         super().__init__(version, str_version, coq_path, coq_prog)
 
         self._to_py_funcs.update({"goal": self._to_goal, "goals": self._to_goals})
-        self._standardize_funcs.update({"Goal": self._standardize_goal})
+        self._standardize_funcs.update(
+            {
+                "Add": self._standardize_add,
+                "Goal": self._standardize_goal,
+            }
+        )
 
     def _to_goal(self, xml: ET.Element) -> "CoqGoal":  # type: ignore[override]
         """Expect: <goal>string (option string) (list Pp) Pp</goal>"""
@@ -1686,6 +1691,42 @@ class XMLInterface814(XMLInterface813):
         </goals>
         """
         return self.CoqGoals(*map(self._to_py, xml))
+
+    # Overrides add() from 8.5
+    def add(
+        self,
+        cmd: str,
+        state: int,
+        encoding: str = "utf-8",
+    ) -> Tuple[str, Optional[bytes]]:
+        """Create an XML string to advance Coqtop.
+        Args:
+          cmd: string - The command to evaluate
+          edit_id: int - The current edit id ?
+          state_id: CoqStateId - The current state id
+          verbose: bool - Verbose output
+          off: int - Offset of phrase in script
+        """
+        return (
+            "Add",
+            self._make_call(
+                encoding,
+                "Add",
+                children=(((cmd, -1), (self.CoqStateId(state), True)), 0),
+            ),
+        )
+
+    def _standardize_add(self, res: Result) -> Result:
+        """Standardize the info returned by 'Add'.
+        Return:
+          res_msg: str - Messages produced by 'Add' (removed in 8.14)
+          state_id: int - The new state id
+        """
+        # pylint: disable=no-self-use
+        if isinstance(res, Ok):
+            val: Tuple[XMLInterface85.CoqStateId, Any] = res.val
+            res.val = {"res_msg": "", "state_id": val[0].id}
+        return res
 
     def _standardize_goal(self, res: Result) -> Result:
         """Standardize the info returned by 'Goal'.
@@ -1709,30 +1750,6 @@ class XMLInterface814(XMLInterface813):
                     [Goal(g.hyp, g.ccl) for g in goals.given_up],
                 )
         return res
-
-    # todo: how to test this before 8.14 comes out?
-    def add(
-            self,
-            cmd: str,
-            state: int,
-            encoding: str = "utf-8",
-    ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to advance Coqtop.
-        Args:
-          cmd: string - The command to evaluate
-          edit_id: int - The current edit id ?
-          state_id: CoqStateId - The current state id
-          verbose: bool - Verbose output
-          off: int - offset of phrase in script
-        """
-        return (
-            "Add",
-            self._make_call(
-                encoding,
-                "Add",
-                children=(((cmd, -1), (self.CoqStateId(state), True)),0),
-            ),
-        )
 
 
 XMLInterfaces = (
