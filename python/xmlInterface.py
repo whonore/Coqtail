@@ -1710,6 +1710,30 @@ class XMLInterface814(XMLInterface813):
                 )
         return res
 
+    # todo: how to test this before 8.14 comes out?
+    def add(
+            self,
+            cmd: str,
+            state: int,
+            encoding: str = "utf-8",
+    ) -> Tuple[str, Optional[bytes]]:
+        """Create an XML string to advance Coqtop.
+        Args:
+          cmd: string - The command to evaluate
+          edit_id: int - The current edit id ?
+          state_id: CoqStateId - The current state id
+          verbose: bool - Verbose output
+          off: int - offset of phrase in script
+        """
+        return (
+            "Add",
+            self._make_call(
+                encoding,
+                "Add",
+                children=(((cmd, -1), (self.CoqStateId(state), True)),0),
+            ),
+        )
+
 
 XMLInterfaces = (
     ((8, 4, 0), (8, 5, 0), XMLInterface84),
