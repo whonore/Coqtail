@@ -42,7 +42,7 @@ endfunction
 " Use `deletebufline` when available because `:delete` forces vim to exit visual mode.
 if exists('*deletebufline')
   function! coqtail#compat#deleteline(first, last) abort
-    call deletebufline('%', a:first, a:last)
+    silent call deletebufline('%', a:first, a:last)
   endfunction
 else
   function! coqtail#compat#deleteline(first, last) abort
