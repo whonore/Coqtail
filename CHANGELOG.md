@@ -3,6 +3,9 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Use `win_execute` when possible while refreshing highlighting to avoid
+  changing windows, which broke certain plugins.
+  (PR #208)
 - Highlight `Existing Instances`.
   (PR #207)
 - Detect when Coqtop crashes on `:CoqStart` and print the error message instead
