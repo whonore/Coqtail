@@ -3,6 +3,8 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Use case-sensitive search in indent function.
+  (PR #210)
 - Use `win_execute` when possible while refreshing highlighting to avoid
   changing windows, which broke certain plugins.
   (PR #208)
