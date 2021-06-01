@@ -159,8 +159,22 @@ function! s:indent_bullet(currentline) abort
   return l:ind
 endfunction
 
-" Main function
 function! GetCoqIndent() abort
+  try
+    let l:ignorecase_save = &ignorecase
+    let l:smartcase_save = &smartcase
+    let l:magic_save = &magic
+    set noignorecase nosmartcase magic
+    return s:GetCoqIndent()
+  finally
+    let &ignorecase = l:ignorecase_save
+    let &smartcase = l:smartcase_save
+    let &magic = l:magic_save
+  endtry
+endfunction
+
+" Main function
+function! s:GetCoqIndent() abort
   " Find a non-commented currentline above the current currentline.
   let l:lnum = s:GetLineWithoutFullComment(v:lnum)
   let l:ind = indent(l:lnum)
