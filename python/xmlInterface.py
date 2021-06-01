@@ -910,7 +910,7 @@ class XMLInterface84(XMLInterfaceBase):
         return ("Goal", self._make_call(encoding, "goal", children=()))
 
     def _standardize_goal(self, res: Result) -> Result:
-        """Standardize the info returned by 'CoqGoal'.
+        """Standardize the info returned by 'Goal'.
         Return:
           fg: list Goal - The current goals
           bg: list (list Goal * list Goal) - Unfocused goals
@@ -1286,7 +1286,7 @@ class XMLInterface85(XMLInterfaceBase):
         return ("Goal", self._make_call(encoding, "Goal", children=()))
 
     def _standardize_goal(self, res: Result) -> Result:
-        """Standardize the info returned by 'CoqGoal'.
+        """Standardize the info returned by 'Goal'.
         Return:
           fg: list Goal - The current goals
           bg: list (list Goal * list Goal) - Unfocused goals
