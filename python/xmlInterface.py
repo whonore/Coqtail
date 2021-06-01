@@ -1542,7 +1542,69 @@ class XMLInterface813(XMLInterface812):
     """The version 8.13.* XML interface."""
 
 
-XMLInterfaceLatest = XMLInterface813
+class XMLInterface814(XMLInterface813):
+    """The version 8.14.* XML interface."""
+
+    CoqGoal = NamedTuple(
+        "CoqGoal",
+        [("id", str), ("name", Optional[str]), ("hyp", List[str]), ("ccl", str)],
+    )
+    CoqGoals = NamedTuple(
+        "CoqGoals",
+        [
+            ("fg", List[CoqGoal]),
+            ("bg", List[Tuple[List[CoqGoal], List[CoqGoal]]]),
+            ("shelved", List[CoqGoal]),
+            ("given_up", List[CoqGoal]),
+        ],
+    )
+
+    def __init__(self, versions: Tuple[int, ...]) -> None:
+        """Update conversion maps with new types."""
+        super().__init__(versions)
+
+        self._to_py_funcs.update({"goal": self._to_goal, "goals": self._to_goals})
+        self._standardize_funcs.update({"Goal": self._standardize_goal})
+
+    def _to_goal(self, xml: ET.Element) -> "CoqGoal":  # type: ignore[override]
+        """Expect: <goal>string (option string) (list Pp) Pp</goal>"""
+        return self.CoqGoal(*map(self._to_py, xml))
+
+    def _to_goals(self, xml: ET.Element) -> "CoqGoals":  # type: ignore[override]
+        """Expect:
+        <goals>
+          (list goal) (list (list goal * list goal))
+          (list goal) (list goal)
+        </goals>
+        """
+        return self.CoqGoals(*map(self._to_py, xml))
+
+    def _standardize_goal(self, res: Result) -> Result:
+        """Standardize the info returned by 'Goal'.
+        Return:
+          fg: list Goal - The current goals
+          bg: list (list Goal * list Goal) - Unfocused goals
+          shelved: list Goal - Shelved goals
+          given_up: list Goal - Admitted goals
+        """
+        # pylint: disable=no-self-use
+        if isinstance(res, Ok):
+            opt_goals: XMLInterfaceBase.CoqOption = res.val
+            if opt_goals is not None:
+                goals: XMLInterface85.CoqGoals = opt_goals.val
+                res.val = Goals(
+                    [Goal(g.hyp, g.ccl) for g in goals.fg],
+                    [
+                        [Goal(g.hyp, g.ccl) for g in pre + post]
+                        for pre, post in goals.bg
+                    ],
+                    [Goal(g.hyp, g.ccl) for g in goals.shelved],
+                    [Goal(g.hyp, g.ccl) for g in goals.given_up],
+                )
+        return res
+
+
+XMLInterfaceLatest = XMLInterface814
 
 
 def XMLInterface(version: str) -> XMLInterfaceBase:
@@ -1580,5 +1642,7 @@ def XMLInterface(version: str) -> XMLInterfaceBase:
         return XMLInterface812(versions)
     elif (8, 13, 0) <= versions < (8, 14, 0):
         return XMLInterface813(versions)
+    elif (8, 14, 0) <= versions < (8, 15, 0):
+        return XMLInterface814(versions)
     else:
         return XMLInterfaceLatest(versions)
