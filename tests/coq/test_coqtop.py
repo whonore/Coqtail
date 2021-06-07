@@ -12,6 +12,7 @@ except ImportError:
     from mock import patch
 
 from coqtop import Coqtop
+from xmlInterface import join_tagged_tokens
 
 # Test Values #
 # Check current version
@@ -125,8 +126,27 @@ def test_dispatch_unicode(coq):
 
 def test_goals_no_change(coq):
     """Calling goals will not change the state."""
+    succ, _, _, _ = coq.dispatch("Lemma x (n: nat) : False.")
+    assert succ
     old_state = get_state(coq)
-    coq.goals()
+    (succ, _, goals, _) = coq.goals()
+    assert succ
+    assert goals.bg == []
+    assert goals.shelved == []
+    assert goals.given_up == []
+    assert len(goals.fg) == 1
+
+    goal = goals.fg[0]
+    assert len(goal.hyp) == 1
+    hyp = (
+        join_tagged_tokens(goal.hyp[0])
+        if isinstance(goal.hyp[0], list)
+        else goal.hyp[0]
+    )
+    ccl = join_tagged_tokens(goal.ccl) if isinstance(goal.ccl, list) else goal.ccl
+    assert hyp == "n : nat"
+    assert ccl == "False"
+
     assert old_state == get_state(coq)
 
 
