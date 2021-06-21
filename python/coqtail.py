@@ -366,12 +366,12 @@ class Coqtail:
             except CT.CoqtopError as e:
                 return None, str(e)
 
-            self.print_stderr(stderr)
-            no_msgs = no_msgs and stderr == ""
-
             if msg != "":
                 self.set_info(msg, reset=no_msgs)
                 no_msgs = False
+
+            self.print_stderr(stderr)
+            no_msgs = no_msgs and stderr == ""
 
             if success:
                 line, col = to_send["stop"]
@@ -635,7 +635,7 @@ class Coqtail:
     def print_stderr(self, err: str) -> None:
         """Display a message from Coqtop stderr."""
         if err != "":
-            self.set_info("From stderr: " + err, reset=False)
+            self.set_info("From stderr:\n" + err, reset=False)
 
     @property
     def highlights(self) -> Dict[str, Optional[str]]:

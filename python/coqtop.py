@@ -15,6 +15,7 @@ from typing import IO, TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
 
 from xmlInterface import (
     TIMEOUT_ERR,
+    UNEXPECTED_ERR,
     Err,
     FindCoqtopError,
     Goals,
@@ -379,20 +380,29 @@ class Coqtop:
         with futures.ThreadPoolExecutor(1) as pool:
             try:
                 timeout = timeout if timeout != 0 else None
-                response = pool.submit(self.get_answer).result(timeout)
+                response, err = pool.submit(self.get_answer).result(timeout)
             except futures.TimeoutError:
                 self.interrupt()
-                response = TIMEOUT_ERR
+                response, err = TIMEOUT_ERR, ""
 
-        return self.xml.standardize(cmd, response), self.collect_err()
+        return self.xml.standardize(cmd, response), err
 
-    def get_answer(self) -> Result:
+    def get_answer(self) -> Tuple[Result, str]:
         """Read from 'out_q' and wait until a full response is received."""
         assert self.xml is not None
         data = []
+        poll_sec = 1
 
         while True:
-            data.append(self.out_q.get())
+            # Check stderr first
+            err = self.collect_err()
+            if err != "":
+                return UNEXPECTED_ERR, err
+
+            try:
+                data.append(self.out_q.get(timeout=poll_sec))
+            except Empty:
+                continue
             xml = b"".join(data)
             if not self.xml.worth_parsing(xml):
                 continue
@@ -404,7 +414,7 @@ class Coqtop:
             # Don't bother doing prettyxml if debugging isn't on
             if self.logger.isEnabledFor(logging.DEBUG):
                 self.logger.debug(prettyxml(b"<response>" + xml + b"</response>"))
-            return response
+            return response, ""
 
     @staticmethod
     def drain_queue(q: BytesQueue) -> Iterator[bytes]:
