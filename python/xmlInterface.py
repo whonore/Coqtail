@@ -1547,7 +1547,7 @@ class XMLInterface814(XMLInterface813):
 
     CoqGoal = NamedTuple(
         "CoqGoal",
-        [("id", str), ("name", Optional[str]), ("hyp", List[str]), ("ccl", str)],
+        [("id", str), ("hyp", List[str]), ("ccl", str), ("name", Optional[str])],
     )
     CoqGoals = NamedTuple(
         "CoqGoals",
