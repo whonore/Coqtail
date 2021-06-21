@@ -3,6 +3,8 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Return when Coqtop prints to `stderr` instead of waiting on `stdout` indefinitely.
+  (PR #214)
 - Use case-sensitive search in indent function.
   (PR #210)
 - Use `win_execute` when possible while refreshing highlighting to avoid
