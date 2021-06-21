@@ -78,6 +78,12 @@ TIMEOUT_ERR = Err(
     "Coq timed out. You can change the timeout with <leader>ct and try again."
 )
 
+# The error in case of an unexpected error (e.g., invalid XML)
+UNEXPECTED_ERR = Err(
+    "Coqtail experienced an unexpected error. "
+    "Please report at https://github.com/whonore/Coqtail/issues."
+)
+
 
 # Helpers #
 def unexpected(expected: Iterable[Any], got: Any) -> TypeError:
