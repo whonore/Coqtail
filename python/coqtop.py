@@ -2,13 +2,13 @@
 # Author: Wolf Honore
 """Coqtop interface with functions to send commands and parse responses."""
 
-import concurrent.futures as futures
 import datetime
 import logging
 import signal
 import subprocess
 import threading
 import time
+from concurrent import futures
 from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
 from typing import IO, TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
