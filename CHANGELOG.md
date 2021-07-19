@@ -2,6 +2,10 @@
 
 ## Unreleased ([master])
 
+### Added
+- Spell checking in comments.
+  (PR #215)
+
 ### Fixed
 - Return when Coqtop prints to `stderr` instead of waiting on `stdout` indefinitely.
   (PR #214)
