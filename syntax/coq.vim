@@ -402,7 +402,7 @@ syn region coqExtrInductive matchgroup=coqVernacCmd start="\<Extract\_s\+Inducti
 syn match coqBigArrow contained "=>"
 
 " Various (High priority)
-syn region  coqComment           containedin=ALL contains=coqComment,coqTodo start="(\*" end="\*)" extend keepend
+syn region  coqComment           containedin=ALL contains=coqComment,coqTodo,@Spell start="(\*" end="\*)" extend keepend
 syn keyword coqTodo              contained TODO FIXME XXX NOTE
 syn region  coqString            start=+"+ skip=+""+ end=+"+ extend
 
