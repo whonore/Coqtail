@@ -1593,7 +1593,6 @@ class XMLInterface814(XMLInterface813):
           shelved: list Goal - Shelved goals
           given_up: list Goal - Admitted goals
         """
-        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             opt_goals: XMLInterfaceBase.CoqOption = res.val
             if opt_goals is not None:
