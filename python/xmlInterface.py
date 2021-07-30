@@ -308,15 +308,12 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             ) from e
 
         # Confirm the version matches
-        try:
-            version = parse_version(extract_version(coq))
-            if version != self.version:
-                raise FindCoqtopError(
-                    f"{coq} version does not match version reported by coqc.\n"
-                    f"Expected: {self.version} Got: {version}"
-                )
-        except subprocess.CalledProcessError as e:
-            raise FindCoqtopError(f"Executing '{coq} --version' failed.") from e
+        version = parse_version(extract_version(coq))
+        if version != self.version:
+            raise FindCoqtopError(
+                f"{coq} version does not match version reported by coqc.\n"
+                f"Expected: {self.version} Got: {version}"
+            )
 
         return (
             (coq,)
