@@ -2,6 +2,20 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Coqtail chooses which `coq(ide)top(.opt)` to use in a more predictable way.
+  It uses `$PATH` (or `g:coqtail_coq_path` if it is set) to find `coqc` (or
+  `g:coqtail_coq_prog` if it is set) and check its version.
+  It then looks for `coqtop` or `coqidetop` (or `g:coqtail_coq_path`) as
+  appropriate in the same directory as `coqc`, taking possible prefixes (e.g.,
+  `coq-prover.`) and extensions (e.g., `.opt`) into account.
+  **BREAKING** If you have multiple versions of Coq installed Coqtail may choose
+  a different one than before.
+  In particular, executables in the current directory are no longer considered
+  by default.
+  Set `g:coqtail_coq_path` explicitly if you rely on this behavior.
+  (PR #216)
+
 ## [1.4.1]
 
 ### Added
