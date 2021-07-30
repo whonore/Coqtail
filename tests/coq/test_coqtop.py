@@ -27,7 +27,6 @@ def get_state(coq):
 def coq():
     """Return a Coqtop for each version."""
     ct = Coqtop()
-    # TODO
     if isinstance(ct.start(None, None, "", [])[0], dict):
         yield ct
         ct.stop()
