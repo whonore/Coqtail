@@ -197,11 +197,7 @@ class Coqtail:
         except (ValueError, CT.CoqtopError) as e:
             ver_or_err = str(e)
 
-        return (
-            ver_or_err
-            if isinstance(ver_or_err, dict)
-            else f"Failed to launch Coq.\n{ver_or_err}"
-        )
+        return ver_or_err if isinstance(ver_or_err, dict) else ver_or_err
 
     def stop(self, opts: VimOptions) -> None:
         """Stop Coqtop."""

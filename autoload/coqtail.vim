@@ -323,7 +323,10 @@ function! coqtail#start(...) abort
       \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', ''),
       \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
     if !l:ok || type(l:ver_or_msg) == g:coqtail#compat#t_string
-      let l:msg = l:ok && l:ver_or_msg != v:null ? l:ver_or_msg : 'Failed to launch Coq.'
+      let l:msg = 'Failed to launch Coq.'
+      if l:ok && l:ver_or_msg != v:null
+        let l:msg .= "\n" . l:ver_or_msg
+      endif
       call coqtail#util#err(l:msg)
       call coqtail#stop()
       return 0
