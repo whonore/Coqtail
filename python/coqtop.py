@@ -11,7 +11,18 @@ import time
 from concurrent import futures
 from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
-from typing import IO, TYPE_CHECKING, Iterable, Iterator, List, Optional, Tuple
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from xmlInterface import (
     TIMEOUT_ERR,
@@ -28,11 +39,22 @@ from xmlInterface import (
 
 if TYPE_CHECKING:
     # pylint: disable=unsubscriptable-object
+    from typing_extensions import TypedDict
+
     BytesQueue = Queue[bytes]
     CoqtopProcess = subprocess.Popen[bytes]
+    VersionInfo = TypedDict(
+        "VersionInfo",
+        {
+            "version": Tuple[int, int, int],
+            "str_version": str,
+            "latest": Optional[str],
+        },
+    )
 else:
     BytesQueue = Queue
     CoqtopProcess = subprocess.Popen
+    VersionInfo = Mapping[str, Any]
 
 
 class CoqtopError(Exception):
@@ -72,20 +94,19 @@ class Coqtop:
     # Coqtop Interface #
     def start(
         self,
-        version: str,
         coq_path: Optional[str],
         coq_prog: Optional[str],
         filename: str,
         args: Iterable[str],
         timeout: Optional[int] = None,
-    ) -> Tuple[Optional[str], str]:
+    ) -> Tuple[Union[VersionInfo, str], str]:
         """Launch the Coqtop process."""
         assert self.coqtop is None
 
-        self.xml = XMLInterface(version)
-        self.logger.debug("start")
         try:
-            launch = self.xml.launch(coq_path, coq_prog, filename, args)
+            self.logger.debug("start")
+            self.xml, latest = XMLInterface(coq_path, coq_prog)
+            launch = self.xml.launch(filename, args)
             self.logger.debug(launch)
             self.coqtop = subprocess.Popen(  # pylint: disable=consider-using-with
                 launch,
@@ -124,7 +145,14 @@ class Coqtop:
             self.root_state = response.val
             self.state_id = response.val
 
-            return None, err
+            return (
+                {
+                    "version": self.xml.version,
+                    "str_version": self.xml.str_version,
+                    "latest": latest,
+                },
+                err,
+            )
         except (OSError, FindCoqtopError) as e:
             # Failed to launch or find Coqtop
             self.coqtop = None
@@ -244,7 +272,7 @@ class Coqtop:
             # the state id so rewinding will work properly. Since 8.4 uses
             # number of steps rather than state ids, record '-1' to indicate
             # that no rewind should actually be done
-            if self.xml.versions >= (8, 5, 0):
+            if self.xml.version >= (8, 5, 0):
                 self.states.append(self.state_id)
             else:
                 self.states.append(-1)

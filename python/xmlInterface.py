@@ -5,8 +5,8 @@ and provide a uniform interface.
 """
 
 # xml.dom.minidom only needed for pretty printing. No stubs for xml.dom.minidom
-import os
 import re
+import subprocess
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
@@ -223,12 +223,21 @@ class XMLInterfaceBase(metaclass=ABCMeta):
     # Types accepted by 'Set {option} {val}'
     OptionArg = Union[bool, int, str, Tuple[None, str]]
 
-    def __init__(self, versions: Tuple[int, ...]) -> None:
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
         """Initialize maps for converting between XML and Python values."""
-        self.versions = versions
+        self.version = version
+        self.str_version = str_version
 
         # Coqtop launch arguments
-        self.coqtop = "coqtop"
+        self.coq_path = coq_path
+        assert coq_prog is not None
+        self.coq_prog = coq_prog
         self.launch_args = ["-ideslave"]
 
         # Valid query commands
@@ -277,46 +286,41 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         # A command that can safely and quickly be executed just to get a new state id
         self.noop = "Eval lazy in forall x, x."
 
-    def launch(
-        self,
-        coq_path: Optional[str],
-        coq_prog: Optional[str],
-        filename: str,
-        args: Iterable[str],
-    ) -> Tuple[str, ...]:
+    def launch(self, filename: str, args: Iterable[str]) -> Tuple[str, ...]:
         """The command to launch coqtop with the appropriate arguments."""
-        # Include current directory in search if coq_path is not specified
-        path = (
-            coq_path
-            if coq_path is not None
-            else os.pathsep.join((os.curdir, os.environ["PATH"]))
-        )
-        paths = [Path(p).resolve() for p in path.split(os.pathsep)]
-        coqtop = coq_prog if coq_prog is not None else self.coqtop
-
-        coqs = (
-            Path(p).resolve()
-            for p in (
-                which(pre + coqtop + ext, path=path)
-                for pre in ("", "coq-prover.")
-                for ext in ("", ".opt")
-            )
-            for path in paths
-            if p is not None
-        )
-
+        # Find the executable
         try:
-            return (
-                (str(next(coqs)),)
-                + tuple(self.launch_args)
-                + self.topfile(filename, args)
-                + tuple(args)
+            coqs = (
+                p
+                for p in (
+                    which(pre + self.coq_prog + ext, path=self.coq_path)
+                    for pre in ("", "coq-prover.")
+                    for ext in ("", ".opt")
+                )
+                if p is not None
             )
+            coq = next(coqs)
         except StopIteration as e:
+            path = "$PATH" if self.coq_path is None else self.coq_path
             raise FindCoqtopError(
-                f"Could not find {coqtop} in {path}. Perhaps you need to set "
-                "g:coqtail_coq_path or g:coqtail_coq_prog."
+                f"Could not find {self.coq_prog} in {path}. Perhaps you need "
+                "to set g:coqtail_coq_path or g:coqtail_coq_prog."
             ) from e
+
+        # Confirm the version matches
+        version = parse_version(extract_version(coq))
+        if version != self.version:
+            raise FindCoqtopError(
+                f"{coq} version does not match version reported by coqc.\n"
+                f"Expected: {self.version} Got: {version}"
+            )
+
+        return (
+            (coq,)
+            + tuple(self.launch_args)
+            + self.topfile(filename, args)
+            + tuple(args)
+        )
 
     @staticmethod
     def topfile(filename: str, args: Iterable[str]) -> Tuple[str, ...]:
@@ -704,9 +708,20 @@ class XMLInterface84(XMLInterfaceBase):
         ],
     )
 
-    def __init__(self, versions: Tuple[int, ...]) -> None:
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
         """Update conversion maps with new types."""
-        super().__init__(versions)
+        super().__init__(
+            version,
+            str_version,
+            coq_path,
+            "coqtop" if coq_prog is None else coq_prog,
+        )
 
         self._to_py_funcs.update(
             {
@@ -1051,9 +1066,20 @@ class XMLInterface85(XMLInterfaceBase):
         ],
     )
 
-    def __init__(self, versions: Tuple[int, ...]) -> None:
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
         """Update conversion maps with new types."""
-        super().__init__(versions)
+        super().__init__(
+            version,
+            str_version,
+            coq_path,
+            "coqtop" if coq_prog is None else coq_prog,
+        )
 
         self.launch_args += ["-main-channel", "stdfds", "-async-proofs", "on"]
         self.queries += ["SearchHead"]
@@ -1388,9 +1414,15 @@ class XMLInterface86(XMLInterface85):
         "diff.removed.bg",
     ]
 
-    def __init__(self, versions: Tuple[int, ...]) -> None:
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
         """Update conversion maps with new types."""
-        super().__init__(versions)
+        super().__init__(version, str_version, coq_path, coq_prog)
 
         self.launch_args += [
             "-async-proofs-command-error-resilience",
@@ -1435,9 +1467,15 @@ class XMLInterface87(XMLInterface86):
 
     CoqRouteId = NamedTuple("CoqRouteId", [("id", int)])
 
-    def __init__(self, versions: Tuple[int, ...]) -> None:
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
         """Update conversion maps with new types."""
-        super().__init__(versions)
+        super().__init__(version, str_version, coq_path, coq_prog)
 
         self._to_py_funcs.update({"route_id": self._to_route_id})
 
@@ -1483,12 +1521,22 @@ class XMLInterface88(XMLInterface87):
 class XMLInterface89(XMLInterface88):
     """The version 8.9.* XML interface."""
 
-    def __init__(self, versions: Tuple[int, ...]) -> None:
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
         """Update launch arguments."""
-        super().__init__(versions)
-
         # Coq 8.9 split 'coqtop -ideslave' into a separate coqidetop binary
-        self.coqtop = "coqidetop"
+        super().__init__(
+            version,
+            str_version,
+            coq_path,
+            "coqidetop" if coq_prog is None else coq_prog,
+        )
+
         self.launch_args.remove("-ideslave")
 
 
@@ -1518,9 +1566,15 @@ class XMLInterface812(XMLInterface811):
         [("sync", bool), ("depr", bool), ("value", "XMLInterface812.CoqOptionValue")],
     )
 
-    def __init__(self, versions: Tuple[int, ...]) -> None:
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
         """Update conversion maps with new types."""
-        super().__init__(versions)
+        super().__init__(version, str_version, coq_path, coq_prog)
 
         self._standardize_funcs.update({"GetOptions": self._standardize_get_options})
 
@@ -1565,9 +1619,15 @@ class XMLInterface814(XMLInterface813):
         ],
     )
 
-    def __init__(self, versions: Tuple[int, ...]) -> None:
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
         """Update conversion maps with new types."""
-        super().__init__(versions)
+        super().__init__(version, str_version, coq_path, coq_prog)
 
         self._to_py_funcs.update({"goal": self._to_goal, "goals": self._to_goals})
         self._standardize_funcs.update({"Goal": self._standardize_goal})
@@ -1609,45 +1669,78 @@ class XMLInterface814(XMLInterface813):
         return res
 
 
-XMLInterfaceLatest = XMLInterface814
+XMLInterfaces = (
+    ((8, 4, 0), (8, 5, 0), XMLInterface84),
+    ((8, 5, 0), (8, 6, 0), XMLInterface85),
+    ((8, 6, 0), (8, 7, 0), XMLInterface86),
+    ((8, 7, 0), (8, 8, 0), XMLInterface87),
+    ((8, 8, 0), (8, 9, 0), XMLInterface88),
+    ((8, 9, 0), (8, 10, 0), XMLInterface89),
+    ((8, 10, 0), (8, 11, 0), XMLInterface810),
+    ((8, 11, 0), (8, 12, 0), XMLInterface811),
+    ((8, 12, 0), (8, 13, 0), XMLInterface812),
+    ((8, 13, 0), (8, 14, 0), XMLInterface813),
+    ((8, 14, 0), (8, 15, 0), XMLInterface814),
+)
+
+XMLInterfaceLatest = XMLInterfaces[-1][2]
 
 
-def XMLInterface(version: str) -> XMLInterfaceBase:
+def find_coq(coq_path: Optional[str], coq_prog: Optional[str]) -> str:
+    """Find the path to the Coq executable."""
+    coq_prog = "coqc" if coq_prog is None else coq_prog
+    coq = which(coq_prog, path=coq_path)
+    if coq is None:
+        path = "$PATH" if coq_path is None else coq_path
+        raise FindCoqtopError(
+            f"Could not find {coq_prog} in {path}. Perhaps you need "
+            "to set g:coqtail_coq_path or g:coqtail_coq_prog."
+        )
+    return coq
+
+
+def extract_version(coq: str) -> str:
+    """Parse the output of coq --version."""
+    try:
+        version = subprocess.run(
+            [coq, "--version"],
+            check=True,
+            stdout=subprocess.PIPE,
+        ).stdout.decode("utf-8")
+        match = re.search(r"version (\S+)", version)
+        if match is None:
+            raise FindCoqtopError(f"Failed to parse '{coq} --version'.")
+        return match.group(1)
+    except subprocess.CalledProcessError as e:
+        raise FindCoqtopError(f"Executing '{coq} --version' failed.") from e
+
+
+def parse_version(version: str) -> Tuple[int, int, int]:
+    """Parse a version string into a 3-tuple."""
+    match = re.fullmatch(r"(\d+)\.(\d+)(?:(?:\.|pl)(\d+)|\+\w+\d*)?", version)
+    if match is None:
+        raise ValueError(f"Invalid version: {version}")
+    major, minor, patch = match.groups()
+    assert major is not None
+    assert minor is not None
+    patch = "0" if patch is None else patch
+    return (int(major), int(minor), int(patch))
+
+
+def XMLInterface(
+    coq_path: Optional[str],
+    coq_prog: Optional[str],
+) -> Tuple[XMLInterfaceBase, Optional[str]]:
     """Return the appropriate XMLInterface class for the given version."""
-    # pylint: disable=no-else-return
-    str_versions = version.replace("pl", ".").split(".")
+    coq = find_coq(coq_path, coq_prog)
+    coq_path = str(Path(coq).parent)
+    str_version = extract_version(coq)
+    version = parse_version(str_version)
 
-    # Strip any trailing text (e.g. '+beta1')
-    versions: Tuple[int, ...] = ()
-    for ver in (re.match("[0-9]+", v) for v in str_versions):
-        if ver is None:
-            raise ValueError(f"Invalid version: {version}")
-        versions += (int(ver.group(0)),)
-
-    # Pad to at least 3 digits
-    versions += (0,) * (3 - len(versions))
-
-    if (8, 4, 0) <= versions < (8, 5, 0):
-        return XMLInterface84(versions)
-    elif (8, 5, 0) <= versions < (8, 6, 0):
-        return XMLInterface85(versions)
-    elif (8, 6, 0) <= versions < (8, 7, 0):
-        return XMLInterface86(versions)
-    elif (8, 7, 0) <= versions < (8, 8, 0):
-        return XMLInterface87(versions)
-    elif (8, 8, 0) <= versions < (8, 9, 0):
-        return XMLInterface88(versions)
-    elif (8, 9, 0) <= versions < (8, 10, 0):
-        return XMLInterface89(versions)
-    elif (8, 10, 0) <= versions < (8, 11, 0):
-        return XMLInterface810(versions)
-    elif (8, 11, 0) <= versions < (8, 12, 0):
-        return XMLInterface811(versions)
-    elif (8, 12, 0) <= versions < (8, 13, 0):
-        return XMLInterface812(versions)
-    elif (8, 13, 0) <= versions < (8, 14, 0):
-        return XMLInterface813(versions)
-    elif (8, 14, 0) <= versions < (8, 15, 0):
-        return XMLInterface814(versions)
-    else:
-        return XMLInterfaceLatest(versions)
+    for minVer, maxVer, xmlInt in XMLInterfaces:
+        if minVer <= version < maxVer:
+            return xmlInt(version, str_version, coq_path, coq_prog), None
+    return (
+        XMLInterfaceLatest(version, str_version, coq_path, coq_prog),
+        ".".join(map(str, XMLInterfaces[-1][0])),
+    )
