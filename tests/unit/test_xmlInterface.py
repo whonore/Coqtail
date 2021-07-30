@@ -4,15 +4,12 @@
 
 from collections import namedtuple
 from inspect import getmembers, isfunction, ismethod
+from pathlib import Path
 from xml.etree.ElementTree import Element, tostring
 
 import pytest
 
-from xmlInterface import XMLInterface
-
-# Test Values #
-VERSIONS = (f"8.{v}.0" for v in range(4, 13))
-
+from xmlInterface import XMLInterfaces
 
 # Pairs of Python values and the corresponding XML representation. Parametrized
 # over an XMLInterface
@@ -69,7 +66,7 @@ class ToOfTests:
         return PyXML("abc", self.abc().xml, True)
 
     def abc_richpp(self):
-        if self.xi.versions >= (8, 6, 0):
+        if self.xi.version >= (8, 6, 0):
             return PyXML([("abc", None)], mkXML("richpp", text="abc"), False)
         return None
 
@@ -128,16 +125,23 @@ class ToOfTests:
 
     def goal(self):
         abc = self.abc()
-        if self.xi.versions < (8, 6, 0):
+        if self.xi.version < (8, 6, 0):
             abc_rich = abc
         else:
             abc_rich = self.abc_richpp()
         abc_list = PyXML([abc_rich.py], mkXML("list", children=[abc_rich]), True)
-        return PyXML(
-            self.xi.CoqGoal(abc.py, abc_list.py, abc_rich.py),
-            mkXML("goal", children=[abc, abc_list, abc_rich]),
-            False,
-        )
+        if self.xi.version < (8, 14, 0):
+            return PyXML(
+                self.xi.CoqGoal(abc.py, abc_list.py, abc_rich.py),
+                mkXML("goal", children=[abc, abc_list, abc_rich]),
+                False,
+            )
+        else:
+            return PyXML(
+                self.xi.CoqGoal(abc.py, abc_list.py, abc_rich.py, abc.py),
+                mkXML("goal", children=[abc, abc_list, abc_rich, abc]),
+                False,
+            )
 
     def goals(self):
         goal = self.goal()
@@ -150,7 +154,7 @@ class ToOfTests:
         goal_pair_list = PyXML(
             [goal_pair.py], mkXML("list", children=[goal_pair]), False
         )
-        if self.xi.versions < (8, 5, 0):
+        if self.xi.version < (8, 5, 0):
             return PyXML(
                 self.xi.CoqGoals(goal_list.py, goal_pair_list.py),
                 mkXML("goals", children=[goal_list, goal_pair_list]),
@@ -203,7 +207,7 @@ class ToOfTests:
             mkXML("option", attrs={"val": "some"}, children=[abc]),
             True,
         )
-        if self.xi.versions >= (8, 5, 0):
+        if self.xi.version >= (8, 5, 0):
             return PyXML(
                 self.xi.CoqOptionValue(opt.py, "str"),
                 mkXML("option_value", attrs={"val": "stringoptvalue"}, children=[opt]),
@@ -221,7 +225,7 @@ class ToOfTests:
 
     def option_value_str_none(self):
         none = self.none()
-        if self.xi.versions >= (8, 5, 0):
+        if self.xi.version >= (8, 5, 0):
             return PyXML(
                 self.xi.CoqOptionValue(None, "str"),
                 mkXML("option_value", attrs={"val": "stringoptvalue"}, children=[none]),
@@ -233,7 +237,7 @@ class ToOfTests:
         true = self.true()
         abc = self.abc()
         opt = self.option_value_bool()
-        if self.xi.versions < (8, 12, 0):
+        if self.xi.version < (8, 12, 0):
             return PyXML(
                 self.xi.CoqOptionState(true.py, true.py, abc.py, opt.py),
                 mkXML("option_state", children=[true, true, abc, opt]),
@@ -255,7 +259,7 @@ class ToOfTests:
             mkXML("option", attrs={"val": "some"}, children=[abc]),
             True,
         )
-        if self.xi.versions < (8, 5, 0):
+        if self.xi.version < (8, 5, 0):
             return PyXML(
                 self.xi.CoqStatus(abc_list.py, abc_opt.py, abc_list.py, one.py, one.py),
                 mkXML("status", children=[abc_list, abc_opt, abc_list, one, one]),
@@ -273,7 +277,7 @@ class ToOfTests:
         abc = self.abc()
         level = PyXML((), mkXML("fake_message_level"), False)
         loc = PyXML((), mkXML("fake_loc"), False)
-        if self.xi.versions < (8, 6, 0):
+        if self.xi.version < (8, 6, 0):
             return PyXML(abc.py, mkXML("message", children=[level, abc]), False)
         else:
             return PyXML(abc.py, mkXML("message", children=[level, loc, abc]), False)
@@ -282,7 +286,7 @@ class ToOfTests:
         # TODO: parse feedback correctly
         abc = self.abc()
         edit_id = PyXML((), mkXML("fake_edit_id"), False)
-        if self.xi.versions < (8, 6, 0):
+        if self.xi.version < (8, 6, 0):
             route = self.one()  # noqa: F841
             content = PyXML(
                 (),
@@ -309,7 +313,7 @@ class ToOfTests:
 
     def state_id(self):
         one = self.one()
-        if self.xi.versions >= (8, 5, 0):
+        if self.xi.version >= (8, 5, 0):
             return PyXML(
                 self.xi.CoqStateId(one.py),
                 mkXML("state_id", attrs={"val": str(one.py)}),
@@ -319,7 +323,7 @@ class ToOfTests:
 
     def route_id(self):
         one = self.one()
-        if self.xi.versions >= (8, 7, 0):
+        if self.xi.version >= (8, 7, 0):
             return PyXML(
                 self.xi.CoqRouteId(one.py),
                 mkXML("route_id", attrs={"val": str(one.py)}),
@@ -329,10 +333,11 @@ class ToOfTests:
 
 
 # Test Fixtures #
-@pytest.fixture(scope="module", params=VERSIONS)
+@pytest.fixture(scope="module", params=XMLInterfaces)
 def xmlInt(request):
     """Return an XMLInterface for each version."""
-    return XMLInterface(request.param)
+    min, max, xi = request.param
+    return xi(min, "", Path(), None)
 
 
 @pytest.fixture(scope="module", params=ToOfTests.all_tests())
@@ -370,7 +375,7 @@ def test_valid_module(xmlInt):
 
 def test_topfile(xmlInt):
     """Test whether topfile adds the correct argument."""
-    if xmlInt.versions < (8, 10, 0):
+    if xmlInt.version < (8, 10, 0):
         assert xmlInt.topfile("c.v", []) == ()
     else:
         assert xmlInt.topfile("c.v", []) == ("-topfile", "c.v")

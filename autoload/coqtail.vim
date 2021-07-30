@@ -20,34 +20,12 @@ endif
 py3 from coqtail import ChannelManager, Coqtail, CoqtailServer
 
 " Initialize global variables.
-" Supported Coq versions.
-let s:supported = [
-  \ '8.4.*',
-  \ '8.5.*',
-  \ '8.6.*',
-  \ '8.7.*',
-  \ '8.8.*',
-  \ '8.9.*',
-  \ '8.10.*',
-  \ '8.11.*',
-  \ '8.12.*',
-  \ '8.13.*'
-\]
-" Coq binaries to try when checking the version if coqtail_coq_prog is not set.
-let s:default_coqs = [
-  \ 'coqtop.opt',
-  \ 'coqtop',
-  \ 'coqidetop.opt',
-  \ 'coqidetop',
-  \ 'coq-prover.coqidetop'
-\]
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
 " Warning/error messages.
 let s:unsupported_msg =
   \ "Coqtail does not officially support your version of Coq (%s).\n" .
-  \ 'Continuing with the interface for the latest supported version (' .
-  \ s:supported[-1] . ').'
+  \ 'Continuing with the interface for the latest supported version (%s).'
 " Server port.
 let s:port = -1
 
@@ -208,43 +186,6 @@ function! s:cleanup() abort
   call coqtail#panels#cleanup()
 endfunction
 
-" Get the Coq version and determine if it is supported.
-" Only called in coqtail#start(), from main buffer, so we can safely use b:
-" vars here.
-function! s:coqversion() abort
-  " Find a coq(ide)top(.opt) binary
-  let l:coq_path = coqtail#util#getvar([b:, g:], 'coqtail_coq_path', '')
-  let l:coq = coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', '')
-  let l:coqs = l:coq !=# '' ? [l:coq] : s:default_coqs
-  let l:ok = 0
-  for l:coq in l:coqs
-    let l:coq = l:coq_path !=# '' ? l:coq_path . '/' . l:coq : exepath(l:coq)
-    if l:coq ==# ''
-      continue
-    endif
-    let l:version_raw = split(system(l:coq . ' --version'))
-    let l:ok = !v:shell_error && l:version_raw != []
-    if l:ok
-      break
-    endif
-  endfor
-
-  " No binary found
-  if !l:ok
-    return [-1, 0]
-  endif
-
-  " Assumes message is of the form: The Coq Proof Assistant, version _ (_ _)
-  let l:version = l:version_raw[index(l:version_raw, 'version') + 1]
-  for l:supp in s:supported
-    if coqtail#version#match(l:version, l:supp)
-      return [l:version, 1]
-    endif
-  endfor
-
-  return [l:version, 0]
-endfunction
-
 " Check if the channel with Coqtail is open.
 function! s:initted() abort
   try
@@ -370,21 +311,6 @@ function! coqtail#start(...) abort
     let b:coqtail_started = 1
     call coqtail#init()
 
-    " Check if version supported
-    let [b:coqtail_version, l:supported] = s:coqversion()
-    if !l:supported
-      if b:coqtail_version == -1
-        call coqtail#util#err(printf(
-          \ "No %s binary found.\n" .
-          \ 'Check that it exists in your $PATH, or set b:coqtail_coq_path.',
-          \ coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', 'coqtop')))
-        call coqtail#stop()
-        return 0
-      else
-        call coqtail#util#warn(printf(s:unsupported_msg, b:coqtail_version))
-      endif
-    endif
-
     " Locate Coq project files
     let [b:coqtail_project_files, l:proj_args] = coqtail#coqproject#locate()
 
@@ -392,27 +318,35 @@ function! coqtail#start(...) abort
     call coqtail#panels#open(0)
 
     " Launch Coqtop
-    let [l:ok, l:msg] = s:call('start', 'sync', 0, {
-      \ 'version': b:coqtail_version,
+    let [l:ok, l:ver_or_msg] = s:call('start', 'sync', 0, {
       \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', '')),
       \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', ''),
       \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
-    if !l:ok || l:msg != v:null
-      let l:msg = l:ok && l:msg != v:null ? l:msg : 'Failed to launch Coq.'
+    if !l:ok || type(l:ver_or_msg) == g:coqtail#compat#t_string
+      let l:msg = l:ok && l:ver_or_msg != v:null ? l:ver_or_msg : 'Failed to launch Coq.'
       call coqtail#util#err(l:msg)
       call coqtail#stop()
       return 0
     endif
 
+    " Check if version is supported
+    let b:coqtail_version = l:ver_or_msg
+    if b:coqtail_version.latest != v:null
+      call coqtail#util#warn(printf(
+        \ s:unsupported_msg,
+        \ b:coqtail_version.str_version,
+        \ b:coqtail_version.latest))
+    endif
+
     " Draw the logo
     let l:info_win = bufwinnr(b:coqtail_panel_bufs[g:coqtail#panels#info])
     call s:call('splash', 'sync', 0, {
-      \ 'version': b:coqtail_version,
+      \ 'version': b:coqtail_version.str_version,
       \ 'width': winwidth(l:info_win),
       \ 'height': winheight(l:info_win)})
     call s:call('refresh', '', 0, {})
 
-    call s:init_proof_diffs(b:coqtail_version)
+    call s:init_proof_diffs(b:coqtail_version.str_version)
 
     " Sync edits to the buffer, close and restore the auxiliary panels
     augroup coqtail#Sync

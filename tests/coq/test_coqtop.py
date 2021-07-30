@@ -14,11 +14,6 @@ except ImportError:
 from coqtop import Coqtop
 from xmlInterface import join_tagged_tokens
 
-# Test Values #
-# Check current version
-# TODO: something less ugly
-VERSION = check_output(("coqtop", "--version")).split()[5].decode()
-
 
 # Test Helpers #
 # TODO: Should also look at current goal, messages returned by Coqtop
@@ -32,7 +27,8 @@ def get_state(coq):
 def coq():
     """Return a Coqtop for each version."""
     ct = Coqtop()
-    if ct.start(VERSION, None, None, "", [])[0] is None:
+    # TODO
+    if isinstance(ct.start(None, None, "", [])[0], dict):
         yield ct
         ct.stop()
     else:
@@ -93,7 +89,7 @@ def test_query_same_state_id(coq):
 
 def test_option_different_state_id(coq):
     """Dispatch with an option command should change the state id."""
-    if coq.xml.versions < (8, 5, 0):
+    if coq.xml.version < (8, 5, 0):
         pytest.skip("Only 8.5+ uses state ids")
     old_id = coq.state_id
     coq.dispatch("Test Silent.")
@@ -212,7 +208,7 @@ def test_recognize_not_option(coq):
 
 def test_recognize_not_query(coq):
     """Dispatch correctly identifies certain lines as not query commands."""
-    if coq.xml.versions < (8, 5, 0):
+    if coq.xml.version < (8, 5, 0):
         pytest.skip("Only 8.5+ uses state ids")
     succ, _, _, _ = coq.dispatch("Definition Print := Type.")
     assert succ

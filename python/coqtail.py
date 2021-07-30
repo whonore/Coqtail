@@ -179,33 +179,29 @@ class Coqtail:
     # Coqtop Interface #
     def start(
         self,
-        version: str,
         coq_path: str,
         coq_prog: str,
         args: Iterable[str],
         opts: VimOptions,
-    ) -> Optional[str]:
+    ) -> Union[CT.VersionInfo, str]:
         """Start a new Coqtop instance."""
-        errmsg: List[str] = []
-
         try:
-            err, stderr = self.coqtop.start(
-                version,
+            ver_or_err, stderr = self.coqtop.start(
                 coq_path if coq_path != "" else None,
                 coq_prog if coq_prog != "" else None,
                 opts["filename"],
                 args,
                 timeout=opts["timeout"],
             )
-            if err is not None:
-                errmsg.append(err)
             self.print_stderr(stderr)
         except (ValueError, CT.CoqtopError) as e:
-            errmsg.append(str(e))
+            ver_or_err = str(e)
 
-        if errmsg != []:
-            return "Failed to launch Coq.\n" + "\n".join(errmsg)
-        return None
+        return (
+            ver_or_err
+            if isinstance(ver_or_err, dict)
+            else f"Failed to launch Coq.\n{ver_or_err}"
+        )
 
     def stop(self, opts: VimOptions) -> None:
         """Stop Coqtop."""
