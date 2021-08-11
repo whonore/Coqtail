@@ -3,6 +3,9 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Jumping to a definition with `:CoqGotoDef` or `:tag` commands works correctly
+  with identifiers that include `'` (a single quote).
+  (PR #218)
 - Coqtail chooses which `coq(ide)top(.opt)` to use in a more predictable way.
   It uses `$PATH` (or `g:coqtail_coq_path` if it is set) to find `coqc` (or
   `g:coqtail_coq_prog` if it is set) and check its version.
