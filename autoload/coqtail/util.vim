@@ -94,6 +94,11 @@ endfunction
 
 " Perform a sequence of searches and put the results in the quickfix list.
 function! coqtail#util#qflist_search(buf, path, searches) abort
+  " Temporarily set the global value of 'iskeyword' to the local value (which
+  " should be Coq's). Otherwise ' is not handled properly by vimgrep.
+  let l:isk = &g:iskeyword
+  let &g:iskeyword = &l:iskeyword
+
   let l:found_match = 0
   let l:has_file = a:path !=# ''
   if !l:has_file
@@ -130,6 +135,7 @@ function! coqtail#util#qflist_search(buf, path, searches) abort
     call s:dedup_qflist()
   endif
 
+  let &g:iskeyword = l:isk
   return l:found_match
 endfunction
 
