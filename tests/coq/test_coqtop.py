@@ -2,8 +2,6 @@
 # Author: Wolf Honore
 """Coq integration tests."""
 
-from subprocess import check_output
-
 import pytest
 
 try:

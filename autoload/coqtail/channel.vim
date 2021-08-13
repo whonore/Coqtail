@@ -125,6 +125,8 @@ elseif g:coqtail#compat#nvim
     let s:replies_raw = s:replies_raw[l:idx + 1:]
   endfunction
 else
+  py3 from coqtail import ChannelManager
+
   " Rate in ms to check if Coqtail is done computing.
   let s:poll_rate = 10
 
