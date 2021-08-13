@@ -197,7 +197,8 @@ class Coqtop:
         assert self.xml is not None
         self.logger.debug("advance: %s", cmd)
         response, err1 = self.call(
-            self.xml.add(cmd, self.state_id, encoding=encoding), timeout=timeout
+            self.xml.add(cmd, self.state_id, encoding=encoding),
+            timeout=timeout,
         )
 
         if isinstance(response, Err):
@@ -264,7 +265,8 @@ class Coqtop:
         assert self.xml is not None
         self.logger.debug("query: %s", cmd)
         response, err = self.call(
-            self.xml.query(cmd, self.state_id, encoding=encoding), timeout=timeout
+            self.xml.query(cmd, self.state_id, encoding=encoding),
+            timeout=timeout,
         )
 
         if isinstance(response, Ok) and in_script:
@@ -314,7 +316,8 @@ class Coqtop:
 
         if vals is None:
             response, err = self.call(
-                self.xml.get_options(encoding=encoding), timeout=timeout
+                self.xml.get_options(encoding=encoding),
+                timeout=timeout,
             )
 
             if isinstance(response, Ok):
@@ -330,7 +333,8 @@ class Coqtop:
             errs = []
             for val in vals:
                 response, err = self.call(
-                    self.xml.set_options(opt, val, encoding=encoding), timeout=timeout
+                    self.xml.set_options(opt, val, encoding=encoding),
+                    timeout=timeout,
                 )
                 ret = response.msg
                 errs.append(err)

@@ -152,7 +152,9 @@ class ToOfTests:
             False,
         )
         goal_pair_list = PyXML(
-            [goal_pair.py], mkXML("list", children=[goal_pair]), False
+            [goal_pair.py],
+            mkXML("list", children=[goal_pair]),
+            False,
         )
         if self.xi.version < (8, 5, 0):
             return PyXML(
@@ -163,10 +165,14 @@ class ToOfTests:
         else:
             return PyXML(
                 self.xi.CoqGoals(
-                    goal_list.py, goal_pair_list.py, goal_list.py, goal_list.py
+                    goal_list.py,
+                    goal_pair_list.py,
+                    goal_list.py,
+                    goal_list.py,
                 ),
                 mkXML(
-                    "goals", children=[goal_list, goal_pair_list, goal_list, goal_list]
+                    "goals",
+                    children=[goal_list, goal_pair_list, goal_list, goal_list],
                 ),
                 False,
             )

@@ -17,7 +17,7 @@ if !g:coqtail#supported
   finish
 endif
 
-py3 from coqtail import ChannelManager, Coqtail, CoqtailServer
+py3 from coqtail import CoqtailServer
 
 " Initialize global variables.
 " Default number of lines of a goal to show.

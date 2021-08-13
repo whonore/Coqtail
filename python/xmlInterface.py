@@ -1306,7 +1306,9 @@ class XMLInterface85(XMLInterfaceBase):
         return (
             "Query",
             self._make_call(
-                encoding, "Query", children=(query, self.CoqStateId(state))
+                encoding,
+                "Query",
+                children=(query, self.CoqStateId(state)),
             ),
         )
 

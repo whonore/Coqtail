@@ -43,7 +43,7 @@ let s:match = '\<\%(lazy\|multi\)\?match\>'
 let s:inductive = '\%(\%(Co\)\?Inductive\|Variant\)'
 
 " Match syntax groups.
-function! s:matchsyn(line, col, syns)
+function! s:matchsyn(line, col, syns) abort
   return printf(
     \ 'synIDattr(synID(%s, %s, 0), "name") =~? "%s"',
     \ a:line,
