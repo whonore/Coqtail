@@ -2,6 +2,10 @@
 
 ## Unreleased ([master])
 
+### Added
+- `g:coqtail_coq_path` defaults to `$COQBIN` if it is set.
+  (PR #219)
+
 ### Fixed
 - Jumping to a definition with `:CoqGotoDef` or `:tag` commands works correctly
   with identifiers that include `'` (a single quote).

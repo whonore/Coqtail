@@ -319,7 +319,7 @@ function! coqtail#start(...) abort
 
     " Launch Coqtop
     let [l:ok, l:ver_or_msg] = s:call('start', 'sync', 0, {
-      \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', '')),
+      \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', $COQBIN)),
       \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', ''),
       \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
     if !l:ok || type(l:ver_or_msg) == g:coqtail#compat#t_string

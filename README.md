@@ -104,7 +104,8 @@ In that case you can set a custom prefix with `g:coqtail_map_prefix` (or
 
 By default Coqtail uses the first `coq(ide)top(.opt)` found in your `PATH`.
 Use `b:coqtail_coq_path` (or `g:coqtail_coq_path`) to specify a different
-directory to search in.
+directory to search in (these are automatically set if the `$COQBIN` environment
+variable is set).
 You can also override the name of the Coq executable to use with
 `b:coqtail_coq_prog` (or `g:coqtail_coq_prog`).
 For example, to use the [HoTT library](https://github.com/HoTT/HoTT):

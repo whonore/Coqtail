@@ -175,10 +175,11 @@ Configuration						 *coqtail-configuration*
 				         *g:coqtail_coq_path* *b:coqtail_coq_path*
 							      *coqtail-coq-path*
 g:coqtail_coq_path
-b:coqtail_coq_path	The path to search for the coq(ide)top(.opt) binary. If
-			empty then $PATH is used.
+b:coqtail_coq_path	The path to search for the coq(ide)top(.opt) binary.
+			Defaults to $COQBIN, and if that is empty then $PATH is
+			used.
 
-			Default: ''
+			Default: $COQBIN
 
 				         *g:coqtail_coq_prog* *b:coqtail_coq_prog*
 							      *coqtail-coq-prog*
