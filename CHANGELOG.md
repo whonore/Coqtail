@@ -16,8 +16,8 @@
   It then looks for `coqtop` or `coqidetop` (or `g:coqtail_coq_path`) as
   appropriate in the same directory as `coqc`, taking possible prefixes (e.g.,
   `coq-prover.`) and extensions (e.g., `.opt`) into account.
-  **BREAKING** If you have multiple versions of Coq installed Coqtail may choose
-  a different one than before.
+  **BREAKING**: If you have multiple versions of Coq installed Coqtail may
+  choose a different one than before.
   In particular, executables in the current directory are no longer considered
   by default.
   Set `g:coqtail_coq_path` explicitly if you rely on this behavior.
