@@ -118,7 +118,7 @@ output-format=colorized
 reports=no
 
 # Activate the evaluation score.
-score=yes
+score=no
 
 
 [REFACTORING]
