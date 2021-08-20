@@ -392,7 +392,7 @@ function! coqtail#jumpto(target) abort
 
   let [l:ok, l:pos] = s:call(a:target, 'sync', 0, {})
   if l:ok && type(l:pos) == g:coqtail#compat#t_list
-    mark '
+    normal! m'
     call cursor(l:pos)
   endif
 endfunction
