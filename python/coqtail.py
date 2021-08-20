@@ -770,13 +770,13 @@ class CoqtailHandler(StreamRequestHandler):
                 self.closed = True
                 break
 
-            if msg_id >= 0:
+            if msg_id >= 0:  # request from Vim
                 bnum, func, args = data
                 if func == "interrupt":
                     self.interrupt()
                 else:
                     self.reqs.put((msg_id, bnum, func, args))
-            else:
+            else:  # response to a `vimeval` request
                 # NOTE: Accessing self.resps concurrently creates a race
                 # condition where defaultdict could construct a Queue twice
                 with self.resp_lk:
@@ -809,7 +809,11 @@ class CoqtailHandler(StreamRequestHandler):
         """Forward requests from Vim to the appropriate Coqtail function."""
         self.coq = Coqtail(self)
         self.closed = False
+        # Requests from Vim (`s:call`)
         self.reqs: ReqQueue = Queue()
+        # Responses to `vimeval` requests.
+        # The key is the id of Vim's request that was being handled at the
+        # moment of `vimeval` call.
         self.resps: DefaultDict[int, ResQueue] = ddict(Queue)
         self.resp_lk = threading.Lock()
 
@@ -860,7 +864,7 @@ class CoqtailHandler(StreamRequestHandler):
                 break
 
     def vimeval(self, expr: List[Any], wait: bool = True) -> Any:
-        """Send Vim a request."""
+        """Send Vim a request as `:h channel-commands`."""
         if wait:
             expr += [-self.msg_id]
         self.wfile.write(_to_jsonl(expr))

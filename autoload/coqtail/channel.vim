@@ -75,6 +75,7 @@ elseif g:coqtail#compat#nvim
     let s:replies[l:msg_id] = {}
     call chansend(self.handle, l:msg)
 
+    " NOTE: only `'timeout': 0` is used now
     if get(a:options, 'timeout', -1) == 0
       return ''
     endif
