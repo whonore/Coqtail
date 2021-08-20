@@ -847,7 +847,7 @@ class CoqtailHandler(StreamRequestHandler):
             try:
                 ret = handler(**args) if handler is not None else None
                 msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
-                self.wfile.write(json.dumps(msg).encode("utf-8") + b"\n")
+                self.wfile.write(_to_jsonl(msg))
             except (EOFError, ConnectionError):
                 break
 
@@ -863,7 +863,7 @@ class CoqtailHandler(StreamRequestHandler):
         """Send Vim a request."""
         if wait:
             expr += [-self.msg_id]
-        self.wfile.write(json.dumps(expr).encode("utf-8") + b"\n")
+        self.wfile.write(_to_jsonl(expr))
 
         if wait:
             # pylint: disable=unpacking-non-sequence
@@ -915,7 +915,7 @@ class CoqtailHandler(StreamRequestHandler):
                 try:
                     msg_id, bnum, _, _ = self.reqs.get_nowait()
                     msg = [msg_id, {"buf": bnum, "ret": None}]
-                    self.wfile.write(json.dumps(msg).encode("utf-8") + b"\n")
+                    self.wfile.write(_to_jsonl(msg))
                 except Empty:
                     break
             self.coq.coqtop.interrupt()
@@ -1002,7 +1002,7 @@ class ChannelManager:
             ChannelManager.sessions[handle] = session
 
         msg_id = reply_id if reply_id is not None else next(ChannelManager.msg_id)
-        ch.sendall((json.dumps([msg_id, expr]) + "\n").encode("utf-8"))
+        ch.sendall(_to_jsonl([msg_id, expr]))
 
         if returns:
             ChannelManager.results[handle] = ChannelManager.pool.submit(
@@ -1464,3 +1464,7 @@ def _char_isdigit(c: int) -> bool:
 
 def _char_isspace(c: int) -> bool:
     return c in b" \t\n\r\x0b\f"
+
+
+def _to_jsonl(obj: Any) -> bytes:
+    return (json.dumps(obj) + "\n").encode("utf-8")
