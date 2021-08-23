@@ -4,6 +4,7 @@
 
 import datetime
 import logging
+import re
 import signal
 import subprocess
 import threading
@@ -55,6 +56,8 @@ else:
     BytesQueue = Queue
     CoqtopProcess = subprocess.Popen
     VersionInfo = Mapping[str, Any]
+
+WARNING_RE = re.compile("^(Warning: [^]]+])$", flags=re.MULTILINE)
 
 
 class CoqtopError(Exception):
@@ -426,9 +429,9 @@ class Coqtop:
         poll_sec = 1
 
         while True:
-            # Check stderr first
+            # Abort if an error is printed to stderr, but ignore warnings.
             err = self.collect_err()
-            if err != "":
+            if partition_warnings(err)[1] != "":
                 return UNEXPECTED_ERR, err
 
             try:
@@ -446,7 +449,7 @@ class Coqtop:
             # Don't bother doing prettyxml if debugging isn't on
             if self.logger.isEnabledFor(logging.DEBUG):
                 self.logger.debug(prettyxml(b"<response>" + xml + b"</response>"))
-            return response, ""
+            return response, err
 
     @staticmethod
     def drain_queue(q: BytesQueue) -> Iterator[bytes]:
@@ -464,7 +467,10 @@ class Coqtop:
 
     def collect_err(self) -> str:
         """Pop and concatenate everything in 'err_q'."""
-        return b"".join(Coqtop.drain_queue(self.err_q)).decode("utf-8")
+        err = b"".join(Coqtop.drain_queue(self.err_q)).decode("utf-8")
+        if err != "":
+            self.logger.debug(err)
+        return err
 
     def capture_out(self, buffer: BytesQueue, stream: IO[bytes]) -> None:
         """Continually read data from 'stream' into 'buffer'."""
@@ -531,3 +537,18 @@ class Coqtop:
             self.logger.addHandler(self.handler)
             self.logger.setLevel(logging.CRITICAL)
         return self.log.name if self.log is not None else None
+
+
+def partition_warnings(stderr: str) -> Tuple[str, str]:
+    """Partition Coq stderr messages into warnings and errors.
+
+    Warnings are assumed to have the following form:
+    Warning: message_with_newlines [warning_type]\n
+    Everything else is treated as an error message.
+    """
+    warns: List[str] = []
+    errs: List[str] = []
+    # Strip whitespace and drop empty strings
+    for msg in filter(None, map(str.strip, WARNING_RE.split(stderr))):
+        (warns if WARNING_RE.fullmatch(msg) else errs).append(msg)
+    return "\n".join(warns), "\n".join(errs)
