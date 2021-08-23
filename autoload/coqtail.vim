@@ -205,6 +205,9 @@ function! s:running() abort
 endfunction
 
 " Send a request to Coqtail.
+" `cb` is either 'sync', '', or the name of a `:h channel-callback` with
+" msg: string | {'buf': bufnr, 'ret': any}.
+" Returns [ok, msg].
 function! s:call(cmd, cb, nocoq, args) abort
   if !((a:nocoq && s:initted()) || (!a:nocoq && s:running()))
     return [0, -1]
@@ -252,7 +255,7 @@ function! s:init_proof_diffs(coq_version) abort
     endif
 endfunction
 
-" Print any error messages.
+" Unlock the buffer if there's no pending command and print any error messages.
 function! coqtail#defaultCB(chan, msg) abort
   let l:pending = getbufvar(a:msg.buf, 'coqtail_cmds_pending')
   call setbufvar(a:msg.buf, 'coqtail_cmds_pending', l:pending - 1)
