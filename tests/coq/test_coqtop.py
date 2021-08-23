@@ -231,7 +231,9 @@ def test_start_warning():
     ct = Coqtop()
     res, stderr = ct.start(None, None, "", ["-R", "fake", "Fake"])
     assert isinstance(res, dict)
-    assert stderr.startswith("Warning:")
+    # Coq <=8.5 doesn't print a warning for nonexistent directories.
+    if ct.xml.version >= (8, 6, 0):
+        assert stderr.startswith("Warning:")
 
 
 @patch("coqtop.XMLInterface", autospec=True)
@@ -240,6 +242,8 @@ def test_start_invalid_xml(fake_interface):
     # Create a fake XMLInterfaceBase and patch init() to return invalid XML.
     # Wrap the real XMLInterfaceBase so all other methods work as usual.
     real_xml = XMLInterface(None, None)[0]
+    if real_xml.version < (8, 6, 0):
+        pytest.skip("<8.6 doesn't print to stderr for invalid XML")
     fake_xml = MagicMock(wraps=real_xml)
     fake_xml.init.return_value = ("Init", b"<bad_xml></bad_xml>")
     fake_interface.return_value = (fake_xml, "")
