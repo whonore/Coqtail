@@ -4,7 +4,6 @@
 
 import datetime
 import logging
-import re
 import signal
 import subprocess
 import threading
@@ -35,6 +34,7 @@ from xmlInterface import (
     Result,
     XMLInterface,
     XMLInterfaceBase,
+    partition_warnings,
     prettyxml,
 )
 
@@ -56,8 +56,6 @@ else:
     BytesQueue = Queue
     CoqtopProcess = subprocess.Popen
     VersionInfo = Mapping[str, Any]
-
-WARNING_RE = re.compile("^(Warning: [^]]+])$", flags=re.MULTILINE)
 
 
 class CoqtopError(Exception):
@@ -430,8 +428,11 @@ class Coqtop:
 
         while True:
             # Abort if an error is printed to stderr, but ignore warnings.
+            # NOTE: If `warnings_wf` is False because this version of Coq does
+            # not follow the pattern expected by `partition_warnings` then
+            # pretend everything is a warning and hope for the best.
             err = self.collect_err()
-            if partition_warnings(err)[1] != "":
+            if self.xml.warnings_wf and partition_warnings(err)[1] != "":
                 return UNEXPECTED_ERR, err
 
             try:
@@ -537,18 +538,3 @@ class Coqtop:
             self.logger.addHandler(self.handler)
             self.logger.setLevel(logging.CRITICAL)
         return self.log.name if self.log is not None else None
-
-
-def partition_warnings(stderr: str) -> Tuple[str, str]:
-    """Partition Coq stderr messages into warnings and errors.
-
-    Warnings are assumed to have the following form:
-    Warning: message_with_newlines [warning_type]\n
-    Everything else is treated as an error message.
-    """
-    warns: List[str] = []
-    errs: List[str] = []
-    # Strip whitespace and drop empty strings
-    for msg in filter(None, map(str.strip, WARNING_RE.split(stderr))):
-        (warns if WARNING_RE.fullmatch(msg) else errs).append(msg)
-    return "\n".join(warns), "\n".join(errs)

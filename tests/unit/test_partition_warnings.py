@@ -10,20 +10,20 @@ def test_partition_warnings():
     msg = """
 Warning: message
 continued
-[type,?]
-Warning: another one [type,?]
+[name,category]
+Warning: another one [name,category]
 Not a warning,
 just an error.
-Warning: again [type, ?]
+Warning: again [name,category]
 Final error.
     """.strip()
 
     warn = """
 Warning: message
 continued
-[type,?]
-Warning: another one [type,?]
-Warning: again [type, ?]
+[name,category]
+Warning: another one [name,category]
+Warning: again [name,category]
     """.strip()
 
     err = """
