@@ -2,6 +2,10 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Don't abort if only warnings are printed to `stderr`.
+  (PR #226)
+
 ## [1.5.0]
 
 ### Added

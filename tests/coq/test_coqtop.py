@@ -2,15 +2,12 @@
 # Author: Wolf Honore
 """Coq integration tests."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
-
 from coqtop import Coqtop
-from xmlInterface import join_tagged_tokens
+from xmlInterface import XMLInterface, join_tagged_tokens
 
 
 # Test Helpers #
@@ -219,3 +216,34 @@ def test_recognize_not_query(coq):
     succ, _, _, _ = coq.dispatch("Variable y :\n Abouts.")
     assert succ
     assert old_id != coq.state_id
+
+
+def test_start_invalid_option():
+    """Passing an invalid option on startup fails gracefully."""
+    ct = Coqtop()
+    res, stderr = ct.start(None, None, "", ["--fake"])
+    assert isinstance(res, str)
+    assert stderr == ""
+
+
+def test_start_warning():
+    """Warnings do not cause startup to fail."""
+    ct = Coqtop()
+    res, stderr = ct.start(None, None, "", ["-R", "fake", "Fake"])
+    assert isinstance(res, dict)
+    assert stderr.startswith("Warning:")
+
+
+@patch("coqtop.XMLInterface", autospec=True)
+def test_start_invalid_xml(fake_interface):
+    """Invalid XML commands do not cause Coqtail to hang."""
+    # Create a fake XMLInterfaceBase and patch init() to return invalid XML.
+    # Wrap the real XMLInterfaceBase so all other methods work as usual.
+    real_xml = XMLInterface(None, None)[0]
+    fake_xml = MagicMock(wraps=real_xml)
+    fake_xml.init.return_value = ("Init", b"<bad_xml></bad_xml>")
+    fake_interface.return_value = (fake_xml, "")
+    ct = Coqtop()
+    res, stderr = ct.start(None, None, "", [])
+    assert isinstance(res, str)
+    assert stderr != ""
