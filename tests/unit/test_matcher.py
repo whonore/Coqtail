@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
+# mypy: ignore-errors
 """Match patterns unit tests."""
 
 import pytest

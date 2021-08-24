@@ -1,5 +1,6 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
+# mypy: ignore-errors
 """Sentence parsing unit tests."""
 
 import pytest
