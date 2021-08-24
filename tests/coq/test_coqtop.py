@@ -1,6 +1,7 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
 # mypy: ignore-errors
+# pylint: disable=redefined-outer-name
 """Coq integration tests."""
 
 from unittest.mock import MagicMock, patch

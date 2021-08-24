@@ -1,6 +1,7 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
 # mypy: ignore-errors
+# pylint: disable=protected-access, redefined-outer-name
 """XMLInterface marshalling unit tests."""
 
 from collections import namedtuple
@@ -30,6 +31,7 @@ def mkXML(tag, text="", attrs=None, children=None):
 
 
 class ToOfTests:
+    # pylint: disable=missing-function-docstring, no-else-return, no-self-use
     """Methods return test cases for _of_py and _to_py as PyXML objects."""
 
     @staticmethod
@@ -294,7 +296,7 @@ class ToOfTests:
         abc = self.abc()
         edit_id = PyXML((), mkXML("fake_edit_id"), False)
         if self.xi.version < (8, 6, 0):
-            route = self.one()  # noqa: F841
+            _route = self.one()  # noqa: F841
             content = PyXML(
                 (),
                 mkXML(
@@ -306,7 +308,7 @@ class ToOfTests:
             )
             return PyXML(abc.py, mkXML("feedback", children=[content]), False)
         else:
-            route = self.route_id()  # noqa: F841
+            _route = self.route_id()  # noqa: F841
             content = PyXML(
                 (),
                 mkXML(
@@ -343,8 +345,8 @@ class ToOfTests:
 @pytest.fixture(scope="module", params=XMLInterfaces)
 def xmlInt(request):
     """Return an XMLInterface for each version."""
-    min, max, xi = request.param
-    return xi(min, "", Path(), None)
+    min_ver, _max_ver, xi = request.param
+    return xi(min_ver, "", Path(), None)
 
 
 @pytest.fixture(scope="module", params=ToOfTests.all_tests())
