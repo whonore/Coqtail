@@ -1,12 +1,12 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
-# mypy: ignore-errors
 """Match patterns unit tests."""
 
 import pytest
 
 from coqtail import matcher
 
+# Test name, generated match pattern, excepted match pattern
 tests = (
     ("Both lines, both cols", matcher[1:5, 1:5], r"\%2l\%>1c\|\%>2l\%<5l\|\%5l\%<6c"),
     ("Both lines, 1 start col", matcher[1:5, 0:5], r"\%2l\|\%>2l\%<5l\|\%5l\%<6c"),
@@ -22,6 +22,6 @@ tests = (
 
 
 @pytest.mark.parametrize("_name, match, expected", tests)
-def test_matcher(_name, match, expected):
+def test_matcher(_name: str, match: str, expected: str) -> None:
     """Matcher builds match regexes correctly."""
     assert match == expected

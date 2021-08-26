@@ -1,24 +1,38 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
-# mypy: ignore-errors
 # pylint: disable=protected-access, redefined-outer-name
 """XMLInterface marshalling unit tests."""
 
 from collections import namedtuple
 from inspect import getmembers, isfunction, ismethod
 from pathlib import Path
+from typing import Any, Callable, Dict, Iterable, List, Optional
 from xml.etree.ElementTree import Element, tostring
 
 import pytest
 
-from xmlInterface import XMLInterfaces, partition_warnings
+from xmlInterface import (
+    XMLInterface84,
+    XMLInterface85,
+    XMLInterface87,
+    XMLInterface812,
+    XMLInterface814,
+    XMLInterfaceBase,
+    XMLInterfaces,
+    partition_warnings,
+)
 
 # Pairs of Python values and the corresponding XML representation. Parametrized
 # over an XMLInterface
 PyXML = namedtuple("PyXML", ("py", "xml", "bijection"))
 
 
-def mkXML(tag, text="", attrs=None, children=None):
+def mkXML(
+    tag: str,
+    text: str = "",
+    attrs: Optional[Dict[str, str]] = None,
+    children: Optional[Iterable[Any]] = None,
+) -> Element:
     """Help build XML Elements."""
     if attrs is None:
         attrs = {}
@@ -35,10 +49,10 @@ class ToOfTests:
     """Methods return test cases for _of_py and _to_py as PyXML objects."""
 
     @staticmethod
-    def all_tests():
+    def all_tests() -> List[str]:
         """Return the names of all test cases."""
 
-        def isfunc(f):
+        def isfunc(f: Callable[[Any], Any]) -> bool:
             return ismethod(f) or isfunction(f)
 
         return [
@@ -47,47 +61,47 @@ class ToOfTests:
             if n not in ("__init__", "all_tests")
         ]
 
-    def __init__(self, xmlInt):
+    def __init__(self, xmlInt: XMLInterfaceBase) -> None:
         self.xi = xmlInt
 
-    def unit(self):
+    def unit(self) -> PyXML:
         return PyXML((), mkXML("unit"), True)
 
-    def true(self):
+    def true(self) -> PyXML:
         return PyXML(True, mkXML("bool", attrs={"val": "true"}), True)
 
-    def false(self):
+    def false(self) -> PyXML:
         return PyXML(False, mkXML("bool", attrs={"val": "false"}), True)
 
-    def one(self):
+    def one(self) -> PyXML:
         return PyXML(1, mkXML("int", text="1"), True)
 
-    def abc(self):
+    def abc(self) -> PyXML:
         return PyXML("abc", mkXML("string", text="abc"), True)
 
-    def abc_u(self):
+    def abc_u(self) -> PyXML:
         return PyXML("abc", self.abc().xml, True)
 
-    def abc_richpp(self):
+    def abc_richpp(self) -> Optional[PyXML]:
         if self.xi.version >= (8, 6, 0):
             return PyXML([("abc", None)], mkXML("richpp", text="abc"), False)
         return None
 
-    def list1(self):
+    def list1(self) -> PyXML:
         unit = self.unit()
         return PyXML([unit.py], mkXML("list", children=[unit]), True)
 
-    def list2(self):
+    def list2(self) -> PyXML:
         one = self.one()
         list1 = self.list1()
         return PyXML([one.py, list1.py], mkXML("list", children=[one, list1]), True)
 
-    def pair(self):
+    def pair(self) -> PyXML:
         one = self.one()
         abc = self.abc()
         return PyXML((one.py, abc.py), mkXML("pair", children=[one, abc]), True)
 
-    def some(self):
+    def some(self) -> PyXML:
         false = self.false()
         return PyXML(
             self.xi.Some(false.py),
@@ -95,10 +109,10 @@ class ToOfTests:
             True,
         )
 
-    def none(self):
+    def none(self) -> PyXML:
         return PyXML(None, mkXML("option", attrs={"val": "none"}), True)
 
-    def inl(self):
+    def inl(self) -> PyXML:
         true = self.true()
         return PyXML(
             self.xi.Inl(true.py),
@@ -106,7 +120,7 @@ class ToOfTests:
             True,
         )
 
-    def inr(self):
+    def inr(self) -> PyXML:
         none = self.none()
         return PyXML(
             self.xi.Inr(none.py),
@@ -114,11 +128,13 @@ class ToOfTests:
             True,
         )
 
-    def evar(self):
+    def evar(self) -> PyXML:
+        assert isinstance(self.xi, (XMLInterface84, XMLInterface85))
         abc = self.abc()
         return PyXML(self.xi.CoqEvar(abc.py), mkXML("evar", children=[abc]), False)
 
-    def coq_info(self):
+    def coq_info(self) -> PyXML:
+        assert isinstance(self.xi, (XMLInterface84, XMLInterface85))
         abc = self.abc()
         return PyXML(
             self.xi.CoqInfo(abc.py, abc.py, abc.py, abc.py),
@@ -126,27 +142,28 @@ class ToOfTests:
             False,
         )
 
-    def goal(self):
+    def goal(self) -> PyXML:
         abc = self.abc()
-        if self.xi.version < (8, 6, 0):
+        abc_rich = self.abc_richpp()
+        if abc_rich is None:
             abc_rich = abc
-        else:
-            abc_rich = self.abc_richpp()
         abc_list = PyXML([abc_rich.py], mkXML("list", children=[abc_rich]), True)
         if self.xi.version < (8, 14, 0):
+            assert isinstance(self.xi, (XMLInterface84, XMLInterface85))
             return PyXML(
                 self.xi.CoqGoal(abc.py, abc_list.py, abc_rich.py),
                 mkXML("goal", children=[abc, abc_list, abc_rich]),
                 False,
             )
         else:
+            assert isinstance(self.xi, XMLInterface814)
             return PyXML(
                 self.xi.CoqGoal(abc.py, abc_list.py, abc_rich.py, abc.py),
                 mkXML("goal", children=[abc, abc_list, abc_rich, abc]),
                 False,
             )
 
-    def goals(self):
+    def goals(self) -> PyXML:
         goal = self.goal()
         goal_list = PyXML([goal.py], mkXML("list", children=[goal]), False)
         goal_pair = PyXML(
@@ -160,12 +177,14 @@ class ToOfTests:
             False,
         )
         if self.xi.version < (8, 5, 0):
+            assert isinstance(self.xi, XMLInterface84)
             return PyXML(
                 self.xi.CoqGoals(goal_list.py, goal_pair_list.py),
                 mkXML("goals", children=[goal_list, goal_pair_list]),
                 False,
             )
         else:
+            assert isinstance(self.xi, XMLInterface85)
             return PyXML(
                 self.xi.CoqGoals(
                     goal_list.py,
@@ -180,7 +199,8 @@ class ToOfTests:
                 False,
             )
 
-    def option_value_bool(self):
+    def option_value_bool(self) -> PyXML:
+        assert isinstance(self.xi, (XMLInterface84, XMLInterface85))
         true = self.true()
         return PyXML(
             self.xi.CoqOptionValue(true.py, "bool"),
@@ -188,7 +208,8 @@ class ToOfTests:
             True,
         )
 
-    def option_value_int(self):
+    def option_value_int(self) -> PyXML:
+        assert isinstance(self.xi, (XMLInterface84, XMLInterface85))
         one = self.one()
         opt = PyXML(
             self.xi.Some(one.py),
@@ -201,7 +222,8 @@ class ToOfTests:
             True,
         )
 
-    def option_value_string(self):
+    def option_value_string(self) -> PyXML:
+        assert isinstance(self.xi, (XMLInterface84, XMLInterface85))
         abc = self.abc()
         return PyXML(
             self.xi.CoqOptionValue(abc.py, "str"),
@@ -209,7 +231,8 @@ class ToOfTests:
             True,
         )
 
-    def option_value_string_opt(self):
+    def option_value_string_opt(self) -> Optional[PyXML]:
+        assert isinstance(self.xi, (XMLInterface84, XMLInterface85))
         abc = self.abc()
         opt = PyXML(
             self.xi.Some(abc.py),
@@ -224,7 +247,8 @@ class ToOfTests:
             )
         return None
 
-    def option_value_int_none(self):
+    def option_value_int_none(self) -> PyXML:
+        assert isinstance(self.xi, (XMLInterface84, XMLInterface85))
         none = self.none()
         return PyXML(
             self.xi.CoqOptionValue(None, "int"),
@@ -232,9 +256,10 @@ class ToOfTests:
             True,
         )
 
-    def option_value_str_none(self):
+    def option_value_str_none(self) -> Optional[PyXML]:
         none = self.none()
         if self.xi.version >= (8, 5, 0):
+            assert isinstance(self.xi, XMLInterface85)
             return PyXML(
                 self.xi.CoqOptionValue(None, "str"),
                 mkXML("option_value", attrs={"val": "stringoptvalue"}, children=[none]),
@@ -242,24 +267,26 @@ class ToOfTests:
             )
         return None
 
-    def option_state(self):
+    def option_state(self) -> PyXML:
         true = self.true()
         abc = self.abc()
         opt = self.option_value_bool()
         if self.xi.version < (8, 12, 0):
+            assert isinstance(self.xi, (XMLInterface84, XMLInterface85))
             return PyXML(
                 self.xi.CoqOptionState(true.py, true.py, abc.py, opt.py),
                 mkXML("option_state", children=[true, true, abc, opt]),
                 False,
             )
         else:
+            assert isinstance(self.xi, XMLInterface812)
             return PyXML(
                 self.xi.CoqOptionState(true.py, true.py, opt.py),
                 mkXML("option_state", children=[true, true, opt]),
                 False,
             )
 
-    def status(self):
+    def status(self) -> PyXML:
         one = self.one()
         abc = self.abc()
         abc_list = PyXML([abc.py], mkXML("list", children=[abc]), True)
@@ -269,19 +296,21 @@ class ToOfTests:
             True,
         )
         if self.xi.version < (8, 5, 0):
+            assert isinstance(self.xi, XMLInterface84)
             return PyXML(
                 self.xi.CoqStatus(abc_list.py, abc_opt.py, abc_list.py, one.py, one.py),
                 mkXML("status", children=[abc_list, abc_opt, abc_list, one, one]),
                 False,
             )
         else:
+            assert isinstance(self.xi, XMLInterface85)
             return PyXML(
                 self.xi.CoqStatus(abc_list.py, abc_opt.py, abc_list.py, one.py),
                 mkXML("status", children=[abc_list, abc_opt, abc_list, one]),
                 False,
             )
 
-    def message(self):
+    def message(self) -> PyXML:
         # TODO: actually parse the level and location
         abc = self.abc()
         level = PyXML((), mkXML("fake_message_level"), False)
@@ -291,10 +320,11 @@ class ToOfTests:
         else:
             return PyXML(abc.py, mkXML("message", children=[level, loc, abc]), False)
 
-    def feedback(self):
+    def feedback(self) -> PyXML:
         # TODO: parse feedback correctly
         abc = self.abc()
         edit_id = PyXML((), mkXML("fake_edit_id"), False)
+        _route: Optional[PyXML]
         if self.xi.version < (8, 6, 0):
             _route = self.one()  # noqa: F841
             content = PyXML(
@@ -320,9 +350,10 @@ class ToOfTests:
             )
             return PyXML(abc.py, mkXML("feedback", children=[edit_id, content]), False)
 
-    def state_id(self):
+    def state_id(self) -> Optional[PyXML]:
         one = self.one()
         if self.xi.version >= (8, 5, 0):
+            assert isinstance(self.xi, XMLInterface85)
             return PyXML(
                 self.xi.CoqStateId(one.py),
                 mkXML("state_id", attrs={"val": str(one.py)}),
@@ -330,9 +361,10 @@ class ToOfTests:
             )
         return None
 
-    def route_id(self):
+    def route_id(self) -> Optional[PyXML]:
         one = self.one()
         if self.xi.version >= (8, 7, 0):
+            assert isinstance(self.xi, XMLInterface87)
             return PyXML(
                 self.xi.CoqRouteId(one.py),
                 mkXML("route_id", attrs={"val": str(one.py)}),
@@ -343,20 +375,20 @@ class ToOfTests:
 
 # Test Fixtures #
 @pytest.fixture(scope="module", params=XMLInterfaces)
-def xmlInt(request):
+def xmlInt(request: pytest.FixtureRequest) -> XMLInterfaceBase:
     """Return an XMLInterface for each version."""
-    min_ver, _max_ver, xi = request.param
-    return xi(min_ver, "", Path(), None)
+    min_ver, _max_ver, xi = request.param  # type: ignore[attr-defined]
+    return xi(min_ver, "", Path(), None)  # type: ignore
 
 
 @pytest.fixture(scope="module", params=ToOfTests.all_tests())
-def py_xml(xmlInt, request):
+def py_xml(xmlInt: XMLInterfaceBase, request: pytest.FixtureRequest) -> Optional[PyXML]:
     """Return PyXML objects from ToOfTests."""
-    return getattr(ToOfTests(xmlInt), request.param)()
+    return getattr(ToOfTests(xmlInt), request.param)()  # type: ignore
 
 
 # Test Cases #
-def test_to_of_py(xmlInt, py_xml):
+def test_to_of_py(xmlInt: XMLInterfaceBase, py_xml: Optional[PyXML]) -> None:
     """Test whether _to_py() and _of_py() convert correctly."""
     if py_xml is None:
         pytest.skip("No tests for this version")
@@ -368,7 +400,7 @@ def test_to_of_py(xmlInt, py_xml):
         assert tostring(xmlInt._of_py(py)) == tostring(xml)
 
 
-def test_valid_module(xmlInt):
+def test_valid_module(xmlInt: XMLInterfaceBase) -> None:
     """Test whether valid_module correctly identifies valid module names."""
     assert xmlInt.valid_module("/a/b/c.v")
     assert xmlInt.valid_module("a/b/c.v")
@@ -382,7 +414,7 @@ def test_valid_module(xmlInt):
     assert not xmlInt.valid_module("a b.v")
 
 
-def test_topfile(xmlInt):
+def test_topfile(xmlInt: XMLInterfaceBase) -> None:
     """Test whether topfile adds the correct argument."""
     if xmlInt.version < (8, 10, 0):
         assert xmlInt.topfile("c.v", []) == ()
@@ -392,7 +424,7 @@ def test_topfile(xmlInt):
         assert xmlInt.topfile("c.v", ["-top", "x"]) == ()
 
 
-def test_partition_warnings():
+def test_partition_warnings() -> None:
     """Test that partition_warnings separates warnings from error messages."""
     msg = """
 Warning: message
