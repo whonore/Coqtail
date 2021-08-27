@@ -6,7 +6,7 @@ import pytest
 
 from coqtail import matcher
 
-# Test name, generated match pattern, excepted match pattern
+# Test name, generated match pattern, expected match pattern
 tests = (
     ("Both lines, both cols", matcher[1:5, 1:5], r"\%2l\%>1c\|\%>2l\%<5l\|\%5l\%<6c"),
     ("Both lines, 1 start col", matcher[1:5, 0:5], r"\%2l\|\%>2l\%<5l\|\%5l\%<6c"),
