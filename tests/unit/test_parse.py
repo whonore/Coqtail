@@ -2,12 +2,27 @@
 # Author: Wolf Honore
 """Sentence parsing unit tests."""
 
+from typing import Iterable, Sequence, Tuple, Union
+
 import pytest
 
 from coqtail import NoDotError, UnmatchedError, _get_message_range, _strip_comments
 
-# Test Values #
-tests = (
+# Test name, input lines, start position, stop position or exception
+# The start can be omitted, in which case it defaults to (0, 0).
+# The stop can be a position, or an exception, in which case it is expected to
+# be raised.
+_ParseIn = Sequence[str]
+ParseStart = Tuple[int, int]
+ParseStop = Union[Exception, Tuple[int, int]]
+_ParseTest = Union[
+    Tuple[str, _ParseIn, ParseStop],
+    Tuple[str, _ParseIn, ParseStart, ParseStop],
+]
+ParseIn = Sequence[bytes]
+ParseTest = Tuple[str, ParseIn, ParseStart, ParseStop]
+
+_parse_tests: Sequence[_ParseTest] = [
     # Valid tests, no offset
     ("word", ["A."], (0, 1)),
     ("word2", ["A B."], (0, 3)),
@@ -63,45 +78,57 @@ tests = (
     ("focus trailing command no spaces", ["2:{t."], (0, 2)),
     ("focus trailing command with spaces", ["2 : { t."], (0, 4)),
     # Invalid tests
-    ("no dot", ["A"], (NoDotError, None)),
-    ("dot2", ["A.."], (NoDotError, None)),
-    ("unclosed comment pre", ["(* ."], (UnmatchedError, (0, 0))),
-    ("unclosed comment", ["A (* ."], (UnmatchedError, (0, 2))),
-    ("unclosed comment nest pre", ["(* (* A *) ."], (UnmatchedError, (0, 0))),
-    ("unclosed string", ['A " .'], (UnmatchedError, (0, 2))),
-    ("unclosed attribute", ["#[A B."], (UnmatchedError, (0, 0))),
-    ("unclosed string attribute", ['#[A="B] C.'], (UnmatchedError, (0, 0))),
-    ("only white", [" "], (NoDotError, None)),
-    ("empty", [""], (NoDotError, None)),
-)
-
+    ("no dot", ["A"], NoDotError()),
+    ("dot2", ["A.."], NoDotError()),
+    ("unclosed comment pre", ["(* ."], UnmatchedError("(*", (0, 0))),
+    ("unclosed comment", ["A (* ."], UnmatchedError("(*", (0, 2))),
+    ("unclosed comment nest pre", ["(* (* A *) ."], UnmatchedError("(*", (0, 0))),
+    ("unclosed string", ['A " .'], UnmatchedError('"', (0, 2))),
+    ("unclosed attribute", ["#[A B."], UnmatchedError("#[", (0, 0))),
+    ("unclosed string attribute", ['#[A="B] C.'], UnmatchedError("#[", (0, 0))),
+    ("only white", [" "], NoDotError()),
+    ("empty", [""], NoDotError()),
+]
 # Default 'start' to (0, 0)
-tests = (
+# Not sure why, but the first ignore is needed to silence "Generator has
+# incompatible item type".
+# The second one silences "Tuple index out of range".
+parse_tests: Iterable[ParseTest] = (
     (
-        t[0],
-        list(map(lambda s: s.encode("utf-8"), t[1])),
+        t[0],  # type: ignore[misc]
+        [s.encode("utf-8") for s in t[1]],
         t[2] if len(t) == 4 else (0, 0),
-        t[3] if len(t) == 4 else t[2],
+        t[3] if len(t) == 4 else t[2],  # type: ignore[misc]
     )
-    for t in tests
+    for t in _parse_tests
 )
 
 
-# Test Cases #
-@pytest.mark.parametrize("_name, lines, start, stop", tests)
-def test_parse(_name, lines, start, stop):
+@pytest.mark.parametrize("_name, lines, start, stop_or_ex", parse_tests)
+def test_parse(
+    _name: str,
+    lines: ParseIn,
+    start: ParseStart,
+    stop_or_ex: ParseStop,
+) -> None:
     """'_get_message_range(lines)' should range from 'start' to 'stop'."""
-    if isinstance(stop[0], int):
-        assert _get_message_range(lines, start) == {"start": start, "stop": stop}
+    if isinstance(stop_or_ex, tuple):
+        assert _get_message_range(lines, start) == {"start": start, "stop": stop_or_ex}
     else:
-        ex, stop = stop
-        with pytest.raises(ex) as e:
+        with pytest.raises(type(stop_or_ex)) as e:
             _get_message_range(lines, start)
-        if stop is not None:
-            assert e.value.range[0] == stop
+        if isinstance(stop_or_ex, UnmatchedError):
+            assert isinstance(e.value, UnmatchedError)
+            assert str(e.value) == str(stop_or_ex)
+            assert e.value.range == stop_or_ex.range
 
 
-com_tests = (
+# Test name, input string, output string and comment positions
+CommentIn = bytes
+CommentOut = Tuple[bytes, Sequence[Tuple[int, int]]]
+CommentTest = Tuple[str, CommentIn, CommentOut]
+
+com_tests: Sequence[CommentTest] = (
     ("no comment", b"abc", (b"abc", [])),
     ("pre", b"(*abc*)def", (b" def", [(0, 7)])),
     ("mid", b"ab(* c *)de", (b"ab de", [(2, 7)])),
@@ -132,6 +159,6 @@ com_tests = (
 
 
 @pytest.mark.parametrize("_name, msg, expected", com_tests)
-def test_strip_comment(_name, msg, expected):
+def test_strip_comment(_name: str, msg: CommentIn, expected: CommentOut) -> None:
     """_strip_comments() should remove only comments"""
     assert _strip_comments(msg) == expected
