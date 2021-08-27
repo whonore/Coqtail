@@ -6,7 +6,7 @@
 from collections import namedtuple
 from inspect import getmembers, isfunction, ismethod
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 from xml.etree.ElementTree import Element, tostring
 
 import pytest
@@ -52,7 +52,7 @@ class ToOfTests:
     def all_tests() -> List[str]:
         """Return the names of all test cases."""
 
-        def isfunc(f: Callable[[Any], Any]) -> bool:
+        def isfunc(f: object) -> bool:
             return ismethod(f) or isfunction(f)
 
         return [
