@@ -183,7 +183,7 @@ class Coqtail:
         coq_prog: str,
         args: Iterable[str],
         opts: VimOptions,
-    ) -> Union[CT.VersionInfo, str]:
+    ) -> Tuple[Union[CT.VersionInfo, str], str]:
         """Start a new Coqtop instance."""
         try:
             ver_or_err, stderr = self.coqtop.start(
@@ -195,8 +195,8 @@ class Coqtail:
             )
             self.print_stderr(stderr)
         except (ValueError, CT.CoqtopError) as e:
-            ver_or_err = str(e)
-        return ver_or_err
+            ver_or_err, stderr = str(e), ""
+        return ver_or_err, stderr
 
     def stop(self, opts: VimOptions) -> None:
         """Stop Coqtop."""
@@ -614,14 +614,23 @@ class Coqtail:
         if clear or "".join(self.goal_msg) == "":
             self.goal_msg, self.goal_hls = ["No goals."], []
 
-    def set_info(self, msg: Optional[str] = None, reset: bool = True) -> None:
+    def set_info(
+        self,
+        msg: Optional[Union[str, List[str]]] = None,
+        reset: bool = True,
+    ) -> None:
         """Update the info message."""
         if msg is not None:
-            info = msg.split("\n")
-            if reset or self.info_msg == [] or self.info_msg == [""]:
+            info = msg.split("\n") if isinstance(msg, str) else msg
+            if reset or self.info_msg == []:
                 self.info_msg = info
             else:
                 self.info_msg += [""] + info
+
+            # Normalize an empty buffer to an empty list instead of a single
+            # empty line.
+            if self.info_msg == [""]:
+                self.info_msg = []
 
     def print_stderr(self, err: str) -> None:
         """Display a message from Coqtop stderr."""
@@ -696,8 +705,10 @@ class Coqtail:
         msg_maxw = max(len(line) for line in msg)
         msg = [line.center(width - msg_maxw // 2) for line in msg]
 
-        top_pad = [""] * ((height // 2) - (len(msg) // 2 + 1))
-        self.info_msg = top_pad + msg
+        # Center vertically if the Info panel is empty.
+        if self.info_msg == []:
+            msg = [""] * ((height // 2) - (len(msg) // 2 + 1)) + msg
+        self.set_info(msg, reset=False)
 
     def toggle_debug(self, opts: VimOptions) -> None:
         """Enable or disable logging of debug messages."""
