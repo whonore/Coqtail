@@ -325,10 +325,14 @@ function! coqtail#start(...) abort
       \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', $COQBIN)),
       \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', ''),
       \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
-    if !l:ok || type(l:ver_or_msg) == g:coqtail#compat#t_string
+    if !l:ok || type(l:ver_or_msg[0]) == g:coqtail#compat#t_string
       let l:msg = 'Failed to launch Coq.'
-      if l:ok && l:ver_or_msg != v:null
-        let l:msg .= "\n" . l:ver_or_msg
+      if l:ok
+        " l:ver_or_msg is [coqtail_error_message, coqtop_stderr]
+        let l:msg .= "\n" . l:ver_or_msg[0]
+        if l:ver_or_msg[1] !=# ''
+          let l:msg .= "\n" . l:ver_or_msg[1]
+        endif
       endif
       call coqtail#util#err(l:msg)
       call coqtail#stop()
@@ -336,7 +340,9 @@ function! coqtail#start(...) abort
     endif
 
     " Check if version is supported
-    let b:coqtail_version = l:ver_or_msg
+    " l:ver_or_msg[0] is
+    " {version: [major, minor, patch], str_version: str, latest: str | None}
+    let b:coqtail_version = l:ver_or_msg[0]
     if b:coqtail_version.latest != v:null
       call coqtail#util#warn(printf(
         \ s:unsupported_msg,

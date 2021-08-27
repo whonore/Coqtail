@@ -34,6 +34,7 @@ from xmlInterface import (
     Result,
     XMLInterface,
     XMLInterfaceBase,
+    partition_warnings,
     prettyxml,
 )
 
@@ -426,9 +427,12 @@ class Coqtop:
         poll_sec = 1
 
         while True:
-            # Check stderr first
+            # Abort if an error is printed to stderr, but ignore warnings.
+            # NOTE: If `warnings_wf` is False because this version of Coq does
+            # not follow the pattern expected by `partition_warnings` then
+            # pretend everything is a warning and hope for the best.
             err = self.collect_err()
-            if err != "":
+            if self.xml.warnings_wf and partition_warnings(err)[1] != "":
                 return UNEXPECTED_ERR, err
 
             try:
@@ -446,7 +450,7 @@ class Coqtop:
             # Don't bother doing prettyxml if debugging isn't on
             if self.logger.isEnabledFor(logging.DEBUG):
                 self.logger.debug(prettyxml(b"<response>" + xml + b"</response>"))
-            return response, ""
+            return response, err
 
     @staticmethod
     def drain_queue(q: BytesQueue) -> Iterator[bytes]:
@@ -464,7 +468,10 @@ class Coqtop:
 
     def collect_err(self) -> str:
         """Pop and concatenate everything in 'err_q'."""
-        return b"".join(Coqtop.drain_queue(self.err_q)).decode("utf-8")
+        err = b"".join(Coqtop.drain_queue(self.err_q)).decode("utf-8")
+        if err != "":
+            self.logger.debug(err)
+        return err
 
     def capture_out(self, buffer: BytesQueue, stream: IO[bytes]) -> None:
         """Continually read data from 'stream' into 'buffer'."""

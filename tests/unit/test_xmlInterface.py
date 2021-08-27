@@ -9,7 +9,7 @@ from xml.etree.ElementTree import Element, tostring
 
 import pytest
 
-from xmlInterface import XMLInterfaces
+from xmlInterface import XMLInterfaces, partition_warnings
 
 # Pairs of Python values and the corresponding XML representation. Parametrized
 # over an XMLInterface
@@ -387,3 +387,33 @@ def test_topfile(xmlInt):
         assert xmlInt.topfile("c.v", []) == ("-topfile", "c.v")
         assert xmlInt.topfile("", []) == ()
         assert xmlInt.topfile("c.v", ["-top", "x"]) == ()
+
+
+def test_partition_warnings():
+    """Test that partition_warnings separates warnings from error messages."""
+    msg = """
+Warning: message
+continued
+[name,category]
+Warning: another one [name,category]
+Not a warning,
+just an error.
+Warning: again [name,category]
+Final error.
+    """.strip()
+
+    warn = """
+Warning: message
+continued
+[name,category]
+Warning: another one [name,category]
+Warning: again [name,category]
+    """.strip()
+
+    err = """
+Not a warning,
+just an error.
+Final error.
+    """.strip()
+
+    assert partition_warnings(msg) == (warn, err)

@@ -47,6 +47,8 @@ Goals = NamedTuple(
     ],
 )
 
+WARNING_RE = re.compile("^(Warning: [^]]+])$", flags=re.MULTILINE)
+
 
 class FindCoqtopError(Exception):
     """An exception for when a coqtop executable could not be found."""
@@ -197,6 +199,21 @@ def join_tagged_tokens(tagged_tokens: Iterable[TaggedToken]) -> str:
     return "".join(s for s, _ in tagged_tokens)
 
 
+def partition_warnings(stderr: str) -> Tuple[str, str]:
+    """Partition Coq stderr messages into warnings and errors.
+
+    Warnings are assumed to have the following form:
+    Warning: message_with_newlines [warning_type]\n
+    Everything else is treated as an error message.
+    """
+    warns: List[str] = []
+    errs: List[str] = []
+    # Strip whitespace and drop empty strings
+    for msg in filter(None, map(str.strip, WARNING_RE.split(stderr))):
+        (warns if WARNING_RE.fullmatch(msg) else errs).append(msg)
+    return "\n".join(warns), "\n".join(errs)
+
+
 # Debugging #
 def prettyxml(xml: bytes) -> str:
     """Pretty print XML for debugging."""
@@ -285,6 +302,10 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
         # A command that can safely and quickly be executed just to get a new state id
         self.noop = "Eval lazy in forall x, x."
+
+        # A flag indicating whether warnings printed to stderr are formatted in
+        # the manner expected by partition_warnings
+        self.warnings_wf = False
 
     def launch(self, filename: str, args: Iterable[str]) -> Tuple[str, ...]:
         """The command to launch coqtop with the appropriate arguments."""
@@ -1435,6 +1456,8 @@ class XMLInterface86(XMLInterface85):
 
         self._to_py_funcs.update({"richpp": self._to_richpp})
 
+        self.warnings_wf = True
+
     def _to_richpp(self, xml: ET.Element) -> List[Tuple[str, Optional[str]]]:
         """Expect: <richpp>richpp</richpp>"""
         return list(parse_tagged_tokens(self.richpp_tags, xml))
@@ -1541,9 +1564,26 @@ class XMLInterface89(XMLInterface88):
 
         self.launch_args.remove("-ideslave")
 
+        # For some reason 8.9 includes extra text such as 'While loading
+        # initial state:'.
+        self.warnings_wf = False
+
 
 class XMLInterface810(XMLInterface89):
     """The version 8.10.* XML interface."""
+
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
+        """Update launch arguments."""
+        super().__init__(version, str_version, coq_path, coq_prog)
+
+        # Warnings are once again parseable by `partition_warnings`.
+        self.warnings_wf = True
 
     @staticmethod
     def topfile(filename: str, args: Iterable[str]) -> Tuple[str, ...]:

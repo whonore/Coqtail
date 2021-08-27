@@ -2,6 +2,11 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Don't abort if only warnings are printed to `stderr`.
+  Include Coqtop `stderr` in the error message for `coqtail#start`.
+  (PR #226)
+
 ## [1.5.0]
 
 ### Added
