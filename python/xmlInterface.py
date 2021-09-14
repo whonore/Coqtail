@@ -1705,14 +1705,16 @@ class XMLInterface814(XMLInterface813):
           edit_id: int - The current edit id ?
           state_id: CoqStateId - The current state id
           verbose: bool - Verbose output
-          off: int - Offset of phrase in script
+          bp: int - Byte offset of phrase in script
+          line_nb: int - Line number of phrase in script
+          bol_pos: int - Byte offset for beginning of line 
         """
         return (
             "Add",
             self._make_call(
                 encoding,
                 "Add",
-                children=(((cmd, -1), (self.CoqStateId(state), True)), 0),
+                children=((((cmd, -1), (self.CoqStateId(state), True)), 0), (0, 0)),
             ),
         )
 
