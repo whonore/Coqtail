@@ -1257,7 +1257,7 @@ def _find_dot_after(lines: Sequence[bytes], sline: int, scol: int) -> Tuple[int,
                     raise UnmatchedError('"', (sline, scol + str_pos))
 
                 sline, scol = str_end
-        elif line[dot_pos : dot_pos + 2] in (b".", b". "):
+        elif line[dot_pos : dot_pos + 2].rstrip() == b".":
             # Don't stop for '.' used in qualified name or for '..'
             return (sline, scol + dot_pos)
         elif line[dot_pos : dot_pos + 3] == b"...":
