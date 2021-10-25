@@ -16,7 +16,7 @@ if has('comments')
   setlocal comments=srn:(*,mb:*,exn:*)
   " NOTE: The 'r' and 'o' flags mistake the '*' bullet as a middle comment and
   " will automatically add an extra one after <Enter>, 'o' or 'O'.
-  setlocal formatoptions-=tro formatoptions+=cql
+  setlocal formatoptions-=t formatoptions-=r formatoptions-=o formatoptions+=cql
   let b:undo_ftplugin = add(b:undo_ftplugin, 'setl cms< com< fo<')
 endif
 
