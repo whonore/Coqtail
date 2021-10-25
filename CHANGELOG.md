@@ -3,6 +3,8 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Recognize `.` followed by a tab as a sentence ending.
+  (PR #234)
 - Don't abort if only warnings are printed to `stderr`.
   Include Coqtop `stderr` in the error message for `coqtail#start`.
   (PR #226)
