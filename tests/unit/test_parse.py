@@ -26,8 +26,10 @@ _parse_tests: Sequence[_ParseTest] = [
     # Valid tests, no offset
     ("word", ["A."], (0, 1)),
     ("word2", ["A B."], (0, 3)),
-    ("lwhite", [" A."], (0, 2)),
-    ("rwhite", ["A. "], (0, 1)),
+    ("lspace", [" A."], (0, 2)),
+    ("rspace", ["A. "], (0, 1)),
+    ("ltab", ["\tA."], (0, 2)),
+    ("rtab", ["A.\t"], (0, 1)),
     ("comment pre", ["(* c. *) A."], (0, 10)),
     ("comment mid", ["A (* c. *) B."], (0, 12)),
     ("comment post", ["A (* c. *)."], (0, 10)),
