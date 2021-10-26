@@ -239,6 +239,7 @@ function! coqtail#panels#hide() abort
     let l:win = bufwinnr(l:buf)
     call setbufvar(l:buf, 'coqtail_panel_open', l:win != -1)
     call setbufvar(l:buf, 'coqtail_panel_size', [winwidth(l:win), winheight(l:win)])
+    call setbufvar(l:buf, 'coqtail_panel_richpp', [])
     if l:win != -1
       let l:toclose = add(l:toclose, l:buf)
     endif
