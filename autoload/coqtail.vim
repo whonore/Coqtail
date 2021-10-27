@@ -351,11 +351,11 @@ function! coqtail#start(...) abort
     endif
 
     " Draw the logo
-    let l:info_win = bufwinnr(b:coqtail_panel_bufs[g:coqtail#panels#info])
+    let l:info_winid = bufwinid(b:coqtail_panel_bufs[g:coqtail#panels#info])
     call s:call('splash', 'sync', 0, {
       \ 'version': b:coqtail_version.str_version,
-      \ 'width': winwidth(l:info_win),
-      \ 'height': winheight(l:info_win)})
+      \ 'width': winwidth(l:info_winid),
+      \ 'height': winheight(l:info_winid)})
     call s:call('refresh', '', 0, {})
 
     call s:init_proof_diffs(b:coqtail_version.str_version)

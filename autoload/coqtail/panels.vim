@@ -236,11 +236,11 @@ function! coqtail#panels#hide() abort
   let l:toclose = []
   for l:panel in g:coqtail#panels#aux
     let l:buf = b:coqtail_panel_bufs[l:panel]
-    let l:winnr = bufwinnr(l:buf)
-    call setbufvar(l:buf, 'coqtail_panel_open', l:winnr != -1)
-    call setbufvar(l:buf, 'coqtail_panel_size', [winwidth(l:winnr), winheight(l:winnr)])
+    let l:winid = bufwinid(l:buf)
+    call setbufvar(l:buf, 'coqtail_panel_open', l:winid != -1)
+    call setbufvar(l:buf, 'coqtail_panel_size', [winwidth(l:winid), winheight(l:winid)])
     call setbufvar(l:buf, 'coqtail_panel_richpp', [])
-    if l:winnr != -1
+    if l:winid != -1
       let l:toclose = add(l:toclose, l:buf)
     endif
   endfor
