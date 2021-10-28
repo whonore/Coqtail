@@ -140,7 +140,7 @@ function! s:open(panel, force) abort
   " Re-open only if not already open, it was open before, or 'force' is true
   let l:opened = 0
   let l:buf = b:coqtail_panel_bufs[a:panel]
-  if bufwinnr(l:buf) == -1 && (a:force || getbufvar(l:buf, 'coqtail_panel_open'))
+  if bufwinid(l:buf) == -1 && (a:force || getbufvar(l:buf, 'coqtail_panel_open'))
     " Arrange relative to the first open panel
     for [l:relative, l:dir] in g:coqtail_panel_layout[a:panel]
       if coqtail#panels#switch(l:relative) != g:coqtail#panels#none
@@ -179,11 +179,11 @@ function! coqtail#panels#open(force) abort
   " Resize
   for l:panel in l:opened
     let l:buf = b:coqtail_panel_bufs[l:panel]
-    let l:win = bufwinnr(l:buf)
+    let l:winnr = bufwinnr(l:buf)
     let l:size = getbufvar(l:buf, 'coqtail_panel_size')
     if l:size != [-1, -1]
-      execute printf('vertical %dresize %d', l:win, l:size[0])
-      execute printf('%dresize %d', l:win, l:size[1])
+      execute printf('vertical %dresize %d', l:winnr, l:size[0])
+      execute printf('%dresize %d', l:winnr, l:size[1])
     endif
   endfor
 endfunction
@@ -202,24 +202,24 @@ endfunction
 
 " Clear Coqtop highlighting.
 " This function must be called in the context of the given window.
-function! s:clearhl(win) abort
+function! s:clearhl(winid) abort
   for [l:var, l:_] in s:hlgroups
-    let l:val = getwinvar(a:win, l:var, -1)
+    let l:val = getwinvar(a:winid, l:var, -1)
     if l:val != -1
       call matchdelete(l:val)
-      call setwinvar(a:win, l:var, -1)
+      call setwinvar(a:winid, l:var, -1)
     endif
   endfor
 endfunction
 
-" Update highlighting of 'win'.
+" Update highlighting of 'winid'.
 " This function must be called in the context of the given window.
-function! s:updatehl(win, highlights) abort
-  call s:clearhl(a:win)
+function! s:updatehl(winid, highlights) abort
+  call s:clearhl(a:winid)
   for [l:var, l:grp] in s:hlgroups
     let l:hl = a:highlights[l:var]
     if l:hl != v:null
-      call setwinvar(a:win, l:var, matchadd(l:grp, l:hl, -10))
+      call setwinvar(a:winid, l:var, matchadd(l:grp, l:hl, -10))
     endif
   endfor
 endfunction
@@ -230,16 +230,17 @@ function! coqtail#panels#hide() abort
     return
   endif
 
-  call s:clearhl(winnr())
+  call s:clearhl(win_getid())
 
   " Hide other panels
   let l:toclose = []
   for l:panel in g:coqtail#panels#aux
     let l:buf = b:coqtail_panel_bufs[l:panel]
-    let l:win = bufwinnr(l:buf)
-    call setbufvar(l:buf, 'coqtail_panel_open', l:win != -1)
-    call setbufvar(l:buf, 'coqtail_panel_size', [winwidth(l:win), winheight(l:win)])
-    if l:win != -1
+    let l:winid = bufwinid(l:buf)
+    call setbufvar(l:buf, 'coqtail_panel_open', l:winid != -1)
+    call setbufvar(l:buf, 'coqtail_panel_size', [winwidth(l:winid), winheight(l:winid)])
+    call setbufvar(l:buf, 'coqtail_panel_richpp', [])
+    if l:winid != -1
       let l:toclose = add(l:toclose, l:buf)
     endif
   endfor
@@ -287,20 +288,20 @@ endfunction
 function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
   " Catch interrupt instead of aborting
   try
-    let l:wins = win_findbuf(a:buf)
+    let l:winids = win_findbuf(a:buf)
     let l:refreshing = getbufvar(a:buf, 'coqtail_refreshing', 0)
-    if l:wins == [] || l:refreshing
+    if l:winids == [] || l:refreshing
       return
     endif
     call setbufvar(a:buf, 'coqtail_refreshing', 1)
-    let l:cur_win = win_getid()
+    let l:cur_winid = win_getid()
 
     " Update highlighting
-    for l:win in l:wins
+    for l:winid in l:winids
       call coqtail#compat#win_call(
-        \ l:win,
+        \ l:winid,
         \ function('s:updatehl'),
-        \ [l:win, a:highlights],
+        \ [l:winid, a:highlights],
         \ 0)
     endfor
 
@@ -317,8 +318,8 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
   catch /^Vim:Interrupt$/
   finally
     if !g:coqtail#compat#has_win_execute
-      " l:cur_win might not exist yet
-      silent! call win_gotoid(l:cur_win)
+      " l:cur_winid might not exist yet
+      silent! call win_gotoid(l:cur_winid)
     endif
     call setbufvar(a:buf, 'coqtail_refreshing', 0)
     redraw
@@ -332,7 +333,7 @@ function! coqtail#panels#cleanup() abort
   endfor
   silent! unlet b:coqtail_panel_bufs
 
-  call s:clearhl(winnr())
+  call s:clearhl(win_getid())
 endfunction
 
 " Getter for variables local to the main buffer
