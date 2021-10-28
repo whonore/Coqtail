@@ -2,6 +2,8 @@
 
 ## Unreleased ([master])
 
+## [1.5.1]
+
 ### Fixed
 - Recognize `.` followed by a tab as a sentence ending.
   (PR #234)
@@ -246,6 +248,7 @@
 
 [master]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
+[1.5.1]: https://github.com/whonore/Coqtail/tree/v1.5.1
 [1.5.0]: https://github.com/whonore/Coqtail/tree/v1.5.0
 [1.4.1]: https://github.com/whonore/Coqtail/tree/v1.4.1
 [1.4.0]: https://github.com/whonore/Coqtail/tree/v1.4.0
