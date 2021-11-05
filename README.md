@@ -69,7 +69,7 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | `CoqToTop` | `<leader>cT` | Rewind to the beginning of the file. |
 | `CoqJumpToEnd` | `<leader>cG` | Move the cursor to the end of the checked region. |
 | `CoqJumpToError` | `<leader>cE` | Move the cursor to the start of the error region. |
-| `CoqGotoDef[!] <arg>` | `<leader>cg` | Populate the quickfix list with possible locations of the definition of `<arg>` and try to jump to the first one. If your Vim supports `'tagfunc'` you can also use `CTRL-]`, `:tag`, and friends. |
+| `CoqGotoDef[!] <arg>` | `<leader>cgd` | Populate the quickfix list with possible locations of the definition of `<arg>` and try to jump to the first one. If your Vim supports `'tagfunc'` you can also use `CTRL-]`, `:tag`, and friends. |
 | **Queries** | |
 | `Coq <args>` | | Send arbitrary queries to Coq (e.g. `Check`, `About`, `Print`, etc.). |
 | `Coq Check <arg>` | `<leader>ch` | Show the type of `<arg>` (the mapping will use the term under the cursor or the highlighted range in visual mode). |
@@ -80,11 +80,11 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | **Panel Management** | |
 | `CoqRestorePanels` | `<leader>cr` | Re-open the Goal and Info panels. |
 | `{n}CoqGotoGoal` | `<leader>cgg` | Scroll the Goal panel to the start of the `n`th goal (defaults to 1). Number of lines shown is controlled by `g:coqtail_goal_lines`. |
-| `{n}CoqGotoGoal!` | `<leader>cGG` | Scroll the Goal panel to the end of the `n`th goal. |
-| `CoqGotoGoalNext` | `g]` | Scroll the Goal panel to the start of the next goal. |
-| `CoqGotoGoalNext!` | `G]` | Scroll the Goal panel to the end of the next goal. |
-| `CoqGotoGoalPrev` | `g[` | Scroll the Goal panel to the start of the previous goal. |
-| `CoqGotoGoalPrev!` | `G[` | Scroll the Goal panel to the end of the previous goal. |
+| `{n}CoqGotoGoal!` | `<leader>cgG` | Scroll the Goal panel to the end of the `n`th goal. |
+| `CoqGotoGoalNext` | `]g` | Scroll the Goal panel to the start of the next goal. |
+| `CoqGotoGoalNext!` | `]G` | Scroll the Goal panel to the end of the next goal. |
+| `CoqGotoGoalPrev` | `[g` | Scroll the Goal panel to the start of the previous goal. |
+| `CoqGotoGoalPrev!` | `[G` | Scroll the Goal panel to the end of the previous goal. |
 
 ## Configuration
 
