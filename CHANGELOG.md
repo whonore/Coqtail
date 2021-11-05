@@ -2,6 +2,16 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Change ambiguous default mappings to remove delay.
+  **BREAKING**: The default mappings have changed for for `<Plug>CoqGotoDef`
+  (`<leader>cg` -> `<leader>cgd`), `<Plug>CoqGotoGoalEnd` (`<leader>cGG` ->
+  `<leader>cgG`), `<Plug>CoqGotoGoalNextStart` (`g]` -> `]g`),
+  `<Plug>CoqGotoGoalNextEnd` (`G]` -> `]G`), `<Plug>CoqGotoGoalPrevStart` (`g[`
+  -> `[g`), and `<Plug>CoqGotoGoalPrevEnd` (`G[` -> `[G`).
+  See the [README](README.md#mappings) for help changing these defaults.
+  (PR #238)
+
 ## [1.5.2]
 
 ### Added
