@@ -531,14 +531,15 @@ function! coqtail#define_mappings() abort
   \]
 
   for [l:cmd, l:key, l:types] in l:maps
+    let l:cmd = '<Plug>Coq' . l:cmd
     for l:type in split(l:types, '\zs')
-      if !hasmapto('<Plug>Coq' . l:cmd, l:type) && (l:type !=# 'i' || l:imap)
+      if !hasmapto(l:cmd, l:type) && (l:type !=# 'i' || l:imap)
         let l:prefix = l:type ==# 'i' ? l:imap_prefix : l:map_prefix
         if l:key[0] ==# '!'
           let l:key = l:key[1:]
           let l:prefix = ''
         endif
-        execute l:type . 'map <buffer> ' . l:prefix . l:key . ' <Plug>Coq' . l:cmd
+        execute printf('%smap <buffer> %s%s %s', l:type, l:prefix, l:key, l:cmd)
       endif
     endfor
   endfor
