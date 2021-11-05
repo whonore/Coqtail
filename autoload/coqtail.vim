@@ -514,7 +514,7 @@ function! coqtail#define_mappings() abort
     \ ['ToTop', 'T', 'ni'],
     \ ['JumpToEnd', 'G', 'ni'],
     \ ['JumpToError', 'E', 'ni'],
-    \ ['GotoDef', 'g', 'n'],
+    \ ['GotoDef', 'gd', 'n'],
     \ ['Search', 's', 'nx'],
     \ ['Check', 'h', 'nx'],
     \ ['About', 'a', 'nx'],
@@ -522,11 +522,11 @@ function! coqtail#define_mappings() abort
     \ ['Locate', 'f', 'nx'],
     \ ['RestorePanels', 'r', 'ni'],
     \ ['GotoGoalStart', 'gg', 'ni'],
-    \ ['GotoGoalEnd', 'GG', 'ni'],
-    \ ['GotoGoalNextStart', '!g]', 'n'],
-    \ ['GotoGoalNextEnd', '!G]', 'n'],
-    \ ['GotoGoalPrevStart', '!g[', 'n'],
-    \ ['GotoGoalPrevEnd', '!G[', 'n'],
+    \ ['GotoGoalEnd', 'gG', 'ni'],
+    \ ['GotoGoalNextStart', '!]g', 'n'],
+    \ ['GotoGoalNextEnd', '!]G', 'n'],
+    \ ['GotoGoalPrevStart', '![g', 'n'],
+    \ ['GotoGoalPrevEnd', '![G', 'n'],
     \ ['ToggleDebug', 'd', 'n']
   \]
 
