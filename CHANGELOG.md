@@ -2,6 +2,10 @@
 
 ## Unreleased ([master])
 
+### Added
+- `g:coqtail_version_compat` option to re-enable old behaviors after breaking changes.
+  (PR #238)
+
 ### Fixed
 - Change ambiguous default mappings to remove delay.
   **BREAKING**: The default mappings have changed for for `<Plug>CoqGotoDef`
@@ -9,7 +13,8 @@
   `<leader>cgG`), `<Plug>CoqGotoGoalNextStart` (`g]` -> `]g`),
   `<Plug>CoqGotoGoalNextEnd` (`G]` -> `]G`), `<Plug>CoqGotoGoalPrevStart` (`g[`
   -> `[g`), and `<Plug>CoqGotoGoalPrevEnd` (`G[` -> `[G`).
-  See the [README](README.md#mappings) for help changing these defaults.
+  Set `g:coqtail_version_compat = ['1.5']` to enable the old mappings, or see
+  the [README](README.md#mappings) for help changing these defaults.
   (PR #238)
 
 ## [1.5.2]

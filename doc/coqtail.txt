@@ -13,7 +13,8 @@ using standard Vim methods (e.g., the |argument-list| or |buffer-list|).
 3. Coq Queries				|coqtail-queries|
 4. Panel Management			|coqtail-panels|
 5. Configuration			|coqtail-configuration|
-6. Debugging				|coqtail-debug|
+6. Backwards Compatibility		|coqtail-backwards-compatibility|
+7. Debugging				|coqtail-debug|
 
 =============================
 Starting and Stopping Coqtail				    *coqtail-start-stop*
@@ -297,6 +298,25 @@ b:coqtail_auto_set_proof_diffs
 			`on`, `off`, or `removed`.
 
 			Default: ''
+
+=======================
+Backwards Compatibility			       *coqtail-backwards-compatibility*
+
+
+			       *g:coqtail_version_compat* *coqtail-version-compat*
+g:coqtail_version_compat
+			New versions of Coqtail should generally maintain
+			backwards compatibility with old ones, but in cases
+			where they do not the old behaviors can be enabled by
+			including the correct version string in the
+			`g:coqtail_version_compat` list. The table below lists
+			the valid version strings and their effects.
+
+			Default: []
+
+Version	Effect~
+						    *coqtail-version-compat-1.5*
+'1.5'	Undo the changes to the default mappings made in v1.6.
 
 =========
 Debugging							 *coqtail-debug*
