@@ -1707,7 +1707,7 @@ class XMLInterface814(XMLInterface813):
           verbose: bool - Verbose output
           bp: int - Byte offset of phrase in script
           line_nb: int - Line number of phrase in script
-          bol_pos: int - Byte offset for beginning of line 
+          bol_pos: int - Byte offset for beginning of line
         """
         return (
             "Add",
@@ -1724,7 +1724,6 @@ class XMLInterface814(XMLInterface813):
           res_msg: str - Messages produced by 'Add' (removed in 8.14)
           state_id: int - The new state id
         """
-        # pylint: disable=no-self-use
         if isinstance(res, Ok):
             val: Tuple[XMLInterface85.CoqStateId, Any] = res.val
             res.val = {"res_msg": "", "state_id": val[0].id}
