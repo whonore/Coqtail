@@ -1672,12 +1672,7 @@ class XMLInterface814(XMLInterface813):
         super().__init__(version, str_version, coq_path, coq_prog)
 
         self._to_py_funcs.update({"goal": self._to_goal, "goals": self._to_goals})
-        self._standardize_funcs.update(
-            {
-                "Add": self._standardize_add,
-                "Goal": self._standardize_goal,
-            }
-        )
+        self._standardize_funcs.update({"Goal": self._standardize_goal})
 
     def _to_goal(self, xml: ET.Element) -> "CoqGoal":  # type: ignore[override]
         """Expect: <goal>string (option string) (list Pp) Pp</goal>"""
@@ -1691,6 +1686,45 @@ class XMLInterface814(XMLInterface813):
         </goals>
         """
         return self.CoqGoals(*map(self._to_py, xml))
+
+    def _standardize_goal(self, res: Result) -> Result:
+        """Standardize the info returned by 'Goal'.
+        Return:
+          fg: list Goal - The current goals
+          bg: list (list Goal * list Goal) - Unfocused goals
+          shelved: list Goal - Shelved goals
+          given_up: list Goal - Admitted goals
+        """
+        if isinstance(res, Ok):
+            opt_goals: XMLInterfaceBase.CoqOption = res.val
+            if opt_goals is not None:
+                goals: XMLInterface85.CoqGoals = opt_goals.val
+                res.val = Goals(
+                    [Goal(g.hyp, g.ccl) for g in goals.fg],
+                    [
+                        [Goal(g.hyp, g.ccl) for g in pre + post]
+                        for pre, post in goals.bg
+                    ],
+                    [Goal(g.hyp, g.ccl) for g in goals.shelved],
+                    [Goal(g.hyp, g.ccl) for g in goals.given_up],
+                )
+        return res
+
+
+class XMLInterface815(XMLInterface814):
+    """The version 8.15.* XML interface."""
+
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
+        """Update conversion maps with new types."""
+        super().__init__(version, str_version, coq_path, coq_prog)
+
+        self._standardize_funcs.update({"Add": self._standardize_add})
 
     # Overrides add() from 8.5
     def add(
@@ -1729,29 +1763,6 @@ class XMLInterface814(XMLInterface813):
             res.val = {"res_msg": "", "state_id": val[0].id}
         return res
 
-    def _standardize_goal(self, res: Result) -> Result:
-        """Standardize the info returned by 'Goal'.
-        Return:
-          fg: list Goal - The current goals
-          bg: list (list Goal * list Goal) - Unfocused goals
-          shelved: list Goal - Shelved goals
-          given_up: list Goal - Admitted goals
-        """
-        if isinstance(res, Ok):
-            opt_goals: XMLInterfaceBase.CoqOption = res.val
-            if opt_goals is not None:
-                goals: XMLInterface85.CoqGoals = opt_goals.val
-                res.val = Goals(
-                    [Goal(g.hyp, g.ccl) for g in goals.fg],
-                    [
-                        [Goal(g.hyp, g.ccl) for g in pre + post]
-                        for pre, post in goals.bg
-                    ],
-                    [Goal(g.hyp, g.ccl) for g in goals.shelved],
-                    [Goal(g.hyp, g.ccl) for g in goals.given_up],
-                )
-        return res
-
 
 XMLInterfaces = (
     ((8, 4, 0), (8, 5, 0), XMLInterface84),
@@ -1765,6 +1776,7 @@ XMLInterfaces = (
     ((8, 12, 0), (8, 13, 0), XMLInterface812),
     ((8, 13, 0), (8, 14, 0), XMLInterface813),
     ((8, 14, 0), (8, 15, 0), XMLInterface814),
+    ((8, 15, 0), (8, 16, 0), XMLInterface815),
 )
 
 XMLInterfaceLatest = XMLInterfaces[-1][2]
