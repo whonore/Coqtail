@@ -1711,6 +1711,59 @@ class XMLInterface814(XMLInterface813):
         return res
 
 
+class XMLInterface815(XMLInterface814):
+    """The version 8.15.* XML interface."""
+
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
+        """Update conversion maps with new types."""
+        super().__init__(version, str_version, coq_path, coq_prog)
+
+        self._standardize_funcs.update({"Add": self._standardize_add})
+
+    # Overrides add() from 8.5
+    def add(
+        self,
+        cmd: str,
+        state: int,
+        encoding: str = "utf-8",
+    ) -> Tuple[str, Optional[bytes]]:
+        """Create an XML string to advance Coqtop.
+        Args:
+          cmd: string - The command to evaluate
+          edit_id: int - The current edit id ?
+          state_id: CoqStateId - The current state id
+          verbose: bool - Verbose output
+          bp: int - Byte offset of phrase in script
+          line_nb: int - Line number of phrase in script
+          bol_pos: int - Byte offset for beginning of line
+        """
+        return (
+            "Add",
+            self._make_call(
+                encoding,
+                "Add",
+                children=((((cmd, -1), (self.CoqStateId(state), True)), 0), (0, 0)),
+            ),
+        )
+
+    def _standardize_add(self, res: Result) -> Result:
+        """Standardize the info returned by 'Add'.
+        Return:
+          res_msg: str - Messages produced by 'Add' (removed in 8.14)
+          state_id: int - The new state id
+        """
+        if isinstance(res, Ok):
+            val: Tuple[XMLInterface85.CoqStateId, Any] = res.val
+            res.val = {"res_msg": "", "state_id": val[0].id}
+        return res
+
+
 XMLInterfaces = (
     ((8, 4, 0), (8, 5, 0), XMLInterface84),
     ((8, 5, 0), (8, 6, 0), XMLInterface85),
@@ -1723,6 +1776,7 @@ XMLInterfaces = (
     ((8, 12, 0), (8, 13, 0), XMLInterface812),
     ((8, 13, 0), (8, 14, 0), XMLInterface813),
     ((8, 14, 0), (8, 15, 0), XMLInterface814),
+    ((8, 15, 0), (8, 16, 0), XMLInterface815),
 )
 
 XMLInterfaceLatest = XMLInterfaces[-1][2]
