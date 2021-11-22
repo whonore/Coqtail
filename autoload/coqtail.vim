@@ -504,41 +504,57 @@ function! coqtail#define_mappings() abort
   let l:map_prefix = get(g:, 'coqtail_map_prefix', '<leader>c')
   let l:imap_prefix = get(g:, 'coqtail_imap_prefix', l:map_prefix)
 
-  let l:maps = [
-    \ ['Start', 'c', 'n'],
-    \ ['Stop', 'q', 'n'],
-    \ ['Interrupt', '!<C-c>', 'n'],
-    \ ['Next', 'j', 'ni'],
-    \ ['Undo', 'k', 'ni'],
-    \ ['ToLine', 'l', 'ni'],
-    \ ['ToTop', 'T', 'ni'],
-    \ ['JumpToEnd', 'G', 'ni'],
-    \ ['JumpToError', 'E', 'ni'],
-    \ ['GotoDef', 'g', 'n'],
-    \ ['Search', 's', 'nx'],
-    \ ['Check', 'h', 'nx'],
-    \ ['About', 'a', 'nx'],
-    \ ['Print', 'p', 'nx'],
-    \ ['Locate', 'f', 'nx'],
-    \ ['RestorePanels', 'r', 'ni'],
-    \ ['GotoGoalStart', 'gg', 'ni'],
-    \ ['GotoGoalEnd', 'GG', 'ni'],
-    \ ['GotoGoalNextStart', '!g]', 'n'],
-    \ ['GotoGoalNextEnd', '!G]', 'n'],
-    \ ['GotoGoalPrevStart', '!g[', 'n'],
-    \ ['GotoGoalPrevEnd', '!G[', 'n'],
-    \ ['ToggleDebug', 'd', 'n']
-  \]
+  let l:maps = {
+    \ 'Start': ['c', 'n'],
+    \ 'Stop': ['q', 'n'],
+    \ 'Interrupt': ['!<C-c>', 'n'],
+    \ 'Next': ['j', 'ni'],
+    \ 'Undo': ['k', 'ni'],
+    \ 'ToLine': ['l', 'ni'],
+    \ 'ToTop': ['T', 'ni'],
+    \ 'JumpToEnd': ['G', 'ni'],
+    \ 'JumpToError': ['E', 'ni'],
+    \ 'GotoDef': ['gd', 'n'],
+    \ 'Search': ['s', 'nx'],
+    \ 'Check': ['h', 'nx'],
+    \ 'About': ['a', 'nx'],
+    \ 'Print': ['p', 'nx'],
+    \ 'Locate': ['f', 'nx'],
+    \ 'RestorePanels': ['r', 'ni'],
+    \ 'GotoGoalStart': ['gg', 'ni'],
+    \ 'GotoGoalEnd': ['gG', 'ni'],
+    \ 'GotoGoalNextStart': ['!]g', 'n'],
+    \ 'GotoGoalNextEnd': ['!]G', 'n'],
+    \ 'GotoGoalPrevStart': ['![g', 'n'],
+    \ 'GotoGoalPrevEnd': ['![G', 'n'],
+    \ 'ToggleDebug': ['d', 'n']
+  \}
 
-  for [l:cmd, l:key, l:types] in l:maps
+  " Use v1.5 mappings
+  let l:compat15 = index(get(g:, 'coqtail_version_compat', []), '1.5') != -1
+  if l:compat15
+    let l:maps15 =  {
+      \ 'GotoDef': ['g', 'n'],
+      \ 'GotoGoalEnd': ['GG', 'ni'],
+      \ 'GotoGoalNextStart': ['!g]', 'n'],
+      \ 'GotoGoalNextEnd': ['!G]', 'n'],
+      \ 'GotoGoalPrevStart': ['!g[', 'n'],
+      \ 'GotoGoalPrevEnd': ['!G[', 'n']
+    \}
+    let l:maps = extend(l:maps, l:maps15, 'force')
+  endif
+
+  for [l:cmd, l:info] in items(l:maps)
+    let [l:key, l:types] = l:info
+    let l:cmd = '<Plug>Coq' . l:cmd
     for l:type in split(l:types, '\zs')
-      if !hasmapto('<Plug>Coq' . l:cmd, l:type) && (l:type !=# 'i' || l:imap)
+      if !hasmapto(l:cmd, l:type) && (l:type !=# 'i' || l:imap)
         let l:prefix = l:type ==# 'i' ? l:imap_prefix : l:map_prefix
         if l:key[0] ==# '!'
           let l:key = l:key[1:]
           let l:prefix = ''
         endif
-        execute l:type . 'map <buffer> ' . l:prefix . l:key . ' <Plug>Coq' . l:cmd
+        execute printf('%smap <buffer> %s%s %s', l:type, l:prefix, l:key, l:cmd)
       endif
     endfor
   endfor

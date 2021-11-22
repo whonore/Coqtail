@@ -13,7 +13,8 @@ using standard Vim methods (e.g., the |argument-list| or |buffer-list|).
 3. Coq Queries				|coqtail-queries|
 4. Panel Management			|coqtail-panels|
 5. Configuration			|coqtail-configuration|
-6. Debugging				|coqtail-debug|
+6. Backwards Compatibility		|coqtail-backwards-compatibility|
+7. Debugging				|coqtail-debug|
 
 =============================
 Starting and Stopping Coqtail				    *coqtail-start-stop*
@@ -84,9 +85,9 @@ Movement Commands					      *coqtail-movement*
 <leader>cE		Move the cursor to the start of the error region. This
 			does not move the checked region.
 
-				       *<leader>cg* *:CoqGotoDef* *coqtail-goto-def*
+				      *<leader>cgd* *:CoqGotoDef* *coqtail-goto-def*
 :CoqGotoDef[!] {arg}
-<leader>cg		Populate the |quickfix| list with possible locations
+<leader>cgd		Populate the |quickfix| list with possible locations
 			of the definition of a Coq term and try to jump to
 			the first one. If jumping is impossible open the
 			|quickfix-window| instead. The first version uses
@@ -142,32 +143,32 @@ Panel Management						*coqtail-panels*
 
 			[count] default: 1.
 
-						     *<leader>cGG* *:CoqGotoGoal!*
+						     *<leader>cgG* *:CoqGotoGoal!*
 							 *coqtail-goto-goal-end*
 :[count]CoqGotoGoal!
-<count><leader>cGG	Same as `:CoqGotoGoal` but scroll to the end of the
+<count><leader>cgG	Same as `:CoqGotoGoal` but scroll to the end of the
 			goal.
 
-							   *g]* *:CoqGotoGoalNext*
+							   *]g* *:CoqGotoGoalNext*
 						  *coqtail-goto-goal-next-start*
 :CoqGotoGoalNext
-g]			Scroll the Goal panel to the start of the next goal.
+]g			Scroll the Goal panel to the start of the next goal.
 
-							  *G]* *:CoqGotoGoalNext!*
+							  *]G* *:CoqGotoGoalNext!*
 						    *coqtail-goto-goal-next-end*
 :CoqGotoGoalNext!
-G]			Scroll the Goal panel to the end of the next goal.
+]G			Scroll the Goal panel to the end of the next goal.
 
-							   *g[* *:CoqGotoGoalPrev*
+							   *[g* *:CoqGotoGoalPrev*
 						  *coqtail-goto-goal-prev-start*
 :CoqGotoGoalPrev
-g[			Scroll the Goal panel to the start of the previous
+[g			Scroll the Goal panel to the start of the previous
 			goal.
 
-							  *G[* *:CoqGotoGoalPrev!*
+							  *[G* *:CoqGotoGoalPrev!*
 						    *coqtail-goto-goal-prev-end*
 :CoqGotoGoalPrev!
-G[			Scroll the Goal panel to the end of the previous goal.
+[G			Scroll the Goal panel to the end of the previous goal.
 
 =============
 Configuration						 *coqtail-configuration*
@@ -297,6 +298,25 @@ b:coqtail_auto_set_proof_diffs
 			`on`, `off`, or `removed`.
 
 			Default: ''
+
+=======================
+Backwards Compatibility			       *coqtail-backwards-compatibility*
+
+
+			       *g:coqtail_version_compat* *coqtail-version-compat*
+g:coqtail_version_compat
+			New versions of Coqtail should generally maintain
+			backwards compatibility with old ones, but in cases
+			where they do not the old behaviors can be enabled by
+			including the correct version string in the
+			`g:coqtail_version_compat` list. The table below lists
+			the valid version strings and their effects.
+
+			Default: []
+
+Version	Effect~
+						    *coqtail-version-compat-1.5*
+'1.5'	Undo the changes to the default mappings made in v1.6.
 
 =========
 Debugging							 *coqtail-debug*
