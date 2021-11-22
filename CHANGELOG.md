@@ -2,6 +2,8 @@
 
 ## Unreleased ([master])
 
+## [1.6.0]
+
 ### Added
 - `g:coqtail_version_compat` option to re-enable old behaviors after breaking changes.
   (PR #238)
@@ -271,6 +273,7 @@
 
 [master]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
+[1.6.0]: https://github.com/whonore/Coqtail/tree/v1.6.0
 [1.5.2]: https://github.com/whonore/Coqtail/tree/v1.5.2
 [1.5.1]: https://github.com/whonore/Coqtail/tree/v1.5.1
 [1.5.0]: https://github.com/whonore/Coqtail/tree/v1.5.0
