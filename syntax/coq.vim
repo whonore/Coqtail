@@ -119,7 +119,7 @@ syn keyword coqAttrBool contained yes no
 syn match coqAttrPunc contained "=\|,\|(\|)"
 
 " Sections
-syn region coqSection contains=TOP matchgroup=coqVernacCmd start="\<Section\_s\+\z(\S\+\)\_s*\.\_s" fold end="\<End\_s\+\z1\_s*\.\_s"
+syn region coqSection contains=TOP matchgroup=coqVernacCmd start="\<Section\_s\+\z(\S\+\)\_s*\.\_s" end="\<End\_s\+\z1\_s*\.\_s" fold
 
 " Obligations
 syn region coqObligation contains=coqOblOf   matchgroup=coqVernacCmd start="\<\%(Obligations\)\|\%(Preterm\)\>" end="\.\_s" keepend
