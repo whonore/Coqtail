@@ -215,7 +215,7 @@ syn region coqEvalTac   contained contains=@coqTerm,coqEvalIn matchgroup=coqTact
 syn region coqEvalIn    contained contains=@coqTerm matchgroup=coqVernacCmd start="in" matchgroup=coqVernacPunctuation end="\.\_s"
 
 " Notations
-syn region coqNSNotation matchgroup=coqVernacCmd start="\<\%(Numeral\|String\)\_s\+Notation\>" contains=coqIdent,coqNotationScope end="\.\_s" keepend
+syn region coqNSNotation matchgroup=coqVernacCmd start="\<\%(Number\|Numeral\|String\)\_s\+Notation\>" contains=coqIdent,coqNotationScope end="\.\_s" keepend
 syn region coqNotation     contains=coqNotationDef start="\%(\%(\%(\<Reserved\>\_s*\)\?\<Notation\>\)\|\<Infix\>\)" matchgroup=coqVernacPunctuation end="\.\@<!\.\_s" keepend
 syn region coqNotationDef       contained contains=coqNotationString,coqNotationTerm matchgroup=coqVernacCmd start="\%(\%(\%(\<Reserved\>\_s*\)\?\<Notation\>\)\|\<Infix\>\)" end="\.\@<!\.\_s"
 syn region coqNotationTerm      contained contains=coqNotationExpr matchgroup=coqVernacPunctuation start=":=" end="\.\@\<!\.\_s"
