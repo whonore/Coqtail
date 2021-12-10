@@ -2,6 +2,14 @@
 
 ## Unreleased ([master])
 
+### Added
+- Code folding for Sections, Modules, and Theorems.
+  (PR #242)
+
+### Fixed
+- Highlight `Number Notation` and `Declare Custom Entry`.
+  (PR #243)
+
 ## [1.6.0]
 
 ### Added
