@@ -963,7 +963,7 @@ class XMLInterface84(XMLInterfaceBase):
         if isinstance(res, Ok):
             opt_goals: XMLInterfaceBase.CoqOption = res.val
             if opt_goals is not None:
-                goals: XMLInterface84.CoqGoals = opt_goals.val
+                goals: "XMLInterface84.CoqGoals" = opt_goals.val
                 res.val = Goals(
                     [Goal(g.hyp, g.ccl) for g in goals.fg],
                     [
@@ -997,7 +997,7 @@ class XMLInterface84(XMLInterfaceBase):
         """
         # pylint: disable=no-self-use
         if isinstance(res, Ok):
-            raw_opts: List[Tuple[str, XMLInterface84.CoqOptionState]] = res.val
+            raw_opts: List[Tuple[str, "XMLInterface84.CoqOptionState"]] = res.val
             opts: List[Tuple[str, str, Any]] = [
                 (" ".join(name), state.name, state.value.val)
                 for name, state in raw_opts
@@ -1250,7 +1250,7 @@ class XMLInterface85(XMLInterfaceBase):
         """
         # pylint: disable=no-self-use
         if isinstance(res, Ok):
-            val: XMLInterface85.CoqStateId = res.val
+            val: "XMLInterface85.CoqStateId" = res.val
             res.val = val.id
         return res
 
@@ -1284,7 +1284,7 @@ class XMLInterface85(XMLInterfaceBase):
         """
         # pylint: disable=no-self-use
         if isinstance(res, Ok):
-            val: Tuple[XMLInterface85.CoqStateId, Tuple[Any, str]] = res.val
+            val: Tuple["XMLInterface85.CoqStateId", Tuple[Any, str]] = res.val
             res.val = {"res_msg": val[1][1], "state_id": val[0].id}
         return res
 
@@ -1352,7 +1352,7 @@ class XMLInterface85(XMLInterfaceBase):
         if isinstance(res, Ok):
             opt_goals: XMLInterfaceBase.CoqOption = res.val
             if opt_goals is not None:
-                goals: XMLInterface85.CoqGoals = opt_goals.val
+                goals: "XMLInterface85.CoqGoals" = opt_goals.val
                 res.val = Goals(
                     [Goal(g.hyp, g.ccl) for g in goals.fg],
                     [
@@ -1386,7 +1386,7 @@ class XMLInterface85(XMLInterfaceBase):
         """
         # pylint: disable=no-self-use
         if isinstance(res, Ok):
-            raw_opts: List[Tuple[str, XMLInterface85.CoqOptionState]] = res.val
+            raw_opts: List[Tuple[str, "XMLInterface85.CoqOptionState"]] = res.val
             opts: List[Tuple[str, str, Any]] = [
                 (" ".join(name), state.name, state.value.val)
                 for name, state in raw_opts
@@ -1631,7 +1631,7 @@ class XMLInterface812(XMLInterface811):
                                              descriptions, and current values
         """
         if isinstance(res, Ok):
-            raw_opts: List[Tuple[str, XMLInterface812.CoqOptionState]] = res.val
+            raw_opts: List[Tuple[str, "XMLInterface812.CoqOptionState"]] = res.val
             opts: List[Tuple[str, str, Any]] = [
                 (" ".join(name), " ".join(name), state.value.val)
                 for name, state in raw_opts
