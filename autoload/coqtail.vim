@@ -289,6 +289,11 @@ function! coqtail#init() abort
     " Open channel with Coqtail server
     let b:coqtail_chan = coqtail#channel#new()
     call b:coqtail_chan.open('localhost:' . s:port)
+    if b:coqtail_chan.status() !=# 'open'
+      call coqtail#util#err(
+        \ printf('Failed to connect to Coqtail server at port %d.', s:port))
+      return 0
+    endif
 
     " Prepare auxiliary panels
     call coqtail#panels#init()
@@ -311,8 +316,11 @@ function! coqtail#start(...) abort
     call coqtail#util#warn('Coq is already running.')
   else
     " See comment in coqtail#init() about buffer-local variables
-    let b:coqtail_started = 1
-    call coqtail#init()
+    let b:coqtail_started = coqtail#init()
+    if !b:coqtail_started
+      call coqtail#stop()
+      return 0
+    endif
 
     " Locate Coq project files
     let [b:coqtail_project_files, l:proj_args] = coqtail#coqproject#locate()
