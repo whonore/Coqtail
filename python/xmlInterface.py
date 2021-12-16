@@ -1671,7 +1671,17 @@ class XMLInterface814(XMLInterface813):
         """Update conversion maps with new types."""
         super().__init__(version, str_version, coq_path, coq_prog)
 
-        self._to_py_funcs.update({"goal": self._to_goal, "goals": self._to_goals})
+        # Starting with MyPy 0.920 it complains about the return type of
+        # `_to_goals` without an explicit cast.
+        self._to_py_funcs.update(
+            cast(
+                Dict[str, Callable[[ET.Element], Any]],
+                {
+                    "goal": self._to_goal,
+                    "goals": self._to_goals,
+                },
+            )
+        )
         self._standardize_funcs.update({"Goal": self._standardize_goal})
 
     def _to_goal(self, xml: ET.Element) -> "CoqGoal":  # type: ignore[override]
