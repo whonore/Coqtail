@@ -67,6 +67,29 @@ Expect coq (indented-variant):
     | con2 : ind
     | con3 : ind.
 
+Given coq (inductive-shift):
+  Inductive ind :=
+  | con1 :
+  ind
+  | con2 : ind
+  | con3 : ind.
+
+Execute (indent-inductive-shift-option-pre):
+  let g:coqtail_inductive_shift = 0
+
+Do (indent-inductive-shift):
+  =ip
+
+Expect coq (indented-inductive-shift):
+  Inductive ind :=
+  | con1 :
+      ind
+  | con2 : ind
+  | con3 : ind.
+
+Execute (indent-inductive-shift-option-post):
+  unlet g:coqtail_inductive_shift
+
 Given coq (match):
   Definition f (b : bool) :=
   match b with

@@ -241,7 +241,8 @@ function! s:GetCoqIndent() abort
   " current line begins with '|':
   if l:currentline =~# '^\s*|[|}]\@!'
     let l:match = s:indent_of_previous_pair(s:match, '', '\<end\>', 1, ['string', 'comment'])
-    return l:match != -1 ? l:match : s:indent_of_previous('^\s*' . s:inductive) + &sw
+    let l:off = get(g:, 'coqtail_inductive_shift', 1) * &sw
+    return l:match != -1 ? l:match : s:indent_of_previous('^\s*' . s:inductive) + l:off
   endif
 
   " current line begins with terminating '|}', '}', or ')'
