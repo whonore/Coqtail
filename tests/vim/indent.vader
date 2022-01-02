@@ -211,6 +211,49 @@ Expect coq (indented-match-in-inductive):
     | con2 : let _ := match true with _ => true end in x
     | con3 : x.
 
+Given coq (match-shift):
+  Definition f (b : bool) (i : ind) :=
+  match b with
+  | true =>
+  match i with
+  | con1 => true
+  | con2 =>
+  false
+  | _ => false
+  end
+  | false =>
+  match i with
+  | _ =>
+  false
+  end
+  end.
+
+Execute (indent-match-shift-option-pre):
+  let g:coqtail_match_shift = 1
+
+Do (indent-match-shift):
+  =ip
+
+Expect coq (indented-match-shift):
+  Definition f (b : bool) (i : ind) :=
+    match b with
+    | true =>
+      match i with
+      | con1 => true
+      | con2 =>
+        false
+      | _ => false
+      end
+    | false =>
+      match i with
+      | _ =>
+        false
+      end
+    end.
+
+Execute (indent-match-shift-option-post):
+  unlet g:coqtail_match_shift
+
 Given coq (ignore-double-pipe):
   Inductive ind :=
   | con1 :
