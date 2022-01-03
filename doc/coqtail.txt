@@ -263,16 +263,39 @@ g:coqtail_noindent_comment
 			Default: 0
 
 				     *g:coqtail_match_shift* *coqtail-match-shift*
-g:coqtail_match_shift	A multiple of 'shiftwidth' to indent lines in a match
-			branch. E.g. >
+g:coqtail_match_shift	A multiple of 'shiftwidth' to indent lines after a `match`
+			branch. Also applies to `Inductive` constructors.
+			NOTE: This is does not affect the indentation of the
+			line with `|` itself. For matches these are always
+			aligned with the `match` keyword, and for `Inductive`
+			(and related keywords) this is controlled by
+			`g:coqtail_inductive_shift`.
+			E.g. >
 		    match b with
 		    | true =>
 		      1 (* g:coqtail_match_shift = 1 *)
 		    | false =>
 			2 (* g:coqtail_match_shift = 2 *)
 		    end
+
+		    Inductive X :=
+		      | A :
+			X (* g:coqtail_match_shift = 1 *)
+		      | B :
+			  X (* g:coqtail_match_shift = 2 *)
 <
 			Default: 2
+
+			     *g:coqtail_inductive_shift* *coqtail-inductive-shift*
+g:coqtail_inductive_shift
+			A multiple of 'shiftwidth' to indent branches of an
+			`Inductive` (and related keywords) constructor.
+			E.g. >
+		    Inductive X :=
+		      | A : X (* g:coqtail_inductive_shift = 1 *)
+		    | B : X (* g:coqtail_inductive_shift = 0 *)
+<
+			Default: 1
 
 				 *g:coqtail_indent_on_dot* *coqtail-indent-on-dot*
 g:coqtail_indent_on_dot	If true then trigger auto-indentation when a '.' is
