@@ -67,6 +67,29 @@ Expect coq (indented-variant):
     | con2 : ind
     | con3 : ind.
 
+Given coq (inductive-shift):
+  Inductive ind :=
+  | con1 :
+  ind
+  | con2 : ind
+  | con3 : ind.
+
+Execute (indent-inductive-shift-option-pre):
+  let g:coqtail_inductive_shift = 0
+
+Do (indent-inductive-shift):
+  =ip
+
+Expect coq (indented-inductive-shift):
+  Inductive ind :=
+  | con1 :
+      ind
+  | con2 : ind
+  | con3 : ind.
+
+Execute (indent-inductive-shift-option-post):
+  unlet g:coqtail_inductive_shift
+
 Given coq (match):
   Definition f (b : bool) :=
   match b with
@@ -210,6 +233,49 @@ Expect coq (indented-match-in-inductive):
         end -> x
     | con2 : let _ := match true with _ => true end in x
     | con3 : x.
+
+Given coq (match-shift):
+  Definition f (b : bool) (i : ind) :=
+  match b with
+  | true =>
+  match i with
+  | con1 => true
+  | con2 =>
+  false
+  | _ => false
+  end
+  | false =>
+  match i with
+  | _ =>
+  false
+  end
+  end.
+
+Execute (indent-match-shift-option-pre):
+  let g:coqtail_match_shift = 1
+
+Do (indent-match-shift):
+  =ip
+
+Expect coq (indented-match-shift):
+  Definition f (b : bool) (i : ind) :=
+    match b with
+    | true =>
+      match i with
+      | con1 => true
+      | con2 =>
+        false
+      | _ => false
+      end
+    | false =>
+      match i with
+      | _ =>
+        false
+      end
+    end.
+
+Execute (indent-match-shift-option-post):
+  unlet g:coqtail_match_shift
 
 Given coq (ignore-double-pipe):
   Inductive ind :=

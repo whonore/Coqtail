@@ -42,9 +42,9 @@ Movement Commands					      *coqtail-movement*
 :[count]CoqNext	or
 [count]<leader>cj	Submit the next [count] sentences to Coqtop for
 			checking. If successful, highlight the sentences and
-			update the Goal and Info panels accordingly. Otherwise,
-			highlight the error and display the error message in
-			the Info panel.
+			update the Goal and Info panels accordingly.
+			Otherwise, highlight the error and display the error
+			message in the Info panel.
 
 			[count] default: 1.
 
@@ -63,8 +63,8 @@ Movement Commands					      *coqtail-movement*
 			[count]. If no [count] is given, use the cursor
 			position instead. For example, given the line below,
 			where '^' represents the cursor position, `:CoqToLine`
-			will position the end of the checked section just after
-			'1' whereas `:27CoqToLine` will put it after '2'. >
+			will position the end of the checked section just
+			after '1' whereas `:27CoqToLine` will put it after '2'. >
     line 27:	   Let x := 1.^Let y := 2.
 <
 					     *<leader>cT* *i_<leader>cT* *:CoqToTop*
@@ -88,12 +88,12 @@ Movement Commands					      *coqtail-movement*
 				      *<leader>cgd* *:CoqGotoDef* *coqtail-goto-def*
 :CoqGotoDef[!] {arg}
 <leader>cgd		Populate the |quickfix| list with possible locations
-			of the definition of a Coq term and try to jump to
-			the first one. If jumping is impossible open the
+			of the definition of a Coq term and try to jump to the
+			first one. If jumping is impossible open the
 			|quickfix-window| instead. The first version uses
-			{arg}, while the second uses the term under the cursor.
-			If |'tagfunc'| is supported then the usual tag
-			commands will also work (|:tag|, |CTRL-]|, etc).
+			{arg}, while the second uses the term under the
+			cursor. If 'tagfunc' is supported then the usual tag
+			commands will also work (`:tag`, `CTRL-]`, etc).
 
 ===========
 Coq Queries						       *coqtail-queries*
@@ -139,7 +139,7 @@ Panel Management						*coqtail-panels*
 :[count]CoqGotoGoal
 <count><leader>cgg	Scroll the Goal panel to the start of goal [count].
 			Control the number of goal lines to display with
-			|g:coqtail_goal_lines|.
+			`g:coqtail_goal_lines`.
 
 			[count] default: 1.
 
@@ -177,17 +177,17 @@ Configuration						 *coqtail-configuration*
 							      *coqtail-coq-path*
 g:coqtail_coq_path
 b:coqtail_coq_path	The path to search for the coq(ide)top(.opt) binary.
-			Defaults to $COQBIN, and if that is empty then $PATH is
-			used.
+			Defaults to $COQBIN, and if that is empty then $PATH
+			is used.
 
 			Default: $COQBIN
 
 				         *g:coqtail_coq_prog* *b:coqtail_coq_prog*
 							      *coqtail-coq-prog*
 g:coqtail_coq_prog
-b:coqtail_coq_prog	The name of the Coq executable to run. If empty then it
-			defaults to coqtop or coqidetop depending on the Coq
-			version. For example, to use the HoTT library: >
+b:coqtail_coq_prog	The name of the Coq executable to run. If empty then
+			it defaults to coqtop or coqidetop depending on the
+			Coq version. For example, to use the HoTT library: >
 		    let b:coqtail_coq_path = '/path/to/HoTT'
 		    let b:coqtail_coq_prog = 'hoqidetop'
 <
@@ -208,10 +208,10 @@ b:coqtail_timeout	The time in seconds before interrupting Coqtop after
 			Default: 0
 
 				     *g:coqtail_project_names* *coq-project-files*
-g:coqtail_project_names	The names of Coq project files to search for. The search
-			begins in the current directory and proceeds upwards.
-			If found, project files are parsed and passed as
-			arguments to Coqtop by `:CoqStart`.
+g:coqtail_project_names	The names of Coq project files to search for. The
+			search begins in the current directory and proceeds
+			upwards. If found, project files are parsed and passed
+			as arguments to Coqtop by `:CoqStart`.
 
 			Default: ['_CoqProject']
 
@@ -225,16 +225,16 @@ g:coqtail_map_prefix	The character(s) to begin Coqtail mappings.
 
 			   *g:coqtail_imap_prefix* *coqtail-insert-mapping-prefix*
 g:coqtail_imap_prefix	The character(s) to begin Coqtail insert-mode
-			mappings. Takes precedence over |g:coqtail_map_prefix|.
+			mappings. Takes precedence over `g:coqtail_map_prefix`.
 
-			Default: |g:coqtail_map_prefix|
+			Default: `g:coqtail_map_prefix`
 
 					    *g:coqtail_nomap* *coqtail-no-mapping*
 g:coqtail_nomap		If true then don't set any default mappings for
 			Coqtail	commands. Specific mappings can also be
 			overwritten by defining new mappings for the desired
-			commands. The defaults will continue to be used for the
-			rest.
+			commands. The defaults will continue to be used for
+			the rest.
 
 			Default: 0
 
@@ -245,14 +245,14 @@ g:coqtail_noimap	If true then don't set insert-mode mappings for
 			Default: 0
 
 					  *g:coqtail_nosyntax* *coqtail-no-syntax*
-g:coqtail_nosyntax	If true then don't load the syntax script included with
-			Coqtail.
+g:coqtail_nosyntax	If true then don't load the syntax script included
+			with Coqtail.
 
 			Default: 0
 
 					  *g:coqtail_noindent* *coqtail-no-indent*
-g:coqtail_noindent	If true then don't load the indent script included with
-			Coqtail.
+g:coqtail_noindent	If true then don't load the indent script included
+			with Coqtail.
 
 			Default: 0
 
@@ -263,16 +263,39 @@ g:coqtail_noindent_comment
 			Default: 0
 
 				     *g:coqtail_match_shift* *coqtail-match-shift*
-g:coqtail_match_shift	A multiple of 'shiftwidth' to indent lines in a match
-			branch. E.g. >
+g:coqtail_match_shift	A multiple of 'shiftwidth' to indent lines after a
+			match branch. Also applies to `Inductive` constructors.
+			Note: This is does not affect the indentation of the
+			line with `|` itself. For matches these are always
+			aligned with the `match` keyword, and for `Inductive`
+			(and related keywords) this is controlled by
+			`g:coqtail_inductive_shift`.
+			E.g. >
 		    match b with
 		    | true =>
 		      1 (* g:coqtail_match_shift = 1 *)
 		    | false =>
 			2 (* g:coqtail_match_shift = 2 *)
 		    end
+
+		    Inductive X :=
+		      | A :
+			X (* g:coqtail_match_shift = 1 *)
+		      | B :
+			  X (* g:coqtail_match_shift = 2 *)
 <
 			Default: 2
+
+			     *g:coqtail_inductive_shift* *coqtail-inductive-shift*
+g:coqtail_inductive_shift
+			A multiple of 'shiftwidth' to indent branches of an
+			`Inductive` (and related keywords) constructor.
+			E.g. >
+		    Inductive X :=
+		      | A : X (* g:coqtail_inductive_shift = 1 *)
+		    | B : X (* g:coqtail_inductive_shift = 0 *)
+<
+			Default: 1
 
 				 *g:coqtail_indent_on_dot* *coqtail-indent-on-dot*
 g:coqtail_indent_on_dot	If true then trigger auto-indentation when a '.' is
@@ -294,8 +317,8 @@ b:coqtail_auto_set_proof_diffs
 			Coq that does not support proof diffs.
 			Note: Changing this option after `:CoqStart` has no
 			effect on the current proof. To manually toggle diffs
-			mid-proof use `:Coq Set Diffs "{arg}"` where `{arg}` is
-			`on`, `off`, or `removed`.
+			mid-proof use `:Coq Set Diffs "{arg}"` where `{arg}`
+			is `on`, `off`, or `removed`.
 
 			Default: ''
 
@@ -326,7 +349,7 @@ Debugging							 *coqtail-debug*
 <leader>cd		Enable or disable logging of debugging statements to a
 			file. Enabling creates a temporary file and displays
 			the name in the Info panel. The name is also stored in
-			|b:coqtail_log_name|. Disabling and enabling again
+			`b:coqtail_log_name`. Disabling and enabling again
 			creates a new log file. Disabled initially.
 
 					   *b:coqtail_log_name* *coqtail-log-name*

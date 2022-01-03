@@ -5,6 +5,9 @@
 ### Added
 - Code folding for Sections, Modules, and Theorems.
   (PR #242)
+- `g:coqtail_inductive_shift` option to control indentation of Inductive
+  constructor branches.
+  (PR #248)
 
 ### Fixed
 - Highlight `Number Notation` and `Declare Custom Entry`.
