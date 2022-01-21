@@ -12,6 +12,10 @@
 ### Fixed
 - Highlight `Number Notation` and `Declare Custom Entry`.
   (PR #243)
+- Crash with `Implicit Type (x : ...)`.
+  (PR #253)
+- Universe levels inconsistent with those shown by `coqc`.
+  (PR #253)
 
 ## [1.6.0]
 

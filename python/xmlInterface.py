@@ -301,7 +301,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         self._standardize_funcs: Dict[str, Callable[[Result], Result]] = {}
 
         # A command that can safely and quickly be executed just to get a new state id
-        self.noop = "Eval lazy in forall x, x."
+        self.noop = "Eval lazy in Prop."
 
         # A flag indicating whether warnings printed to stderr are formatted in
         # the manner expected by partition_warnings
