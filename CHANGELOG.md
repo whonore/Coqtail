@@ -16,6 +16,8 @@
   (PR #253)
 - Universe levels inconsistent with those shown by `coqc`.
   (PR #253)
+- Indent the line after `Proof using` correctly.
+  (PR #255)
 
 ## [1.6.0]
 
