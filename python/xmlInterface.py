@@ -27,6 +27,7 @@ from typing import (
     cast,
 )
 from xml.dom.minidom import parseString
+from xml.parsers.expat import errors
 
 PPTag = str
 TaggedToken = Tuple[str, Optional[PPTag]]
@@ -94,14 +95,25 @@ def unexpected(expected: Iterable[Any], got: Any) -> TypeError:
     return TypeError(f"Expected {expect}, but got {str(got)}")
 
 
+CHARMAP = {b"&nbsp;": b" ", b"&apos;": b"'", b"&#40;": b"(", b"&#41;": b")"}
+BAD_BYTE = errors.codes[errors.XML_ERROR_INVALID_TOKEN]  # pylint: disable=no-member
+
+
 def _unescape(cmd: bytes) -> bytes:
     """Replace escaped characters with the unescaped version."""
-    charmap = {b"&nbsp;": b" ", b"&apos;": b"'", b"&#40;": b"(", b"&#41;": b")"}
-
-    for escape, unescape in charmap.items():
+    for escape, unescape in CHARMAP.items():
         cmd = cmd.replace(escape, unescape)
-
     return cmd
+
+
+def _escape_byte(data: bytes, line: int, col: int) -> bytes:
+    """Escape an unprintable byte."""
+    lines = data.splitlines()
+    bad = lines[line - 1][col]
+    pre = lines[line - 1][:col]
+    post = lines[line - 1][col + 1 :]
+    lines[line - 1] = pre + f"\\x{bad:02x}".encode("utf-8") + post
+    return b"\n".join(lines)
 
 
 def _parse_tagged_tokens(
@@ -541,11 +553,19 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         res = None
         msgs: List[str] = []
 
-        try:
-            xmls = ET.fromstring(b"<coqtoproot>" + _unescape(data) + b"</coqtoproot>")
-        except ET.ParseError:
-            # If not all data has been read, the XML might not be well-formed
-            return None
+        err_pos = (-1, -1)
+        data = b"<coqtoproot>" + _unescape(data) + b"</coqtoproot>"
+        while True:
+            try:
+                xmls = ET.fromstring(data)
+                break
+            except ET.ParseError as e:
+                # If not all data has been read, the XML might not be well-formed
+                if e.code != BAD_BYTE or e.position <= err_pos:
+                    return None
+                # Found an invalid byte, try escaping it
+                err_pos = e.position
+                data = _escape_byte(data, *err_pos)
 
         # Wait for a 'value' node and store any 'message' nodes
         for xml in xmls:
