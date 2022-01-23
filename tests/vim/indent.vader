@@ -342,6 +342,21 @@ Expect coq (indented-proof-body):
     auto.
   Qed.
 
+Given coq (proof-using-body):
+  Lemma p : True.
+  Proof using All.
+  auto.
+  Qed.
+
+Do (indent-proof-using-body):
+  =ip
+
+Expect coq (indented-proof-using-body):
+  Lemma p : True.
+  Proof using All.
+    auto.
+  Qed.
+
 Given coq (obligation-body):
   Program Definition p (i : ind) : {i = i} + {i <> i} := _.
   Next Obligation.
@@ -412,6 +427,21 @@ Expect coq (indented-obligation-body-empty):
   Abort.
   Obligation 1 of p.
   Admitted.
+
+Given coq (proof-one-line):
+  Lemma p : True.
+  Proof. Admitted.
+  Lemma q : True.
+  Proof. Admitted.
+
+Do (indent-proof-one-line):
+  =ip
+
+Expect coq (indented-proof-one-line):
+  Lemma p : True.
+  Proof. Admitted.
+  Lemma q : True.
+  Proof. Admitted.
 
 Given coq (sections):
   Section S1.
