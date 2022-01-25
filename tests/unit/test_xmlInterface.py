@@ -19,6 +19,7 @@ from xmlInterface import (
     XMLInterface814,
     XMLInterfaceBase,
     XMLInterfaces,
+    _escape_byte,
     partition_warnings,
 )
 
@@ -452,3 +453,11 @@ Final error.
     """.strip()
 
     assert partition_warnings(msg) == (warn, err)
+
+
+def test_escape_byte() -> None:
+    """Test whether _escape_byte replaces the correct byte."""
+    assert _escape_byte(b"a", 1, 0) == b"\\x61"
+    assert _escape_byte(b"ab", 1, 1) == b"a\\x62"
+    assert _escape_byte(b"ab\nc", 2, 0) == b"ab\n\\x63"
+    assert _escape_byte(b"ab\ncd", 2, 1) == b"ab\nc\\x64"
