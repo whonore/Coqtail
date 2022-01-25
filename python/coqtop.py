@@ -521,6 +521,7 @@ class Coqtop:
             fmt = logging.Formatter("%(asctime)s: %(message)s")
             self.log = NamedTemporaryFile(  # pylint: disable=consider-using-with
                 mode="w",
+                encoding="utf-8",
                 prefix=f"coqtop_{datetime.datetime.now().strftime('%y%m%d_%H%M%S')}_",
                 delete=False,
             )

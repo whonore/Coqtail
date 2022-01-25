@@ -18,6 +18,8 @@
   (PR #253)
 - Indent the line after `Proof using` correctly.
   (PR #255)
+- Crash when output contains unprintable characters.
+  (PR #256)
 
 ## [1.6.0]
 

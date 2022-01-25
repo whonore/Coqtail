@@ -122,6 +122,15 @@ def test_dispatch_unicode(coq: Coqtop) -> None:
     assert succ
 
 
+def test_dispatch_unprintable(coq: Coqtop) -> None:
+    """Should be able to handle unprintable characters."""
+    succ, _, _, _ = coq.dispatch("Require Import String.")
+    assert succ
+    succ, out, _, _ = coq.dispatch("Compute String (Ascii.ascii_of_nat 0) EmptyString.")
+    assert succ
+    assert "\\x00" in out
+
+
 def test_goals_no_change(coq: Coqtop) -> None:
     """Calling goals will not change the state."""
     succ, _, _, _ = coq.dispatch("Lemma x (n: nat) : False.")
