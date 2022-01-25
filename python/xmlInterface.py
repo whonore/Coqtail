@@ -27,7 +27,7 @@ from typing import (
     cast,
 )
 from xml.dom.minidom import parseString
-from xml.parsers.expat import errors
+from xml.parsers.expat import ExpatError, errors
 
 PPTag = str
 TaggedToken = Tuple[str, Optional[PPTag]]
@@ -230,8 +230,16 @@ def partition_warnings(stderr: str) -> Tuple[str, str]:
 def prettyxml(xml: bytes) -> str:
     """Pretty print XML for debugging."""
     xml = _unescape(xml)
-    # No stubs for xml.dom.minidom
-    return cast(str, parseString(xml).toprettyxml())
+    # See `XMLInterfaceBase.raw_response`.
+    err_pos = (-1, -1)
+    while True:
+        try:
+            return cast(str, parseString(xml).toprettyxml())
+        except ExpatError as e:
+            if e.code != BAD_BYTE or (e.lineno, e.offset) <= err_pos:
+                raise e
+            err_pos = (e.lineno, e.offset)
+            xml = _escape_byte(xml, *err_pos)
 
 
 class XMLInterfaceBase(metaclass=ABCMeta):
