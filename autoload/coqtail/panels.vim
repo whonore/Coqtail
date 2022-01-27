@@ -271,7 +271,8 @@ function! s:replace(panel, txt, richpp, scroll) abort
     if has_key(s:richpp_hlgroups, l:hlgroup)
       let l:match = matchaddpos(
         \ s:richpp_hlgroups[l:hlgroup],
-        \ [[l:line_no, l:start_pos, l:span]])
+        \ [[l:line_no, l:start_pos, l:span]],
+        \ -10)
       let l:matches = add(l:matches, l:match)
     endif
   endfor
