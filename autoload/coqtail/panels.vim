@@ -323,7 +323,9 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
       silent! call win_gotoid(l:cur_winid)
     endif
     call setbufvar(a:buf, 'coqtail_refreshing', 0)
-    redraw
+    if !has('nvim')
+      redraw
+    endif
   endtry
 endfunction
 
