@@ -70,7 +70,7 @@ class Coqtop:
 
         coqtop - The Coqtop process
         states - A stack of previous state_ids (grows to the right)
-        state_id - The current state_id
+        state_id - The current (tip) state_id
         root_state - The starting state_id
         out_q - A thread-safe queue of data read from Coqtop
         err_q - A thread-safe queue of error messages read from Coqtop

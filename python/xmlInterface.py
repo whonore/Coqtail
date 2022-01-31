@@ -2,6 +2,8 @@
 # Author: Wolf Honore
 """Classes to handle differences in the Coqtop XML interface across versions
 and provide a uniform interface.
+
+https://github.com/coq/coq/blob/master/dev/doc/xml-protocol.md
 """
 
 # xml.dom.minidom only needed for pretty printing. No stubs for xml.dom.minidom

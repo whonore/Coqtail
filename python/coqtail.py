@@ -42,8 +42,8 @@ Highlight = NamedTuple(
     "Highlight",
     [("line_no", int), ("index", int), ("tok_len", int), ("tag", PPTag)],
 )
-Req = Tuple[int, int, str, Mapping[str, Any]]
-Res = Tuple[int, Any]
+Req = Tuple[int, int, str, Mapping[str, Any]]  # (msg_id, bnum, func, args)
+Res = Tuple[int, Any]  # (msg_id, data)
 SkipFun = Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]
 
 if TYPE_CHECKING:
