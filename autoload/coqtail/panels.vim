@@ -60,6 +60,7 @@ function! s:init(name) abort
   setlocal nobuflisted
   setlocal nocursorline
   setlocal wrap
+  setlocal undolevels=50
 
   let b:coqtail_panel_open = 1
   let b:coqtail_panel_size = [-1, -1]
@@ -262,8 +263,14 @@ function! s:replace(panel, txt, richpp, scroll) abort
   endfor
 
   " Update buffer text
-  call coqtail#compat#deleteline(1, '$')
-  call append(0, a:txt)
+  let old = getline(1, '$') " returns [''] for empty buffer
+  let old = (old ==# ['']) ? [] : old
+  if old !=# a:txt
+    let &l:undolevels = &l:undolevels " explicitly break undo sequence
+    call coqtail#compat#deleteline(1, '$')
+    call append(0, a:txt) " this leaves an empty line at the bottom
+    call coqtail#compat#deleteline('$', '$')
+  endif
 
   " Set new highlights
   let l:matches = []
