@@ -323,7 +323,11 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
       silent! call win_gotoid(l:cur_winid)
     endif
     call setbufvar(a:buf, 'coqtail_refreshing', 0)
-    if !has('nvim')
+    " NOTE: NeoVim seems to update often enough on its own to make calling
+    " `redraw` unnecessary, but skipping it in Vim results in noticeable delays
+    " while updating highlighting and text in auxiliary panels delays.
+    " See https://github.com/whonore/Coqtail/pull/260.
+    if !g:coqtail#compat#nvim
       redraw
     endif
   endtry
