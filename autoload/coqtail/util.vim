@@ -49,7 +49,7 @@ endfunction
 function! coqtail#util#getvisual() abort
   try
     let l:v_old = @v
-    normal! gv"vy
+    noautocmd normal! gv"vy
     return join(split(@v, '\n'), ' ')
   finally
     " Restore register
