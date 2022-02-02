@@ -2,6 +2,12 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Suppress spurious `TextYankPost` autocmd while getting text selected in Visual mode.
+  (PR #260)
+- Avoid manually calling `redraw` in NeoVim.
+  (PR #260)
+
 ## [1.6.1]
 
 ### Added
