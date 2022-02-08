@@ -337,6 +337,7 @@ class Coqtail:
         opts: VimOptions,
     ) -> Tuple[Optional[Tuple[int, int]], Optional[str]]:
         """Send all sentences in 'send_queue' until an error is encountered."""
+        empty = self.send_queue == deque()
         scroll = len(self.send_queue) > 1
         failed_at = None
         no_msgs = True
@@ -382,8 +383,8 @@ class Coqtail:
                     eline, ecol = _pos_from_offset(col, message, loc_e)
                     self.error_at = ((line + sline, scol), (line + eline, ecol))
 
-        # Clear info if no messages
-        if no_msgs:
+        # Clear info if no messages and at least one message was sent
+        if no_msgs and not empty:
             self.set_info("", reset=True)
         self.refresh(opts=opts, scroll=scroll)
         return failed_at, None
