@@ -24,11 +24,12 @@ def get_state(coq: Coqtop) -> Tuple[int, int, List[int]]:
 def coq() -> Generator[Coqtop, None, None]:
     """Return a Coqtop for each version."""
     ct = Coqtop()
-    if isinstance(ct.start(None, None, "", [])[0], dict):
+    ver_or_err, _ = ct.start(None, None, "", [])
+    if isinstance(ver_or_err, dict):
         yield ct
         ct.stop()
     else:
-        pytest.fail("Failed to create Coqtop instance")
+        pytest.fail(f"Failed to create Coqtop instance\n{ver_or_err}")
 
 
 # Test Cases #
