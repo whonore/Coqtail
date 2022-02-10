@@ -3,6 +3,8 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Avoid clearing the Info buffer when `:CoqToLine` advances 0 sentences.
+  (PR #261)
 - Suppress spurious `TextYankPost` autocmd while getting text selected in Visual mode.
   (PR #260)
 - Avoid manually calling `redraw` in NeoVim.
