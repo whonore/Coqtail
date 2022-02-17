@@ -34,8 +34,9 @@ if !exists('g:coqtail_project_names')
   let g:coqtail_project_names = ['_CoqProject']
 endif
 
+" Default to updating the tagstack on coqtail#gotodef.
 if !exists('g:coqtail_update_tagstack')
-  let g:coqtail_update_tagstack = 0
+  let g:coqtail_update_tagstack = 1
 endif
 
 " Find the path corresponding to 'lib'. Used by includeexpr.
@@ -108,31 +109,6 @@ function! s:finddef(target) abort
   return (!l:ok || type(l:loc) != g:coqtail#compat#t_list) ? v:null : l:loc
 endfunction
 
-function! s:updatetagstack() abort
-    let l:should_update_tagstack = exists('*gettagstack') && exists('*settagstack') && g:coqtail_update_tagstack
-
-    if l:should_update_tagstack
-        " Grab the old location (to jump back to) and the word under the
-        " cursor (as a label for the tagstack)
-        let l:old_location = [bufnr('%'), line('.'), col('.'), 0]
-        let l:tagname = expand('<cword>')
-        let l:winid = win_getid()
-        let l:tagstack = gettagstack(l:winid)
-
-        " If the current tagstack index is somewhere in the middle of the
-        " stack, we first truncate everything up to the end, to replicate
-        " native behavior of CTRL-]
-        if l:tagstack.curidx <= l:tagstack.length
-            " curidx is always at least 1
-            unlet l:tagstack.items[l:tagstack.curidx - 1:]
-        endif
-
-        call add(l:tagstack.items, {'from': l:old_location, 'tagname': l:tagname})
-        let l:tagstack.curidx += 1
-        call settagstack(l:winid, l:tagstack, 'r')
-    endif
-  endfunction
-
 " Populate the quickfix list with possible locations of the definition of
 " 'target'.
 function! coqtail#gotodef(target, bang) abort
@@ -150,11 +126,12 @@ function! coqtail#gotodef(target, bang) abort
     let l:swb = &switchbuf
     set switchbuf+=usetab
 
-    call s:updatetagstack()
+    let l:item = coqtail#util#preparetagstack()
 
     " Jump to first if possible, otherwise open list
     try
       execute 'cfirst' . l:bang
+      call coqtail#util#pushtagstack(l:item)
     catch /^Vim(cfirst):/
       botright cwindow
     endtry

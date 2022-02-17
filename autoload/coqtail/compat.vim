@@ -7,6 +7,8 @@ let g:coqtail#compat#t_list = type([])
 let g:coqtail#compat#t_string = type('')
 let g:coqtail#compat#nvim = has('nvim')
 let g:coqtail#compat#has_channel = (has('channel') && has('patch-8.0.0001')) || g:coqtail#compat#nvim
+let g:coqtail#compat#has_tagstack = exists('*gettagstack') && exists('*settagstack')
+let g:coqtail#compat#has_tagstack_truncate = has('patch-8.2.0077')
 
 " Has a stable version of `win_execute`.
 " If `return` is true then the function must jump back to original window
@@ -20,12 +22,12 @@ if g:coqtail#compat#has_win_execute
 else
   function! s:win_execute(id, cmd, return) abort
     if a:return
-      let l:cur_win = win_getid()
+      let l:cur_winid = win_getid()
     endif
     call win_gotoid(a:id)
     call execute(a:cmd, '')
     if a:return
-      call win_gotoid(l:cur_win)
+      call win_gotoid(l:cur_winid)
     endif
   endfunction
 endif
