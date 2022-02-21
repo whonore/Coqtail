@@ -2,6 +2,8 @@
 
 ## Unreleased ([master])
 
+## [1.6.2]
+
 ### Added
 - `g:coqtail_update_tagstack` option to update the tagstack on `:CoqGotoDef`
   (enabled by default).
@@ -307,6 +309,7 @@
 
 [master]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
+[1.6.2]: https://github.com/whonore/Coqtail/tree/v1.6.2
 [1.6.1]: https://github.com/whonore/Coqtail/tree/v1.6.1
 [1.6.0]: https://github.com/whonore/Coqtail/tree/v1.6.0
 [1.5.2]: https://github.com/whonore/Coqtail/tree/v1.5.2
