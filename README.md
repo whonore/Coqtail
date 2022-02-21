@@ -165,6 +165,11 @@ augroup CoqtailHighlights
 augroup END
 ```
 
+If you feel distracted by the error highlighting while editing a failed
+sentence, you can use the sequence `<leader>cl` (`:CoqToLine`) while the cursor
+is inside that sentence. If it isn't, you can use `<leader>cE`
+(`:CoqJumpToError`) to move it to an appropriate position.
+
 ### Proof Diffs
 
 Since 8.9, Coq can generate [proof diffs] to highlight the differences in the

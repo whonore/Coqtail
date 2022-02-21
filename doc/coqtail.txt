@@ -67,6 +67,11 @@ Movement Commands					      *coqtail-movement*
 			after '1' whereas `:27CoqToLine` will put it after '2'. >
     line 27:	   Let x := 1.^Let y := 2.
 <
+			You can use this command to clear the error
+			highlighting for a failed sentence. The cursor has to
+			be moved inside the sentence first, for instance by
+			using `:CoqJumpToError` first.
+
 					     *<leader>cT* *i_<leader>cT* *:CoqToTop*
 								*coqtail-to-top*
 :CoqToTop	or
