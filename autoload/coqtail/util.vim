@@ -182,6 +182,7 @@ function! coqtail#util#pushtagstack(item) abort
     endif
 
     let l:tagstack.items = l:items
+    let l:tagstack.curidx += 1
     call settagstack(l:winid, l:tagstack, l:action)
   endif
 endfunction
