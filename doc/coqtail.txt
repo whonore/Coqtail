@@ -70,8 +70,7 @@ Movement Commands					      *coqtail-movement*
 			You can use this command to clear the error
 			highlighting for a failed sentence. The cursor has to
 			be moved inside the sentence first, for instance by
-			using `:CoqJumpToError` first. Note that this has the
-			side-effect of clearing the Info buffer.
+			using `:CoqJumpToError` first.
 
 					     *<leader>cT* *i_<leader>cT* *:CoqToTop*
 								*coqtail-to-top*

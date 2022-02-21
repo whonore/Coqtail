@@ -168,8 +168,7 @@ augroup END
 If you feel distracted by the error highlighting while editing a failed
 sentence, you can use the sequence `<leader>cl` (`:CoqToLine`) while the cursor
 is inside that sentence. If it isn't, you can use `<leader>cE`
-(`:CoqJumpToError`) to move it to an appropriate position. An important
-side-effect is that the Info buffer (on the bottom-right) will be cleared.
+(`:CoqJumpToError`) to move it to an appropriate position.
 
 ### Proof Diffs
 
