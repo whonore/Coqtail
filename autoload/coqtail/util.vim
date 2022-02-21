@@ -145,3 +145,44 @@ function! coqtail#util#getvar(scopes, var, default) abort
     \ ? get(a:scopes[0], a:var, coqtail#util#getvar(a:scopes[1:], a:var, a:default))
     \ : a:default
 endfunction
+
+" Create a tagstack item to push if the jump is successful.
+function! coqtail#util#preparetagstack() abort
+  if g:coqtail#compat#has_tagstack && g:coqtail_update_tagstack
+    " Grab the old location (to jump back to) and the word under the cursor
+    " (as a label for the tagstack)
+    let l:pos = [bufnr('%')] + getcurpos()[1:]
+    let l:tag = expand('<cword>')
+    return {'bufnr': l:pos[0], 'from': l:pos, 'tagname': l:tag}
+  else
+    return v:null
+  endif
+endfunction
+
+" Push an item to the tagstack.
+function! coqtail#util#pushtagstack(item) abort
+  if g:coqtail#compat#has_tagstack && g:coqtail_update_tagstack
+    let l:winid = win_getid()
+    let l:tagstack = gettagstack(l:winid)
+
+    " If the current tagstack index is somewhere in the middle of the stack, we
+    " first truncate everything up to the end, to replicate native behavior of
+    " CTRL-]. This is handled by the 't' action in versions that support it.
+    if g:coqtail#compat#has_tagstack_truncate
+      let l:action = 't'
+      let l:items = [a:item]
+    else
+      let l:action = 'r'
+      let l:items = l:tagstack.items
+      if l:tagstack.curidx <= l:tagstack.length
+        " curidx is always at least 1
+        unlet l:items[l:tagstack.curidx - 1:]
+      endif
+      call add(l:items, a:item)
+    endif
+
+    let l:tagstack.items = l:items
+    let l:tagstack.curidx += 1
+    call settagstack(l:winid, l:tagstack, l:action)
+  endif
+endfunction

@@ -34,6 +34,11 @@ if !exists('g:coqtail_project_names')
   let g:coqtail_project_names = ['_CoqProject']
 endif
 
+" Default to updating the tagstack on coqtail#gotodef.
+if !exists('g:coqtail_update_tagstack')
+  let g:coqtail_update_tagstack = 1
+endif
+
 " Find the path corresponding to 'lib'. Used by includeexpr.
 function! coqtail#findlib(lib) abort
   let [l:ok, l:lib] = s:call('find_lib', 'sync', 0, {'lib': a:lib})
@@ -121,9 +126,12 @@ function! coqtail#gotodef(target, bang) abort
     let l:swb = &switchbuf
     set switchbuf+=usetab
 
+    let l:item = coqtail#util#preparetagstack()
+
     " Jump to first if possible, otherwise open list
     try
       execute 'cfirst' . l:bang
+      call coqtail#util#pushtagstack(l:item)
     catch /^Vim(cfirst):/
       botright cwindow
     endtry

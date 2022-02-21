@@ -2,6 +2,11 @@
 
 ## Unreleased ([master])
 
+### Added
+- `g:coqtail_update_tagstack` option to update the tagstack on `:CoqGotoDef`
+  (enabled by default).
+  (PR #175)
+
 ### Fixed
 - Avoid clearing the Info buffer when `:CoqToLine` advances 0 sentences.
   (PR #261)

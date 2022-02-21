@@ -322,6 +322,13 @@ b:coqtail_auto_set_proof_diffs
 
 			Default: ''
 
+			     *g:coqtail_update_tagstack* *coqtail-update-tagstack*
+g:coqtail_update_tagstack
+			If true then update the |tagstack| when `:CoqGotoDef`
+			jumps to a definition.
+
+			Default: 1
+
 =======================
 Backwards Compatibility			       *coqtail-backwards-compatibility*
 
