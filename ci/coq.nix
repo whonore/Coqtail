@@ -11,5 +11,15 @@ let
     (filter (s: s != "") (match "coq([0-9]|master)([0-9]*)-.*" tox_version));
 in if dot_version == "8.4" then
   (import (fetchTarball url_8_4) { }).coq_8_4
+else if dot_version == "master" then
+  # NOTE: Temporary workaround until
+  # https://github.com/coq-community/coq-nix-toolbox/issues/95 is resolved
+  (pkgs.coq.override { version = dot_version; }).overrideAttrs (old: {
+    postInstall = old.postInstall + ''
+      for prog in $out/bin/coq*; do
+        wrapProgram $prog --prefix OCAMLPATH : $OCAMLPATH
+      done
+    '';
+  })
 else
   pkgs.coq.override ({ version = dot_version; })
