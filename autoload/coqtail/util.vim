@@ -151,7 +151,7 @@ function! coqtail#util#preparetagstack() abort
   if g:coqtail#compat#has_tagstack && g:coqtail_update_tagstack
     " Grab the old location (to jump back to) and the word under the cursor
     " (as a label for the tagstack)
-    let l:pos = getpos('.')
+    let l:pos = [bufnr('%')] + getcurpos()[1:]
     let l:tag = expand('<cword>')
     return {'bufnr': l:pos[0], 'from': l:pos, 'tagname': l:tag}
   else
