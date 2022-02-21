@@ -148,7 +148,7 @@ endfunction
 
 " Create a tagstack item to push if the jump is successful.
 function! coqtail#util#preparetagstack() abort
-  if g:coqtail#compat#hastagstack && g:coqtail_update_tagstack
+  if g:coqtail#compat#has_tagstack && g:coqtail_update_tagstack
     " Grab the old location (to jump back to) and the word under the cursor
     " (as a label for the tagstack)
     let l:pos = getpos('.')
