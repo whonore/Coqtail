@@ -14,12 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # NOTE: A recent change to using `findlib` broke Coq installed through nix.
-        # See:
-        # https://coq.zulipchat.com/#narrow/stream/237656-Coq-devs.20.26.20plugin.20devs/topic/Findlib.20error.20with.20master.20.2B.20nix
-        # and
-        # https://github.com/coq/coq/pull/15220#issuecomment-1030597338
-        coq_version: ['8.4', '8.5', '8.6', '8.7', '8.8', '8.9', '8.10', '8.11', '8.12', '8.13', '8.14']
+        coq_version: ['8.4', '8.5', '8.6', '8.7', '8.8', '8.9', '8.10', '8.11', '8.12', '8.13', '8.14', 'master']
         py_version: [3.6]
     steps:
       - uses: actions/checkout@v2
