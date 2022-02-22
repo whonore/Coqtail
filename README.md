@@ -9,7 +9,7 @@ Coqtail enables interactive Coq proof development in Vim similar to [CoqIDE] or
 [ProofGeneral].
 
 It supports:
-- [Coq 8.4 - 8.14]
+- [Coq 8.4 - 8.15]
 - Python >=3.6 (see [here](#python-2-support) for older versions)
 - Vim >=7.4 and Neovim >=0.3
 - Simultaneous Coq sessions in different buffers
@@ -46,7 +46,7 @@ Requirements:
 - Vim compiled with `+python3` (3.6 or later)
 - Vim configuration options `filetype plugin on`, and optionally `filetype
   indent on` and `syntax on` (e.g. in `.vimrc`)
-- [Coq 8.4 - 8.14]
+- [Coq 8.4 - 8.15]
 
 Newer versions of Coq have not yet been tested, but should still work as long as
 there are no major changes made to the XML protocol Coqtail uses to communicate
@@ -222,7 +222,7 @@ See [YouCompleteMe] for help building Vim with Python 3 support.
 If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
 
 [python2]: https://github.com/whonore/Coqtail/tree/python2
-[Coq 8.4 - 8.14]: https://coq.inria.fr/download
+[Coq 8.4 - 8.15]: https://coq.inria.fr/download
 [CoqIDE]: https://coq.inria.fr/refman/practical-tools/coqide.html
 [ProofGeneral]: https://proofgeneral.github.io/
 [vim package]: https://vimhelp.org/repeat.txt.html#packages
