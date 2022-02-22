@@ -2,6 +2,10 @@
 
 ## Unreleased ([master])
 
+### Added
+- Support for Coq 8.15.
+  (PR #266)
+
 ## [1.6.2]
 
 ### Added
