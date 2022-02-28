@@ -269,9 +269,12 @@ syn region coqLtacProfile  contained contains=coqLtacIdent,coqVernacPunctuation,
 syn region coqLtacIdent    contained matchgroup=coqVernacCmd start="Ltac" matchgroup=coqIdent end="[[:digit:]']\@!\k\k*"
 syn region coqLtacContents contained contains=coqTactic,coqTacticKwd,coqTacticAdmit,coqLtac,coqProofPunctuation matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
 
-syn keyword coqLtac contained do info progress repeat try
-syn keyword coqLtac contained abstract constr context end external eval fail first fresh fun goal
-syn keyword coqLtac contained idtac in let ltac lazymatch multimatch match of rec reverse solve type with
+syn keyword coqLtac contained do info progress repeat try tryif
+syn keyword coqLtac contained abstract constr context end external eval fail first fresh fun gfail goal guard
+syn keyword coqLtac contained idtac in let ltac lazymatch multimatch match numgoals of rec revgoals reverse solve swap
+syn keyword coqLtac contained timeout transparent_abstract type type_term with
+syn keyword coqLtac contained has_evar is_cofix is_const is_constructor is_evar is_ground is_ind is_proj is_var
+syn keyword coqLtac contained finish_timing restart_timer time time_constr
 syn match   coqLtac contained "|-\|=>\|||\|\[\|\]\|\<_\>\||"
 
 " Ltac2
@@ -299,16 +302,56 @@ syn region coqProofEnder contained contains=coqIdent matchgroup=coqProofDelim st
 " Must come after `coqProofBody`.
 syn region coqProofFail  matchgroup=coqProofDelim start="\%(\<Fail\>\_s\+\)\@<=\%(Proof\|\%(Obligation\_s\+\d\+\)\|\%(Next\_s\+Obligation\)\)\>" end="\.\_s" keepend
 
-syn keyword coqTactic    contained absurd apply assert assumption auto
-syn keyword coqTactic    contained case case_eq change clear clearbody cofix cbn cbv compare compute congruence constructor contradiction cut cutrewrite
-syn keyword coqTactic    contained decide decompose dependent destruct discriminate double
-syn keyword coqTactic    contained eapply eassumption eauto econstructor elim elimtype equality erewrite evar exact eexact exists eexists exfalso
-syn keyword coqTactic    contained fix cofix f_equal fold functional generalize hnf
-syn keyword coqTactic    contained idtac induction injection instantiate intro[s] intuition inversion inversion_clear
-syn keyword coqTactic    contained lapply left move omega pattern pose proof quote
-syn keyword coqTactic    contained red refine reflexivity remember rename replace revert rewrite right ring
-syn keyword coqTactic    contained set simpl[e] simplify_eq specialize split subst stepl stepr symmetry
-syn keyword coqTactic    contained transitivity trivial unfold vm_compute
+syn keyword coqTactic    contained abstract absurd apply assert assert_fails assert_succeeds assumption auto autoapply
+syn keyword coqTactic    contained autorewrite autounfold autounfold_one
+syn keyword coqTactic    contained btauto
+syn keyword coqTactic    contained case case_eq casetype cbn cbv change change_no_check classical_left classical_right
+syn keyword coqTactic    contained clear clearbody cofix compare compute congr congruence constr_eq constr_eq_nounivs
+syn keyword coqTactic    contained constr_eq_strict constructor contradict contradiction cut cutrewrite cycle
+syn keyword coqTactic    contained decompose destruct dintuition discriminate discrR done dtauto
+syn keyword coqTactic    contained eapply eassert eassumption easy eauto ecase econstructor eelim eenough eexact eexists
+syn keyword coqTactic    contained einduction einjection eintros eleft elim elimtype enough eremember erewrite eright
+syn keyword coqTactic    contained eset esimplify_eq esplit etransitivity evar exact exact_no_check exactly_once exfalso
+syn keyword coqTactic    contained exists
+syn keyword coqTactic    contained f_equal field field_lookup field_simplify field_simplify_eq finish_timing firstorder
+syn keyword coqTactic    contained fix fold
+syn keyword coqTactic    contained generalize gintuition
+syn keyword coqTactic    contained have hnf
+syn keyword coqTactic    contained idtac induction info_auto info_eauto info_trivial injection instantiate intro[s]
+syn keyword coqTactic    contained intuition inversion inversion_clear inversion_sigma
+syn keyword coqTactic    contained lapply lazy left lia lra lra_Q lra_R
+syn keyword coqTactic    contained move
+syn keyword coqTactic    contained native_cast_no_check native_compute nia now now_show nra nsatz nsatz_compute
+syn keyword coqTactic    contained omega once optimize_heap over
+syn keyword coqTactic    contained pattern protect_fv psatz psatz_Q psatz_R psatz_Z
+syn keyword coqTactic    contained quote
+syn keyword coqTactic    contained rapply red refine reflexivity remember rename replace rewrite rewrite_db
+syn keyword coqTactic    contained rewrite_strat right ring ring_lookup ring_simplify rtauto
+syn keyword coqTactic    contained set setoid_etransitivity setoid_reflexivity setoid_replace setoid_rewrite
+syn keyword coqTactic    contained setoid_symmetry setoid_transitivity shelve shelve_unifiable simpl simplify_eq
+syn keyword coqTactic    contained solve_constraints sos_Q sos_R sos_Z specialize split split_Rabs split_Rmult stepl
+syn keyword coqTactic    contained stepr subst substitute suff suffices symmetry
+syn keyword coqTactic    contained tauto transitivity trivial
+syn keyword coqTactic    contained under unfold unify unlock unshelve
+syn keyword coqTactic    contained vm_cast_no_check vm_compute
+syn keyword coqTactic    contained with_strategy wlog
+syn keyword coqTactic    contained xlia xnlia xnqa xnra
+syn keyword coqTactic    contained zify zify_elim_let zify_iter_let zify_iter_specs zify_op zify_saturate
+syn match   coqTactic    contained "debug\_s\+\%(auto\|eauto\|trivial\)"
+syn match   coqTactic    contained "decide\_s\+equality"
+syn match   coqTactic    contained "dependent\_s\+\%(destruction\|induction\|inversion\|inversion_clear\|rewrite\|simple\_s\+inversion\)"
+syn match   coqTactic    contained "dfs\_s+eauto"
+syn match   coqTactic    contained "e\?pose\%(\_s\+proof\)\?"
+syn match   coqTactic    contained "functional\_s\+\%(induction\|inversion\)"
+syn match   coqTactic    contained "generally\_s\+have"
+syn match   coqTactic    contained "notypeclasses\_s\+refine"
+syn match   coqTactic    contained "revert\%(\_s\+dependent\)\?"
+syn match   coqTactic    contained "\%(reset\|show\)\_s\+ltac\_s\+profile"
+syn match   coqTactic    contained "\%(start\|stop\)\_s\+ltac\_s\+profiling"
+syn match   coqTactic    contained "simple\_s\+\%(apply\|congruence\|destruct\|eapply\|induction\|injection\|inversion\|\%(notypeclasses\_s\+refine\)\|refine\|subst\)"
+syn match   coqTactic    contained "soft\_s\+functional\_s\+induction"
+syn match   coqTactic    contained "typeclasses\_s\+eauto"
+syn match   coqTactic    contained "without\_s\+loss"
 syn keyword coqTacticKwd contained as by in using with into after until return
 syn keyword coqTacticAdmit contained admit give_up
 
