@@ -9,6 +9,8 @@
 ### Fixed
 - Broken highlighting and indentation after `Fail Next Obligation`.
   (PR #268)
+- Highlight many more tactics.
+  (PR #269)
 
 ## [1.6.2]
 
