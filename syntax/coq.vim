@@ -79,6 +79,7 @@ syn match   coqIdent             contained "[[:digit:]']\@!\k\k*"
 syn keyword coqTopLevel          Type Structure Cd Drop Existential
 "...
 syn keyword coqVernacCmd         Local Global Polymorphic Functional Scheme Back Combined
+syn keyword coqVernacCmd         Fail Succeed
 syn keyword coqFeedback          Show
 
 syn region coqPrint matchgroup=coqVernacCmd start="\<\%(Print\%(\_s\+Assumptions\)\?\|About\)\>" contains=coqIdent end="\.\_s"
@@ -294,6 +295,9 @@ syn region coqProofDelim contained contains=coqOblOfDelim start="\%(\%(\<O\)\@1<
 syn region coqProofEnder contained matchgroup=coqProofDelim start="\<\%(Qed\|Defined\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqProofEnder contained matchgroup=coqProofAdmit start="\<\%(Abort\|Admitted\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqProofEnder contained contains=coqIdent matchgroup=coqProofDelim start="\<Save\>" matchgroup=coqVernacPunctuation end="\.\_s"
+" NOTE: Don't expect a proof body after `Fail Proof` or `Fail Next Obligation`.
+" Must come after `coqProofBody`.
+syn region coqProofFail  matchgroup=coqProofDelim start="\%(\<Fail\>\_s\+\)\@<=\%(Proof\|\%(Obligation\_s\+\d\+\)\|\%(Next\_s\+Obligation\)\)\>" end="\.\_s" keepend
 
 syn keyword coqTactic    contained absurd apply assert assumption auto
 syn keyword coqTactic    contained case case_eq change clear clearbody cofix cbn cbv compare compute congruence constructor contradiction cut cutrewrite

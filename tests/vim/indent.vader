@@ -428,6 +428,19 @@ Expect coq (indented-obligation-body-empty):
   Obligation 1 of p.
   Admitted.
 
+Given coq (obligation-fail):
+  Program Definition p (i : ind) : {i = i} + {i <> i} := ind_eq_dec.
+  Fail Next Obligation.
+  Definition x := 1.
+
+Do (indent-obligation-fail):
+  =ip
+
+Expect coq (indented-obligation-fail):
+  Program Definition p (i : ind) : {i = i} + {i <> i} := ind_eq_dec.
+  Fail Next Obligation.
+  Definition x := 1.
+
 Given coq (proof-one-line):
   Lemma p : True.
   Proof. Admitted.
