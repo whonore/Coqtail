@@ -6,6 +6,10 @@
 - Support for Coq 8.15.
   (PR #266)
 
+### Fixed
+- Broken highlighting and indentation after `Fail Next Obligation`.
+  (PR #268)
+
 ## [1.6.2]
 
 ### Added
