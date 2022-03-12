@@ -372,7 +372,7 @@ function! coqtail#start(...) abort
       \ 'version': b:coqtail_version.str_version,
       \ 'width': winwidth(l:info_winid),
       \ 'height': winheight(l:info_winid)})
-    call s:call('refresh', '', 0, {})
+    call coqtail#refresh()
 
     call s:init_proof_diffs(b:coqtail_version.str_version)
 
@@ -382,8 +382,8 @@ function! coqtail#start(...) abort
       autocmd InsertEnter <buffer> call s:call('sync', 'sync', 0, {})
       autocmd BufWinLeave <buffer> call coqtail#panels#hide()
       autocmd BufWinEnter <buffer>
-        \ call coqtail#panels#open(0) | call s:call('refresh', '', 0, {})
-      autocmd WinNew <buffer> call s:call('refresh', '', 0, {})
+        \ call coqtail#panels#open(0) | call coqtail#refresh()
+      autocmd WinNew <buffer> call coqtail#refresh()
     augroup END
   endif
 
@@ -420,6 +420,11 @@ function! coqtail#jumpto(target) abort
     normal! m'
     call cursor(l:pos)
   endif
+endfunction
+
+" Refresh the auxiliary panels.
+function! coqtail#refresh() abort
+  call s:call('refresh', '', 0, {})
 endfunction
 
 " Define Coqtail commands with the correct options.
@@ -466,7 +471,7 @@ function! coqtail#define_commands() abort
   call s:cmddef('CoqGotoDef', 'call coqtail#gotodef(<f-args>, <bang>0)', 's')
   call s:cmddef('Coq', 'call s:call("query", "", 0, {"args": [<f-args>]})', 's')
   call s:cmddef('CoqRestorePanels',
-    \ 'call coqtail#panels#open(1) | call s:call("refresh", "", 0, {})', 's')
+    \ 'call coqtail#panels#open(1) | call coqtail#refresh()', 's')
   call s:cmddef('CoqGotoGoal', 'call coqtail#gotogoal(<count>, <bang>1)', 's')
   call s:cmddef('CoqGotoGoalNext', 'call coqtail#gotogoal(-1, <bang>1)', 's')
   call s:cmddef('CoqGotoGoalPrev', 'call coqtail#gotogoal(-2, <bang>1)', 's')
