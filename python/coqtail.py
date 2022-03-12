@@ -129,9 +129,12 @@ class Coqtail:
         handler - The Vim interface
         oldchange - The previous number of changes to the buffer
         oldbuf - The buffer corresponding to oldchange
-        endpoints - A stack of the end positions of the sentences sent to Coqtop
-                    (grows to the right)
-        send_queue - A queue of the sentences to send to Coqtop
+        endpoints - A stack (grows to the right) of the end positions of the
+                    sentences checked by CoqTop. The end position of a sentence
+                    is the start position of its next sentence.
+        send_queue - A queue of the sentences to send to Coqtop. Each item
+                     contains the "start" and "end" (inclusive, including the
+                     dot) position of the sentence.
         error_at - The position of the last error
         info_msg - Lines of text to display in the info panel
         goal_msg - Lines of text to display in the goal panel
@@ -265,7 +268,9 @@ class Coqtail:
 
         # Check if should rewind or advance
         if (line, col) < (eline, ecol):
-            return self.rewind_to(line, col + 2, opts=opts)
+            # Don't rewind the sentence whose dot is on the specified position.
+            #                               vvv
+            return self.rewind_to(line, col + 1 + 1, opts=opts)
 
         unmatched = None
         buffer = self.buffer
@@ -318,7 +323,7 @@ class Coqtail:
         # opts is always passed by handle().
         # Get the location of the last '.'
         line, col = self.endpoints[-1] if self.endpoints != [] else (0, 1)
-        return (line + 1, col)
+        return (line + 1, col - 1 + 1)
 
     def errorpoint(self, opts: VimOptions) -> Optional[Tuple[int, int]]:
         """Return the start of the error region."""
@@ -390,7 +395,9 @@ class Coqtail:
         return failed_at, None
 
     def rewind_to(self, line: int, col: int, opts: VimOptions) -> Optional[str]:
-        """Rewind to a specific location."""
+        """Rewind to the point where all remaining endpoints are strictly
+        before the specified position.
+        """
         # Count the number of endpoints after the specified location
         steps_too_far = sum(pos >= (line, col) for pos in self.endpoints)
         return self.rewind(steps_too_far, opts=opts)
@@ -1128,7 +1135,7 @@ def _between(
     start: Tuple[int, int],
     end: Tuple[int, int],
 ) -> bytes:
-    """Return the text between a given start and end point."""
+    """Return the text between a given start and end point (inclusive)."""
     sline, scol = start
     eline, ecol = end
 
