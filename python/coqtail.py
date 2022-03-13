@@ -159,20 +159,10 @@ class Coqtail:
             newbuf = self.buffer
 
             if self.endpoints != []:
-                eline, ecol = self.endpoints[-1]
-                linediff = _find_diff(self.oldbuf, newbuf, eline + 1)
-                if linediff is not None:
-                    try:
-                        coldiff = _find_diff(
-                            self.oldbuf[linediff],
-                            newbuf[linediff],
-                            ecol if linediff == eline else None,
-                        )
-                    except IndexError:
-                        linediff = len(newbuf) - 1
-                        coldiff = len(newbuf[-1])
-                    if coldiff is not None:
-                        err = self.rewind_to(linediff, coldiff + 1, opts=opts)
+                diff = _diff_lines(self.oldbuf, newbuf, self.endpoints[-1])
+                if diff is not None:
+                    linediff, coldiff = diff
+                    err = self.rewind_to(linediff, coldiff + 1, opts=opts)
 
             self.oldchange = newchange
             self.oldbuf = newbuf
@@ -1474,11 +1464,39 @@ def _find_diff(
     y: Iterable[T],
     stop: Optional[int] = None,
 ) -> Optional[int]:
-    """Locate the first differing element in 'x' and 'y' up to 'stop'."""
+    """Locate the first differing element in 'x' and 'y' up to 'stop'
+    (exclusive).
+    """
     seq: Iterator[Tuple[int, Tuple[T, T]]] = enumerate(zip_longest(x, y))
     if stop is not None:
         seq = islice(seq, stop)
     return next((i for i, vs in seq if vs[0] != vs[1]), None)
+
+
+def _diff_lines(
+    old: Sequence[bytes],
+    new: Sequence[bytes],
+    stop: Tuple[int, int],
+) -> Optional[Tuple[int, int]]:
+    """Locate the first differing position in 'old' and 'new' lines of text up
+    to 'stop' (exclusive).
+    """
+    sline, scol = stop
+    linediff = _find_diff(old, new, sline + 1)
+    if linediff is None:
+        return None
+    try:
+        coldiff = _find_diff(
+            old[linediff],
+            new[linediff],
+            scol if linediff == sline else None,
+        )
+    except IndexError:
+        linediff = len(new) - 1
+        coldiff = len(new[-1])
+    if coldiff is None:
+        return None
+    return (linediff, coldiff)
 
 
 def _char_isdigit(c: int) -> bool:
