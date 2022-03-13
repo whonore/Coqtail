@@ -127,8 +127,16 @@ class Coqtail:
 
         coqtop - The Coqtop interface
         handler - The Vim interface
-        oldchange - The previous number of changes to the buffer
-        oldbuf - The buffer corresponding to oldchange
+        changedtick - The most recent value of `b:changedtick` that Coqtail has
+                      observed. The positions stored in other variables
+                      (`endpoints`, `send_queue`, `error_at`) can become
+                      invalid when this value gets outdated. To protect Coqtail
+                      from this inconsistency, the buffer is locked (unset
+                      `modifiable`) when processing. When processing, `sync()`
+                      should be called first to refresh this variable and
+                      remove the positions invalidated by the new changes to
+                      the buffer.
+        buffer - The buffer corresponding to changedtick
         endpoints - A stack (grows to the right) of the end positions of the
                     sentences checked by CoqTop. The end position of a sentence
                     is the start position of its next sentence.
@@ -142,8 +150,8 @@ class Coqtail:
         """
         self.coqtop = CT.Coqtop()
         self.handler = handler
-        self.oldchange = 0
-        self.oldbuf: List[bytes] = []
+        self.changedtick = 0
+        self.buffer: List[bytes] = []
         self.endpoints: List[Tuple[int, int]] = []
         self.send_queue: Deque[Mapping[str, Tuple[int, int]]] = deque()
         self.error_at: Optional[Tuple[Tuple[int, int], Tuple[int, int]]] = None
@@ -154,18 +162,18 @@ class Coqtail:
     def sync(self, opts: VimOptions) -> Optional[str]:
         """Check if the buffer has been updated and rewind Coqtop if so."""
         err = None
-        newchange = self.changedtick
-        if newchange != self.oldchange:
-            newbuf = self.buffer
+        newtick = self.get_changedtick()
+        if newtick != self.changedtick:
+            newbuf = self.get_buffer()
 
             if self.endpoints != []:
-                diff = _diff_lines(self.oldbuf, newbuf, self.endpoints[-1])
+                diff = _diff_lines(self.buffer, newbuf, self.endpoints[-1])
                 if diff is not None:
                     linediff, coldiff = diff
                     err = self.rewind_to(linediff, coldiff + 1, opts=opts)
 
-            self.oldchange = newchange
-            self.oldbuf = newbuf
+            self.changedtick = newtick
+            self.buffer = newbuf
 
         return err
 
@@ -208,10 +216,9 @@ class Coqtail:
         line, col = self.endpoints[-1] if self.endpoints != [] else (0, 0)
 
         unmatched = None
-        buffer = self.buffer
         for _ in range(steps):
             try:
-                to_send = _get_message_range(buffer, (line, col))
+                to_send = _get_message_range(self.buffer, (line, col))
             except UnmatchedError as e:
                 unmatched = e
                 break
@@ -221,7 +228,7 @@ class Coqtail:
             col += 1
             self.send_queue.append(to_send)
 
-        failed_at, err = self.send_until_fail(buffer, opts=opts)
+        failed_at, err = self.send_until_fail(self.buffer, opts=opts)
         if unmatched is not None and failed_at is None:
             # Only report unmatched if no other errors occurred first
             self.set_info(str(unmatched), reset=False)
@@ -263,10 +270,9 @@ class Coqtail:
             return self.rewind_to(line, col + 1 + 1, opts=opts)
 
         unmatched = None
-        buffer = self.buffer
         while True:
             try:
-                to_send = _get_message_range(buffer, (eline, ecol))
+                to_send = _get_message_range(self.buffer, (eline, ecol))
             except UnmatchedError as e:
                 # Only report unmatched if it occurs after the desired position
                 if e.range[0] <= (line, col):
@@ -280,7 +286,7 @@ class Coqtail:
             ecol += 1
             self.send_queue.append(to_send)
 
-        failed_at, err = self.send_until_fail(buffer, opts=opts)
+        failed_at, err = self.send_until_fail(self.buffer, opts=opts)
         if unmatched is not None and failed_at is None:
             # Only report unmatched if no other errors occurred first
             self.set_info(str(unmatched), reset=False)
@@ -722,9 +728,8 @@ class Coqtail:
         self.refresh(goals=False, opts=opts)
 
     # Vim Helpers #
-    @property
-    def changedtick(self) -> int:
-        """The value of changedtick for this buffer."""
+    def get_changedtick(self) -> int:
+        """Get the value of changedtick for this buffer."""
         return cast(int, self.handler.vimvar("changedtick"))
 
     @property
@@ -737,9 +742,8 @@ class Coqtail:
         """The name of this buffer's debug log."""
         self.handler.vimvar("coqtail_log_name", log)
 
-    @property
-    def buffer(self) -> List[bytes]:
-        """The contents of this buffer."""
+    def get_buffer(self) -> List[bytes]:
+        """Get the contents of this buffer."""
         lines: List[str] = self.handler.vimcall(
             "getbufline",
             True,
