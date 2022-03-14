@@ -337,21 +337,21 @@ syn keyword coqTactic    contained vm_cast_no_check vm_compute
 syn keyword coqTactic    contained with_strategy wlog
 syn keyword coqTactic    contained xlia xnlia xnqa xnra
 syn keyword coqTactic    contained zify zify_elim_let zify_iter_let zify_iter_specs zify_op zify_saturate
-syn match   coqTactic    contained "debug\_s\+\%(auto\|eauto\|trivial\)"
-syn match   coqTactic    contained "decide\_s\+equality"
-syn match   coqTactic    contained "dependent\_s\+\%(destruction\|induction\|inversion\|inversion_clear\|rewrite\|simple\_s\+inversion\)"
-syn match   coqTactic    contained "dfs\_s+eauto"
-syn match   coqTactic    contained "e\?pose\%(\_s\+proof\)\?"
-syn match   coqTactic    contained "functional\_s\+\%(induction\|inversion\)"
-syn match   coqTactic    contained "generally\_s\+have"
-syn match   coqTactic    contained "notypeclasses\_s\+refine"
-syn match   coqTactic    contained "revert\%(\_s\+dependent\)\?"
-syn match   coqTactic    contained "\%(reset\|show\)\_s\+ltac\_s\+profile"
-syn match   coqTactic    contained "\%(start\|stop\)\_s\+ltac\_s\+profiling"
-syn match   coqTactic    contained "simple\_s\+\%(apply\|congruence\|destruct\|eapply\|induction\|injection\|inversion\|\%(notypeclasses\_s\+refine\)\|refine\|subst\)"
-syn match   coqTactic    contained "soft\_s\+functional\_s\+induction"
-syn match   coqTactic    contained "typeclasses\_s\+eauto"
-syn match   coqTactic    contained "without\_s\+loss"
+syn match   coqTactic    contained "\<debug\_s\+\%(auto\|eauto\|trivial\)\>"
+syn match   coqTactic    contained "\<decide\_s\+equality\>"
+syn match   coqTactic    contained "\<dependent\_s\+\%(destruction\|induction\|inversion\|inversion_clear\|rewrite\|simple\_s\+inversion\)\>"
+syn match   coqTactic    contained "\<dfs\_s+eauto\>"
+syn match   coqTactic    contained "\<e\?pose\%(\_s\+proof\)\?\>"
+syn match   coqTactic    contained "\<functional\_s\+\%(induction\|inversion\)\>"
+syn match   coqTactic    contained "\<generally\_s\+have\>"
+syn match   coqTactic    contained "\<notypeclasses\_s\+refine\>"
+syn match   coqTactic    contained "\<revert\%(\_s\+dependent\)\?\>"
+syn match   coqTactic    contained "\<\%(reset\|show\)\_s\+ltac\_s\+profile\>"
+syn match   coqTactic    contained "\<\%(start\|stop\)\_s\+ltac\_s\+profiling\>"
+syn match   coqTactic    contained "\<simple\_s\+\%(apply\|congruence\|destruct\|eapply\|induction\|injection\|inversion\|\%(notypeclasses\_s\+refine\)\|refine\|subst\)\>"
+syn match   coqTactic    contained "\<soft\_s\+functional\_s\+induction\>"
+syn match   coqTactic    contained "\<typeclasses\_s\+eauto\>"
+syn match   coqTactic    contained "\<without\_s\+loss\>"
 syn keyword coqTacticKwd contained as by in using with into after until return
 syn keyword coqTacticAdmit contained admit give_up
 
