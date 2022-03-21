@@ -3,6 +3,8 @@
 ## Unreleased ([master])
 
 ### Added
+- `g:coqtail_tagfunc` option to enable/disable Coqtail's default `tagfunc`.
+  (PR #272)
 - Support for Coq 8.15.
   (PR #266)
 

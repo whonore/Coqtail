@@ -29,7 +29,7 @@ if g:coqtail#supported
 endif
 
 " Tags
-if exists('+tagfunc') && g:coqtail#supported
+if exists('+tagfunc') && g:coqtail#supported && get(g:, 'coqtail_tagfunc', 1)
   setlocal tagfunc=coqtail#gettags
   let b:undo_ftplugin = add(b:undo_ftplugin, 'setl tfu<')
 endif

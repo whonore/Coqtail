@@ -96,9 +96,10 @@ Movement Commands					      *coqtail-movement*
 			of the definition of a Coq term and try to jump to the
 			first one. If jumping is impossible open the
 			|quickfix-window| instead. The first version uses
-			{arg}, while the second uses the term under the
-			cursor. If 'tagfunc' is supported then the usual tag
-			commands will also work (`:tag`, `CTRL-]`, etc).
+			{arg}, while the second uses the term under the cursor.
+			If 'tagfunc' is supported and `g:coqtail_tagfunc` is
+			true then the usual tag commands will also work
+			(`:tag`, `CTRL-]`, etc).
 
 ===========
 Coq Queries						       *coqtail-queries*
@@ -331,6 +332,11 @@ b:coqtail_auto_set_proof_diffs
 g:coqtail_update_tagstack
 			If true then update the |tagstack| when `:CoqGotoDef`
 			jumps to a definition.
+
+			Default: 1
+
+					     *g:coqtail_tagfunc* *coqtail-tagfunc*
+g:coqtail_tagfunc	If true then set 'tagfunc' to `coqtail#gettags`.
 
 			Default: 1
 
