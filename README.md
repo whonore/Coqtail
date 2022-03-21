@@ -206,6 +206,18 @@ Coqtail defines patterns to enable automatic insertion of the appropriate `End`
 command for code blocks such as `Section`s, `Module`s, and `match` expressions
 with [endwise].
 
+### Tags
+
+Coqtail supports the `:tag` family of commands by locating a term on the fly
+with `tagfunc`.
+However, as this relies on Coq's `Locate` command, it only works if the point
+where the term is defined has already been evaluated by Coq.
+An alternative is to disable Coqtail's default `tagfunc` (`let g:coqtail_tagfunc
+= 0`) and instead use [universal-ctags] in conjunction with [coq.ctags], to
+statically generate a `tags` file.
+This works especially well with something like the [gutentags] plugin to
+automatically keep the `tags` file in sync with the Coq source.
+
 ## Thanks
 
 Parts of Coqtail were originally inspired by/adapted from [Coquille] (MIT
@@ -237,3 +249,6 @@ If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
 [proof diffs]: https://coq.inria.fr/distrib/current/refman/proofs/writing-proofs/proof-mode.html#coq:opt.Diffs
 [Coquille]: https://github.com/the-lambda-church/coquille
 [YouCompleteMe]: https://github.com/ycm-core/YouCompleteMe/wiki/Building-Vim-from-source
+[universal-ctags]: https://github.com/universal-ctags/ctags
+[coq.ctags]: https://github.com/tomtomjhj/coq.ctags
+[gutentags]: https://github.com/ludovicchabant/vim-gutentags
