@@ -50,7 +50,7 @@ Goals = NamedTuple(
     ],
 )
 
-WARNING_RE = re.compile("^(Warning: [^]]+])$", flags=re.MULTILINE)
+WARNING_RE = re.compile("^(Warning:[^]]+])$", flags=re.MULTILINE)
 
 
 class FindCoqtopError(Exception):
