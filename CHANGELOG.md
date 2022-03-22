@@ -9,6 +9,9 @@
   (PR #266)
 
 ### Fixed
+- Catch and report long warnings from Coqtop that line wrap (`Warning:\n`
+  instead of `Warning: `) instead of aborting.
+  (PR #274)
 - Broken highlighting and indentation after `Fail Next Obligation`.
   (PR #268)
 - Highlight many more tactics.
