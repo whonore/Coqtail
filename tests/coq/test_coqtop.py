@@ -246,10 +246,21 @@ def test_start_invalid_option() -> None:
     assert stderr == ""
 
 
-def test_start_warning() -> None:
+@pytest.mark.parametrize(
+    "args",
+    (
+        ["-R", "fake", "Fake"],
+        [
+            "-R",
+            "very-long-fake-file-name-that-forces-the-warning-to-wrap-to-a-new-line",
+            "Fake",
+        ],
+    ),
+)
+def test_start_warning(args: List[str]) -> None:
     """Warnings do not cause startup to fail."""
     ct = Coqtop()
-    res, stderr = ct.start(None, None, "", ["-R", "fake", "Fake"])
+    res, stderr = ct.start(None, None, "", args)
     assert isinstance(res, dict)
     assert ct.xml is not None
     # Some versions of Coq don't print warnings in the expected format.
