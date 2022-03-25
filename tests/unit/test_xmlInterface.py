@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
-# pylint: disable=protected-access, redefined-outer-name
+# pylint: disable=redefined-outer-name
 """XMLInterface marshalling unit tests."""
 
 from collections import namedtuple
