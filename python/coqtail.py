@@ -1239,26 +1239,34 @@ def _find_dot_after(lines: Sequence[bytes], sline: int, scol: int) -> Tuple[int,
         dot_pos = line.find(b".")
         com_pos = line.find(b"(*")
         str_pos = line.find(b'"')
+        elpi_pos = line.find(b"lp:{{")
 
-        if dot_pos == -1 and com_pos == -1 and str_pos == -1:
+        first_pos = dot_pos
+        for p in (com_pos, str_pos, elpi_pos):
+            if first_pos == -1 or (0 <= p < first_pos):
+                first_pos = p
+
+        if first_pos == -1:
             # Nothing on this line
             sline += 1
             scol = 0
-        elif dot_pos == -1 or (0 <= com_pos < dot_pos) or (0 <= str_pos < dot_pos):
-            if str_pos == -1 or (0 <= com_pos < str_pos):
-                # We see a comment opening before the next '.'
-                com_end = _skip_comment(lines, sline, scol + com_pos)
-                if com_end is None:
-                    raise UnmatchedError("(*", (sline, scol + com_pos))
-
-                sline, scol = com_end
-            else:
-                # We see a string starting before the next '.'
-                str_end = _skip_str(lines, sline, scol + str_pos)
-                if str_end is None:
-                    raise UnmatchedError('"', (sline, scol + str_pos))
-
-                sline, scol = str_end
+        elif first_pos == com_pos:
+            # We see a comment opening before the next '.'
+            com_end = _skip_comment(lines, sline, scol + com_pos)
+            if com_end is None:
+                raise UnmatchedError("(*", (sline, scol + com_pos))
+            sline, scol = com_end
+        elif first_pos == str_pos:
+            # We see a string starting before the next '.'
+            str_end = _skip_str(lines, sline, scol + str_pos)
+            if str_end is None:
+                raise UnmatchedError('"', (sline, scol + str_pos))
+            sline, scol = str_end
+        elif first_pos == elpi_pos:
+            lp_end = _skip_elpi(lines, sline, scol + elpi_pos)
+            if lp_end is None:
+                raise UnmatchedError("lp:{{", (sline, scol + elpi_pos))
+            sline, scol = lp_end
         elif line[dot_pos : dot_pos + 2].rstrip() == b".":
             # Don't stop for '.' used in qualified name or for '..'
             return (sline, scol + dot_pos)
@@ -1290,6 +1298,29 @@ def _skip_comment(
 ) -> Optional[Tuple[int, int]]:
     """Skip the next block contained in (* *)."""
     return _skip_block(lines, sline, scol, b"(*", b"*)")
+
+
+# In an elpi antiquotation lp:{{ }} we currently ignore strings "" and comments %
+# For example the lp:{{ }} may end in the middle of a string "}}" or a comment % }}
+# which is not ideal, but intentional to agree with the current Coq parser
+# https://github.com/coq/coq/blob/f2bf445b8f4f5241ebdc348b69961041b4e57883/parsing/cLexer.ml#L542
+# See also this discussion: https://github.com/whonore/Coqtail/pull/278#discussion_r841927125
+def _skip_elpi(
+    lines: Sequence[bytes],
+    sline: int,
+    scol: int,
+) -> Optional[Tuple[int, int]]:
+    """Skip the next block contained in lp:{{ }}."""
+    return _skip_block(lines, sline, scol, b"lp:{{", b"}}", {b"{{": _skip_br2})
+
+
+def _skip_br2(
+    lines: Sequence[bytes],
+    sline: int,
+    scol: int,
+) -> Optional[Tuple[int, int]]:
+    """Skip the next block contained in {{ }}."""
+    return _skip_block(lines, sline, scol, b"{{", b"}}")
 
 
 def _skip_attribute(

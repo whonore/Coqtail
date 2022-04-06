@@ -79,6 +79,14 @@ _parse_tests: Sequence[_ParseTest] = [
     ("focus space before colon", ["1 :{"], (0, 3)),
     ("focus trailing command no spaces", ["2:{t."], (0, 2)),
     ("focus trailing command with spaces", ["2 : { t."], (0, 4)),
+    # elpi
+    ("elpi antiquote", ["Elpi Accumulate lp:{{ }}."], (0, 24)),
+    ("elpi antiquote quote", ["Elpi Accumulate lp:{{ {{ }}. }}."], (0, 31)),
+    (
+        "elpi antiquote quote antiquote",
+        ["Elpi Accumulate lp:{{ {{ lp:{{ }} }}. }}."],
+        (0, 40),
+    ),
     # Invalid tests
     ("no dot", ["A"], NoDotError()),
     ("dot2", ["A.."], NoDotError()),

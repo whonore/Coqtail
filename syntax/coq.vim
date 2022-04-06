@@ -370,8 +370,8 @@ syn region coqDefContents1  contained contains=@coqTerm matchgroup=coqVernacPunc
 " Coercions
 syn region coqCoercion      contains=coqCoercionName,coqCoercionBody1,coqCoercionBody2 matchgroup=coqVernacCmd start="\<\%(Identity\_s\+\)\?Coercion\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
 syn region coqCoercionName  contained contains=coqBinder,coqDefType matchgroup=coqIdent start="[[:digit:]']\@!\k\k*" matchgroup=NONE end=":="me=e-2 end=">->"me=e-3 keepend
-syn region coqCoercionBody1 contained contains=coqIdent matchgroup=coqVernacPunctuation start=">->" end="\.\_s""
-syn region coqCoercionBody2 contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":=" end="\.\_s""
+syn region coqCoercionBody1 contained contains=coqIdent matchgroup=coqVernacPunctuation start=">->" end="\.\_s"
+syn region coqCoercionBody2 contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
 
 " Fixpoints
 syn region coqFix     contains=coqFixBody start="\<\%(Program\_s\+\)\?\%(\%(\%(Co\)\?Fixpoint\)\|Fixpoint\|Function\)\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
@@ -449,6 +449,31 @@ syn region coqExtrInductive matchgroup=coqVernacCmd start="\<Extract\_s\+Inducti
 " TODO: ^ Enforce order of tokens: ident => "string"
 syn match coqBigArrow contained "=>"
 
+" Elpi
+
+" User-defined commands
+syn region coqElpi matchgroup=coqVernacCmd start="\<Elpi\>" end="\.\_s" keepend
+
+syn region coqElpiCommand matchgroup=coqVernacCmd start="\<Elpi\_s\+Command\>" end="\.\_s" keepend
+syn region coqElpiTypecheck matchgroup=coqVernacCmd start="\<Elpi\_s\+Typecheck\>" end="\.\_s" keepend
+syn region coqElpiDebug matchgroup=coqVernacCmd start="\<Elpi\_s\+\%(Debug\|Trace\|Bound\_s\+Steps\)\>" end="\.\_s" keepend
+syn region coqElpiAccumulate contains=elpiEmbed matchgroup=coqVernacCmd start="\<Elpi\_s\+\%(Accumulate\|Program\)\>" end="\.\_s" keepend
+syn region coqElpiQuery contains=elpiEmbed matchgroup=coqVernacCmd start="\<Elpi\_s\+Query\>" end="\.\_s" keepend
+syn region coqElpiDb matchgroup=coqVernacCmd start="\<Elpi\_s\+Db\>" contains=elpiEmbed end="\.\_s" keepend
+syn region coqElpiAccumulateDb matchgroup=coqVernacCmd start="\<Elpi\_s\+Accumulate\_s\+Db\>" end="\.\_s" keepend
+
+syn cluster elpiCode contains=elpiName,elpiQuote,elpiMetavar,elpiComment,elpiString,elpiKeyword,elpiSymbol,elpiMode,elpiNumber
+syn keyword elpiKeyword contained pred type kind pi sigma is
+syn match elpiSymbol contained ":-\|=>\|->\|[,|.=!\\(){}\[\]]"
+syn region elpiEmbed contained contains=@elpiCode matchgroup=elpiPunctuation start="\<lp:{{"rs=e end="}}" extend
+syn region elpiQuote contained contains=@elpiCode matchgroup=elpiPunctuation start="{{" end="}}" extend
+syn match elpiName contained "[a-z_][a-zA-Z0-9_.!?<>-]*"
+syn match elpiMetavar contained "[A-Z][a-zA-Z0-0_!?<>-]*"
+syn region elpiComment contained start="%" end="$" extend
+syn region elpiString contained start=+"+ skip=+\\"+ end=+"+ extend
+syn match elpiMode contained "\<[io]:"
+syn match elpiNumber contained "[0-9]\+"
+
 " Various (High priority)
 syn region  coqComment           containedin=ALL contains=coqComment,coqTodo,@Spell start="(\*" end="\*)" extend keepend
 syn keyword coqTodo              contained TODO FIXME XXX NOTE
@@ -521,6 +546,16 @@ HiLink coqProofAdmit        coqError
 
 " Strings
 HiLink coqString            String
+
+" Elpi
+HiLink elpiKeyword          Keyword
+HiLink elpiMetavar          Identifier
+HiLink elpiComment          Comment
+HiLink elpiString           String
+HiLink elpiSymbol           Operator
+HiLink elpiMode             Special
+HiLink elpiNumber           Number
+HiLink elpiPunctuation      Type
 
 delcommand HiLink
 
