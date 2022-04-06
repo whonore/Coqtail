@@ -3,6 +3,8 @@
 ## Unreleased ([master])
 
 ### Added
+- Support for Elpi syntax highlighting and parsing inside `lp:{{ ... }}` blocks.
+  (PR #278)
 - `g:coqtail_tagfunc` option to enable/disable Coqtail's default `tagfunc`.
   (PR #272)
 - Support for Coq 8.15.
