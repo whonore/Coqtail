@@ -113,6 +113,7 @@ syn region coqOpaque  matchgroup=coqVernacCmd start="\<\%(Opaque\|Transparent\)\
 syn region coqShow       matchgroup=coqVernacCmd start="\<Show\_s\+\%(\%(Implicits\|Script\|Tree\|Proof\|Conjectures\|Intros\?\|Existentials\)\>\)\?" end="\.\_s"
 syn region coqImplicitTypes matchgroup=coqVernacCmd start="\<Implicit Types\?" end="\.\_s"
 syn region coqGeneralizable matchgroup=coqVernacCmd start="\<Generalizable\_s\+\%(\%(All\|No\)\_s\+\)\?Variables\?" end="\.\_s"
+syn region coqDeclareML contains=coqString matchgroup=coqVernacCmd start="\<Declare\_s\+ML\_s\+Module\>" end="\.\_s"
 
 " Attributes
 syn region coqAttribute contains=coqString,coqAttrBool,coqAttrPunc,coqIdent start="#\[" end="]"
@@ -474,6 +475,9 @@ syn region elpiString contained start=+"+ skip=+\\"+ end=+"+ extend
 syn match elpiMode contained "\<[io]:"
 syn match elpiNumber contained "[0-9]\+"
 
+" cppo
+syn region cppo start="^\_s*#\%(if\|ifdef\|ifndef\|else\|elif\|endif\|define\|undef\|include\|warning\|error\|ext\|endext\)" end="$"
+
 " Various (High priority)
 syn region  coqComment           containedin=ALL contains=coqComment,coqTodo,@Spell start="(\*" end="\*)" extend keepend
 syn keyword coqTodo              contained TODO FIXME XXX NOTE
@@ -556,6 +560,8 @@ HiLink elpiSymbol           Operator
 HiLink elpiMode             Special
 HiLink elpiNumber           Number
 HiLink elpiPunctuation      Type
+
+HiLink cppo PreProc
 
 delcommand HiLink
 
