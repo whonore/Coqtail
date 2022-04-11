@@ -113,6 +113,7 @@ syn region coqOpaque  matchgroup=coqVernacCmd start="\<\%(Opaque\|Transparent\)\
 syn region coqShow       matchgroup=coqVernacCmd start="\<Show\_s\+\%(\%(Implicits\|Script\|Tree\|Proof\|Conjectures\|Intros\?\|Existentials\)\>\)\?" end="\.\_s"
 syn region coqImplicitTypes matchgroup=coqVernacCmd start="\<Implicit Types\?" end="\.\_s"
 syn region coqGeneralizable matchgroup=coqVernacCmd start="\<Generalizable\_s\+\%(\%(All\|No\)\_s\+\)\?Variables\?" end="\.\_s"
+syn region coqDeclareML contains=coqString matchgroup=coqVernacCmd start="\<Declare\_s\+ML\_s\+Module\>" end="\.\_s"
 
 " Attributes
 syn region coqAttribute contains=coqString,coqAttrBool,coqAttrPunc,coqIdent start="#\[" end="]"
