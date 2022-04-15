@@ -712,6 +712,7 @@ class Coqtail:
         # Center vertically if the Info panel is empty.
         if self.info_msg == []:
             msg = [""] * ((height // 2) - (len(msg) // 2 + 1)) + msg
+        msg = [line.rstrip() for line in msg]
         self.set_info(msg, reset=False)
 
     def toggle_debug(self, opts: VimOptions) -> None:

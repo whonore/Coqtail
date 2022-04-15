@@ -11,6 +11,9 @@
   (PR #266)
 
 ### Fixed
+- Strip trailing whitespace from the splash screen to make it less ugly when
+  `list` + `listchars=trail:` is set.
+  (PR #284)
 - Catch and report long warnings from Coqtop that line wrap (`Warning:\n`
   instead of `Warning: `) instead of aborting.
   (PR #274)
