@@ -11,6 +11,8 @@
   (PR #266)
 
 ### Fixed
+- Highlight `Typeclasses Opaque/Transparent`.
+  (PR #286)
 - Strip trailing whitespace from the splash screen to make it less ugly when
   `list` + `listchars=trail:` is set.
   (PR #284)
