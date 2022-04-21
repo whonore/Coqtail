@@ -109,7 +109,7 @@ syn region coqRequire matchgroup=coqVernacCmd start="\<Export\>" matchgroup=coqV
 syn region coqRequire matchgroup=coqVernacCmd start="\<Include\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqRequire contains=coqString,coqRequire matchgroup=coqVernacCmd start="\<From\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
 syn region coqCheckCompute contains=@coqTerm matchgroup=coqVernacCmd start="\<\%(Check\|Compute\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
-syn region coqOpaque  matchgroup=coqVernacCmd start="\<\%(Opaque\|Transparent\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
+syn region coqOpaque  matchgroup=coqVernacCmd start="\%(\<Typeclasses\_s\+\)\?\<\%(Opaque\|Transparent\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqShow       matchgroup=coqVernacCmd start="\<Show\_s\+\%(\%(Implicits\|Script\|Tree\|Proof\|Conjectures\|Intros\?\|Existentials\)\>\)\?" end="\.\_s"
 syn region coqImplicitTypes matchgroup=coqVernacCmd start="\<Implicit Types\?" end="\.\_s"
 syn region coqGeneralizable matchgroup=coqVernacCmd start="\<Generalizable\_s\+\%(\%(All\|No\)\_s\+\)\?Variables\?" end="\.\_s"
