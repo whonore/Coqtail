@@ -2,6 +2,8 @@
 
 ## Unreleased ([master])
 
+## [1.6.3]
+
 ### Added
 - Support for Elpi syntax highlighting and parsing inside `lp:{{ ... }}` blocks.
   (PR #278)
@@ -335,6 +337,7 @@
 
 [master]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
+[1.6.3]: https://github.com/whonore/Coqtail/tree/v1.6.3
 [1.6.2]: https://github.com/whonore/Coqtail/tree/v1.6.2
 [1.6.1]: https://github.com/whonore/Coqtail/tree/v1.6.1
 [1.6.0]: https://github.com/whonore/Coqtail/tree/v1.6.0
