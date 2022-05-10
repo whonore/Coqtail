@@ -220,6 +220,15 @@ statically generate a `tags` file.
 This works especially well with something like the [gutentags] plugin to
 automatically keep the `tags` file in sync with the Coq source.
 
+### Latex/Unicode input
+
+Coqtail and Coq can handle non-ASCII characters in identifiers, notations, etc.,
+but Coqtail does not provide a method for inputting these characters itself.
+Instead one can use one of the native Vim options (e.g.,
+[`i_CTRL-K`](https://vimhelp.org/insert.txt.html#i_CTRL-K) or
+[`i_CTRL-V_digit`](https://vimhelp.org/insert.txt.html#i_CTRL-V_digit)) or a
+plugin like [latex-unicoder] or [unicode.vim].
+
 ## Thanks
 
 Parts of Coqtail were originally inspired by/adapted from [Coquille] (MIT
@@ -255,3 +264,5 @@ If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
 [universal-ctags]: https://github.com/universal-ctags/ctags
 [coq.ctags]: https://github.com/tomtomjhj/coq.ctags
 [gutentags]: https://github.com/ludovicchabant/vim-gutentags
+[latex-unicoder]: https://github.com/joom/latex-unicoder.vim
+[unicode.vim]: https://github.com/chrisbra/unicode.vim
