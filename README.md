@@ -43,14 +43,16 @@ vim +PlugInstall +qa
 ```
 
 Requirements:
-- Vim compiled with `+python3` (3.6 or later)
+- Vim/Neovim compiled with `+python3` (3.6 or later)
 - Vim configuration options `filetype plugin on`, and optionally `filetype
   indent on` and `syntax on` (e.g. in `.vimrc`)
 - [Coq 8.4 - 8.15]
 
 Newer versions of Coq have not yet been tested, but should still work as long as
-there are no major changes made to the XML protocol Coqtail uses to communicate
-with `coqtop`.
+there are no major changes made to the [XML protocol].
+Note that for Coq >=8.9, the `coqidetop` executable must be available, which may
+require additionally installing CoqIDE depending on the installation method.
+See [here](#coq-executable) for help with pointing Coqtail to the appropriate location.
 
 ## Usage
 
@@ -61,7 +63,7 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | **Starting and Stopping** | |
 | `CoqStart` | `<leader>cc` | Launch Coqtail in the current buffer. |
 | `CoqStop` | `<leader>cq` | Quit Coqtail in the current buffer. |
-| `CoqInterrupt` | `CTRL-C` | Send SIGINT to `coqtop`. |
+| `CoqInterrupt` | `CTRL-C` | Send SIGINT to Coq. |
 | **Movement** | |
 | `{n}CoqNext` | `<leader>cj` | Send the next `n` (1 by default) sentences to Coq. |
 | `{n}CoqUndo` | `<leader>ck` | Step back `n` (1 by default) sentences. |
@@ -237,6 +239,7 @@ If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
 [Coq 8.4 - 8.15]: https://coq.inria.fr/download
 [CoqIDE]: https://coq.inria.fr/refman/practical-tools/coqide.html
 [ProofGeneral]: https://proofgeneral.github.io/
+[XML protocol]: https://github.com/coq/coq/blob/master/dev/doc/xml-protocol.md
 [vim package]: https://vimhelp.org/repeat.txt.html#packages
 [pathogen]: https://github.com/tpope/vim-pathogen
 [Vundle]: https://github.com/VundleVim/Vundle.vim
