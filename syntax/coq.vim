@@ -82,8 +82,13 @@ syn keyword coqVernacCmd         Local Global Polymorphic Functional Scheme Back
 syn keyword coqVernacCmd         Fail Succeed
 syn keyword coqFeedback          Show
 
-syn region coqPrint matchgroup=coqVernacCmd start="\<\%(Print\%(\_s\+Assumptions\)\?\|About\)\>" contains=coqIdent end="\.\_s"
-syn region coqPrintUniversesSubgraph matchgroup=coqVernacCmd start="\<Print\_s\+Universes\_s\+Subgraph\>" contains=coqIdent end="\.\_s"
+syn region coqQuery contains=@coqTerm matchgroup=coqVernacCmd start="\<\%(About\|Check\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
+syn region coqLocate matchgroup=coqVernacCmd start="\<Locate\%(\_s\+\%(Term\|Module\|Ltac\|Library\|File\)\)\?\>" contains=@coqTerm end="\.\_s"
+syn region coqPrint matchgroup=coqVernacCmd start="\<Print\%(\_s\+\%(Term\|All\|Section\|Ltac\|Notation\)\)\?\>" contains=@coqTerm end="\.\_s"
+syn region coqPrintDep matchgroup=coqVernacCmd start="\<Print\%(\_s\+\%(Assumptions\|\%(Opaque\|Transparent\|All\)\_s\+Dependencies\)\)\?\>" contains=@coqTerm end="\.\_s"
+syn region coqPrintMisc matchgroup=coqVernacCmd start="\<Print\%(\_s\+\%(Canonical\_s\+Projections\|Classes\|Coercion\_s\+Paths\|Coercions\|Custom\_s\+Grammar\|Debug\_s\+GC\|Extraction\_s\+\%(Blacklist\|Inline\)\|Firstorder\_s\+Solver\|Grammar\|\|Graph\|Hint\|HintDb\|Implicit\|Instances\|Libraries\|LoadPath\|Ltac\_s\+Signatures\|ML\_s\+\%(Modules\|Path\)\|Options\|Rewrite\_s\+HintDb\|Rings\|Scopes\?\|Strateg\%(y\|ies\)\|Tables\?\|Typing\_s\+Flags\|Universes\%(\_s\+Subgraph\)\?\|Visibility\)\)\?\>" contains=@coqTerm end="\.\_s"
+" TODO: recognize special search syntax (e.g., `inside`, `head:`, etc)
+syn region coqSearch matchgroup=coqVernacCmd start="\<Search\%(Pattern\|Rewrite\)\?\>" contains=@coqTerm end="\.\_s"
 
 " Modules
 syn region coqModule contains=TOP matchgroup=coqVernacCmd start="\<Module\%(\_s\+\%(Type\|Import\|Export\)\)\?\_s\+\z(\%(\%(Type\|Import\|Export\)\_s\)\@![[:digit:]']\@!\k\k*\)\%([^=]*\.\_s\)\@=" end="\<End\_s\+\z1\_s*\.\_s" fold
@@ -98,7 +103,7 @@ syn region coqKwdLet           contained contains=@coqTerm matchgroup=coqKwd sta
 syn region coqKwdParen         contained contains=@coqTerm matchgroup=coqTermPunctuation start="(" end=")" keepend extend
 syn keyword coqKwd             contained else end exists2 fix cofix forall fun if in struct then as return
 syn match   coqKwd             contained "\<where\>"
-syn match   coqKwd             contained "\<exists!\?"
+syn match   coqKwd             contained "\<exists!\?\>"
 syn match   coqKwd             contained "|\|/\\\|\\/\|<->\|\~\|->\|=>\|{\|}\|&\|+\|-\|*\|=\|>\|<\|<="
 syn match coqTermPunctuation   contained ":=\|:>\|:\|;\|,\|||\|\[\|\]\|@\|?\|\<_\>\|<+"
 
@@ -108,7 +113,7 @@ syn region coqRequire matchgroup=coqVernacCmd start="\<Import\>" matchgroup=coqV
 syn region coqRequire matchgroup=coqVernacCmd start="\<Export\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqRequire matchgroup=coqVernacCmd start="\<Include\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqRequire contains=coqString,coqRequire matchgroup=coqVernacCmd start="\<From\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
-syn region coqCheckCompute contains=@coqTerm matchgroup=coqVernacCmd start="\<\%(Check\|Compute\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
+syn region coqCompute contains=@coqTerm matchgroup=coqVernacCmd start="\<Compute\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqOpaque  matchgroup=coqVernacCmd start="\%(\<Typeclasses\_s\+\)\?\<\%(Opaque\|Transparent\)\>" matchgroup=coqVernacPunctuation end="\.\_s"
 syn region coqShow       matchgroup=coqVernacCmd start="\<Show\_s\+\%(\%(Implicits\|Script\|Tree\|Proof\|Conjectures\|Intros\?\|Existentials\)\>\)\?" end="\.\_s"
 syn region coqImplicitTypes matchgroup=coqVernacCmd start="\<Implicit Types\?" end="\.\_s"

@@ -11,6 +11,10 @@
   (PR #266)
 
 ### Fixed
+- Incorrect highlighting of identifiers containing "exists" or "error".
+  (PR #291)
+- Highlight more query commands.
+  (PR #291)
 - Highlight `Typeclasses Opaque/Transparent`.
   (PR #286)
 - Strip trailing whitespace from the splash screen to make it less ugly when

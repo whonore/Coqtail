@@ -65,7 +65,7 @@ syn region coqKwdLet           contained contains=@coqTerm matchgroup=coqKwd sta
 syn region coqKwdParen         contained contains=@coqTerm matchgroup=coqTermPunctuation start="(" end=")" keepend extend
 syn keyword coqKwd             contained else end exists2 fix forall fun if in struct then as return
 syn match   coqKwd             contained "\<where\>"
-syn match   coqKwd             contained "\<exists!\?"
+syn match   coqKwd             contained "\<exists!\?\>"
 syn match   coqKwd             contained "|\|/\\\|\\/\|<->\|\~\|->\|=>\|{\|}\|&\|+\|-\|*\|=\|>\|<\|<="
 syn match coqTermPunctuation   contained ":=\|:>\|:\|;\|,\|||\|\[\|\]\|@\|?\|\<_\>"
 
@@ -129,10 +129,10 @@ syn region  coqArgumentScopeSpecification start="^\%(For \_.\{-}:\)\?\s*Argument
 syn keyword coqArgumentSpecificationKeywords contained Argument Arguments is are scope scopes implicit For and maximally inserted when applied to argument arguments
 
 " Warning and errors
-syn match   coqBad               contained ".*\%(w\|W\)arnings\?"
-syn match   coqVeryBad           contained ".*\%(e\|E\)rrors\?"
-syn region  coqWarningMsg        matchgroup=coqBad start="^.*\%(w\|W\)arnings\?:" end="$"
-syn region  coqErrorMsg          matchgroup=coqVeryBad start="^.*\%(e\|E\)rrors\?:" end="$"
+syn match   coqBad               contained ".*\<[wW]arnings\?\>"
+syn match   coqVeryBad           contained ".*\<[eE]rrors\?\>"
+syn region  coqWarningMsg        matchgroup=coqBad start="^.*\<[wW]arnings\?:" matchgroup=NONE end="\.\_s"
+syn region  coqErrorMsg          matchgroup=coqVeryBad start="^.*\<[eE]rrors\?:" matchgroup=NONE end="\.\_s"
 
 " Various (High priority)
 syn region  coqComment           containedin=ALL contains=coqComment,coqTodo start="(\*" end="\*)" extend keepend
@@ -179,9 +179,6 @@ HiLink coqScopeSpecification            Underlined
 " WARNINGS AND ERRORS
 HiLink coqBad               WarningMsg
 HiLink coqVeryBad           ErrorMsg
-HiLink coqWarningMsg        WarningMsg
-HiLink coqBad               WarningMsg
-
 
 " USUAL VIM HIGHLIGHTINGS
 " Comments
