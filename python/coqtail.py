@@ -1206,10 +1206,12 @@ def _find_next_sentence(
         state = "digit"
         selcol = col
         selline = line
-        while True:
-            while selcol >= len(lines[selline]):
+        max_line = len(lines)
+        while selline < max_line:
+            if selcol >= len(lines[selline]):
                 selcol = 0
                 selline += 1
+                continue
             c = lines[selline][selcol]
 
             if state == "digit" and _char_isdigit(c):
