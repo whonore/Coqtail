@@ -1205,7 +1205,13 @@ def _find_next_sentence(
     if _char_isdigit(first_line[0]):
         state = "digit"
         selcol = col
-        for c in first_line[1:]:
+        selline = line
+        while True:
+            while selcol >= len(lines[selline]):
+                selcol = 0
+                selline += 1
+            c = lines[selline][selcol]
+
             if state == "digit" and _char_isdigit(c):
                 selcol += 1
             elif state == "digit" and _char_isspace(c):
@@ -1222,8 +1228,7 @@ def _find_next_sentence(
             elif state == "aftercolon" and _char_isspace(c):
                 selcol += 1
             elif state == "aftercolon" and c == ord("{"):
-                selcol += 1
-                return (line, selcol)
+                return (selline, selcol)
             else:
                 break
 
