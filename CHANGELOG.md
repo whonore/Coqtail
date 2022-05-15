@@ -2,6 +2,10 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Incorrect parsing of bracketed goal selectors (`2:{`) with newlines.
+  (PR #292)
+
 ## [1.6.3]
 
 ### Added
