@@ -30,9 +30,10 @@ syn match   coqNumberAdmitted    "\d\+ admitted"
 syn match   coqNumberShelved     "\d\+ shelved"
 
 " Hypothesis
-syn region  coqHypothesisBlock  contains=coqHypothesis start="^[[:digit:]']\@!\k\k*\s*:" end="^$" keepend
-syn region  coqHypothesis       contained contains=coqHypothesisBody matchgroup=coqIdent start="^\([[:digit:]']\@!\k\k*,\s*\)*[[:digit:]']\@!\k\k*" matchgroup=NONE end="^\S"me=e-1
-syn region  coqHypothesisBody   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" matchgroup=NONE end="^\S"me=e-1
+syn region  coqHypothesisBlock  contains=coqHypothesis start="^[[:digit:]']\@!\k\k*" end="^$" keepend
+syn region  coqHypothesis       contained contains=coqHypothesisList,coqHypothesisBody start="^[[:digit:]']\@!\k\k*" matchgroup=NONE end="^\S"me=e-1
+syn region  coqHypothesisList   contained contains=coqIdent start="^[[:digit:]']\@!\k\k*" matchgroup=NONE end=":"me=e-1 end=":="me=e-2
+syn region  coqHypothesisBody   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":=\?" matchgroup=NONE end="^\S"me=e-1
 
 " Separator
 syn match   coqGoalNumber       contained "(\s*\d\+\s*\/\s*\d\+\s*)"
