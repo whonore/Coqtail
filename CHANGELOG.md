@@ -3,6 +3,9 @@
 ## Unreleased ([master])
 
 ### Fixed
+- Highlight hypotheses separated by a comma on the first line of the hypotheses
+  block in the Goal panel as `coqIdent`.
+  (PR #294)
 - Incorrect parsing of bracketed goal selectors (`2:{`) with newlines.
   (PR #292)
 
