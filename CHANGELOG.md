@@ -2,6 +2,10 @@
 
 ## Unreleased ([master])
 
+### Added
+- Support for Coq 8.16.
+  (PR #264)
+
 ### Fixed
 - Highlight hypotheses separated by a comma on the first line of the hypotheses
   block in the Goal panel as `coqIdent`.
