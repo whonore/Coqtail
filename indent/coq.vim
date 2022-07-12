@@ -211,7 +211,7 @@ function! s:GetCoqIndent() abort
     while eval(s:matchsyn(l:lnum, 1, ['comment']))
       " indent relative to the last non-comment
       call search('\*)', 'bW')
-      let l:skip = s:matchsyn('line(".")', 'col(".")', 'string')
+      let l:skip = s:matchsyn('line(".")', 'col(".")', ['string'])
       let l:startcom = searchpair('(\*', '', '\*)', 'bWn', l:skip)
       let l:lnum = s:GetLineWithoutFullComment(l:startcom)
     endwhile

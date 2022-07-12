@@ -7,6 +7,8 @@
   (PR #264)
 
 ### Fixed
+- Incorrect indentation of a line following a comment.
+  (PR #299)
 - Highlight hypotheses separated by a comma on the first line of the hypotheses
   block in the Goal panel as `coqIdent`.
   (PR #294)
