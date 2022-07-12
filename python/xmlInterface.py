@@ -1804,6 +1804,10 @@ class XMLInterface815(XMLInterface814):
         return res
 
 
+class XMLInterface816(XMLInterface815):
+    """The version 8.16.* XML interface."""
+
+
 XMLInterfaces = (
     ((8, 4, 0), (8, 5, 0), XMLInterface84),
     ((8, 5, 0), (8, 6, 0), XMLInterface85),
@@ -1817,6 +1821,7 @@ XMLInterfaces = (
     ((8, 13, 0), (8, 14, 0), XMLInterface813),
     ((8, 14, 0), (8, 15, 0), XMLInterface814),
     ((8, 15, 0), (8, 16, 0), XMLInterface815),
+    ((8, 16, 0), (8, 17, 0), XMLInterface816),
 )
 
 XMLInterfaceLatest = XMLInterfaces[-1][2]
