@@ -39,7 +39,6 @@ from xmlInterface import (
 )
 
 if TYPE_CHECKING:
-    # pylint: disable=unsubscriptable-object
     from typing_extensions import TypedDict
 
     BytesQueue = Queue[bytes]
