@@ -46,7 +46,7 @@ def mkXML(
 
 
 class ToOfTests:
-    # pylint: disable=missing-function-docstring, no-else-return, no-self-use
+    # pylint: disable=missing-function-docstring, no-else-return
     """Methods return test cases for _of_py and _to_py as PyXML objects."""
 
     @staticmethod

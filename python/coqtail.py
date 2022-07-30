@@ -47,7 +47,6 @@ Res = Tuple[int, Any]  # (msg_id, data)
 SkipFun = Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]
 
 if TYPE_CHECKING:
-    # pylint: disable=unsubscriptable-object
     # Some types are only subscriptable during type checking.
     from typing_extensions import TypedDict
 
