@@ -120,6 +120,10 @@ syn region coqImplicitTypes matchgroup=coqVernacCmd start="\<Implicit Types\?" e
 syn region coqGeneralizable matchgroup=coqVernacCmd start="\<Generalizable\_s\+\%(\%(All\|No\)\_s\+\)\?Variables\?" end="\.\_s"
 syn region coqDeclareML contains=coqString matchgroup=coqVernacCmd start="\<Declare\_s\+ML\_s\+Module\>" end="\.\_s"
 
+syn region  coqRegister contains=coqRegisterKwd matchgroup=coqVernacCmd start="\<Register\>" end="\.\_s"
+syn region  coqRegister matchgroup=coqVernacCmd start="\<Register\_s\+Inline\>" end="\.\_s"
+syn keyword coqRegisterKwd contained as
+
 " Attributes
 syn region coqAttribute contains=coqString,coqAttrBool,coqAttrPunc,coqIdent start="#\[" end="]"
 syn keyword coqAttrBool contained yes no
@@ -520,6 +524,7 @@ HiLink coqVernacPunctuation coqVernacular
 HiLink coqHint              coqVernacular
 HiLink coqFeedback          coqVernacular
 HiLink coqTopLevel          coqVernacular
+HiLink coqRegisterKwd       coqVernacular
 
 " DEFINED OBJECTS
 HiLink coqIdent             Identifier
