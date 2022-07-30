@@ -5,6 +5,8 @@
 ### Added
 - Support for Coq 8.16.
   (PR #264)
+- Highlight `Register/Register Inline`.
+  (PR #300)
 
 ### Fixed
 - Incorrect indentation of a line following a comment.
