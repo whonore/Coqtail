@@ -267,9 +267,7 @@ function! s:replace(panel, txt, richpp, scroll) abort
   let l:old = l:old ==# [''] ? [] : l:old
   if l:old !=# a:txt
     let &l:undolevels = &l:undolevels " explicitly break undo sequence
-    call coqtail#compat#deleteline(1, '$')
-    call append(0, a:txt) " this leaves an empty line at the bottom
-    call coqtail#compat#deleteline('$', '$')
+    call coqtail#compat#replacelines(a:txt)
   endif
 
   " Set new highlights

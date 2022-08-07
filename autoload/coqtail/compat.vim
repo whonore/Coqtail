@@ -53,6 +53,13 @@ else
   endfunction
 endif
 
+" Replace the entire contents of a buffer.
+function! coqtail#compat#replacelines(lines) abort
+  call coqtail#compat#deleteline(1, '$')
+  call append(0, a:lines) " this leaves an empty line at the bottom
+  call coqtail#compat#deleteline('$', '$')
+endfunction
+
 function! coqtail#compat#init(python_dir) abort
   " Workaround for a NeoVim bug where py3eval returns v:null the first time
   " it's called.
