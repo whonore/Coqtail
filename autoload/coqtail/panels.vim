@@ -266,7 +266,7 @@ function! s:replace(panel, txt, richpp, scroll) abort
   let l:old = getline(1, '$') " returns [''] for empty buffer
   let l:old = l:old ==# [''] ? [] : l:old
   if l:old !=# a:txt
-    let &l:undolevels = &l:undolevels " explicitly break undo sequence
+    let &l:undolevels = &l:undolevels " explicitly break undo sequence (:h undo-break)
     call coqtail#compat#replacelines(a:txt)
   endif
 
