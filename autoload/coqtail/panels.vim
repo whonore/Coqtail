@@ -263,9 +263,9 @@ function! s:replace(panel, txt, richpp, scroll) abort
   endfor
 
   " Update buffer text
-  let old = getline(1, '$') " returns [''] for empty buffer
-  let old = (old ==# ['']) ? [] : old
-  if old !=# a:txt
+  let l:old = getline(1, '$') " returns [''] for empty buffer
+  let l:old = l:old ==# [''] ? [] : l:old
+  if l:old !=# a:txt
     let &l:undolevels = &l:undolevels " explicitly break undo sequence
     call coqtail#compat#deleteline(1, '$')
     call append(0, a:txt) " this leaves an empty line at the bottom
