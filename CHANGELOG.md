@@ -9,6 +9,8 @@
   (PR #300)
 
 ### Fixed
+- Set the undo history for the Goal and Info panels on updates.
+  (PR #302)
 - Incorrect indentation of a line following a comment.
   (PR #299)
 - Highlight hypotheses separated by a comma on the first line of the hypotheses
