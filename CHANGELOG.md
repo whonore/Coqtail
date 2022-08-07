@@ -2,6 +2,8 @@
 
 ## Unreleased ([master])
 
+## [1.6.4]
+
 ### Added
 - Support for Coq 8.16.
   (PR #264)
@@ -354,6 +356,7 @@
 
 [master]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
+[1.6.4]: https://github.com/whonore/Coqtail/tree/v1.6.4
 [1.6.3]: https://github.com/whonore/Coqtail/tree/v1.6.3
 [1.6.2]: https://github.com/whonore/Coqtail/tree/v1.6.2
 [1.6.1]: https://github.com/whonore/Coqtail/tree/v1.6.1
