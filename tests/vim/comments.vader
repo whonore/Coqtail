@@ -15,13 +15,13 @@ Do (join-comment):
 Expect coq (join-comment):
   (* Lorem ipsum dolor sit amet, consectetur adipiscing elit. *)
 
-Given coq (long-comment):
+Given coq (format-long-comment):
   (* Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam eleifend mauris et lectus rhoncus, at feugiat sapien euismod. *)
 
-Do (long-comment):
+Do (format-long-comment):
   gqq
 
-Expect coq (long-comment):
+Expect coq (format-long-comment):
   (* Lorem ipsum dolor sit amet,
    * consectetur adipiscing elit. Nam
    * eleifend mauris et lectus rhoncus, at
