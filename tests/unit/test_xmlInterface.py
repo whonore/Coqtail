@@ -378,7 +378,7 @@ class ToOfTests:
 @pytest.fixture(scope="module", params=XMLInterfaces)
 def xmlInt(request: pytest.FixtureRequest) -> XMLInterfaceBase:
     """Return an XMLInterface for each version."""
-    min_ver, _max_ver, xi = request.param  # type: ignore[attr-defined]
+    min_ver, _max_ver, xi = request.param
     return xi(min_ver, "", Path(), None)  # type: ignore
 
 
