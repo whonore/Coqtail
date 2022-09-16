@@ -1,0 +1,28 @@
+" Author: Wolf Honore
+" Coq comment formatting unit tests.
+
+Before:
+  set textwidth=40
+  set formatoptions+=qj
+
+Given coq (join-comment):
+  (* Lorem ipsum dolor sit amet,
+   * consectetur adipiscing elit. *)
+
+Do (join-comment):
+  J
+
+Expect coq (join-comment):
+  (* Lorem ipsum dolor sit amet, consectetur adipiscing elit. *)
+
+Given coq (format-long-comment):
+  (* Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam eleifend mauris et lectus rhoncus, at feugiat sapien euismod. *)
+
+Do (format-long-comment):
+  gqq
+
+Expect coq (format-long-comment):
+  (* Lorem ipsum dolor sit amet,
+   * consectetur adipiscing elit. Nam
+   * eleifend mauris et lectus rhoncus, at
+   * feugiat sapien euismod. *)

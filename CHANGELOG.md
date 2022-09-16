@@ -2,6 +2,13 @@
 
 ## Unreleased ([master])
 
+### Fixed
+- Joining comments with `J` while the `j` flag is set in `'formatoptions'` does
+  not delete the second line.
+  (PR #307)
+- Formatting long comments (e.g., with `gqq`) does not stop after the second line.
+  (PR #307)
+
 ## [1.6.4]
 
 ### Added
