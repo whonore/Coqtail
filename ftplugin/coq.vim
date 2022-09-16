@@ -13,7 +13,7 @@ endif
 " Comments
 if has('comments')
   setlocal commentstring=(*%s*)
-  setlocal comments=srn:(*,mb:*,exn:*)
+  setlocal comments=srn:(*,mb:*,ex:*)
   " NOTE: The 'r' and 'o' flags mistake the '*' bullet as a middle comment and
   " will automatically add an extra one after <Enter>, 'o' or 'O'.
   setlocal formatoptions-=t formatoptions-=r formatoptions-=o formatoptions+=cql
