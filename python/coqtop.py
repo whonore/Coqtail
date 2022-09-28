@@ -468,7 +468,7 @@ class Coqtop:
         else:
             # Failures are just logged because there's not much else that can
             # be done from here.
-            self.logger.warning("Failed to disable diffs: %s", err)
+            self.logger.warning("Failed to read Diffs option: %s", err)
             diffs = "off"
 
         # Disable if necessary
@@ -479,7 +479,7 @@ class Coqtop:
                 timeout=timeout,
             )
             if not ok:
-                self.logger.warning("Failed to disable diffs: %s", err)
+                self.logger.warning("Failed to disable Diffs option: %s", err)
 
         yield None
 
@@ -491,7 +491,7 @@ class Coqtop:
                 timeout=timeout,
             )
             if not ok:
-                self.logger.warning("Failed to re-enable diffs: %s", err)
+                self.logger.warning("Failed to re-enable Diffs option: %s", err)
 
     # Interacting with Coqtop #
     def call(
