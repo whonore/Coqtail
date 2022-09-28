@@ -2,6 +2,12 @@
 
 ## Unreleased ([master])
 
+### Added
+- Support for the `Subgoals` XML command (>= 8.16 only).
+  This should speed up displaying the current goal when there are many
+  unfocused/shelved/admitted goals with large proof contexts.
+  (PR #309)
+
 ### Fixed
 - Joining comments with `J` while the `j` flag is set in `'formatoptions'` does
   not delete the second line.

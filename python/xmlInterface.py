@@ -11,6 +11,7 @@ import re
 import subprocess
 import xml.etree.ElementTree as ET
 from abc import ABCMeta, abstractmethod
+from enum import Enum
 from pathlib import Path
 from shutil import which
 from typing import (
@@ -49,6 +50,16 @@ Goals = NamedTuple(
         ("given_up", List[Goal]),
     ],
 )
+
+
+class GoalMode(Enum):
+    """Control the information returned by the Subgoals command."""
+
+    # Get the goal and hypotheses
+    FULL = "full"
+    # Get only the goal
+    SHORT = "short"
+
 
 WARNING_RE = re.compile("^(Warning:[^]]+])$", flags=re.MULTILINE)
 
@@ -1793,6 +1804,60 @@ class XMLInterface815(XMLInterface814):
 
 class XMLInterface816(XMLInterface815):
     """The version 8.16.* XML interface."""
+
+    CoqGoalFlags = NamedTuple(
+        "CoqGoalFlags",
+        [
+            ("mode", str),
+            ("fg", bool),
+            ("bg", bool),
+            ("shelved", bool),
+            ("given_up", bool),
+        ],
+    )
+
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
+        """Update conversion maps with new types."""
+        super().__init__(version, str_version, coq_path, coq_prog)
+
+        self._of_py_funcs.update({"CoqGoalFlags": self._of_goal_flags})
+
+        self._standardize_funcs.update({"Subgoals": self._standardize_goal})
+
+    def _of_goal_flags(self, val: CoqGoalFlags) -> ET.Element:
+        """Expect: CoqGoalFlags(str, bool, bool, bool, bool)"""
+        return self._build_xml(
+            "goal_flags",
+            children=[val.mode, val.fg, val.bg, val.shelved, val.given_up],
+        )
+
+    def subgoal(
+        self,
+        mode: GoalMode,
+        fg: bool = True,
+        bg: bool = True,
+        shelved: bool = True,
+        given_up: bool = True,
+        encoding: str = "utf-8",
+    ) -> Tuple[str, Optional[bytes]]:
+        """Create an XML string to check the state a specific set of goals.
+        Args:
+          flags: CoqGoalFlags - Which goals to return
+        """
+        return (
+            "Subgoals",
+            self._make_call(
+                encoding,
+                "Subgoals",
+                children=self.CoqGoalFlags(mode.value, fg, bg, shelved, given_up),
+            ),
+        )
 
 
 XMLInterfaces = (
