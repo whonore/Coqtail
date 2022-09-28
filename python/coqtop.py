@@ -9,12 +9,14 @@ import subprocess
 import threading
 import time
 from concurrent import futures
+from contextlib import contextmanager
 from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
 from typing import (
     IO,
     TYPE_CHECKING,
     Any,
+    Generator,
     Iterable,
     Iterator,
     List,
@@ -29,6 +31,7 @@ from xmlInterface import (
     UNEXPECTED_ERR,
     Err,
     FindCoqtopError,
+    GoalMode,
     Goals,
     Ok,
     Result,
@@ -55,6 +58,11 @@ else:
     BytesQueue = Queue
     CoqtopProcess = subprocess.Popen
     VersionInfo = Mapping[str, Any]
+
+
+def join_not_empty(msgs: Iterable[str], joiner: str = "\n\n") -> str:
+    """Concatenate non-empty messages."""
+    return joiner.join(msg for msg in msgs if msg != "")
 
 
 class CoqtopError(Exception):
@@ -209,11 +217,7 @@ class Coqtop:
         status, err2 = self.call(self.xml.status(encoding=encoding), timeout=timeout)
 
         # Combine messages
-        msgs = "\n\n".join(
-            msg
-            for msg in (response.msg, response.val["res_msg"], status.msg)
-            if msg != ""
-        )
+        msgs = join_not_empty((response.msg, response.val["res_msg"], status.msg))
         err = err1 + err2
 
         if isinstance(status, Err):
@@ -293,6 +297,11 @@ class Coqtop:
         """Get the current set of hypotheses and goals."""
         assert self.xml is not None
         self.logger.debug("goals")
+
+        # Use Subgoals if available, otherwise fall back to Goal
+        if hasattr(self.xml, "subgoal"):
+            return self.subgoals(timeout=timeout)
+
         response, err = self.call(self.xml.goal(), timeout=timeout)
 
         return (
@@ -301,6 +310,65 @@ class Coqtop:
             response.val if isinstance(response, Ok) else None,
             err,
         )
+
+    def subgoals(
+        self,
+        timeout: Optional[int] = None,
+    ) -> Tuple[bool, str, Optional[Goals], str]:
+        """Get the current set of hypotheses and goals."""
+        assert self.xml is not None
+
+        # Get only the focused goals
+        response_main, err_main = self.call(
+            self.xml.subgoal(  # type: ignore
+                GoalMode.FULL,
+                fg=True,
+                bg=False,
+                shelved=False,
+                given_up=False,
+            ),
+            timeout=timeout,
+        )
+
+        if isinstance(response_main, Err):
+            return (False, response_main.msg, None, err_main)
+
+        # NOTE: Subgoals ignores `gf_flag = "short"` if proof diffs are
+        # enabled.
+        # See: https://github.com/coq/coq/issues/16564
+        with self.suppress_diffs():
+            # Get the short version of other goals (no hypotheses)
+            response_extra, err_extra = self.call(
+                self.xml.subgoal(  # type: ignore
+                    GoalMode.SHORT,
+                    fg=False,
+                    bg=True,
+                    shelved=True,
+                    given_up=True,
+                ),
+                timeout=timeout,
+            )
+
+        # Combine messages
+        msgs = join_not_empty(response_main.msg, response_extra.msg)
+        errs = err_main + err_extra
+
+        if isinstance(response_extra, Err):
+            return (False, msgs, None, errs)
+
+        # Merge goals
+        fg = response_main.val.fg if response_main.val is not None else []
+        bg, shelved, given_up = (
+            (
+                response_extra.val.bg,
+                response_extra.val.shelved,
+                response_extra.val.given_up,
+            )
+            if response_extra.val is not None
+            else ([], [], [])
+        )
+
+        return (True, msgs, Goals(fg, bg, shelved, given_up), errs)
 
     def do_option(
         self,
@@ -380,6 +448,50 @@ class Coqtop:
             return self.advance(cmd, encoding, timeout)
         else:
             return True, "Command only allowed in script.", None, ""
+
+    @contextmanager
+    def suppress_diffs(
+        self,
+        timeout: Optional[int] = None,
+    ) -> Generator[None, None, None]:
+        """Temporarily disable proof diffs."""
+        # Check if diffs are enabled
+        expect_prefix = "Diffs: Some(val="
+        ok, response, _, err = self.do_option(
+            "Test Diffs",
+            in_script=False,
+            timeout=timeout,
+        )
+        if ok and response.startswith(expect_prefix):
+            # TODO: Make a cleaner way of reading an option
+            diffs = response[len(expect_prefix) : -1].strip("'")
+        else:
+            # Failures are just logged because there's not much else that can
+            # be done from here.
+            self.logger.warning("Failed to disable diffs: %s", err)
+            diffs = "off"
+
+        # Disable if necessary
+        if diffs != "off":
+            ok, _, _, err = self.do_option(
+                'Set Diffs "off"',
+                in_script=False,
+                timeout=timeout,
+            )
+            if not ok:
+                self.logger.warning("Failed to disable diffs: %s", err)
+
+        yield None
+
+        # Re-enable if necessary
+        if diffs != "off":
+            ok, _, _, err = self.do_option(
+                f'Set Diffs "{diffs}"',
+                in_script=False,
+                timeout=timeout,
+            )
+            if not ok:
+                self.logger.warning("Failed to re-enable diffs: %s", err)
 
     # Interacting with Coqtop #
     def call(
