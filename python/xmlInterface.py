@@ -1000,16 +1000,18 @@ class XMLInterface84(XMLInterfaceBase):
           shelved: list Goal - Shelved goals (dummy value in 8.4)
           given_up: list Goal - Admitted goals (dummy value in 8.4)
         """
+
+        def to_goal(g: XMLInterface84.CoqGoal) -> Goal:
+            return Goal(g.hyp, g.ccl, None)
+
         if isinstance(res, Ok):
-            opt_goals: XMLInterfaceBase.CoqOption = res.val
-            if opt_goals is not None:
-                goals: "XMLInterface84.CoqGoals" = opt_goals.val
+            goals: Optional[
+                XMLInterface84.CoqGoals
+            ] = XMLInterfaceBase.unwrap_coq_option(res.val)
+            if goals is not None:
                 res.val = Goals(
-                    [Goal(g.hyp, g.ccl, None) for g in goals.fg],
-                    [
-                        [Goal(g.hyp, g.ccl, None) for g in pre + post]
-                        for pre, post in goals.bg
-                    ],
+                    [to_goal(g) for g in goals.fg],
+                    [[to_goal(g) for g in pre + post] for pre, post in goals.bg],
                     [],
                     [],
                 )
@@ -1384,18 +1386,20 @@ class XMLInterface85(XMLInterfaceBase):
           shelved: list Goal - Shelved goals
           given_up: list Goal - Admitted goals
         """
+
+        def to_goal(g: XMLInterface85.CoqGoal) -> Goal:
+            return Goal(g.hyp, g.ccl, None)
+
         if isinstance(res, Ok):
-            opt_goals: XMLInterfaceBase.CoqOption = res.val
-            if opt_goals is not None:
-                goals: "XMLInterface85.CoqGoals" = opt_goals.val
+            goals: Optional[
+                XMLInterface85.CoqGoals
+            ] = XMLInterfaceBase.unwrap_coq_option(res.val)
+            if goals is not None:
                 res.val = Goals(
-                    [Goal(g.hyp, g.ccl, None) for g in goals.fg],
-                    [
-                        [Goal(g.hyp, g.ccl, None) for g in pre + post]
-                        for pre, post in goals.bg
-                    ],
-                    [Goal(g.hyp, g.ccl, None) for g in goals.shelved],
-                    [Goal(g.hyp, g.ccl, None) for g in goals.given_up],
+                    [to_goal(g) for g in goals.fg],
+                    [[to_goal(g) for g in pre + post] for pre, post in goals.bg],
+                    [to_goal(g) for g in goals.shelved],
+                    [to_goal(g) for g in goals.given_up],
                 )
         return res
 
@@ -1745,8 +1749,8 @@ class XMLInterface814(XMLInterface813):
           given_up: list Goal - Admitted goals
         """
 
-        def name(g: XMLInterface814.CoqGoal) -> Optional[str]:
-            return XMLInterfaceBase.unwrap_coq_option(g.name)
+        def to_goal(g: XMLInterface814.CoqGoal) -> Goal:
+            return Goal(g.hyp, g.ccl, XMLInterfaceBase.unwrap_coq_option(g.name))
 
         if isinstance(res, Ok):
             goals: Optional[
@@ -1754,13 +1758,10 @@ class XMLInterface814(XMLInterface813):
             ] = XMLInterfaceBase.unwrap_coq_option(res.val)
             if goals is not None:
                 res.val = Goals(
-                    [Goal(g.hyp, g.ccl, name(g)) for g in goals.fg],
-                    [
-                        [Goal(g.hyp, g.ccl, name(g)) for g in pre + post]
-                        for pre, post in goals.bg
-                    ],
-                    [Goal(g.hyp, g.ccl, name(g)) for g in goals.shelved],
-                    [Goal(g.hyp, g.ccl, name(g)) for g in goals.given_up],
+                    [to_goal(g) for g in goals.fg],
+                    [[to_goal(g) for g in pre + post] for pre, post in goals.bg],
+                    [to_goal(g) for g in goals.shelved],
+                    [to_goal(g) for g in goals.given_up],
                 )
         return res
 
