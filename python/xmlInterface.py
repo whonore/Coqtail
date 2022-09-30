@@ -39,6 +39,7 @@ Goal = NamedTuple(
     [
         ("hyp", Sequence[Union[str, Sequence[TaggedToken]]]),
         ("ccl", Union[str, Sequence[TaggedToken]]),
+        ("name", Optional[str]),
     ],
 )
 Goals = NamedTuple(
@@ -723,6 +724,11 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
         return vals, " ".join(opts[1:])
 
+    @staticmethod
+    def unwrap_coq_option(opt: CoqOption) -> Optional[Any]:
+        """Convert CoqOption to Optional."""
+        return None if opt is None else opt.val
+
 
 class XMLInterface84(XMLInterfaceBase):
     """The version 8.4.* XML interface."""
@@ -999,9 +1005,9 @@ class XMLInterface84(XMLInterfaceBase):
             if opt_goals is not None:
                 goals: "XMLInterface84.CoqGoals" = opt_goals.val
                 res.val = Goals(
-                    [Goal(g.hyp, g.ccl) for g in goals.fg],
+                    [Goal(g.hyp, g.ccl, None) for g in goals.fg],
                     [
-                        [Goal(g.hyp, g.ccl) for g in pre + post]
+                        [Goal(g.hyp, g.ccl, None) for g in pre + post]
                         for pre, post in goals.bg
                     ],
                     [],
@@ -1383,13 +1389,13 @@ class XMLInterface85(XMLInterfaceBase):
             if opt_goals is not None:
                 goals: "XMLInterface85.CoqGoals" = opt_goals.val
                 res.val = Goals(
-                    [Goal(g.hyp, g.ccl) for g in goals.fg],
+                    [Goal(g.hyp, g.ccl, None) for g in goals.fg],
                     [
-                        [Goal(g.hyp, g.ccl) for g in pre + post]
+                        [Goal(g.hyp, g.ccl, None) for g in pre + post]
                         for pre, post in goals.bg
                     ],
-                    [Goal(g.hyp, g.ccl) for g in goals.shelved],
-                    [Goal(g.hyp, g.ccl) for g in goals.given_up],
+                    [Goal(g.hyp, g.ccl, None) for g in goals.shelved],
+                    [Goal(g.hyp, g.ccl, None) for g in goals.given_up],
                 )
         return res
 
@@ -1677,7 +1683,12 @@ class XMLInterface814(XMLInterface813):
 
     CoqGoal = NamedTuple(
         "CoqGoal",
-        [("id", str), ("hyp", List[str]), ("ccl", str), ("name", Optional[str])],
+        [
+            ("id", str),
+            ("hyp", List[str]),
+            ("ccl", str),
+            ("name", "XMLInterface814.CoqOption"),
+        ],
     )
     CoqGoals = NamedTuple(
         "CoqGoals",
@@ -1713,7 +1724,7 @@ class XMLInterface814(XMLInterface813):
         self._standardize_funcs.update({"Goal": self._standardize_goal})
 
     def _to_goal(self, xml: ET.Element) -> "CoqGoal":  # type: ignore[override]
-        """Expect: <goal>string (option string) (list Pp) Pp</goal>"""
+        """Expect: <goal>string (list Pp) Pp (option string)</goal>"""
         return self.CoqGoal(*map(self._to_py, xml))
 
     def _to_goals(self, xml: ET.Element) -> "CoqGoals":  # type: ignore[override]
@@ -1733,18 +1744,23 @@ class XMLInterface814(XMLInterface813):
           shelved: list Goal - Shelved goals
           given_up: list Goal - Admitted goals
         """
+
+        def name(g: XMLInterface814.CoqGoal) -> Optional[str]:
+            return XMLInterfaceBase.unwrap_coq_option(g.name)
+
         if isinstance(res, Ok):
-            opt_goals: XMLInterfaceBase.CoqOption = res.val
-            if opt_goals is not None:
-                goals: XMLInterface85.CoqGoals = opt_goals.val
+            goals: Optional[
+                XMLInterface814.CoqGoals
+            ] = XMLInterfaceBase.unwrap_coq_option(res.val)
+            if goals is not None:
                 res.val = Goals(
-                    [Goal(g.hyp, g.ccl) for g in goals.fg],
+                    [Goal(g.hyp, g.ccl, name(g)) for g in goals.fg],
                     [
-                        [Goal(g.hyp, g.ccl) for g in pre + post]
+                        [Goal(g.hyp, g.ccl, name(g)) for g in pre + post]
                         for pre, post in goals.bg
                     ],
-                    [Goal(g.hyp, g.ccl) for g in goals.shelved],
-                    [Goal(g.hyp, g.ccl) for g in goals.given_up],
+                    [Goal(g.hyp, g.ccl, name(g)) for g in goals.shelved],
+                    [Goal(g.hyp, g.ccl, name(g)) for g in goals.given_up],
                 )
         return res
 

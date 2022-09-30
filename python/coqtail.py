@@ -577,6 +577,8 @@ class Coqtail:
                         bullet_info = f"use bullet '{bullet}'"
 
                 next_info = "Next goal"
+                if next_goal.name is not None:
+                    next_info += f" [{next_goal.name}]"
                 if bullet_info != "":
                     next_info += f" ({bullet_info})"
                 next_info += ":"
@@ -598,6 +600,8 @@ class Coqtail:
                     highlights += hls
 
             hbar = f"{'':=>25} ({idx + 1} / {ngoals})"
+            if goal.name is not None:
+                hbar += f" [{goal.name}]"
             lines += ["", hbar, ""]
 
             ls, hls = lines_and_highlights(goal.ccl, len(lines))
