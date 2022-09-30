@@ -3,6 +3,8 @@
 ## Unreleased ([master])
 
 ### Added
+- Display goal names when `Printing Goal Names` is enabled.
+  (PR #310)
 - Support for the `Subgoals` XML command (>= 8.16 only).
   This should speed up displaying the current goal when there are many
   unfocused/shelved/admitted goals with large proof contexts.
