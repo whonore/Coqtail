@@ -36,9 +36,9 @@ syn region  coqHypothesisList   contained contains=coqIdent start="^[[:digit:]']
 syn region  coqHypothesisBody   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":=\?" matchgroup=NONE end="^\S"me=e-1
 
 " Separator
+syn region  coqGoalSep          matchgroup=coqGoalLine start="^=\+" matchgroup=NONE end="^$\n" contains=coqGoalNumber,coqGoalName nextgroup=coqGoalBlock keepend
 syn match   coqGoalNumber       contained "(\s*\d\+\s*\/\s*\d\+\s*)"
-syn region  coqGoalSep          matchgroup=coqGoalLine start="^=\+" matchgroup=NONE end="^$\n" contains=coqGoalSepNumber nextgroup=coqGoalBlock keepend
-syn region  coqGoalSepNumber    matchgroup=coqGoalNumber start="(\s*\d\+\s*\/\s*\d\+\s*)" matchgroup=NONE end=")"
+syn region  coqGoalName         contained start="\[" end="]" keepend
 syn region  coqNextGoal         start="Next goal" end="^$\n" nextgroup=coqGoalBlock keepend
 
 " Goals
@@ -79,6 +79,7 @@ HiLink coqGoalLine          Todo
 
 " GOAL IDENTIFIER
 HiLink coqGoalNumber        Underlined
+HiLink coqGoalName          Underlined
 HiLink coqNextGoal          Underlined
 
 " USUAL VIM HIGHLIGHTINGS
