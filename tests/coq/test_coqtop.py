@@ -283,3 +283,16 @@ def test_start_invalid_xml(fake_interface: MagicMock) -> None:
     res, stderr = ct.start(None, None, "", [])
     assert isinstance(res, str)
     assert stderr != ""
+
+
+def test_start_noinit() -> None:
+    """-noinit does not cause Coqtail to hang."""
+    xml = XMLInterface(None, None)[0]
+    if xml.version < (8, 5, 0):
+        pytest.skip("Only 8.5+ supports -noinit")
+    ct = Coqtop()
+    res, _ = ct.start(None, None, "", ["-noinit"])
+    assert isinstance(res, dict)
+    assert ct.xml is not None
+    succ, _, _, _ = ct.dispatch("Set Implicit Arguments.")
+    assert succ

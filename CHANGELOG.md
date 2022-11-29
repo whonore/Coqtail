@@ -11,6 +11,8 @@
   (PR #309)
 
 ### Fixed
+- Use a no-op command that does not hang with `-noinit`.
+  (PR #313)
 - Joining comments with `J` while the `j` flag is set in `'formatoptions'` does
   not delete the second line.
   (PR #307)
