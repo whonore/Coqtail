@@ -34,13 +34,13 @@ jobs:
         # uses: actions/setup-python@v2
         # with:
         #   python-version: ${{ matrix.py_version }}
-        run: nix-env -j auto --cores 0 -f '<nixpkgs>' -iA python36 python36Packages.pip
+        run: nix-env -j auto --cores 0 -f '<nixpkgs>' -iE 'nixpkgs: (nixpkgs {}).python36.withPackages (pkgs: [pkgs.tox])'
         env:
           NIX_PATH: nixpkgs=channel:nixos-21.05
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install tox
+      # - name: Install dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip install tox
       - name: Run Coq tests
         if: startsWith(matrix.py_version, '3.6')
         run: |
@@ -66,13 +66,13 @@ jobs:
         # uses: actions/setup-python@v2
         # with:
         #   python-version: ${{ matrix.py_version }}
-        run: nix-env -j auto --cores 0 -f '<nixpkgs>' -iA python36 python36Packages.pip
+        run: nix-env -j auto --cores 0 -f '<nixpkgs>' -iE 'nixpkgs: (nixpkgs {}).python36.withPackages (pkgs: [pkgs.tox])'
         env:
           NIX_PATH: nixpkgs=channel:nixos-21.05
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install tox
+      # - name: Install dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip install tox
       - name: Run Python tests
         if: startsWith(matrix.py_version, '3.6')
         run: |
