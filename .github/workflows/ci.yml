@@ -34,7 +34,7 @@ jobs:
         # uses: actions/setup-python@v2
         # with:
         #   python-version: ${{ matrix.py_version }}
-        run: nix-env -j auto --cores 0 -f '<nixpkgs>' -iE 'nixpkgs: (nixpkgs {}).python36.withPackages (pkgs: [pkgs.tox])'
+        run: nix-env -j auto --cores 0 -f '<nixpkgs>' -iE "nixpkgs: (nixpkgs {}).python36.withPackages (pkgs: [pkgs.tox])"
         env:
           NIX_PATH: nixpkgs=channel:nixos-21.05
       # - name: Install dependencies
@@ -66,7 +66,7 @@ jobs:
         # uses: actions/setup-python@v2
         # with:
         #   python-version: ${{ matrix.py_version }}
-        run: nix-env -j auto --cores 0 -f '<nixpkgs>' -iE 'nixpkgs: (nixpkgs {}).python36.withPackages (pkgs: [pkgs.tox])'
+        run: nix-env -j auto --cores 0 -f '<nixpkgs>' -iE "nixpkgs: (nixpkgs {}).python36.withPackages (pkgs: [pkgs.tox])"
         env:
           NIX_PATH: nixpkgs=channel:nixos-21.05
       # - name: Install dependencies
