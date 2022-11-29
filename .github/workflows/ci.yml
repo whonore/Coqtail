@@ -30,9 +30,13 @@ jobs:
       - name: Install Coq ${{ matrix.coq_version }}
         run: nix-env -j auto --cores 0 -i -f ci/coq.nix --argstr version ${{ matrix.coq_version }}
       - name: Install Python ${{ matrix.py_version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.py_version }}
+        # TODO: Restore when actions/setup-python#544 is fixed
+        # uses: actions/setup-python@v2
+        # with:
+        #   python-version: ${{ matrix.py_version }}
+        run: nix-env -j auto --cores 0 -i python36
+        env:
+          NIX_PATH: nixpkgs=channel:nixos-21.05
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -53,9 +57,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install Python ${{ matrix.py_version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.py_version }}
+        # TODO: Restore when actions/setup-python#544 is fixed
+        # uses: actions/setup-python@v2
+        # with:
+        #   python-version: ${{ matrix.py_version }}
+        run: nix-env -j auto --cores 0 -i python36
+        env:
+          NIX_PATH: nixpkgs=channel:nixos-21.05
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
