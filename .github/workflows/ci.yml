@@ -19,20 +19,20 @@ jobs:
         coq_version: ['8.4', '8.5', '8.6', '8.7', '8.8', '8.9', '8.10', '8.11', '8.12', '8.13', '8.14', '8.15', '8.16', 'master']
         py_version: ['3.6']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install Nix
-        uses: cachix/install-nix-action@v16
+        uses: cachix/install-nix-action@v18
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
       - name: Install Cachix
-        uses: cachix/cachix-action@v10
+        uses: cachix/cachix-action@v12
         with:
           name: coq
           skipPush: true
       - name: Install Coq ${{ matrix.coq_version }}
         run: nix-env -j auto --cores 0 -i -f ci/coq.nix --argstr version ${{ matrix.coq_version }}
       - name: Install Python ${{ matrix.py_version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.py_version }}
       - name: Install dependencies
@@ -55,9 +55,9 @@ jobs:
       matrix:
         py_version: ['3.6']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install Python ${{ matrix.py_version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.py_version }}
       - name: Install dependencies
@@ -77,20 +77,20 @@ jobs:
       matrix:
         version: ['7.4', '8.0', '8.1', '8.2', '9.0']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install Nix
-        uses: cachix/install-nix-action@v16
+        uses: cachix/install-nix-action@v18
         with:
           nix_path: nixpkgs=channel:nixos-20.09
       - name: Install Cachix
-        uses: cachix/cachix-action@v10
+        uses: cachix/cachix-action@v12
         with:
           name: whonore-vim
           skipPush: true
       - name: Install Vim ${{ matrix.version }}
         run: nix-env -j auto --cores 0 -i -f ci/vim.nix --argstr version ${{ matrix.version }}
       - name: Install Vader
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: junegunn/vader.vim
           path: ./vader.vim
