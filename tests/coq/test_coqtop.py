@@ -289,6 +289,8 @@ def test_start_noinit() -> None:
     """-noinit does not cause Coqtail to hang."""
     ct = Coqtop()
     res, _ = ct.start(None, None, "", ["-noinit"])
+    if ct.xml.version < (8, 5, 0):
+        pytest.skip("Only 8.5+ supports -noinit")
     assert isinstance(res, dict)
     assert ct.xml is not None
     succ, _, _, _ = ct.dispatch("Set Implicit Arguments.")
