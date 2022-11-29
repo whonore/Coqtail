@@ -11,11 +11,13 @@ on:
 jobs:
   coq-tests:
     name: Coq integration tests
-    runs-on: ubuntu-latest
+    # TODO: Restore when actions/setup-python#544 is fixed
+    # runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         coq_version: ['8.4', '8.5', '8.6', '8.7', '8.8', '8.9', '8.10', '8.11', '8.12', '8.13', '8.14', '8.15', '8.16', 'master']
-        py_version: [3.6]
+        py_version: ['3.6']
     steps:
       - uses: actions/checkout@v2
       - name: Install Nix
@@ -38,7 +40,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox
       - name: Run Coq tests
-        if: matrix.py_version == '3.6'
+        if: startsWith(matrix.py_version, '3.6')
         run: |
           coqtop --version
           python --version
@@ -46,10 +48,12 @@ jobs:
 
   py-tests:
     name: Python unit tests
-    runs-on: ubuntu-latest
+    # TODO: Restore when actions/setup-python#544 is fixed
+    # runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        py_version: [3.6]
+        py_version: ['3.6']
     steps:
       - uses: actions/checkout@v2
       - name: Install Python ${{ matrix.py_version }}
@@ -61,7 +65,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox
       - name: Run Python tests
-        if: matrix.py_version == '3.6'
+        if: startsWith(matrix.py_version, '3.6')
         run: |
           python --version
           tox -e unit-py36
