@@ -11,6 +11,9 @@
   (PR #309)
 
 ### Fixed
+- Fall back to using `Add` to set options if a best-effort attempt at using
+  `SetOptions` fails.
+  (PR #318)
 - Use a no-op command that does not hang with `-noinit`.
   (PR #313)
 - Joining comments with `J` while the `j` flag is set in `'formatoptions'` does
