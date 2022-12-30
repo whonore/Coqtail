@@ -377,10 +377,11 @@ class Coqtop:
         encoding: str = "utf-8",
         timeout: Optional[int] = None,
     ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
-        """Set or get an option."""
+        """Set or get an option's value."""
         assert self.xml is not None
         self.logger.debug("do_option: %s", cmd)
         vals, opt = self.xml.parse_option(cmd)
+        option_ok = True
 
         if vals is None:
             response, err = self.call(
@@ -389,14 +390,17 @@ class Coqtop:
             )
 
             if isinstance(response, Ok):
-                optval = [
-                    (val, desc) for name, desc, val in response.val if name == opt
-                ]
-
-                if optval != []:
-                    ret = f"{optval[0][1]}: {optval[0][0]}"
-                else:
+                try:
+                    ret = next(
+                        (
+                            f"{desc}: {val}"
+                            for name, desc, val in response.val
+                            if name == opt
+                        )
+                    )
+                except StopIteration:
                     ret = "Invalid option name"
+                    option_ok = False
         else:
             errs = []
             for val in vals:
@@ -405,17 +409,24 @@ class Coqtop:
                     timeout=timeout,
                 )
                 ret = response.msg
+                # `set_options()` returns nothing on success
+                option_ok = option_ok and ret == ""
                 errs.append(err)
                 if isinstance(response, Ok):
                     break
             err = "".join(errs)
 
-        if isinstance(response, Ok) and in_script:
+        if in_script and isinstance(response, Ok) and option_ok:
             # Hack to associate setting an option with a new state id by
             # executing a noop so it works correctly with rewinding
-            if in_script:
-                success, _, _, _ = self.advance(self.xml.noop, encoding)
-                assert success
+            success, _, _, _ = self.advance(self.xml.noop, encoding)
+            assert success
+        elif in_script and not option_ok:
+            # Fall back to using `advance()` in case the best-effort attempt at
+            # using `SetOptions` only failed because the option's value doesn't
+            # follow the usual pattern (e.g., `Firstorder Solver`)
+            self.logger.warning("Failed to handle %s with Get/SetOptions", cmd)
+            return self.advance(cmd, encoding, timeout)
 
         return (
             isinstance(response, Ok),
