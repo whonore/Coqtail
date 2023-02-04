@@ -397,12 +397,13 @@ function! coqtail#stop() abort
 endfunction
 
 " Advance/rewind Coq to the specified position.
-function! coqtail#toline(line) abort
+function! coqtail#toline(line, admit) abort
   " If no line was given then use the cursor's position,
   " otherwise use the last column in the line
   call s:call('to_line', '', 0, {
     \ 'line': (a:line == 0 ? line('.') : a:line) - 1,
-    \ 'col': (a:line == 0 ? col('.') : len(getline(a:line))) - 1})
+    \ 'col': (a:line == 0 ? col('.') : len(getline(a:line))) - 1,
+    \ 'admit': a:admit})
 endfunction
 
 " Move the cursor to the specified target:
@@ -434,7 +435,7 @@ let s:cmd_opts = {
   \ 'CoqInterrupt': '-bar',
   \ 'CoqNext': '-bar -count=1',
   \ 'CoqUndo': '-bar -count=1',
-  \ 'CoqToLine': '-bar -count=0',
+  \ 'CoqToLine': '-bar -bang -count=0',
   \ 'CoqToTop': '-bar',
   \ 'CoqJumpToEnd': '-bar',
   \ 'CoqJumpToError': '-bar',
@@ -464,7 +465,7 @@ function! coqtail#define_commands() abort
   call s:cmddef('CoqInterrupt', 'call s:call("interrupt", "sync", 0, {})', '')
   call s:cmddef('CoqNext', 'call s:call("step", "", 0, {"steps": <count>})', 's')
   call s:cmddef('CoqUndo', 'call s:call("rewind", "", 0, {"steps": <count>})', 's')
-  call s:cmddef('CoqToLine', 'call coqtail#toline(<count>)', 's')
+  call s:cmddef('CoqToLine', 'call coqtail#toline(<count>, <bang>0)', 's')
   call s:cmddef('CoqToTop', 'call s:call("to_top", "", 0, {})', 's')
   call s:cmddef('CoqJumpToEnd', 'call coqtail#jumpto("endpoint")', 's')
   call s:cmddef('CoqJumpToError', 'call coqtail#jumpto("errorpoint")', 's')

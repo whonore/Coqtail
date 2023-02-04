@@ -63,6 +63,10 @@ else:
     VimOptions = Mapping[str, Any]
     ResFuture = futures.Future
 
+PROOF_START_PAT = re.compile(rb"^\s*Proof\b")
+PROOF_END_PAT = re.compile(rb"^\s*(Qed|Admitted|Defined|Abort|Save)\b")
+OPAQUE_PROOF_ENDS = {b"Qed", b"Admitted"}
+
 
 def lines_and_highlights(
     tagged_tokens: Union[str, Iterable[TaggedToken]],
@@ -255,7 +259,13 @@ class Coqtail:
         self.refresh(opts=opts)
         return None
 
-    def to_line(self, line: int, col: int, opts: VimOptions) -> Optional[str]:
+    def to_line(
+        self,
+        line: int,
+        col: int,
+        admit: bool,
+        opts: VimOptions,
+    ) -> Optional[str]:
         """Advance/rewind Coq to the specified position."""
         self.sync(opts=opts)
 
@@ -285,7 +295,7 @@ class Coqtail:
             ecol += 1
             self.send_queue.append(to_send)
 
-        failed_at, err = self.send_until_fail(self.buffer, opts=opts)
+        failed_at, err = self.send_until_fail(self.buffer, admit=admit, opts=opts)
         if unmatched is not None and failed_at is None:
             # Only report unmatched if no other errors occurred first
             self.set_info(str(unmatched), reset=False)
@@ -335,6 +345,7 @@ class Coqtail:
         self,
         buffer: Sequence[bytes],
         opts: VimOptions,
+        admit: bool = False,
     ) -> Tuple[Optional[Tuple[int, int]], Optional[str]]:
         """Send all sentences in 'send_queue' until an error is encountered."""
         empty = self.send_queue == deque()
@@ -342,11 +353,28 @@ class Coqtail:
         failed_at = None
         no_msgs = True
         self.error_at = None
+
+        admit_up_to = None
         while self.send_queue:
             self.refresh(goals=False, force=False, scroll=scroll, opts=opts)
             to_send = self.send_queue.popleft()
             message = _between(buffer, to_send["start"], to_send["stop"])
             no_comments, _ = _strip_comments(message)
+
+            if admit:
+                if admit_up_to is None and PROOF_START_PAT.match(message):
+                    # Reached the beginning of a proof in admit mode.
+                    admit_up_to = _find_opaque_proof_end(buffer, self.send_queue)
+                elif admit_up_to == to_send:
+                    # Reached the end of an opaque proof in admit mode. Replace
+                    # with `Admitted`.
+                    match = PROOF_END_PAT.match(message)
+                    assert match is not None and match.group(1) in OPAQUE_PROOF_ENDS
+                    message = no_comments = b"Admitted."
+                    admit_up_to = None
+                elif admit_up_to is not None:
+                    # Inside an opaque proof in admit mode. Skip this sentence.
+                    continue
 
             try:
                 success, msg, err_loc, stderr = self.coqtop.dispatch(
@@ -1503,6 +1531,37 @@ def _strip_comments(msg: bytes) -> Tuple[bytes, List[Tuple[int, int]]]:
                 com_pos[-1] = (com_pos[-1][0], off - com_pos[-1][0])
 
     return b" ".join(nocom), com_pos
+
+
+def _find_opaque_proof_end(
+    buffer: Sequence[bytes],
+    ranges: Iterable[Mapping[str, Tuple[int, int]]],
+) -> Optional[Mapping[str, Tuple[int, int]]]:
+    """
+    Find the end of the current proof to check if it's opaque.
+
+    A proof that contains a non-opaque nested proof is considered
+    non-opaque. A proof without an ending is also considered non-opaque.
+    """
+    pdepth = 1
+    for range_ in ranges:
+        message = _between(buffer, range_["start"], range_["stop"])
+        pstart = PROOF_START_PAT.match(message)
+        pend = PROOF_END_PAT.match(message)
+        if pstart is not None:
+            pdepth += 1
+        elif pend is not None:
+            pdepth -= 1
+            if pdepth == 0 and pend.group(1) in OPAQUE_PROOF_ENDS:
+                # Found a non-nested opaque end.
+                return range_
+            if pend.group(1) not in OPAQUE_PROOF_ENDS:
+                # Found a non-opaque end.
+                return None
+
+        if pdepth == 0:
+            break
+    return None
 
 
 def _find_diff(
