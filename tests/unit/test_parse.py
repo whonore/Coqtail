@@ -266,6 +266,32 @@ Defined.
 Lemma L13 : True.
 Proof.
   idtac "L13".
+  (*
+  Lemma L14 : True.
+  Proof.
+    idtac "L14".
+    auto.
+  Qed.
+  *)
+  auto.
+Qed.
+
+Lemma L15 : True.
+Proof.
+  idtac "L15".
+  (*
+  Lemma L16 : True.
+  Proof.
+    idtac "L16".
+    auto.
+  Qed.
+  *)
+  auto.
+Defined.
+
+Lemma L17 : True.
+Proof.
+  idtac "L17".
 """
     )
     .strip()
@@ -281,7 +307,9 @@ pend_tests: Sequence[PEndTest] = (
     ("qed in defined", "L7", None),
     ("defined in qed", "L9", None),
     ("defined in defined", "L11", None),
-    ("unclosed", "L13", None),
+    ("comment qed", "L13", {"start": (79, 0), "stop": (79, 3)}),
+    ("comment defined", "L15", None),
+    ("unclosed", "L17", None),
 )
 
 
