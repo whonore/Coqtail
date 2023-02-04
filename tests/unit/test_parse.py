@@ -2,11 +2,18 @@
 # Author: Wolf Honore
 """Sentence parsing unit tests."""
 
-from typing import Iterable, Sequence, Tuple, Union
+from itertools import takewhile
+from typing import Iterable, Mapping, Optional, Sequence, Tuple, Union
 
 import pytest
 
-from coqtail import NoDotError, UnmatchedError, _get_message_range, _strip_comments
+from coqtail import (
+    NoDotError,
+    UnmatchedError,
+    _find_opaque_proof_end,
+    _get_message_range,
+    _strip_comments,
+)
 
 # Test name, input lines, start position, stop position or exception
 # The start can be omitted, in which case it defaults to (0, 0).
@@ -178,3 +185,115 @@ com_tests: Sequence[CommentTest] = (
 def test_strip_comment(_name: str, msg: CommentIn, expected: CommentOut) -> None:
     """_strip_comments() should remove only comments"""
     assert _strip_comments(msg) == expected
+
+
+# Test name, lemma name, output range
+PEndIn = str
+PEndOut = Optional[Mapping[str, Tuple[int, int]]]
+PEndTest = Tuple[str, PEndIn, PEndOut]
+
+pend_buffer = (
+    (
+        b"""
+Lemma L1 : True.
+Proof.
+  idtac "L1".
+  auto.
+Qed.
+
+Lemma L2 : True.
+Proof.
+  idtac "L2".
+  auto.
+Admitted.
+
+Lemma L3 : True.
+Proof.
+  idtac "L3".
+  auto.
+Defined.
+
+Lemma L4 : True.
+Proof.
+  idtac "L4".
+  auto.
+Abort.
+
+Lemma L5 : True.
+Proof.
+  idtac "L5".
+  Lemma L6 : True.
+  Proof.
+    idtac "L6".
+    auto.
+  Qed.
+  auto.
+Qed.
+
+Lemma L7 : True.
+Proof.
+  idtac "L7".
+  Lemma L8 : True.
+  Proof.
+    idtac "L8".
+    auto.
+  Qed.
+  auto.
+Defined.
+
+Lemma L9 : True.
+Proof.
+  idtac "L9".
+  Lemma L10 : True.
+  Proof.
+    idtac "L10".
+    auto.
+  Defined.
+  auto.
+Qed.
+
+Lemma L11 : True.
+Proof.
+  idtac "L11".
+  Lemma L12 : True.
+  Proof.
+    idtac "L12".
+    auto.
+  Defined.
+  auto.
+Defined.
+
+Lemma L13 : True.
+Proof.
+  idtac "L13".
+"""
+    )
+    .strip()
+    .split(b"\n")
+)
+
+pend_tests: Sequence[PEndTest] = (
+    ("qed", "L1", {"start": (4, 0), "stop": (4, 3)}),
+    ("admitted", "L2", {"start": (10, 0), "stop": (10, 8)}),
+    ("defined", "L3", None),
+    ("abort", "L4", None),
+    ("qed in qed", "L5", {"start": (33, 0), "stop": (33, 3)}),
+    ("qed in defined", "L7", None),
+    ("defined in qed", "L9", None),
+    ("defined in defined", "L11", None),
+    ("unclosed", "L13", None),
+)
+
+
+@pytest.mark.parametrize("_name, lemma, expected", pend_tests)
+def test_find_opaque_proof_end(_name: str, lemma: PEndIn, expected: PEndOut) -> None:
+    """_find_opaque_proof_end() should only find an opaque proof ender at the same depth."""
+    start = pend_buffer.index(f"Lemma {lemma} : True.".encode("utf-8")) + 2
+    ranges = [
+        {"start": (lnum, 0), "stop": (lnum, len(line) - 1)}
+        for lnum, line in enumerate(
+            takewhile(lambda line: line != b"", pend_buffer[start:]),
+            start=start,
+        )
+    ]
+    assert _find_opaque_proof_end(pend_buffer, ranges) == expected
