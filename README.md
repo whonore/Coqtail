@@ -68,6 +68,7 @@ Coqtail provides the following commands (see `:help coqtail` for more details):
 | `{n}CoqNext` | `<leader>cj` | Send the next `n` (1 by default) sentences to Coq. |
 | `{n}CoqUndo` | `<leader>ck` | Step back `n` (1 by default) sentences. |
 | `{n}CoqToLine` | `<leader>cl` | Send/rewind all sentences up to line `n` (cursor position by default). `n` can also be `$` to check the entire buffer. |
+| `{n}CoqOmitToLine` | No default (see [Mappings](#mappings)) | Same as `CoqToLine`, but skip processing of and admit all opaque proofs. Similar to Proof General's [`proof-omit-proofs-option`](https://proofgeneral.github.io/doc/master/userman/Coq-Proof-General/#Omitting-proofs-for-speed). See `:help CoqOmitToLine` for more information. |
 | `CoqToTop` | `<leader>cT` | Rewind to the beginning of the file. |
 | `CoqJumpToEnd` | `<leader>cG` | Move the cursor to the end of the checked region. |
 | `CoqJumpToError` | `<leader>cE` | Move the cursor to the start of the error region. |
@@ -137,7 +138,8 @@ Formatting of comments can be disabled with `g:coqtail_noindent_comment`.
 
 In addition to the Coq syntax, Coqtail defines highlighting groups for the
 sentences that are currently or have already been checked by Coq (`CoqtailSent`
-and `CoqtailChecked`) as well as any lines that raised an error (`CoqtailError`).
+and `CoqtailChecked`), any lines that raised an error (`CoqtailError`), and the
+beginnings and ends of omitted proofs (`CoqtailOmitted`).
 By default these are defined as:
 
 ```vim
@@ -149,6 +151,7 @@ else
   hi def CoqtailSent    ctermbg=7 guibg=LimeGreen
 endif
 hi def link CoqtailError Error
+hi def link CoqtailOmitted coqProofAdmit
 ```
 
 To override these defaults simply set your own highlighting (`:help :hi`) before

@@ -72,6 +72,25 @@ Movement Commands					      *coqtail-movement*
 			be moved inside the sentence first, for instance by
 			using `:CoqJumpToError` first.
 
+								*:CoqOmitToLine*
+							  *coqtail-omit-to-line*
+:[count]CoqOmitToLine	Behaves the same as `:CoqToLine`, but the bodies of
+			all opaque proofs (those ending with "Qed" or
+			"Admitted") are omitted and admitted. This can be
+			useful for quickly jumping to a point towards the end
+			of a large file. The beginnings and ends of omitted
+			proofs (i.e., the "Proof" and "Qed"/"Admitted"
+			commands) are marked by highlighting them with the
+			`CoqtailOmitted` group.
+
+			NOTE: Proofs must begin with "Proof" or "Proof using".
+			NOTE: A proof is considered opaque only if every
+			nested proof it contains is also opaque.
+			NOTE: Proofs inside sections may need to list the
+			variables they depend on with `Proof using` in order
+			to get the right type when the proof body is omitted.
+			See https://coq.inria.fr/distrib/current/refman/proofs/writing-proofs/proof-mode.html#coq:cmd.Proof-using.
+
 					     *<leader>cT* *i_<leader>cT* *:CoqToTop*
 								*coqtail-to-top*
 :CoqToTop	or
