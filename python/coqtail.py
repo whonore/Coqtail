@@ -265,7 +265,7 @@ class Coqtail:
         self.omitted_proofs = [
             range_
             for range_ in self.omitted_proofs
-            if range_.qed["stop"] <= self.endpoints[-1]
+            if self.endpoints != [] and range_.qed["stop"] <= self.endpoints[-1]
         ]
         self.error_at = None
         self.refresh(opts=opts)
