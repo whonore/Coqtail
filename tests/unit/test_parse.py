@@ -290,8 +290,20 @@ Proof.
 Defined.
 
 Lemma L17 : True.
-Proof.
+Proof using Type.
   idtac "L17".
+  auto.
+Qed.
+
+Lemma L18 : True.
+Proof using Type.
+  idtac "L18".
+  auto.
+Defined.
+
+Lemma L19 : True.
+Proof.
+  idtac "L19".
 """
     )
     .strip()
@@ -309,7 +321,9 @@ pend_tests: Sequence[PEndTest] = (
     ("defined in defined", "L11", None),
     ("comment qed", "L13", {"start": (79, 0), "stop": (79, 3)}),
     ("comment defined", "L15", None),
-    ("unclosed", "L17", None),
+    ("qed using", "L17", {"start": (98, 0), "stop": (98, 3)}),
+    ("defined using", "L18", None),
+    ("unclosed", "L19", None),
 )
 
 
