@@ -13,7 +13,8 @@ let g:coqtail#panels#aux = [g:coqtail#panels#goal, g:coqtail#panels#info]
 let s:hlgroups = [
   \ ['coqtail_checked', 'CoqtailChecked'],
   \ ['coqtail_sent', 'CoqtailSent'],
-  \ ['coqtail_error', 'CoqtailError']
+  \ ['coqtail_error', 'CoqtailError'],
+  \ ['coqtail_omitted', 'CoqtailOmitted']
 \]
 let s:richpp_hlgroups = {
   \ 'diff.added': 'CoqtailDiffAdded',
@@ -219,8 +220,10 @@ function! s:updatehl(winid, highlights) abort
   call s:clearhl(a:winid)
   for [l:var, l:grp] in s:hlgroups
     let l:hl = a:highlights[l:var]
-    if l:hl != v:null
+    if type(l:hl) == g:coqtail#compat#t_string
       call setwinvar(a:winid, l:var, matchadd(l:grp, l:hl, -10))
+    elseif type(l:hl) == g:coqtail#compat#t_list
+      call setwinvar(a:winid, l:var, matchaddpos(l:grp, l:hl, -10))
     endif
   endfor
 endfunction

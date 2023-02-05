@@ -42,6 +42,10 @@ Highlight = NamedTuple(
     "Highlight",
     [("line_no", int), ("index", int), ("tok_len", int), ("tag", PPTag)],
 )
+ProofRange = NamedTuple(
+    "ProofRange",
+    (("proof", Mapping[str, Tuple[int, int]]), ("qed", Mapping[str, Tuple[int, int]])),
+)
 Req = Tuple[int, int, str, Mapping[str, Any]]  # (msg_id, bnum, func, args)
 Res = Tuple[int, Any]  # (msg_id, data)
 SkipFun = Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]
@@ -147,6 +151,8 @@ class Coqtail:
                      contains the "start" and "end" (inclusive, including the
                      dot) position of the sentence.
         error_at - The position of the last error
+        omitted_proofs - The positions of the starts and ends of the proofs
+                         that have been skipped by `to_line()`.
         info_msg - Lines of text to display in the info panel
         goal_msg - Lines of text to display in the goal panel
         goal_hls - Highlight positions for each line of goal_msg
@@ -158,6 +164,7 @@ class Coqtail:
         self.endpoints: List[Tuple[int, int]] = []
         self.send_queue: Deque[Mapping[str, Tuple[int, int]]] = deque()
         self.error_at: Optional[Tuple[Tuple[int, int], Tuple[int, int]]] = None
+        self.omitted_proofs: List[ProofRange] = []
         self.info_msg: List[str] = []
         self.goal_msg: List[str] = []
         self.goal_hls: List[Highlight] = []
@@ -255,6 +262,11 @@ class Coqtail:
             return msg
 
         self.endpoints = self.endpoints[: -(steps + extra_steps)]
+        self.omitted_proofs = [
+            range_
+            for range_ in self.omitted_proofs
+            if range_.qed["stop"] <= self.endpoints[-1]
+        ]
         self.error_at = None
         self.refresh(opts=opts)
         return None
@@ -365,6 +377,8 @@ class Coqtail:
                 if admit_up_to is None and PROOF_START_PAT.match(message):
                     # Reached the beginning of a proof in admit mode.
                     admit_up_to = _find_opaque_proof_end(buffer, self.send_queue)
+                    if admit_up_to is not None:
+                        self.omitted_proofs.append(ProofRange(to_send, admit_up_to))
                 elif admit_up_to == to_send:
                     # Reached the end of an opaque proof in admit mode. Replace
                     # with `Admitted`.
@@ -673,12 +687,13 @@ class Coqtail:
             self.set_info("From stderr:\n" + err, reset=False)
 
     @property
-    def highlights(self) -> Dict[str, Optional[str]]:
+    def highlights(self) -> Dict[str, Optional[Union[str, List[Tuple[int, int, int]]]]]:
         """Vim match patterns for highlighting."""
-        matches: Dict[str, Optional[str]] = {
+        matches: Dict[str, Optional[Union[str, List[Tuple[int, int, int]]]]] = {
             "coqtail_checked": None,
             "coqtail_sent": None,
             "coqtail_error": None,
+            "coqtail_omitted": None,
         }
 
         if self.endpoints != []:
@@ -693,6 +708,22 @@ class Coqtail:
         if self.error_at is not None:
             (sline, scol), (eline, ecol) = self.error_at
             matches["coqtail_error"] = matcher[sline : eline + 1, scol:ecol]
+
+        if self.omitted_proofs != []:
+            ranges = []
+            for pstart, pend in self.omitted_proofs:
+                for range_ in (pstart, pend):
+                    sline, scol = range_["start"]
+                    eline, ecol = range_["stop"]
+                    for line in range(sline, eline + 1):
+                        col = scol if line == sline else 0
+                        span = (
+                            ecol - col
+                            if line == eline
+                            else len(self.buffer[line]) - col
+                        )
+                        ranges.append((line + 1, col + 1, span))
+            matches["coqtail_omitted"] = ranges
 
         return matches
 

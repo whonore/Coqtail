@@ -46,6 +46,7 @@ if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight
     hi def link CoqtailDiffRemoved DiffDelete
     hi def link CoqtailDiffRemovedBg DiffDelete
     hi def link CoqtailError Error
+    hi def link CoqtailOmitted coqProofAdmit
   endfunction
 
   call s:CoqtailHighlight()
