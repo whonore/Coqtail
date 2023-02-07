@@ -302,12 +302,22 @@ Proof using Type.
 Defined.
 
 Lemma L19 : True.
+Proof. idtac "L19". auto. Qed.
+
+Lemma L20 : True.
 Proof.
-  idtac "L19".
+  idtac "L20".
+  auto.
+\t
+  Qed.
+
+Lemma L21 : True.
+Proof.
+  idtac "L21".
 """
     )
     .strip()
-    .split(b"\n")
+    .splitlines()
 )
 
 pend_tests: Sequence[PEndTest] = (
@@ -317,25 +327,48 @@ pend_tests: Sequence[PEndTest] = (
     ("abort", "L4", None),
     ("qed in qed", "L5", {"start": (33, 0), "stop": (33, 3)}),
     ("qed in defined", "L7", None),
+    ("qed in defined inner", "L8", {"start": (42, 2), "stop": (42, 5)}),
     ("defined in qed", "L9", None),
     ("defined in defined", "L11", None),
     ("comment qed", "L13", {"start": (79, 0), "stop": (79, 3)}),
     ("comment defined", "L15", None),
     ("qed using", "L17", {"start": (98, 0), "stop": (98, 3)}),
     ("defined using", "L18", None),
-    ("unclosed", "L19", None),
+    ("qed same line", "L19", {"start": (107, 26), "stop": (107, 29)}),
+    ("qed extra spaces", "L20", {"start": (114, 2), "stop": (114, 5)}),
+    ("unclosed", "L21", None),
 )
 
 
 @pytest.mark.parametrize("_name, lemma, expected", pend_tests)
 def test_find_opaque_proof_end(_name: str, lemma: PEndIn, expected: PEndOut) -> None:
     """_find_opaque_proof_end() should only find an opaque proof ender at the same depth."""
-    start = pend_buffer.index(f"Lemma {lemma} : True.".encode("utf-8")) + 2
-    ranges = [
-        {"start": (lnum, 0), "stop": (lnum, len(line) - 1)}
-        for lnum, line in enumerate(
-            takewhile(lambda line: line != b"", pend_buffer[start:]),
-            start=start,
+    # Find the first line of the proof.
+    sline = (
+        next(
+            idx
+            for idx, line in enumerate(pend_buffer)
+            if line.strip().startswith(f"Lemma {lemma}".encode("utf-8"))
         )
-    ]
+        + 1  # "Proof" starts on the line after "Lemma"
+    )
+    scol = 0
+    # Find the last line of the proof.
+    eline = sline + len(list(takewhile(lambda line: line != b"", pend_buffer[sline:])))
+
+    # Split the proof into sentences.
+    ranges = []
+    while True:
+        try:
+            range_ = _get_message_range(pend_buffer, (sline, scol))
+        except NoDotError:
+            break
+        if eline < range_["stop"][0]:
+            break
+        sline, scol = range_["stop"]
+        scol += 1
+        ranges.append(range_)
+    # Skip the first sentence ("Proof").
+    ranges = ranges[1:]
+
     assert _find_opaque_proof_end(pend_buffer, ranges) == expected
