@@ -235,7 +235,7 @@ signature-mutators=
 [EXCEPTIONS]
 
 # Exceptions that will emit a warning when caught.
-overgeneral-exceptions=Exception
+overgeneral-exceptions=builtins.Exception
 
 
 [VARIABLES]
