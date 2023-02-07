@@ -3,8 +3,8 @@
 ## Unreleased ([master])
 
 ### Added
-- A command (`CoqToLine!`) to advance to a given line while omitting the body of
-  and admitting all intervening opaque proofs.
+- A command (`CoqOmitToLine`) to advance to a given line while omitting the body
+  of and admitting all intervening opaque proofs.
   (PR #321)
 - Display goal names when `Printing Goal Names` is enabled.
   (PR #310)
