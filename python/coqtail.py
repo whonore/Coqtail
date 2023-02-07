@@ -67,7 +67,7 @@ else:
     VimOptions = Mapping[str, Any]
     ResFuture = futures.Future
 
-PROOF_START_PAT = re.compile(rb"^\s*Proof\b")
+PROOF_START_PAT = re.compile(rb"^\s*(Proof)\b")
 PROOF_END_PAT = re.compile(rb"^\s*(Qed|Admitted|Defined|Abort|Save)\b")
 OPAQUE_PROOF_ENDS = {b"Qed", b"Admitted"}
 
@@ -365,8 +365,8 @@ class Coqtail:
         failed_at = None
         no_msgs = True
         self.error_at = None
+        admit_up_to: Optional[Mapping[str, Tuple[int, int]]] = None
 
-        admit_up_to = None
         while self.send_queue:
             self.refresh(goals=False, force=False, scroll=scroll, opts=opts)
             to_send = self.send_queue.popleft()
@@ -374,19 +374,28 @@ class Coqtail:
             no_comments, _ = _strip_comments(message)
 
             if admit:
-                if admit_up_to is None and PROOF_START_PAT.match(message):
-                    # Reached the beginning of a proof in admit mode.
-                    admit_up_to = _find_opaque_proof_end(buffer, self.send_queue)
-                    if admit_up_to is not None:
-                        self.omitted_proofs.append(ProofRange(to_send, admit_up_to))
-                elif admit_up_to == to_send:
+                if admit_up_to is None:
+                    pstart = PROOF_START_PAT.match(message)
+                    if pstart is not None:
+                        # Reached the beginning of a proof in admit mode.
+                        admit_up_to = _find_opaque_proof_end(buffer, self.send_queue)
+                        if admit_up_to is not None:
+                            admit_from = _shrink_range_to_match(
+                                to_send,
+                                pstart.group(),
+                                pstart.start(1),
+                            )
+                            self.omitted_proofs.append(
+                                ProofRange(admit_from, admit_up_to)
+                            )
+                elif admit_up_to["stop"] == to_send["stop"]:
                     # Reached the end of an opaque proof in admit mode. Replace
                     # with `Admitted`.
                     match = PROOF_END_PAT.match(message)
                     assert match is not None and match.group(1) in OPAQUE_PROOF_ENDS
                     message = no_comments = b"Admitted."
                     admit_up_to = None
-                elif admit_up_to is not None:
+                else:
                     # Inside an opaque proof in admit mode. Skip this sentence.
                     continue
 
@@ -1585,7 +1594,7 @@ def _find_opaque_proof_end(
             pdepth -= 1
             if pdepth == 0 and pend.group(1) in OPAQUE_PROOF_ENDS:
                 # Found a non-nested opaque end.
-                return range_
+                return _shrink_range_to_match(range_, pend.group(), pend.start(1))
             if pend.group(1) not in OPAQUE_PROOF_ENDS:
                 # Found a non-opaque end.
                 return None
@@ -1593,6 +1602,22 @@ def _find_opaque_proof_end(
         if pdepth == 0:
             break
     return None
+
+
+def _shrink_range_to_match(
+    range_: Mapping[str, Tuple[int, int]],
+    match: bytes,
+    match_off: int,
+) -> Mapping[str, Tuple[int, int]]:
+    """Shrink a sentence range to begin at the start of a given match."""
+    nline_breaks = match.count(b"\n")
+    sline = range_["start"][0] + nline_breaks
+    # Offset the match start by the initial column if there are no line breaks,
+    # else discount everything before the last line break.
+    scol = match_off + (
+        range_["start"][1] if nline_breaks == 0 else -(match.rindex(b"\n") + 1)
+    )
+    return {"start": (sline, scol), "stop": range_["stop"]}
 
 
 def _find_diff(
