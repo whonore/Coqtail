@@ -375,7 +375,7 @@ class Coqtail:
 
             if admit:
                 if admit_up_to is None:
-                    pstart = PROOF_START_PAT.match(message)
+                    pstart = PROOF_START_PAT.match(no_comments)
                     if pstart is not None:
                         # Reached the beginning of a proof in admit mode.
                         admit_up_to = _find_opaque_proof_end(buffer, self.send_queue)
@@ -391,7 +391,7 @@ class Coqtail:
                 elif admit_up_to["stop"] == to_send["stop"]:
                     # Reached the end of an opaque proof in admit mode. Replace
                     # with `Admitted`.
-                    match = PROOF_END_PAT.match(message)
+                    match = PROOF_END_PAT.match(no_comments)
                     assert match is not None and match.group(1) in OPAQUE_PROOF_ENDS
                     message = no_comments = b"Admitted."
                     admit_up_to = None
@@ -1538,7 +1538,7 @@ matcher = Matcher()
 
 # Misc #
 def _strip_comments(msg: bytes) -> Tuple[bytes, List[Tuple[int, int]]]:
-    """Remove all comments from 'msg'."""
+    """Replace all comments in 'msg' with whitespace."""
     # pylint: disable=no-else-break
     # NOTE: Coqtop will ignore comments, but it makes it easier to inspect
     # commands in Coqtail (e.g. options in coqtop.do_option) if we remove them.
@@ -1558,19 +1558,25 @@ def _strip_comments(msg: bytes) -> Tuple[bytes, List[Tuple[int, int]]]:
             # New nested comment
             if nesting == 0:
                 nocom.append(msg[:start])
+                nocom.append(b" " * 2)  # Replace '(*'
                 com_pos.append((off + start, 0))
-            msg = msg[start + 2 :]
+            else:
+                # Replace everything up to and including nested comment start.
+                nocom.append(re.sub(rb"\S", b" ", msg[: start + 2]))
+            msg = msg[start + 2 :]  # Skip '(*'
             off += start + 2
             nesting += 1
         elif end != -1 and (end < start or start == -1):
             # End of a comment
+            # Replace everything up to and including comment end.
+            nocom.append(re.sub(rb"\S", b" ", msg[: end + 2]))
             msg = msg[end + 2 :]
             off += end + 2
             nesting -= 1
             if nesting == 0:
                 com_pos[-1] = (com_pos[-1][0], off - com_pos[-1][0])
 
-    return b" ".join(nocom), com_pos
+    return b"".join(nocom), com_pos
 
 
 def _find_opaque_proof_end(
@@ -1585,7 +1591,7 @@ def _find_opaque_proof_end(
     """
     pdepth = 1
     for range_ in ranges:
-        message = _between(buffer, range_["start"], range_["stop"])
+        message, _ = _strip_comments(_between(buffer, range_["start"], range_["stop"]))
         pstart = PROOF_START_PAT.match(message)
         pend = PROOF_END_PAT.match(message)
         if pstart is not None:

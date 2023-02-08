@@ -153,31 +153,35 @@ CommentTest = Tuple[str, CommentIn, CommentOut]
 
 com_tests: Sequence[CommentTest] = (
     ("no comment", b"abc", (b"abc", [])),
-    ("pre", b"(*abc*)def", (b" def", [(0, 7)])),
-    ("mid", b"ab(* c *)de", (b"ab de", [(2, 7)])),
-    ("post", b"abc(*def *)", (b"abc", [(3, 8)])),
+    ("pre", b"(*abc*)def", (b"       def", [(0, 7)])),
+    ("mid", b"ab(* c *)de", (b"ab       de", [(2, 7)])),
+    ("post", b"abc(*def *)", (b"abc        ", [(3, 8)])),
     (
         "multi",
         b"abc (* com1 *)  def (*com2 *) g",
-        (b"abc    def   g", [(4, 10), (20, 9)]),
+        (b"abc             def           g", [(4, 10), (20, 9)]),
     ),
-    ("nested", b"abc (* c1 (*c2 (*c3*) (*c4*) *) *)def", (b"abc  def", [(4, 30)])),
+    (
+        "nested",
+        b"abc (* c1 (*c2 (*c3*) (*c4*) *) *)def",
+        (b"abc                               def", [(4, 30)]),
+    ),
     ("no comment newline", b"\nabc\n\n", (b"\nabc\n\n", [])),
-    ("pre newline", b"(*ab\nc*)d\nef", (b" d\nef", [(0, 8)])),
-    ("mid newline", b"ab(* c *)\nde", (b"ab \nde", [(2, 7)])),
-    ("post newline", b"abc\n(*def *)\n", (b"abc\n \n", [(4, 8)])),
+    ("pre newline", b"(*ab\nc*)d\nef", (b"    \n   d\nef", [(0, 8)])),
+    ("mid newline", b"ab(* c *)\nde", (b"ab       \nde", [(2, 7)])),
+    ("post newline", b"abc\n(*def *)\n", (b"abc\n        \n", [(4, 8)])),
     (
         "multi newline",
         b"abc (* com1 *)\n def \n(*\ncom2 *) g",
-        (b"abc  \n def \n  g", [(4, 10), (21, 10)]),
+        (b"abc           \n def \n  \n        g", [(4, 10), (21, 10)]),
     ),
     (
         "nested newline",
         b"\nabc (* c1 (*c2 \n\n(*c3\n*) (*c4*) *) *)def\n",
-        (b"\nabc  def\n", [(5, 33)]),
+        (b"\nabc            \n\n    \n               def\n", [(5, 33)]),
     ),
     ("star paren", b"abc *)", (b"abc *)", [])),
-    ("star paren post comment", b"(*abc*) *)", (b"  *)", [(0, 7)])),
+    ("star paren post comment", b"(*abc*) *)", (b"        *)", [(0, 7)])),
 )
 
 
@@ -266,6 +270,7 @@ Defined.
 Lemma L13 : True.
 Proof.
   idtac "L13".
+  auto.
   (*
   Lemma L14 : True.
   Proof.
@@ -273,12 +278,12 @@ Proof.
     auto.
   Qed.
   *)
-  auto.
 Qed.
 
 Lemma L15 : True.
 Proof.
   idtac "L15".
+  auto.
   (*
   Lemma L16 : True.
   Proof.
@@ -286,34 +291,39 @@ Proof.
     auto.
   Qed.
   *)
-  auto.
 Defined.
 
 Lemma L17 : True.
-Proof using Type.
+Proof.
   idtac "L17".
   auto.
-Qed.
+Qed (* *).
 
 Lemma L18 : True.
 Proof using Type.
   idtac "L18".
   auto.
-Defined.
+Qed.
 
 Lemma L19 : True.
-Proof. idtac "L19". auto. Qed.
+Proof using Type.
+  idtac "L19".
+  auto.
+Defined.
 
 Lemma L20 : True.
-Proof.
-  idtac "L20".
-  auto.
-\t
-  Qed.
+Proof. idtac "L20". auto. Qed.
 
 Lemma L21 : True.
 Proof.
   idtac "L21".
+  auto.
+\t
+  Qed.
+
+Lemma L22 : True.
+Proof.
+  idtac "L22".
 """
     )
     .strip()
@@ -332,11 +342,12 @@ pend_tests: Sequence[PEndTest] = (
     ("defined in defined", "L11", None),
     ("comment qed", "L13", {"start": (79, 0), "stop": (79, 3)}),
     ("comment defined", "L15", None),
-    ("qed using", "L17", {"start": (98, 0), "stop": (98, 3)}),
-    ("defined using", "L18", None),
-    ("qed same line", "L19", {"start": (107, 26), "stop": (107, 29)}),
-    ("qed extra spaces", "L20", {"start": (114, 2), "stop": (114, 5)}),
-    ("unclosed", "L21", None),
+    ("comment after qed", "L13", {"start": (79, 0), "stop": (79, 3)}),
+    ("qed using", "L18", {"start": (104, 0), "stop": (104, 3)}),
+    ("defined using", "L19", None),
+    ("qed same line", "L20", {"start": (113, 26), "stop": (113, 29)}),
+    ("qed extra spaces", "L21", {"start": (120, 2), "stop": (120, 5)}),
+    ("unclosed", "L22", None),
 )
 
 
