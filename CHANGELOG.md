@@ -2,6 +2,8 @@
 
 ## Unreleased ([master])
 
+## [1.7.0]
+
 ### Added
 - A command (`CoqOmitToLine`) to advance to a given line while omitting the body
   of and admitting all intervening opaque proofs.
@@ -379,6 +381,7 @@
 
 [master]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
+[1.7.0]: https://github.com/whonore/Coqtail/tree/v1.7.0
 [1.6.4]: https://github.com/whonore/Coqtail/tree/v1.6.4
 [1.6.3]: https://github.com/whonore/Coqtail/tree/v1.6.3
 [1.6.2]: https://github.com/whonore/Coqtail/tree/v1.6.2
