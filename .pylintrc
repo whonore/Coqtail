@@ -174,6 +174,7 @@ disable=blacklisted-name,
         too-many-public-methods,
         too-many-return-statements,
         too-many-statements,
+        unsubscriptable-object,
         wrong-spelling-in-comment,
         wrong-spelling-in-docstring,
 

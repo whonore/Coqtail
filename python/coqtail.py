@@ -42,6 +42,10 @@ Highlight = NamedTuple(
     "Highlight",
     [("line_no", int), ("index", int), ("tok_len", int), ("tag", PPTag)],
 )
+ProofRange = NamedTuple(
+    "ProofRange",
+    (("proof", Mapping[str, Tuple[int, int]]), ("qed", Mapping[str, Tuple[int, int]])),
+)
 Req = Tuple[int, int, str, Mapping[str, Any]]  # (msg_id, bnum, func, args)
 Res = Tuple[int, Any]  # (msg_id, data)
 SkipFun = Callable[[Sequence[bytes], int, int], Optional[Tuple[int, int]]]
@@ -62,6 +66,10 @@ else:
     ResQueue = Queue
     VimOptions = Mapping[str, Any]
     ResFuture = futures.Future
+
+PROOF_START_PAT = re.compile(rb"^\s*(Proof)\b")
+PROOF_END_PAT = re.compile(rb"^\s*(Qed|Admitted|Defined|Abort|Save)\b")
+OPAQUE_PROOF_ENDS = {b"Qed", b"Admitted"}
 
 
 def lines_and_highlights(
@@ -143,6 +151,8 @@ class Coqtail:
                      contains the "start" and "end" (inclusive, including the
                      dot) position of the sentence.
         error_at - The position of the last error
+        omitted_proofs - The positions of the starts and ends of the proofs
+                         that have been skipped by `to_line()`.
         info_msg - Lines of text to display in the info panel
         goal_msg - Lines of text to display in the goal panel
         goal_hls - Highlight positions for each line of goal_msg
@@ -154,6 +164,7 @@ class Coqtail:
         self.endpoints: List[Tuple[int, int]] = []
         self.send_queue: Deque[Mapping[str, Tuple[int, int]]] = deque()
         self.error_at: Optional[Tuple[Tuple[int, int], Tuple[int, int]]] = None
+        self.omitted_proofs: List[ProofRange] = []
         self.info_msg: List[str] = []
         self.goal_msg: List[str] = []
         self.goal_hls: List[Highlight] = []
@@ -251,11 +262,22 @@ class Coqtail:
             return msg
 
         self.endpoints = self.endpoints[: -(steps + extra_steps)]
+        self.omitted_proofs = [
+            range_
+            for range_ in self.omitted_proofs
+            if self.endpoints != [] and range_.qed["stop"] <= self.endpoints[-1]
+        ]
         self.error_at = None
         self.refresh(opts=opts)
         return None
 
-    def to_line(self, line: int, col: int, opts: VimOptions) -> Optional[str]:
+    def to_line(
+        self,
+        line: int,
+        col: int,
+        admit: bool,
+        opts: VimOptions,
+    ) -> Optional[str]:
         """Advance/rewind Coq to the specified position."""
         self.sync(opts=opts)
 
@@ -285,7 +307,7 @@ class Coqtail:
             ecol += 1
             self.send_queue.append(to_send)
 
-        failed_at, err = self.send_until_fail(self.buffer, opts=opts)
+        failed_at, err = self.send_until_fail(self.buffer, admit=admit, opts=opts)
         if unmatched is not None and failed_at is None:
             # Only report unmatched if no other errors occurred first
             self.set_info(str(unmatched), reset=False)
@@ -335,6 +357,7 @@ class Coqtail:
         self,
         buffer: Sequence[bytes],
         opts: VimOptions,
+        admit: bool = False,
     ) -> Tuple[Optional[Tuple[int, int]], Optional[str]]:
         """Send all sentences in 'send_queue' until an error is encountered."""
         empty = self.send_queue == deque()
@@ -342,11 +365,39 @@ class Coqtail:
         failed_at = None
         no_msgs = True
         self.error_at = None
+        admit_up_to: Optional[Mapping[str, Tuple[int, int]]] = None
+
         while self.send_queue:
             self.refresh(goals=False, force=False, scroll=scroll, opts=opts)
             to_send = self.send_queue.popleft()
             message = _between(buffer, to_send["start"], to_send["stop"])
             no_comments, _ = _strip_comments(message)
+
+            if admit:
+                if admit_up_to is None:
+                    pstart = PROOF_START_PAT.match(no_comments)
+                    if pstart is not None:
+                        # Reached the beginning of a proof in admit mode.
+                        admit_up_to = _find_opaque_proof_end(buffer, self.send_queue)
+                        if admit_up_to is not None:
+                            admit_from = _shrink_range_to_match(
+                                to_send,
+                                pstart.group(),
+                                pstart.start(1),
+                            )
+                            self.omitted_proofs.append(
+                                ProofRange(admit_from, admit_up_to)
+                            )
+                elif admit_up_to["stop"] == to_send["stop"]:
+                    # Reached the end of an opaque proof in admit mode. Replace
+                    # with `Admitted`.
+                    match = PROOF_END_PAT.match(no_comments)
+                    assert match is not None and match.group(1) in OPAQUE_PROOF_ENDS
+                    message = no_comments = b"Admitted."
+                    admit_up_to = None
+                else:
+                    # Inside an opaque proof in admit mode. Skip this sentence.
+                    continue
 
             try:
                 success, msg, err_loc, stderr = self.coqtop.dispatch(
@@ -645,12 +696,13 @@ class Coqtail:
             self.set_info("From stderr:\n" + err, reset=False)
 
     @property
-    def highlights(self) -> Dict[str, Optional[str]]:
+    def highlights(self) -> Dict[str, Optional[Union[str, List[Tuple[int, int, int]]]]]:
         """Vim match patterns for highlighting."""
-        matches: Dict[str, Optional[str]] = {
+        matches: Dict[str, Optional[Union[str, List[Tuple[int, int, int]]]]] = {
             "coqtail_checked": None,
             "coqtail_sent": None,
             "coqtail_error": None,
+            "coqtail_omitted": None,
         }
 
         if self.endpoints != []:
@@ -665,6 +717,22 @@ class Coqtail:
         if self.error_at is not None:
             (sline, scol), (eline, ecol) = self.error_at
             matches["coqtail_error"] = matcher[sline : eline + 1, scol:ecol]
+
+        if self.omitted_proofs != []:
+            ranges = []
+            for pstart, pend in self.omitted_proofs:
+                for range_ in (pstart, pend):
+                    sline, scol = range_["start"]
+                    eline, ecol = range_["stop"]
+                    for line in range(sline, eline + 1):
+                        col = scol if line == sline else 0
+                        span = (
+                            ecol - col
+                            if line == eline
+                            else len(self.buffer[line]) - col
+                        )
+                        ranges.append((line + 1, col + 1, span))
+            matches["coqtail_omitted"] = ranges
 
         return matches
 
@@ -1470,7 +1538,7 @@ matcher = Matcher()
 
 # Misc #
 def _strip_comments(msg: bytes) -> Tuple[bytes, List[Tuple[int, int]]]:
-    """Remove all comments from 'msg'."""
+    """Replace all comments in 'msg' with whitespace."""
     # pylint: disable=no-else-break
     # NOTE: Coqtop will ignore comments, but it makes it easier to inspect
     # commands in Coqtail (e.g. options in coqtop.do_option) if we remove them.
@@ -1490,19 +1558,72 @@ def _strip_comments(msg: bytes) -> Tuple[bytes, List[Tuple[int, int]]]:
             # New nested comment
             if nesting == 0:
                 nocom.append(msg[:start])
+                nocom.append(b" " * 2)  # Replace '(*'
                 com_pos.append((off + start, 0))
-            msg = msg[start + 2 :]
+            else:
+                # Replace everything up to and including nested comment start.
+                nocom.append(re.sub(rb"\S", b" ", msg[: start + 2]))
+            msg = msg[start + 2 :]  # Skip '(*'
             off += start + 2
             nesting += 1
         elif end != -1 and (end < start or start == -1):
             # End of a comment
+            # Replace everything up to and including comment end.
+            nocom.append(re.sub(rb"\S", b" ", msg[: end + 2]))
             msg = msg[end + 2 :]
             off += end + 2
             nesting -= 1
             if nesting == 0:
                 com_pos[-1] = (com_pos[-1][0], off - com_pos[-1][0])
 
-    return b" ".join(nocom), com_pos
+    return b"".join(nocom), com_pos
+
+
+def _find_opaque_proof_end(
+    buffer: Sequence[bytes],
+    ranges: Iterable[Mapping[str, Tuple[int, int]]],
+) -> Optional[Mapping[str, Tuple[int, int]]]:
+    """
+    Find the end of the current proof to check if it's opaque.
+
+    A proof that contains a non-opaque nested proof is considered
+    non-opaque. A proof without an ending is also considered non-opaque.
+    """
+    pdepth = 1
+    for range_ in ranges:
+        message, _ = _strip_comments(_between(buffer, range_["start"], range_["stop"]))
+        pstart = PROOF_START_PAT.match(message)
+        pend = PROOF_END_PAT.match(message)
+        if pstart is not None:
+            pdepth += 1
+        elif pend is not None:
+            pdepth -= 1
+            if pdepth == 0 and pend.group(1) in OPAQUE_PROOF_ENDS:
+                # Found a non-nested opaque end.
+                return _shrink_range_to_match(range_, pend.group(), pend.start(1))
+            if pend.group(1) not in OPAQUE_PROOF_ENDS:
+                # Found a non-opaque end.
+                return None
+
+        if pdepth == 0:
+            break
+    return None
+
+
+def _shrink_range_to_match(
+    range_: Mapping[str, Tuple[int, int]],
+    match: bytes,
+    match_off: int,
+) -> Mapping[str, Tuple[int, int]]:
+    """Shrink a sentence range to begin at the start of a given match."""
+    nline_breaks = match.count(b"\n")
+    sline = range_["start"][0] + nline_breaks
+    # Offset the match start by the initial column if there are no line breaks,
+    # else discount everything before the last line break.
+    scol = match_off + (
+        range_["start"][1] if nline_breaks == 0 else -(match.rindex(b"\n") + 1)
+    )
+    return {"start": (sline, scol), "stop": range_["stop"]}
 
 
 def _find_diff(

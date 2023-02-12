@@ -13,7 +13,8 @@ let g:coqtail#panels#aux = [g:coqtail#panels#goal, g:coqtail#panels#info]
 let s:hlgroups = [
   \ ['coqtail_checked', 'CoqtailChecked'],
   \ ['coqtail_sent', 'CoqtailSent'],
-  \ ['coqtail_error', 'CoqtailError']
+  \ ['coqtail_error', 'CoqtailError'],
+  \ ['coqtail_omitted', 'CoqtailOmitted']
 \]
 let s:richpp_hlgroups = {
   \ 'diff.added': 'CoqtailDiffAdded',
@@ -205,11 +206,11 @@ endfunction
 " This function must be called in the context of the given window.
 function! s:clearhl(winid) abort
   for [l:var, l:_] in s:hlgroups
-    let l:val = getwinvar(a:winid, l:var, -1)
-    if l:val != -1
-      call matchdelete(l:val)
-      call setwinvar(a:winid, l:var, -1)
-    endif
+    let l:matches = getwinvar(a:winid, l:var, [])
+    for l:match in l:matches
+      call matchdelete(l:match)
+    endfor
+    call setwinvar(a:winid, l:var, [])
   endfor
 endfunction
 
@@ -219,8 +220,16 @@ function! s:updatehl(winid, highlights) abort
   call s:clearhl(a:winid)
   for [l:var, l:grp] in s:hlgroups
     let l:hl = a:highlights[l:var]
-    if l:hl != v:null
-      call setwinvar(a:winid, l:var, matchadd(l:grp, l:hl, -10))
+    if type(l:hl) == g:coqtail#compat#t_string
+      call setwinvar(a:winid, l:var, [matchadd(l:grp, l:hl, -10)])
+    elseif type(l:hl) == g:coqtail#compat#t_list
+      " NOTE: add positions one at a time to work around 8-position maximum in
+      " older Vims.
+      let l:matches = []
+      for l:pos in l:hl
+        let l:matches = add(l:matches, matchaddpos(l:grp, [l:pos], -10))
+      endfor
+      call setwinvar(a:winid, l:var, l:matches)
     endif
   endfor
 endfunction

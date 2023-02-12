@@ -3,6 +3,9 @@
 ## Unreleased ([master])
 
 ### Added
+- A command (`CoqOmitToLine`) to advance to a given line while omitting the body
+  of and admitting all intervening opaque proofs.
+  (PR #321)
 - Display goal names when `Printing Goal Names` is enabled.
   (PR #310)
 - Support for the `Subgoals` XML command (>= 8.16 only).

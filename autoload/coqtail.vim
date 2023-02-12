@@ -397,12 +397,13 @@ function! coqtail#stop() abort
 endfunction
 
 " Advance/rewind Coq to the specified position.
-function! coqtail#toline(line) abort
+function! coqtail#toline(line, admit) abort
   " If no line was given then use the cursor's position,
   " otherwise use the last column in the line
   call s:call('to_line', '', 0, {
     \ 'line': (a:line == 0 ? line('.') : a:line) - 1,
-    \ 'col': (a:line == 0 ? col('.') : len(getline(a:line))) - 1})
+    \ 'col': (a:line == 0 ? col('.') : len(getline(a:line))) - 1,
+    \ 'admit': a:admit})
 endfunction
 
 " Move the cursor to the specified target:
@@ -435,6 +436,7 @@ let s:cmd_opts = {
   \ 'CoqNext': '-bar -count=1',
   \ 'CoqUndo': '-bar -count=1',
   \ 'CoqToLine': '-bar -count=0',
+  \ 'CoqOmitToLine': '-bar -count=0',
   \ 'CoqToTop': '-bar',
   \ 'CoqJumpToEnd': '-bar',
   \ 'CoqJumpToError': '-bar',
@@ -464,7 +466,8 @@ function! coqtail#define_commands() abort
   call s:cmddef('CoqInterrupt', 'call s:call("interrupt", "sync", 0, {})', '')
   call s:cmddef('CoqNext', 'call s:call("step", "", 0, {"steps": <count>})', 's')
   call s:cmddef('CoqUndo', 'call s:call("rewind", "", 0, {"steps": <count>})', 's')
-  call s:cmddef('CoqToLine', 'call coqtail#toline(<count>)', 's')
+  call s:cmddef('CoqToLine', 'call coqtail#toline(<count>, 0)', 's')
+  call s:cmddef('CoqOmitToLine', 'call coqtail#toline(<count>, 1)', 's')
   call s:cmddef('CoqToTop', 'call s:call("to_top", "", 0, {})', 's')
   call s:cmddef('CoqJumpToEnd', 'call coqtail#jumpto("endpoint")', 's')
   call s:cmddef('CoqJumpToError', 'call coqtail#jumpto("errorpoint")', 's')
@@ -486,12 +489,14 @@ function! coqtail#define_mappings() abort
   nnoremap <buffer> <silent> <Plug>CoqNext :<C-U>execute v:count1 'CoqNext'<CR>
   nnoremap <buffer> <silent> <Plug>CoqUndo :<C-U>execute v:count1 'CoqUndo'<CR>
   nnoremap <buffer> <silent> <Plug>CoqToLine :<C-U>execute v:count 'CoqToLine'<CR>
+  nnoremap <buffer> <silent> <Plug>CoqOmitToLine :<C-U>execute v:count 'CoqOmitToLine'<CR>
   nnoremap <buffer> <silent> <Plug>CoqToTop :CoqToTop<CR>
   nnoremap <buffer> <silent> <Plug>CoqJumpToEnd :CoqJumpToEnd<CR>
   nnoremap <buffer> <silent> <Plug>CoqJumpToError :CoqJumpToError<CR>
   inoremap <buffer> <silent> <Plug>CoqNext <C-\><C-o>:CoqNext<CR>
   inoremap <buffer> <silent> <Plug>CoqUndo <C-\><C-o>:CoqUndo<CR>
   inoremap <buffer> <silent> <Plug>CoqToLine <C-\><C-o>:CoqToLine<CR>
+  inoremap <buffer> <silent> <Plug>CoqOmitToLine <C-\><C-o>:CoqOmitToLine<CR>
   inoremap <buffer> <silent> <Plug>CoqToTop <C-\><C-o>:CoqToTop<CR>
   inoremap <buffer> <silent> <Plug>CoqJumpToEnd <C-\><C-o>:CoqJumpToEnd<CR>
   inoremap <buffer> <silent> <Plug>CoqJumpToError <C-\><C-o>:CoqJumpToError<CR>
