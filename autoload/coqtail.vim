@@ -185,10 +185,10 @@ function! s:cleanup() abort
   silent! autocmd! coqtail#Quit * <buffer>
   silent! autocmd! coqtail#Sync * <buffer>
 
-  " Close the channel
-  silent! call b:coqtail_chan.close()
-  let b:coqtail_chan = 0
-  let b:coqtail_started = 0
+  " " Close the channel
+  " silent! call b:coqtail_chan.close()
+  " let b:coqtail_chan = 0
+  " let b:coqtail_started = 0
 
   " Clean up auxiliary panels
   call coqtail#panels#cleanup()
@@ -277,43 +277,19 @@ endfunction
 
 " Initialize Python interface.
 function! coqtail#init() abort
-  if s:port == -1
-    let s:port = py3eval(printf(
-      \ 'CoqtailServer.start_server(bool(%d))',
-      \ !g:coqtail#compat#has_channel))
-    augroup coqtail#StopServer
-      autocmd! *
-      autocmd VimLeavePre *
-        \ call py3eval('CoqtailServer.stop_server()') | let s:port = -1
-    augroup END
-  endif
+  " Prepare auxiliary panels
+  call coqtail#panels#init()
 
-  if !s:initted()
-    " Since we are initializing, we are in the main buffer;
-    " the other buffers have not been initialized yet.
-    " Thus, we can safely refer to buffer-local b: variables
-    let b:coqtail_cmds_pending = 0
+  " Shutdown the Coqtop interface when the last instance of this buffer is
+  " closed
+  augroup coqtail#Quit
+    autocmd! * <buffer>
+    autocmd QuitPre <buffer>
+      \ if len(win_findbuf(expand('<abuf>'))) == 1 | call coqtail#stop() | endif
+  augroup END
 
-    " Open channel with Coqtail server
-    let b:coqtail_chan = coqtail#channel#new()
-    call b:coqtail_chan.open('localhost:' . s:port)
-    if b:coqtail_chan.status() !=# 'open'
-      call coqtail#util#err(
-        \ printf('Failed to connect to Coqtail server at port %d.', s:port))
-      return 0
-    endif
-
-    " Prepare auxiliary panels
-    call coqtail#panels#init()
-
-    " Shutdown the Coqtop interface when the last instance of this buffer is
-    " closed
-    augroup coqtail#Quit
-      autocmd! * <buffer>
-      autocmd QuitPre <buffer>
-        \ if len(win_findbuf(expand('<abuf>'))) == 1 | call coqtail#stop() | endif
-    augroup END
-  endif
+  " Prepare the LSP backend
+  call coqtail#lsp#init()
 
   return 1
 endfunction
@@ -392,7 +368,7 @@ endfunction
 
 " Stop the Coqtop interface and clean up auxiliary panels.
 function! coqtail#stop() abort
-  call s:call('stop', 'sync', 1, {})
+  " call s:call('stop', 'sync', 1, {})
   call s:cleanup()
 endfunction
 
@@ -600,7 +576,9 @@ function! coqtail#register() abort
     " Only define commands + mappings for main buffer for now;
     " these will be redefined for the goal and info buffers
     " when those are created (when :CoqStart is called)
-    call coqtail#define_commands()
-    call coqtail#define_mappings()
+    " call coqtail#define_commands()
+    " call coqtail#define_mappings()
+
+    call coqtail#init()
   endif
 endfunction
