@@ -3,7 +3,6 @@
 
 let s:lsp_server_name = 'coq-lsp'
 
-let s:goal_timer = -1
 let s:goal_delay = 100
 let s:progress_delay = 100
 
@@ -31,6 +30,13 @@ function! s:register_lsp() abort
     \ lsp#callbag#debounceTime(s:progress_delay),
     \ lsp#callbag#map({msg -> msg.response.params.processing}),
     \ lsp#callbag#subscribe({'next': function('s:on_file_progress')}),
+  \)
+
+  " Listen for CursorMoved, CursorMovedI
+  call lsp#callbag#pipe(
+    \ lsp#callbag#fromEvent(['CursorMoved', 'CursorMovedI']),
+    \ lsp#callbag#debounceTime(s:goal_delay),
+    \ lsp#callbag#subscribe({'next': {_ -> s:get_goals()}})
   \)
 endfunction
 
@@ -154,11 +160,6 @@ function! s:get_goals() abort
   \})
 endfunction
 
-function! s:schedule_goals() abort
-  call timer_stop(s:goal_timer)
-  let s:goal_timer = timer_start(s:goal_delay, {_ -> s:get_goals()})
-endfunction
-
 function s:match_from_pos(sline, scol, eline, ecol) abort
   let l:match = []
   for l:line in range(a:sline, a:eline)
@@ -192,11 +193,6 @@ endfunction
 
 function! s:register_commands() abort
   command! -buffer CoqGoals call <sid>get_goals()
-  augroup coqtail_goals
-    autocmd! *
-    autocmd CursorMoved <buffer> call s:schedule_goals()
-    autocmd CursorMovedI <buffer> call s:schedule_goals()
-  augroup END
 endfunction
 
 function coqtail#lsp#init() abort
