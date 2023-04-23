@@ -16,12 +16,12 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        coq_version: ['8.4', '8.5', '8.6', '8.7', '8.8', '8.9', '8.10', '8.11', '8.12', '8.13', '8.14', '8.15', '8.16', 'master']
+        coq_version: ['8.4', '8.5', '8.6', '8.7', '8.8', '8.9', '8.10', '8.11', '8.12', '8.13', '8.14', '8.15', '8.16', '8.17', 'master']
         py_version: ['3.6']
     steps:
       - uses: actions/checkout@v3
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
+        uses: cachix/install-nix-action@v20
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
       - name: Install Cachix
@@ -79,7 +79,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
+        uses: cachix/install-nix-action@v20
         with:
           nix_path: nixpkgs=channel:nixos-20.09
       - name: Install Cachix
