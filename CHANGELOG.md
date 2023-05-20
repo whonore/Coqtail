@@ -6,6 +6,13 @@
 - Support for Coq 8.17.
   (PR #324)
 
+### Fixed
+- Adjusted the default dark-mode GUI colors for `CoqtailChecked` and
+  `CoqtailSent` to make them more legible.
+  See the [README](README.md#syntax-highlighting-and-indentation) for help
+  overriding these defaults.
+  (PR #325)
+
 ## [1.7.0]
 
 ### Added
