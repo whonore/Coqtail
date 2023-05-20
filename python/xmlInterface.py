@@ -6,7 +6,7 @@ and provide a uniform interface.
 https://github.com/coq/coq/blob/master/dev/doc/xml-protocol.md
 """
 
-# xml.dom.minidom only needed for pretty printing. No stubs for xml.dom.minidom
+# xml.dom.minidom only needed for pretty printing.
 import re
 import subprocess
 import xml.etree.ElementTree as ET
@@ -248,7 +248,7 @@ def prettyxml(xml: bytes) -> str:
     err_pos = (-1, -1)
     while True:
         try:
-            return cast(str, parseString(xml).toprettyxml())
+            return parseString(xml).toprettyxml()
         except ExpatError as e:
             if e.code != BAD_BYTE or (e.lineno, e.offset) <= err_pos:
                 raise e
