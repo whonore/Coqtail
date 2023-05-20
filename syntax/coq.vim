@@ -35,7 +35,7 @@ if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight
       " `autocmd ColorScheme` instead.
       call g:CoqtailHighlight()
     elseif &t_Co > 16
-      if &background == "dark"
+      if &background ==# 'dark'
         hi def CoqtailChecked ctermbg=17 guibg=#113311
         hi def CoqtailSent ctermbg=60 guibg=#007630
       else
