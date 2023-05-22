@@ -161,8 +161,8 @@ function! s:open(panel, force) abort
     endfor
   endif
 
-  call coqtail#define_commands()
-  call coqtail#define_mappings()
+  " call coqtail#define_commands()
+  " call coqtail#define_mappings()
 
   call coqtail#panels#switch(l:from)
   return l:opened
@@ -312,13 +312,15 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
     let l:cur_winid = win_getid()
 
     " Update highlighting
-    for l:winid in l:winids
-      call coqtail#compat#win_call(
-        \ l:winid,
-        \ function('s:updatehl'),
-        \ [l:winid, a:highlights],
-        \ 0)
-    endfor
+    if a:highlights != {}
+      for l:winid in l:winids
+        call coqtail#compat#win_call(
+          \ l:winid,
+          \ function('s:updatehl'),
+          \ [l:winid, a:highlights],
+          \ 0)
+      endfor
+    endif
 
     " Update panels
     for [l:panel, l:panel_data] in items(a:panels)
