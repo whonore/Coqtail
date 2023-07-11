@@ -202,26 +202,24 @@ function! s:scroll() abort
   endif
 endfunction
 
-" Clear Coqtop highlighting.
-" This function must be called in the context of the given window.
-function! s:clearhl(winid) abort
+" Clear Coqtop highlighting of the current window
+function! s:clearhl() abort
   for [l:var, l:_] in s:hlgroups
-    let l:matches = getwinvar(a:winid, l:var, [])
+    let l:matches = get(w:, l:var, [])
     for l:match in l:matches
       call matchdelete(l:match)
     endfor
-    call setwinvar(a:winid, l:var, [])
+    unlet! w:{l:var}
   endfor
 endfunction
 
-" Update highlighting of 'winid'.
-" This function must be called in the context of the given window.
-function! s:updatehl(winid, highlights) abort
-  call s:clearhl(a:winid)
+" Update highlighting of the current window.
+function! s:updatehl(highlights) abort
+  call s:clearhl()
   for [l:var, l:grp] in s:hlgroups
     let l:hl = a:highlights[l:var]
     if type(l:hl) == g:coqtail#compat#t_string
-      call setwinvar(a:winid, l:var, [matchadd(l:grp, l:hl, -10)])
+      let w:{l:var} = [matchadd(l:grp, l:hl, -10)]
     elseif type(l:hl) == g:coqtail#compat#t_list
       " NOTE: add positions one at a time to work around 8-position maximum in
       " older Vims.
@@ -229,7 +227,7 @@ function! s:updatehl(winid, highlights) abort
       for l:pos in l:hl
         let l:matches = add(l:matches, matchaddpos(l:grp, [l:pos], -10))
       endfor
-      call setwinvar(a:winid, l:var, l:matches)
+      let w:{l:var} = l:matches
     endif
   endfor
 endfunction
@@ -240,7 +238,7 @@ function! coqtail#panels#hide() abort
     return
   endif
 
-  call s:clearhl(win_getid())
+  call s:clearhl()
 
   " Hide other panels
   let l:toclose = []
@@ -316,7 +314,7 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
       call coqtail#compat#win_call(
         \ l:winid,
         \ function('s:updatehl'),
-        \ [l:winid, a:highlights],
+        \ [a:highlights],
         \ 0)
     endfor
 
@@ -354,7 +352,7 @@ function! coqtail#panels#cleanup() abort
   endfor
   silent! unlet b:coqtail_panel_bufs
 
-  call s:clearhl(win_getid())
+  call s:clearhl()
 endfunction
 
 " Getter for variables local to the main buffer
