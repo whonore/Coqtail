@@ -286,6 +286,12 @@ function! coqtail#init() abort
       autocmd VimLeavePre *
         \ call py3eval('CoqtailServer.stop_server()') | let s:port = -1
     augroup END
+
+    " Clear Coqtail highlights when window shows an unrelated buffer.
+    augroup coqtail#CleanupHighlights
+      autocmd! *
+      autocmd BufEnter * call coqtail#panels#cleanuphl()
+    augroup END
   endif
 
   if !s:initted()

@@ -75,6 +75,15 @@ function! coqtail#panels#init() abort
   let l:curpos = getcurpos()[1:]
   let l:coqtail_panel_bufs = {g:coqtail#panels#main: l:main_buf}
 
+  " Show saved highlights when the buffer is newly displayed in a window.
+  augroup coqtail#RecallHighlights
+    autocmd! * <buffer>
+    autocmd BufEnter <buffer>
+          \ if !exists('w:coqtail_highlights') && exists('b:coqtail_highlights')
+          \|  call s:updatehl(bufnr('%'), b:coqtail_highlights)
+          \|endif
+  augroup END
+
   " Add panels
   for l:panel in g:coqtail#panels#aux
     let l:coqtail_panel_bufs[l:panel] = s:init(l:panel)
@@ -216,10 +225,16 @@ function! s:clearhl() abort
   unlet! w:coqtail_highlights
 endfunction
 
+function! coqtail#panels#cleanuphl() abort
+  if exists('w:coqtail_highlights') && w:coqtail_highlights['buf'] != bufnr('%')
+    call s:clearhl()
+  endif
+endfunction
+
 " Update highlighting of the current window.
-function! s:updatehl(highlights) abort
+function! s:updatehl(buf, highlights) abort
   call s:clearhl()
-  let w:coqtail_highlights = {}
+  let w:coqtail_highlights = {'buf': a:buf}
   for [l:var, l:grp] in s:hlgroups
     let l:hl = a:highlights[l:var]
     if type(l:hl) == g:coqtail#compat#t_string
@@ -314,11 +329,12 @@ function! coqtail#panels#refresh(buf, highlights, panels, scroll) abort
     let l:cur_winid = win_getid()
 
     " Update highlighting
+    call setbufvar(a:buf, 'coqtail_highlights', a:highlights)
     for l:winid in l:winids
       call coqtail#compat#win_call(
         \ l:winid,
         \ function('s:updatehl'),
-        \ [a:highlights],
+        \ [a:buf, a:highlights],
         \ 0)
     endfor
 
@@ -355,8 +371,23 @@ function! coqtail#panels#cleanup() abort
     silent! execute 'bwipeout' b:coqtail_panel_bufs[l:panel]
   endfor
   silent! unlet b:coqtail_panel_bufs
+  silent! unlet b:coqtail_highlights
 
-  call s:clearhl()
+  let l:cur_winid = win_getid()
+  try
+    for l:winid in win_findbuf(bufnr('%'))
+      call coqtail#compat#win_call(
+        \ l:winid,
+        \ function('s:clearhl'),
+        \ [],
+        \ 0)
+    endfor
+  catch /^Vim:Interrupt$/
+  finally
+    if !g:coqtail#compat#has_win_execute
+      call win_gotoid(l:cur_winid)
+    endif
+  endtry
 endfunction
 
 " Getter for variables local to the main buffer
