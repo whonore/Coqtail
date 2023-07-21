@@ -699,24 +699,24 @@ class Coqtail:
     def highlights(self) -> Dict[str, Optional[Union[str, List[Tuple[int, int, int]]]]]:
         """Vim match patterns for highlighting."""
         matches: Dict[str, Optional[Union[str, List[Tuple[int, int, int]]]]] = {
-            "coqtail_checked": None,
-            "coqtail_sent": None,
-            "coqtail_error": None,
-            "coqtail_omitted": None,
+            "checked": None,
+            "sent": None,
+            "error": None,
+            "omitted": None,
         }
 
         if self.endpoints != []:
             line, col = self.endpoints[-1]
-            matches["coqtail_checked"] = matcher[: line + 1, :col]
+            matches["checked"] = matcher[: line + 1, :col]
 
         if self.send_queue:
             sline, scol = self.endpoints[-1] if self.endpoints != [] else (0, -1)
             eline, ecol = self.send_queue[-1]["stop"]
-            matches["coqtail_sent"] = matcher[sline : eline + 1, scol:ecol]
+            matches["sent"] = matcher[sline : eline + 1, scol:ecol]
 
         if self.error_at is not None:
             (sline, scol), (eline, ecol) = self.error_at
-            matches["coqtail_error"] = matcher[sline : eline + 1, scol:ecol]
+            matches["error"] = matcher[sline : eline + 1, scol:ecol]
 
         if self.omitted_proofs != []:
             ranges = []
@@ -732,7 +732,7 @@ class Coqtail:
                             else len(self.buffer[line]) - col
                         )
                         ranges.append((line + 1, col + 1, span))
-            matches["coqtail_omitted"] = ranges
+            matches["omitted"] = ranges
 
         return matches
 

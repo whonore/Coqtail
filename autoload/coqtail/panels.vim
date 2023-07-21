@@ -11,10 +11,10 @@ let g:coqtail#panels#info = 'info'
 let g:coqtail#panels#aux = [g:coqtail#panels#goal, g:coqtail#panels#info]
 " Highlighting groups.
 let s:hlgroups = [
-  \ ['coqtail_checked', 'CoqtailChecked'],
-  \ ['coqtail_sent', 'CoqtailSent'],
-  \ ['coqtail_error', 'CoqtailError'],
-  \ ['coqtail_omitted', 'CoqtailOmitted']
+  \ ['checked', 'CoqtailChecked'],
+  \ ['sent', 'CoqtailSent'],
+  \ ['error', 'CoqtailError'],
+  \ ['omitted', 'CoqtailOmitted']
 \]
 let s:richpp_hlgroups = {
   \ 'diff.added': 'CoqtailDiffAdded',
@@ -204,22 +204,26 @@ endfunction
 
 " Clear Coqtop highlighting of the current window
 function! s:clearhl() abort
+  if !exists('w:coqtail_highlights')
+    return
+  endif
   for [l:var, l:_] in s:hlgroups
-    let l:matches = get(w:, l:var, [])
+    let l:matches = get(w:coqtail_highlights, l:var, [])
     for l:match in l:matches
       call matchdelete(l:match)
     endfor
-    unlet! w:{l:var}
   endfor
+  unlet! w:coqtail_highlights
 endfunction
 
 " Update highlighting of the current window.
 function! s:updatehl(highlights) abort
   call s:clearhl()
+  let w:coqtail_highlights = {}
   for [l:var, l:grp] in s:hlgroups
     let l:hl = a:highlights[l:var]
     if type(l:hl) == g:coqtail#compat#t_string
-      let w:{l:var} = [matchadd(l:grp, l:hl, -10)]
+      let w:coqtail_highlights[l:var] = [matchadd(l:grp, l:hl, -10)]
     elseif type(l:hl) == g:coqtail#compat#t_list
       " NOTE: add positions one at a time to work around 8-position maximum in
       " older Vims.
@@ -227,7 +231,7 @@ function! s:updatehl(highlights) abort
       for l:pos in l:hl
         let l:matches = add(l:matches, matchaddpos(l:grp, [l:pos], -10))
       endfor
-      let w:{l:var} = l:matches
+      let w:coqtail_highlights[l:var] = l:matches
     endif
   endfor
 endfunction
