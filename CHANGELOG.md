@@ -12,6 +12,9 @@
   See the [README](README.md#syntax-highlighting-and-indentation) for help
   overriding these defaults.
   (PR #325)
+- Refresh proof-progress highlighting correctly when entering/leaving a buffer
+  that is open in multiple windows.
+  (PR #327)
 
 ## [1.7.0]
 
