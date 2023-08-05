@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased ([master])
+## Unreleased ([main])
 
 ### Added
 - Support for Coq 8.17.
@@ -393,7 +393,7 @@
 - Support for `:tag` commands (only with `+tagfunc`).
 - Interoperability with [matchup] and [endwise].
 
-[master]: https://github.com/whonore/Coqtail
+[main]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
 [1.7.0]: https://github.com/whonore/Coqtail/tree/v1.7.0
 [1.6.4]: https://github.com/whonore/Coqtail/tree/v1.6.4

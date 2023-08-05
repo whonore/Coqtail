@@ -1,7 +1,7 @@
 # Coqtail
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-[![Build Status](https://github.com/whonore/Coqtail/workflows/CI/badge.svg?branch=master)](https://github.com/whonore/Coqtail/actions?query=workflow%3ACI)
+[![Build Status](https://github.com/whonore/Coqtail/workflows/CI/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions?query=workflow%3ACI)
 
 ## Interactive Coq Proofs in Vim
 

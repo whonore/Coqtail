@@ -12,7 +12,7 @@ let g:coqtail#supported = coqtail#compat#init(s:python_dir)
 if !g:coqtail#supported
   call coqtail#util#warn(
     \ "Coqtail requires Python 3.6 or later.\n" .
-    \ 'See https://github.com/whonore/Coqtail/blob/master/README.md#python-2-support.'
+    \ 'See https://github.com/whonore/Coqtail/blob/main/README.md#python-2-support.'
   \)
   finish
 endif
