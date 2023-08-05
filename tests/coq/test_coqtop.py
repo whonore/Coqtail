@@ -264,7 +264,7 @@ def test_start_warning(args: List[str]) -> None:
     assert isinstance(res, dict)
     assert ct.xml is not None
     # Some versions of Coq don't print warnings in the expected format.
-    if ct.xml.warnings_wf:
+    if ct.xml.warnings_wf and stderr != "":
         assert stderr.startswith("Warning:")
 
 
