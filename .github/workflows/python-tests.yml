@@ -1,0 +1,41 @@
+name: Python Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '**'
+    paths:
+      - '.github/workflows/python-tests.yml'
+      - 'tox.ini'
+      - '**.py'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  py-tests:
+    name: Python unit tests
+    # Allow installing Python 3.6 (actions/setup-python#544).
+    runs-on: ubuntu-20.04
+    # runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        py_version: ['3.6']
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Python ${{ matrix.py_version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.py_version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox
+      - name: Run Python tests
+        run: |
+          python --version
+          tox -e unit-py36
