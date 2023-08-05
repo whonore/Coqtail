@@ -52,6 +52,8 @@ jobs:
         with:
           name: coq
           skipPush: true
+      - name: Set up Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v2
       - name: Install Coq ${{ matrix.coq_version }}
         run: nix-env -j auto --cores 0 -i -f ci/coq.nix --argstr version ${{ matrix.coq_version }}
       - name: Install Python ${{ matrix.py_version }}
