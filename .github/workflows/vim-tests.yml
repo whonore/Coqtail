@@ -1,0 +1,53 @@
+name: Vim Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '**'
+    paths:
+      - '.github/workflows/vim-tests.yml'
+      - '**.vim'
+      - 'tests/vim/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vim-tests:
+    name: Vim unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version:
+          - '7.4'
+          - '8.0'
+          - '8.1'
+          - '8.2'
+          - '9.0'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Nix
+        uses: cachix/install-nix-action@v22
+        with:
+          nix_path: nixpkgs=channel:nixos-20.09
+      - name: Install Cachix
+        uses: cachix/cachix-action@v12
+        with:
+          name: whonore-vim
+          skipPush: true
+      - name: Install Vim ${{ matrix.version }}
+        run: nix-env -j auto --cores 0 -i -f ci/vim.nix --argstr version ${{ matrix.version }}
+      - name: Install Vader
+        uses: actions/checkout@v3
+        with:
+          repository: junegunn/vader.vim
+          path: ./vader.vim
+      - name: Run Vim tests
+        env:
+          VADER_PATH: $GITHUB_WORKSPACE/vader.vim
+        working-directory: ./tests/vim
+        run: ./run.sh
