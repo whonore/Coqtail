@@ -1881,6 +1881,10 @@ class XMLInterface817(XMLInterface816):
     """The version 8.17.* XML interface."""
 
 
+class XMLInterface818(XMLInterface817):
+    """The version 8.18.* XML interface."""
+
+
 XMLInterfaces = (
     ((8, 4, 0), (8, 5, 0), XMLInterface84),
     ((8, 5, 0), (8, 6, 0), XMLInterface85),
@@ -1896,6 +1900,7 @@ XMLInterfaces = (
     ((8, 15, 0), (8, 16, 0), XMLInterface815),
     ((8, 16, 0), (8, 17, 0), XMLInterface816),
     ((8, 17, 0), (8, 18, 0), XMLInterface817),
+    ((8, 18, 0), (8, 19, 0), XMLInterface818),
 )
 
 XMLInterfaceLatest = XMLInterfaces[-1][2]
