@@ -3,6 +3,8 @@
 ## Unreleased ([main])
 
 ### Added
+- Support for Coq 8.18.
+  (PR #329)
 - Support for Coq 8.17.
   (PR #324)
 

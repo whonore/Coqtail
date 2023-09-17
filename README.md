@@ -1,7 +1,9 @@
 # Coqtail
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-[![Build Status](https://github.com/whonore/Coqtail/workflows/CI/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions?query=workflow%3ACI)
+[![Vim Tests](https://github.com/whonore/Coqtail/workflows/Vim%20Tests/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions?query=workflow%3AVim%20Tests)
+[![Python Tests](https://github.com/whonore/Coqtail/workflows/Python%20Tests/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions?query=workflow%3APython%20Tests)
+[![Coq Tests](https://github.com/whonore/Coqtail/workflows/Coq%20Tests/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions?query=workflow%3ACoq%20Tests)
 
 ## Interactive Coq Proofs in Vim
 
@@ -9,7 +11,7 @@ Coqtail enables interactive Coq proof development in Vim similar to [CoqIDE] or
 [ProofGeneral].
 
 It supports:
-- [Coq 8.4 - 8.17]
+- [Coq 8.4 - 8.18]
 - Python >=3.6 (see [here](#python-2-support) for older versions)
 - Vim >=7.4 and Neovim >=0.3
 - Simultaneous Coq sessions in different buffers
@@ -46,7 +48,7 @@ Requirements:
 - Vim/Neovim compiled with `+python3` (3.6 or later)
 - Vim configuration options `filetype plugin on`, and optionally `filetype
   indent on` and `syntax on` (e.g. in `.vimrc`)
-- [Coq 8.4 - 8.17]
+- [Coq 8.4 - 8.18]
 
 Newer versions of Coq have not yet been tested, but should still work as long as
 there are no major changes made to the [XML protocol].
@@ -253,7 +255,7 @@ See [YouCompleteMe] for help building Vim with Python 3 support.
 If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
 
 [python2]: https://github.com/whonore/Coqtail/tree/python2
-[Coq 8.4 - 8.17]: https://coq.inria.fr/download
+[Coq 8.4 - 8.18]: https://coq.inria.fr/download
 [CoqIDE]: https://coq.inria.fr/refman/practical-tools/coqide.html
 [ProofGeneral]: https://proofgeneral.github.io/
 [XML protocol]: https://github.com/coq/coq/blob/master/dev/doc/xml-protocol.md
