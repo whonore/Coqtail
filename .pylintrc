@@ -175,6 +175,8 @@ disable=blacklisted-name,
         too-many-return-statements,
         too-many-statements,
         unsubscriptable-object,
+        use-implicit-booleaness-not-comparison-to-string,
+        use-implicit-booleaness-not-comparison-to-zero,
         wrong-spelling-in-comment,
         wrong-spelling-in-docstring,
 
