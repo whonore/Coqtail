@@ -169,7 +169,7 @@ user-defined highlighting, so it is recommended to place your settings in a
 For example:
 
 ```vim
-augroup CoqtailHighlights
+augroup CoqtailHighlight
   autocmd!
   autocmd ColorScheme *
     \  hi def CoqtailChecked ctermbg=236
