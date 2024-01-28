@@ -1005,9 +1005,9 @@ class XMLInterface84(XMLInterfaceBase):
             return Goal(g.hyp, g.ccl, None)
 
         if isinstance(res, Ok):
-            goals: Optional[
-                XMLInterface84.CoqGoals
-            ] = XMLInterfaceBase.unwrap_coq_option(res.val)
+            goals: Optional[XMLInterface84.CoqGoals] = (
+                XMLInterfaceBase.unwrap_coq_option(res.val)
+            )
             if goals is not None:
                 res.val = Goals(
                     [to_goal(g) for g in goals.fg],
@@ -1391,9 +1391,9 @@ class XMLInterface85(XMLInterfaceBase):
             return Goal(g.hyp, g.ccl, None)
 
         if isinstance(res, Ok):
-            goals: Optional[
-                XMLInterface85.CoqGoals
-            ] = XMLInterfaceBase.unwrap_coq_option(res.val)
+            goals: Optional[XMLInterface85.CoqGoals] = (
+                XMLInterfaceBase.unwrap_coq_option(res.val)
+            )
             if goals is not None:
                 res.val = Goals(
                     [to_goal(g) for g in goals.fg],
@@ -1753,9 +1753,9 @@ class XMLInterface814(XMLInterface813):
             return Goal(g.hyp, g.ccl, XMLInterfaceBase.unwrap_coq_option(g.name))
 
         if isinstance(res, Ok):
-            goals: Optional[
-                XMLInterface814.CoqGoals
-            ] = XMLInterfaceBase.unwrap_coq_option(res.val)
+            goals: Optional[XMLInterface814.CoqGoals] = (
+                XMLInterfaceBase.unwrap_coq_option(res.val)
+            )
             if goals is not None:
                 res.val = Goals(
                     [to_goal(g) for g in goals.fg],
