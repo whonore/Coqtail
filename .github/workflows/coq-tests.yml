@@ -42,16 +42,17 @@ jobs:
           - '8.16'
           - '8.17'
           - '8.18'
+          - '8.19'
           - 'master'
         py_version: ['3.6']
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Nix
-        uses: cachix/install-nix-action@v22
+        uses: cachix/install-nix-action@v25
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
       - name: Install Cachix
-        uses: cachix/cachix-action@v12
+        uses: cachix/cachix-action@v14
         with:
           name: coq
           skipPush: true
@@ -62,7 +63,7 @@ jobs:
       - name: Install Coq ${{ matrix.coq_version }}
         run: nix-env -j auto --cores 0 -i -f ci/coq.nix --argstr version ${{ matrix.coq_version }}
       - name: Install Python ${{ matrix.py_version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py_version }}
       - name: Install dependencies

@@ -1005,9 +1005,9 @@ class XMLInterface84(XMLInterfaceBase):
             return Goal(g.hyp, g.ccl, None)
 
         if isinstance(res, Ok):
-            goals: Optional[
-                XMLInterface84.CoqGoals
-            ] = XMLInterfaceBase.unwrap_coq_option(res.val)
+            goals: Optional[XMLInterface84.CoqGoals] = (
+                XMLInterfaceBase.unwrap_coq_option(res.val)
+            )
             if goals is not None:
                 res.val = Goals(
                     [to_goal(g) for g in goals.fg],
@@ -1391,9 +1391,9 @@ class XMLInterface85(XMLInterfaceBase):
             return Goal(g.hyp, g.ccl, None)
 
         if isinstance(res, Ok):
-            goals: Optional[
-                XMLInterface85.CoqGoals
-            ] = XMLInterfaceBase.unwrap_coq_option(res.val)
+            goals: Optional[XMLInterface85.CoqGoals] = (
+                XMLInterfaceBase.unwrap_coq_option(res.val)
+            )
             if goals is not None:
                 res.val = Goals(
                     [to_goal(g) for g in goals.fg],
@@ -1753,9 +1753,9 @@ class XMLInterface814(XMLInterface813):
             return Goal(g.hyp, g.ccl, XMLInterfaceBase.unwrap_coq_option(g.name))
 
         if isinstance(res, Ok):
-            goals: Optional[
-                XMLInterface814.CoqGoals
-            ] = XMLInterfaceBase.unwrap_coq_option(res.val)
+            goals: Optional[XMLInterface814.CoqGoals] = (
+                XMLInterfaceBase.unwrap_coq_option(res.val)
+            )
             if goals is not None:
                 res.val = Goals(
                     [to_goal(g) for g in goals.fg],
@@ -1885,6 +1885,10 @@ class XMLInterface818(XMLInterface817):
     """The version 8.18.* XML interface."""
 
 
+class XMLInterface819(XMLInterface817):
+    """The version 8.19.* XML interface."""
+
+
 XMLInterfaces = (
     ((8, 4, 0), (8, 5, 0), XMLInterface84),
     ((8, 5, 0), (8, 6, 0), XMLInterface85),
@@ -1901,6 +1905,7 @@ XMLInterfaces = (
     ((8, 16, 0), (8, 17, 0), XMLInterface816),
     ((8, 17, 0), (8, 18, 0), XMLInterface817),
     ((8, 18, 0), (8, 19, 0), XMLInterface818),
+    ((8, 19, 0), (8, 20, 0), XMLInterface819),
 )
 
 XMLInterfaceLatest = XMLInterfaces[-1][2]

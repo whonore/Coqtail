@@ -113,15 +113,12 @@ _parse_tests: Sequence[_ParseTest] = [
     ("empty", [""], NoDotError()),
 ]
 # Default 'start' to (0, 0)
-# Not sure why, but the first ignore is needed to silence "Generator has
-# incompatible item type".
-# The second one silences "Tuple index out of range".
 parse_tests: Iterable[ParseTest] = (
     (
-        t[0],  # type: ignore[misc]
+        t[0],
         [s.encode("utf-8") for s in t[1]],
         t[2] if len(t) == 4 else (0, 0),
-        t[3] if len(t) == 4 else t[2],  # type: ignore[misc]
+        t[3] if len(t) == 4 else t[2],
     )
     for t in _parse_tests
 )

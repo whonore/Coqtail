@@ -868,12 +868,10 @@ class CoqtailHandler(StreamRequestHandler):
                     self.resps[-msg_id].put((msg_id, data))
 
     @overload
-    def get_msg(self, msg_id: None = ...) -> Req:
-        ...
+    def get_msg(self, msg_id: None = ...) -> Req: ...
 
     @overload
-    def get_msg(self, msg_id: int) -> Res:
-        ...
+    def get_msg(self, msg_id: int) -> Res: ...
 
     def get_msg(self, msg_id: Optional[int] = None) -> Union[Res, Req]:
         """Check for any pending messages from Vim."""

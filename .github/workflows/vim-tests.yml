@@ -28,21 +28,22 @@ jobs:
           - '8.1'
           - '8.2'
           - '9.0'
+          - '9.1'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Nix
-        uses: cachix/install-nix-action@v22
+        uses: cachix/install-nix-action@v25
         with:
           nix_path: nixpkgs=channel:nixos-20.09
       - name: Install Cachix
-        uses: cachix/cachix-action@v12
+        uses: cachix/cachix-action@v14
         with:
           name: whonore-vim
           skipPush: true
       - name: Install Vim ${{ matrix.version }}
         run: nix-env -j auto --cores 0 -i -f ci/vim.nix --argstr version ${{ matrix.version }}
       - name: Install Vader
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: junegunn/vader.vim
           path: ./vader.vim
