@@ -318,7 +318,8 @@ class Coqtop:
         """Get the current set of hypotheses and goals."""
         assert self.xml is not None
 
-        # Get only the focused goals
+        # Get the current proof state, but only include focused
+        # goals in the goal list.
         response_main, err_main = self.call(
             self.xml.subgoal(  # type: ignore
                 GoalMode.FULL,
@@ -332,6 +333,13 @@ class Coqtop:
 
         if isinstance(response_main, Err):
             return (False, response_main.msg, None, err_main)
+
+        # If success but we didn't get a CoqGoals, then there's
+        # no proof in progress. We can return early.
+        if response_main.val is None:
+            # If the request was success but it returned None, then
+            # we're not in a proof. No need to run the second query.
+            return (True, response_main.msg, None, err_main)
 
         # NOTE: Subgoals ignores `gf_flag = "short"` if proof diffs are
         # enabled.
@@ -356,19 +364,18 @@ class Coqtop:
         if isinstance(response_extra, Err):
             return (False, msgs, None, errs)
 
+        assert response_extra.val is not None, \
+            "proof state changed unexpectedly?"
+
         # Merge goals
-        fg = response_main.val.fg if response_main.val is not None else []
-        bg, shelved, given_up = (
-            (
-                response_extra.val.bg,
-                response_extra.val.shelved,
-                response_extra.val.given_up,
-            )
-            if response_extra.val is not None
-            else ([], [], [])
+        goals = Goals(
+            response_main.val.fg,
+            response_extra.val.bg,
+            response_extra.val.shelved,
+            response_extra.val.given_up,
         )
 
-        return (True, msgs, Goals(fg, bg, shelved, given_up), errs)
+        return (True, msgs, goals, errs)
 
     def do_option(
         self,
