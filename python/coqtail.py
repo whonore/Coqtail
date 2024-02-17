@@ -58,7 +58,12 @@ if TYPE_CHECKING:
     ResQueue = Queue[Res]
     VimOptions = TypedDict(
         "VimOptions",
-        {"encoding": str, "timeout": int, "filename": str},
+        {
+            "encoding": str,
+            "timeout": int,
+            "filename": str,
+            "stderr_is_warning": bool,
+        },
     )
     ResFuture = futures.Future[Optional[str]]
 else:
@@ -203,6 +208,7 @@ class Coqtail:
                 opts["filename"],
                 args,
                 timeout=opts["timeout"],
+                stderr_is_warning=opts["stderr_is_warning"],
             )
             self.print_stderr(stderr)
         except (ValueError, CT.CoqtopError) as e:
@@ -253,7 +259,10 @@ class Coqtail:
             return None
 
         try:
-            _, msg, extra_steps, stderr = self.coqtop.rewind(steps)
+            _, msg, extra_steps, stderr = self.coqtop.rewind(
+                steps,
+                stderr_is_warning=opts["stderr_is_warning"],
+            )
             self.print_stderr(stderr)
         except CT.CoqtopError as e:
             return str(e)
@@ -405,6 +414,7 @@ class Coqtail:
                     no_comments.decode("utf-8"),
                     encoding=opts["encoding"],
                     timeout=opts["timeout"],
+                    stderr_is_warning=opts["stderr_is_warning"],
                 )
             except CT.CoqtopError as e:
                 return None, str(e)
@@ -460,6 +470,7 @@ class Coqtail:
                 in_script=False,
                 encoding=opts["encoding"],
                 timeout=opts["timeout"],
+                stderr_is_warning=opts["stderr_is_warning"],
             )
         except CT.CoqtopError as e:
             return False, str(e), ""
@@ -581,7 +592,10 @@ class Coqtail:
     def get_goals(self, opts: VimOptions) -> Tuple[Optional[Goals], str]:
         """Get the current goals."""
         try:
-            _, msg, goals, stderr = self.coqtop.goals(timeout=opts["timeout"])
+            _, msg, goals, stderr = self.coqtop.goals(
+                timeout=opts["timeout"],
+                stderr_is_warning=opts["stderr_is_warning"],
+            )
             self.print_stderr(stderr)
             return goals, msg
         except CT.CoqtopError as e:

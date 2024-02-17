@@ -359,6 +359,20 @@ g:coqtail_tagfunc	If true then set 'tagfunc' to `coqtail#gettags`.
 
 			Default: 1
 
+					     *g:coqtail_treat_stderr_as_warning*
+					       *coqtail-treat-stderr-as-warning*
+g:coqtail_treat_stderr_as_warning
+			If true then assume all messages received from Coq on
+			stderr are only warnings. Warnings are reported in the
+			Info panel, but do not prevent checking subsequent
+			sentences. This shouldn't be necessary in most cases
+			as Coqtail can automatically recognize warning
+			messages that follow a standard format, and generally,
+			messages should be sent via the XML protocol rather
+			than stderr.
+
+			Default: 0
+
 =======================
 Backwards Compatibility			       *coqtail-backwards-compatibility*
 

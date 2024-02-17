@@ -39,6 +39,11 @@ if !exists('g:coqtail_update_tagstack')
   let g:coqtail_update_tagstack = 1
 endif
 
+" Default to not treating all stderr messages as warnings.
+if !exists('g:coqtail_treat_stderr_as_warning')
+  let g:coqtail_treat_stderr_as_warning = 0
+endif
+
 " Find the path corresponding to 'lib'. Used by includeexpr.
 function! coqtail#findlib(lib) abort
   let [l:ok, l:lib] = s:call('find_lib', 'sync', 0, {'lib': a:lib})
@@ -224,7 +229,8 @@ function! s:call(cmd, cb, nocoq, args) abort
   let a:args.opts = {
     \ 'encoding': &encoding,
     \ 'timeout': coqtail#panels#getvar('coqtail_timeout'),
-    \ 'filename': expand('#' . b:coqtail_panel_bufs.main . ':p')
+    \ 'filename': expand('#' . b:coqtail_panel_bufs.main . ':p'),
+    \ 'stderr_is_warning': g:coqtail_treat_stderr_as_warning
   \}
   let l:args = [b:coqtail_panel_bufs.main, a:cmd, a:args]
 

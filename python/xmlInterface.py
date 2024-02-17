@@ -95,10 +95,15 @@ TIMEOUT_ERR = Err(
     "Coq timed out. You can change the timeout with <leader>ct and try again."
 )
 
-# The error in case of an unexpected error (e.g., invalid XML)
-UNEXPECTED_ERR = Err(
-    "Coqtail experienced an unexpected error. "
+# The error in case of a message on stderr
+STDERR_ERR = Err(
+    "Coqtail received an unexpected error message on stderr. "
     "Please report at https://github.com/whonore/Coqtail/issues."
+    "\n\n"
+    "This can sometimes happen if the message is actually a warning, but is not "
+    "formatted in a way that Coqtail recognizes. "
+    "If you wish to ignore this error and try to proceed past it, set "
+    "g:coqtail_treat_stderr_as_warning = 1."
 )
 
 
