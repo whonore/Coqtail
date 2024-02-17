@@ -27,8 +27,8 @@ from typing import (
 )
 
 from xmlInterface import (
+    STDERR_ERR,
     TIMEOUT_ERR,
-    UNEXPECTED_ERR,
     Err,
     FindCoqtopError,
     GoalMode,
@@ -107,6 +107,7 @@ class Coqtop:
         filename: str,
         args: Iterable[str],
         timeout: Optional[int] = None,
+        stderr_is_warning: bool = False,
     ) -> Tuple[Union[VersionInfo, str], str]:
         """Launch the Coqtop process."""
         assert self.coqtop is None
@@ -145,7 +146,11 @@ class Coqtop:
             threading.Thread(target=self.capture_dead, daemon=True).start()
 
             # Initialize Coqtop
-            response, err = self.call(self.xml.init(), timeout=timeout)
+            response, err = self.call(
+                self.xml.init(),
+                timeout=timeout,
+                stderr_is_warning=stderr_is_warning,
+            )
 
             if isinstance(response, Err):
                 return response.msg, err
@@ -200,6 +205,7 @@ class Coqtop:
         cmd: str,
         encoding: str = "utf-8",
         timeout: Optional[int] = None,
+        stderr_is_warning: bool = False,
     ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
         """Advance Coqtop by sending 'cmd'."""
         assert self.xml is not None
@@ -207,6 +213,7 @@ class Coqtop:
         response, err1 = self.call(
             self.xml.add(cmd, self.state_id, encoding=encoding),
             timeout=timeout,
+            stderr_is_warning=stderr_is_warning,
         )
 
         if isinstance(response, Err):
@@ -214,7 +221,11 @@ class Coqtop:
 
         # In addition to sending 'cmd', also check status in order to force it
         # to be evaluated
-        status, err2 = self.call(self.xml.status(encoding=encoding), timeout=timeout)
+        status, err2 = self.call(
+            self.xml.status(encoding=encoding),
+            timeout=timeout,
+            stderr_is_warning=stderr_is_warning,
+        )
 
         # Combine messages
         msgs = join_not_empty((response.msg, response.val["res_msg"], status.msg))
@@ -222,7 +233,10 @@ class Coqtop:
 
         if isinstance(status, Err):
             # Reset state id to before the error
-            self.call(self.xml.edit_at(self.state_id, 1))
+            self.call(
+                self.xml.edit_at(self.state_id, 1),
+                stderr_is_warning=stderr_is_warning,
+            )
             return False, msgs, status.loc, err
 
         self.states.append(self.state_id)
@@ -230,7 +244,11 @@ class Coqtop:
 
         return True, msgs, None, err
 
-    def rewind(self, steps: int = 1) -> Tuple[bool, str, Optional[int], str]:
+    def rewind(
+        self,
+        steps: int = 1,
+        stderr_is_warning: bool = False,
+    ) -> Tuple[bool, str, Optional[int], str]:
         """Go back 'steps' states."""
         assert self.xml is not None
         self.logger.debug("rewind: %d", steps)
@@ -250,7 +268,10 @@ class Coqtop:
             self.states = self.states[:-steps]
             steps -= fake_steps
 
-        response, err = self.call(self.xml.edit_at(self.state_id, steps))
+        response, err = self.call(
+            self.xml.edit_at(self.state_id, steps),
+            stderr_is_warning=stderr_is_warning,
+        )
         return (
             isinstance(response, Ok),
             response.msg,
@@ -264,6 +285,7 @@ class Coqtop:
         in_script: bool,
         encoding: str = "utf-8",
         timeout: Optional[int] = None,
+        stderr_is_warning: bool = False,
     ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
         """Query Coqtop with 'cmd'."""
         assert self.xml is not None
@@ -271,6 +293,7 @@ class Coqtop:
         response, err = self.call(
             self.xml.query(cmd, self.state_id, encoding=encoding),
             timeout=timeout,
+            stderr_is_warning=stderr_is_warning,
         )
 
         if isinstance(response, Ok) and in_script:
@@ -293,6 +316,7 @@ class Coqtop:
     def goals(
         self,
         timeout: Optional[int] = None,
+        stderr_is_warning: bool = False,
     ) -> Tuple[bool, str, Optional[Goals], str]:
         """Get the current set of hypotheses and goals."""
         assert self.xml is not None
@@ -300,9 +324,13 @@ class Coqtop:
 
         # Use Subgoals if available, otherwise fall back to Goal
         if hasattr(self.xml, "subgoal"):
-            return self.subgoals(timeout=timeout)
+            return self.subgoals(timeout=timeout, stderr_is_warning=stderr_is_warning)
 
-        response, err = self.call(self.xml.goal(), timeout=timeout)
+        response, err = self.call(
+            self.xml.goal(),
+            timeout=timeout,
+            stderr_is_warning=stderr_is_warning,
+        )
 
         return (
             isinstance(response, Ok),
@@ -314,6 +342,7 @@ class Coqtop:
     def subgoals(
         self,
         timeout: Optional[int] = None,
+        stderr_is_warning: bool = False,
     ) -> Tuple[bool, str, Optional[Goals], str]:
         """Get the current set of hypotheses and goals."""
         assert self.xml is not None
@@ -329,6 +358,7 @@ class Coqtop:
                 given_up=False,
             ),
             timeout=timeout,
+            stderr_is_warning=stderr_is_warning,
         )
 
         if isinstance(response_main, Err):
@@ -344,7 +374,7 @@ class Coqtop:
         # NOTE: Subgoals ignores `gf_flag = "short"` if proof diffs are
         # enabled.
         # See: https://github.com/coq/coq/issues/16564
-        with self.suppress_diffs():
+        with self.suppress_diffs(stderr_is_warning=stderr_is_warning):
             # Get the short version of other goals (no hypotheses)
             response_extra, err_extra = self.call(
                 self.xml.subgoal(  # type: ignore
@@ -355,6 +385,7 @@ class Coqtop:
                     given_up=True,
                 ),
                 timeout=timeout,
+                stderr_is_warning=stderr_is_warning,
             )
 
         # Combine messages
@@ -382,6 +413,7 @@ class Coqtop:
         in_script: bool,
         encoding: str = "utf-8",
         timeout: Optional[int] = None,
+        stderr_is_warning: bool = False,
     ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
         """Set or get an option's value."""
         assert self.xml is not None
@@ -393,6 +425,7 @@ class Coqtop:
             response, err = self.call(
                 self.xml.get_options(encoding=encoding),
                 timeout=timeout,
+                stderr_is_warning=stderr_is_warning,
             )
 
             if isinstance(response, Ok):
@@ -413,6 +446,7 @@ class Coqtop:
                 response, err = self.call(
                     self.xml.set_options(opt, val, encoding=encoding),
                     timeout=timeout,
+                    stderr_is_warning=stderr_is_warning,
                 )
                 ret = response.msg
                 # `set_options()` returns nothing on success
@@ -425,14 +459,23 @@ class Coqtop:
         if in_script and isinstance(response, Ok) and option_ok:
             # Hack to associate setting an option with a new state id by
             # executing a noop so it works correctly with rewinding
-            success, _, _, _ = self.advance(self.xml.noop, encoding)
+            success, _, _, _ = self.advance(
+                self.xml.noop,
+                encoding=encoding,
+                stderr_is_warning=stderr_is_warning,
+            )
             assert success
         elif in_script and not option_ok:
             # Fall back to using `advance()` in case the best-effort attempt at
             # using `SetOptions` only failed because the option's value doesn't
             # follow the usual pattern (e.g., `Firstorder Solver`)
             self.logger.warning("Failed to handle %s with Get/SetOptions", cmd)
-            return self.advance(cmd, encoding, timeout)
+            return self.advance(
+                cmd,
+                encoding=encoding,
+                timeout=timeout,
+                stderr_is_warning=stderr_is_warning,
+            )
 
         return (
             isinstance(response, Ok),
@@ -448,6 +491,7 @@ class Coqtop:
         in_script: bool = True,
         encoding: str = "utf-8",
         timeout: Optional[int] = None,
+        stderr_is_warning: bool = False,
     ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
         """Decide whether 'cmd' is setting/getting an option, a query, or a
         regular command.
@@ -458,11 +502,28 @@ class Coqtop:
             cmd_no_comment = cmd
 
         if self.xml.is_option(cmd_no_comment):
-            return self.do_option(cmd_no_comment, in_script, encoding, timeout)
+            return self.do_option(
+                cmd_no_comment,
+                in_script,
+                encoding=encoding,
+                timeout=timeout,
+                stderr_is_warning=stderr_is_warning,
+            )
         elif self.xml.is_query(cmd_no_comment):
-            return self.query(cmd, in_script, encoding, timeout)
+            return self.query(
+                cmd,
+                in_script,
+                encoding=encoding,
+                timeout=timeout,
+                stderr_is_warning=stderr_is_warning,
+            )
         elif in_script:
-            return self.advance(cmd, encoding, timeout)
+            return self.advance(
+                cmd,
+                encoding=encoding,
+                timeout=timeout,
+                stderr_is_warning=stderr_is_warning,
+            )
         else:
             return True, "Command only allowed in script.", None, ""
 
@@ -470,6 +531,7 @@ class Coqtop:
     def suppress_diffs(
         self,
         timeout: Optional[int] = None,
+        stderr_is_warning: bool = False,
     ) -> Generator[None, None, None]:
         """Temporarily disable proof diffs."""
         # Check if diffs are enabled
@@ -478,6 +540,7 @@ class Coqtop:
             "Test Diffs",
             in_script=False,
             timeout=timeout,
+            stderr_is_warning=stderr_is_warning,
         )
         if ok and response.startswith(expect_prefix):
             # TODO: Make a cleaner way of reading an option
@@ -494,6 +557,7 @@ class Coqtop:
                 'Set Diffs "off"',
                 in_script=False,
                 timeout=timeout,
+                stderr_is_warning=stderr_is_warning,
             )
             if not ok:
                 self.logger.warning("Failed to disable Diffs option: %s", err)
@@ -506,6 +570,7 @@ class Coqtop:
                 f'Set Diffs "{diffs}"',
                 in_script=False,
                 timeout=timeout,
+                stderr_is_warning=stderr_is_warning,
             )
             if not ok:
                 self.logger.warning("Failed to re-enable Diffs option: %s", err)
@@ -515,6 +580,7 @@ class Coqtop:
         self,
         cmdtype_msg: Tuple[str, Optional[bytes]],
         timeout: Optional[int] = None,
+        stderr_is_warning: bool = False,
     ) -> Tuple[Result, str]:
         """Send 'msg' to the Coqtop process and wait for the response."""
         assert self.xml is not None
@@ -540,15 +606,17 @@ class Coqtop:
 
         with futures.ThreadPoolExecutor(1) as pool:
             try:
-                timeout = timeout if timeout != 0 else None
-                response, err = pool.submit(self.get_answer).result(timeout)
+                timeout = None if timeout == 0 else timeout
+                response, err = pool.submit(
+                    lambda: self.get_answer(stderr_is_warning)
+                ).result(timeout)
             except futures.TimeoutError:
                 self.interrupt()
                 response, err = TIMEOUT_ERR, ""
 
         return self.xml.standardize(cmd, response), err
 
-    def get_answer(self) -> Tuple[Result, str]:
+    def get_answer(self, stderr_is_warning: bool = False) -> Tuple[Result, str]:
         """Read from 'out_q' and wait until a full response is received."""
         assert self.xml is not None
         data = []
@@ -559,9 +627,15 @@ class Coqtop:
             # NOTE: If `warnings_wf` is False because this version of Coq does
             # not follow the pattern expected by `partition_warnings` then
             # pretend everything is a warning and hope for the best.
+            # The `stderr_is_warning` option also causes any any message
+            # on stderr to be treated as a warning.
             err = self.collect_err()
-            if self.xml.warnings_wf and partition_warnings(err)[1] != "":
-                return UNEXPECTED_ERR, err
+            if (
+                not stderr_is_warning
+                and self.xml.warnings_wf
+                and partition_warnings(err)[1] != ""
+            ):
+                return STDERR_ERR, err
 
             try:
                 data.append(self.out_q.get(timeout=poll_sec))

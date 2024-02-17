@@ -2,6 +2,10 @@
 
 ## Unreleased ([main])
 
+### Added
+- `g:coqtail_treat_stderr_as_warning` option to ignore unrecognized warnings on stderr.
+  (PR #338)
+
 ### Fixed
 - Fix rendering of goals panel when no proof is active in Coq >= 8.16.
   (PR #337)
