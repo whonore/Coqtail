@@ -364,8 +364,7 @@ class Coqtop:
         if isinstance(response_extra, Err):
             return (False, msgs, None, errs)
 
-        assert response_extra.val is not None, \
-            "proof state changed unexpectedly?"
+        assert response_extra.val is not None, "proof state changed unexpectedly?"
 
         # Merge goals
         goals = Goals(

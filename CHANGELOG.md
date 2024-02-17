@@ -3,7 +3,8 @@
 ## Unreleased ([main])
 
 ### Fixed
-- Fix rendering of goals panel when no proof is active in Coq >= 8.16
+- Fix rendering of goals panel when no proof is active in Coq >= 8.16.
+  (PR #337)
 
 ## [1.7.1]
 
