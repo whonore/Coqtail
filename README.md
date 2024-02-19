@@ -99,11 +99,38 @@ The mappings above are set by default, but you can disable them all and define
 your own by setting `g:coqtail_nomap = 1` in your `.vimrc`.
 Some of the commands, such as `CoqNext`, also have insert-mode mappings by
 default, which can be disabled with `g:coqtail_noimap`.
+
 Alternatively, you can keep the defaults but remap specific commands.
 For example, use `map <leader>ci <Plug>CoqInterrupt` to avoid hijacking `CTRL-C`.
+If a mapping for a command already exists when Coqtail is loaded, the default
+mapping for that command won't be defined.
+
 The `<leader>c` prefix may be inconvenient depending on your `mapleader` setting.
 In that case you can set a custom prefix with `g:coqtail_map_prefix` (or
 `g:coqtail_imap_prefix` for just insert-mode mappings).
+
+Finally, after defining the standard keybindings, Coqtail will call a vim
+function named `CoqtailHookDefineMappings` (if one is defined). This makes it
+easy to add additional mappings without removing the standard mappings, and
+to add mappings which are only active in Coqtail-managed buffers. One way to
+use this hook is to make bindings for commands which augment the standard
+Coqtail bindings instead of replacing them. One concrete example is:
+
+```vim
+function CoqtailHookDefineMappings()
+  imap <buffer> <S-Down> <Plug>CoqNext
+  imap <buffer> <S-Left> <Plug>CoqToLine
+  imap <buffer> <S-Up> <Plug>CoqUndo
+  nmap <buffer> <S-Down> <Plug>CoqNext
+  nmap <buffer> <S-Left> <Plug>CoqToLine
+  nmap <buffer> <S-Up> <Plug>CoqUndo
+endfunction
+```
+
+Adding that snippet to your `.vimrc` would create new bindings for `CoqNext`,
+`CoqToLine`, and `CoqUndo`. Those bindings would be active in all Coq buffers,
+including Coqtail panels, but inactive in other buffers. The standard Coqtail
+bindings (`<leader>cj`, etc) would remain active.
 
 ### Coq Executable
 
