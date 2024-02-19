@@ -596,6 +596,10 @@ function! coqtail#define_mappings() abort
       endif
     endfor
   endfor
+
+  if exists('*CoqtailHookDefineMappings')
+    call CoqtailHookDefineMappings()
+  endif
 endfunction
 
 " Initialize buffer local variables, commands, and mappings.
