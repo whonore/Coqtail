@@ -8,6 +8,8 @@
 - Add a hook for more flexible keybindings (PR #339)
 
 ### Fixed
+- Parse single and double quotes in `_CoqProject` files in the same way as CoqIDE.
+  (PR #342)
 - Fix rendering of goals panel when no proof is active in Coq >= 8.16.
   (PR #337)
 
