@@ -147,26 +147,42 @@ Execute (quote-empty):
   let args = coqtail#coqproject#parse(f)
   AssertEqual ['-R', d . '/', ''], args
 
-Execute (quote-escape):
-  let d = tempname()
-  let sd = 'quote"subdir'
-  let sdEsc = 'quote\"subdir'
-  let dsd = join([d, sd], '/')
-  let dsdEsc = join([d, sdEsc], '/')
-  call mkdir(dsd, 'p')
-  let f = join([dsd, '1'], '/')
-  call writefile(['-R "' . dsdEsc . '" top'], f)
-  let args = coqtail#coqproject#parse(f)
-  AssertEqual ['-R', dsd . '/', 'top'], args
-
 Execute (arg):
   let f = tempname()
   call writefile(['-arg -w -arg all'], f)
   let args = coqtail#coqproject#parse(f)
   AssertEqual ['-w', 'all'], args
 
+" See https://coq.inria.fr/doc/v8.19/refman/practical-tools/utilities.html#quoting-arguments-to-coqc
+Execute (double-quote-arg):
+  let f = tempname()
+  call writefile(['-arg "-w all"'], f)
+  let args = coqtail#coqproject#parse(f)
+  AssertEqual ['-w', 'all'], args
+
+Execute (single-quote-in-double-quote-arg):
+  let f = tempname()
+  call writefile(["-arg \"-set 'Default Goal Selector=!'\""], f)
+  let args = coqtail#coqproject#parse(f)
+  AssertEqual ['-set', 'Default Goal Selector=!'], args
+
+Execute (single-quote-not-in-double-quote-arg):
+  let f1 = tempname()
+  call writefile(["-arg 'foo bar'"], f1)
+  let args1 = coqtail#coqproject#parse(f1)
+  let f2 = tempname()
+  call writefile(["-arg foo \"bar'\""], f2)
+  let args2 = coqtail#coqproject#parse(f2)
+  AssertEqual args1, args2
+
 Execute (ignore-files):
   let f = tempname()
   call writefile(['-arg a', '-byte', 'A.v'], f)
   let args = coqtail#coqproject#parse(f)
   AssertEqual ['a'], args
+
+Execute (ignore-comments):
+  let f = tempname()
+  call writefile(['# abc', '-arg a', '# def', '-arg b', '# ghi'], f)
+  let args = coqtail#coqproject#parse(f)
+  AssertEqual ['a', 'b'], args
