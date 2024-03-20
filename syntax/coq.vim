@@ -331,7 +331,7 @@ syn keyword coqTactic    contained eset esimplify_eq esplit etransitivity evar e
 syn keyword coqTactic    contained exists
 syn keyword coqTactic    contained f_equal field field_lookup field_simplify field_simplify_eq finish_timing firstorder
 syn keyword coqTactic    contained fix fold
-syn keyword coqTactic    contained generalize gintuition
+syn keyword coqTactic    contained gintuition
 syn keyword coqTactic    contained have hnf
 syn keyword coqTactic    contained idtac induction info_auto info_eauto info_trivial injection instantiate intro[s]
 syn keyword coqTactic    contained intuition inversion inversion_clear inversion_sigma
@@ -359,6 +359,7 @@ syn match   coqTactic    contained "\<dependent\_s\+\%(destruction\|induction\|i
 syn match   coqTactic    contained "\<dfs\_s+eauto\>"
 syn match   coqTactic    contained "\<e\?pose\%(\_s\+proof\)\?\>"
 syn match   coqTactic    contained "\<functional\_s\+\%(induction\|inversion\)\>"
+syn match   coqTactic    contained "\<generalize\>\%(\_s\+\<dependent\>\)\?"
 syn match   coqTactic    contained "\<generally\_s\+have\>"
 syn match   coqTactic    contained "\<notypeclasses\_s\+refine\>"
 syn match   coqTactic    contained "\<revert\%(\_s\+dependent\)\?\>"
