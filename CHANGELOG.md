@@ -5,9 +5,12 @@
 ### Added
 - `g:coqtail_treat_stderr_as_warning` option to ignore unrecognized warnings on stderr.
   (PR #338)
-- Add a hook for more flexible keybindings (PR #339)
+- Add a hook for more flexible keybindings.
+  (PR #339)
 
 ### Fixed
+- Highlight `generalize dependent` correctly.
+  (PR #343)
 - Parse single and double quotes in `_CoqProject` files in the same way as CoqIDE.
   (PR #342)
 - Fix rendering of goals panel when no proof is active in Coq >= 8.16.
