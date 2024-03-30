@@ -325,7 +325,7 @@ syn keyword coqTactic    contained case case_eq casetype cbn cbv change change_n
 syn keyword coqTactic    contained clear clearbody cofix compare compute congr congruence constr_eq constr_eq_nounivs
 syn keyword coqTactic    contained constr_eq_strict constructor contradict contradiction cut cutrewrite cycle
 syn keyword coqTactic    contained decompose destruct dintuition discriminate discrR done dtauto
-syn keyword coqTactic    contained eapply eassert eassumption easy eauto ecase econstructor eelim eenough eexact eexists
+syn keyword coqTactic    contained eapply eassert eassumption easy eauto ecase econstructor edestruct eelim eenough eexact eexists
 syn keyword coqTactic    contained einduction einjection eintros eleft elim elimtype enough eremember erewrite eright
 syn keyword coqTactic    contained eset esimplify_eq esplit etransitivity evar exact exact_no_check exactly_once exfalso
 syn keyword coqTactic    contained exists
