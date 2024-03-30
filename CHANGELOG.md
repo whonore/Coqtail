@@ -9,6 +9,8 @@
   (PR #339)
 
 ### Fixed
+- Highlight `edestruct` correctly.
+  (PR #346)
 - Highlight `generalize dependent` correctly.
   (PR #343)
 - Parse single and double quotes in `_CoqProject` files in the same way as CoqIDE.
