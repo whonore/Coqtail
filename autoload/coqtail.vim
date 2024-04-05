@@ -114,6 +114,12 @@ function! s:finddef(target) abort
   return (!l:ok || type(l:loc) != g:coqtail#compat#t_list) ? v:null : l:loc
 endfunction
 
+" Patch the given filepath to refer to the source in case dune is used.
+function! s:patch_path_for_dune(path) abort
+  let l:patched = substitute(a:path, "/_build/default", "", "")
+  return l:patched
+endfunction
+
 " Populate the quickfix list with possible locations of the definition of
 " 'target'.
 function! coqtail#gotodef(target, bang) abort
@@ -124,9 +130,10 @@ function! coqtail#gotodef(target, bang) abort
     return
   endif
   let [l:path, l:searches] = l:loc
+  let l:patched_path = s:patch_path_for_dune(l:path)
 
   " Try progressively broader searches
-  if coqtail#util#qflist_search(b:coqtail_panel_bufs.main, l:path, l:searches)
+  if coqtail#util#qflist_search(b:coqtail_panel_bufs.main, l:patched_path, l:searches)
     " Set usetab instead of opening a new buffer
     let l:swb = &switchbuf
     set switchbuf+=usetab
@@ -156,7 +163,8 @@ function! coqtail#gettags(target, flags, info) abort
 
   let l:tags = []
   for l:search in l:searches
-    let l:tag = {'name': a:target, 'filename': l:path, 'cmd': '/\v' . l:search}
+    let l:patched_path = s:patch_path_for_dune(l:path)
+    let l:tag = {'name': a:target, 'filename': l:patched_path, 'cmd': '/\v' . l:search}
     let l:tags = add(l:tags, l:tag)
   endfor
 
