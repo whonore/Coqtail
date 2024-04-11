@@ -51,10 +51,10 @@ def test_rewind_start(coq: Coqtop) -> None:
 
 def test_dispatch_rewind(coq: Coqtop) -> None:
     """Rewinding should cancel out in_script dispatches."""
-    succ, _, _, _ = coq.dispatch("Let a := 0.")
+    succ, _, _, _ = coq.dispatch("#[local] Definition a := 0.")
     old_state = get_state(coq)
 
-    succ, _, _, _ = coq.dispatch("Let x := 1.")
+    succ, _, _, _ = coq.dispatch("#[local] Definition x := 1.")
     assert succ
     coq.rewind(1)
     assert old_state == get_state(coq)
@@ -117,7 +117,7 @@ def test_dispatch_correct(
 
 def test_dispatch_unicode(coq: Coqtop) -> None:
     """Should be able to use unicode characters."""
-    succ, _, _, _ = coq.dispatch("Let α := 0.")
+    succ, _, _, _ = coq.dispatch("#[local] Definition α := 0.")
     assert succ
     succ, _, _, _ = coq.dispatch("Print α.")
     assert succ
@@ -211,11 +211,11 @@ def test_recognize_not_option(coq: Coqtop) -> None:
     """Dispatch correctly identifies certain lines as not option commands."""
     succ, _, _, _ = coq.dispatch("Require Import\nSetoid.")
     assert succ
-    succ, _, _, _ = coq.dispatch("Variable x :\nSet.")
+    succ, _, _, _ = coq.dispatch("Parameter x :\nSet.")
     assert succ
     succ, _, _, _ = coq.dispatch("Definition Test := Type.")
     assert succ
-    succ, _, _, _ = coq.dispatch("Variable y :\n Test.")
+    succ, _, _, _ = coq.dispatch("Parameter y :\n Test.")
     assert succ
 
 
@@ -227,13 +227,13 @@ def test_recognize_not_query(coq: Coqtop) -> None:
     succ, _, _, _ = coq.dispatch("Definition Print := Type.")
     assert succ
     old_id = coq.state_id
-    succ, _, _, _ = coq.dispatch("Variable x :\nPrint.")
+    succ, _, _, _ = coq.dispatch("Parameter x :\nPrint.")
     assert succ
     assert old_id != coq.state_id
     succ, _, _, _ = coq.dispatch("Definition Abouts := Type.")
     assert succ
     old_id = coq.state_id
-    succ, _, _, _ = coq.dispatch("Variable y :\n Abouts.")
+    succ, _, _, _ = coq.dispatch("Parameter y :\n Abouts.")
     assert succ
     assert old_id != coq.state_id
 
