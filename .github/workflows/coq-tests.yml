@@ -12,7 +12,7 @@ on:
       - 'tox.ini'
       - 'python/coqtop.py'
       - 'python/xmlInterface.py'
-      - 'tests/test_coqtop.py'
+      - 'tests/coq/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
