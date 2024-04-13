@@ -51,10 +51,12 @@ def test_rewind_start(coq: Coqtop) -> None:
 
 def test_dispatch_rewind(coq: Coqtop) -> None:
     """Rewinding should cancel out in_script dispatches."""
-    succ, _, _, _ = coq.dispatch("#[local] Definition a := 0.")
+    assert coq.xml is not None
+    let = "#[local] Definition" if coq.xml.version >= (8, 19, 0) else "Let"
+    succ, _, _, _ = coq.dispatch(f"{let} a := 0.")
     old_state = get_state(coq)
 
-    succ, _, _, _ = coq.dispatch("#[local] Definition x := 1.")
+    succ, _, _, _ = coq.dispatch(f"{let} x := 1.")
     assert succ
     coq.rewind(1)
     assert old_state == get_state(coq)
@@ -117,7 +119,9 @@ def test_dispatch_correct(
 
 def test_dispatch_unicode(coq: Coqtop) -> None:
     """Should be able to use unicode characters."""
-    succ, _, _, _ = coq.dispatch("#[local] Definition α := 0.")
+    assert coq.xml is not None
+    let = "#[local] Definition" if coq.xml.version >= (8, 19, 0) else "Let"
+    succ, _, _, _ = coq.dispatch(f"{let} α := 0.")
     assert succ
     succ, _, _, _ = coq.dispatch("Print α.")
     assert succ
