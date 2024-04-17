@@ -492,7 +492,7 @@ syn match elpiMode contained "\<[io]:"
 syn match elpiNumber contained "[0-9]\+"
 
 " Various (High priority)
-syn region  coqComment           containedin=ALL contains=coqComment,coqTodo,@Spell start="(\*" end="\*)" extend keepend
+syn region  coqComment           containedin=ALLBUT,coqString contains=coqComment,coqTodo,@Spell start="(\*" end="\*)" extend keepend
 syn keyword coqTodo              contained TODO FIXME XXX NOTE
 syn region  coqString            start=+"+ skip=+""+ end=+"+ extend
 
