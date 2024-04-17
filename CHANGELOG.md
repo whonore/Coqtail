@@ -9,6 +9,8 @@
   (PR #339)
 
 ### Fixed
+- Don't highlight comments inside strings.
+  (PR #352)
 - Highlight `edestruct` correctly.
   (PR #346)
 - Highlight `generalize dependent` correctly.
