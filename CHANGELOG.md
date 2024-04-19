@@ -9,6 +9,9 @@
   (PR #339)
 
 ### Fixed
+- Don't try to decode partial JSON responses, avoiding a potential overflow
+  error in NeoVim for very long responses.
+  (PR #353)
 - Don't highlight comments inside strings.
   (PR #352)
 - Highlight `edestruct` correctly.
