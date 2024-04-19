@@ -90,40 +90,40 @@ elseif g:coqtail#compat#nvim
 
   " Handle replies from Coqtail.
   function! s:chanrecv(handle, msg, event) abort
-    " Complete partial reply.
+    " Every element of a:msg except the first and last is a complete line and
+    " is expected to be valid JSON. The first and last elements may be partial
+    " lines where the first is a continuation of the previous last element. By
+    " appending the first element of a:msg to the last of s:replies_raw, we
+    " guarantee that every element of s:replies_raw except the last one is a
+    " complete reply. When the last line of the reply is received,
+    " s:replies_raw will be [''].
     let s:replies_raw[-1] .= a:msg[0]
     let s:replies_raw += a:msg[1:]
 
-    " Try to parse replies
-    for l:idx in range(len(s:replies_raw))
-      let l:reply = s:replies_raw[l:idx]
-      try
-        let l:res = json_decode(l:reply)
-        if l:res[0] ==# 'call'
-          let [l:func, l:args; l:msg_id] = l:res[1:]
-          let l:val = call(l:func, l:args)
-          " Reply only if expected
-          if len(l:msg_id) == 1
-            call chansend(a:handle, [json_encode([l:msg_id[0], l:val]), ''])
-          endif
-        else
-          let [l:msg_id, l:data] = l:res
-          " Return or execute callback
-          if has_key(s:replies, l:msg_id)
-            let s:replies[l:msg_id] = l:data
-          elseif has_key(s:callbacks, l:msg_id)
-            call call(s:callbacks[l:msg_id], [a:handle, l:data])
-            unlet s:callbacks[l:msg_id]
-          endif
+    " Parse complete replies (all but the last).
+    for l:reply in s:replies_raw[:-2]
+      let l:res = json_decode(l:reply)
+      if l:res[0] ==# 'call'
+        let [l:func, l:args; l:msg_id] = l:res[1:]
+        let l:val = call(l:func, l:args)
+        " Reply only if expected
+        if len(l:msg_id) == 1
+          call chansend(a:handle, [json_encode([l:msg_id[0], l:val]), ''])
         endif
-      catch /^Vim\%((\a\+)\)\=:E474/
-        let l:idx -= 1
-        break
-      endtry
+      else
+        let [l:msg_id, l:data] = l:res
+        " Return or execute callback
+        if has_key(s:replies, l:msg_id)
+          let s:replies[l:msg_id] = l:data
+        elseif has_key(s:callbacks, l:msg_id)
+          call call(s:callbacks[l:msg_id], [a:handle, l:data])
+          unlet s:callbacks[l:msg_id]
+        endif
+      endif
     endfor
 
-    " Remove parsed replies
-    let s:replies_raw = s:replies_raw[l:idx + 1:]
+    " Remove parsed replies (all but the last).
+    let s:replies_raw = [s:replies_raw[-1]]
   endfunction
 else
   py3 from coqtail import ChannelManager
