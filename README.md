@@ -17,7 +17,7 @@ It supports:
 - Simultaneous Coq sessions in different buffers
 - Non-blocking communication between Vim and Coq (Vim >=8.0 and NeoVim only)
 
-## Installation and Requirements
+## Installation
 
 As a [vim package]:
 ```sh
@@ -44,7 +44,8 @@ Plug 'whonore/Coqtail' (add this line in .vimrc)
 vim +PlugInstall +qa
 ```
 
-Requirements:
+### Requirements
+
 - Vim/Neovim compiled with `+python3` (3.6 or later)
 - Vim configuration options `filetype plugin on`, and optionally `filetype
   indent on` and `syntax on` (e.g. in `.vimrc`)
