@@ -919,7 +919,6 @@ class CoqtailHandler(StreamRequestHandler):
         while not self.closed:
             try:
                 self.working = False
-                # pylint: disable=unpacking-non-sequence
                 self.msg_id, self.bnum, func, args = self.get_msg()
                 self.refresh_time = 0.0
                 self.working = True
@@ -967,7 +966,6 @@ class CoqtailHandler(StreamRequestHandler):
         self.wfile.write(_to_jsonl(expr))
 
         if wait:
-            # pylint: disable=unpacking-non-sequence
             msg_id, res = self.get_msg(self.msg_id)
             assert msg_id == -self.msg_id
             return res
