@@ -46,7 +46,7 @@ vim +PlugInstall +qa
 
 ### Requirements
 
-- Vim/Neovim compiled with `+python3` (3.6 or later)
+- Vim compiled with `+python3` (3.6 or later) or the `pynvim` Python package for Neovim
 - Vim configuration options `filetype plugin on`, and optionally `filetype
   indent on` and `syntax on` (e.g. in `.vimrc`)
 - [Coq 8.4 - 8.19]
