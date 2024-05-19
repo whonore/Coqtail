@@ -9,6 +9,8 @@
   (PR #339)
 
 ### Fixed
+- Highlight `Structure` as a synonym for `Record`.
+  (PR #357)
 - Don't try to decode partial JSON responses, avoiding a potential overflow
   error in NeoVim for very long responses.
   (PR #353)

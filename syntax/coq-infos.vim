@@ -23,7 +23,7 @@ syn case match
 " Various
 syn match   coqVernacPunctuation ":=\|\.\|:"
 syn match   coqIdent             contained "[[:digit:]']\@!\k\k*"
-syn keyword coqTopLevel          Declare Type Canonical Structure Cd Coercion Derive Drop Existential
+syn keyword coqTopLevel          Declare Type Canonical Cd Coercion Derive Drop Existential
 
 " Binders
 syn region coqBinder            contained contains=coqIdent,coqBinderTypeParen matchgroup=coqVernacPunctuation start="(" end=")" keepend
@@ -114,8 +114,8 @@ syn region coqIndNotScope    contained contains=coqIndBody matchgroup=coqVernacP
 syn match  coqConstructor    contained "[[:digit:]']\@!\k\k*"
 
 " Records
-syn region coqRec        contains=coqRecProfile start="\<Record\>" matchgroup=coqVernacPunctuation end="^\S"me=e-1 keepend
-syn region coqRecProfile contained contains=coqIdent,coqRecTerm,coqBinder matchgroup=coqVernacCmd start="Record" matchgroup=NONE end="^\S"me=e-1
+syn region coqRec        contains=coqRecProfile start="\<Record\>\|\<Structure\>" matchgroup=coqVernacPunctuation end="^\S"me=e-1 keepend
+syn region coqRecProfile contained contains=coqIdent,coqRecTerm,coqBinder matchgroup=coqVernacCmd start="Record\|Structure" matchgroup=NONE end="^\S"me=e-1
 syn region coqRecTerm    contained contains=@coqTerm,coqRecContent matchgroup=coqVernacPunctuation start=":"  end="^\S"me=e-1
 syn region coqRecContent contained contains=coqConstructor,coqRecStart matchgroup=coqVernacPunctuation start=":=" end="^\S"me=e-1
 syn region coqRecStart   contained contains=coqRecField,@coqTerm start="{" matchgroup=coqVernacPunctuation end="}" keepend

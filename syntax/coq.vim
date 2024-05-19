@@ -82,7 +82,7 @@ syn case match
 syn match   coqError             "\S\+"
 syn match   coqVernacPunctuation ":=\|\.\|:"
 syn match   coqIdent             contained "[[:digit:]']\@!\k\k*"
-syn keyword coqTopLevel          Type Structure Cd Drop Existential
+syn keyword coqTopLevel          Type Cd Drop Existential
 "...
 syn keyword coqVernacCmd         Local Global Polymorphic Functional Scheme Back Combined
 syn keyword coqVernacCmd         Fail Succeed
@@ -414,8 +414,8 @@ syn region coqIndNotScope    contained contains=coqIndBody matchgroup=coqVernacP
 syn match  coqConstructor    contained "[[:digit:]']\@!\k\k*"
 
 " Records
-syn region coqRec        contains=coqRecProfile start="\<Record\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
-syn region coqRecProfile contained contains=coqIdent,coqRecTerm,coqBinder matchgroup=coqVernacCmd start="Record" matchgroup=NONE end="\.\_s"
+syn region coqRec        contains=coqRecProfile start="\<Record\>\|\<Structure\>" matchgroup=coqVernacPunctuation end="\.\_s" keepend
+syn region coqRecProfile contained contains=coqIdent,coqRecTerm,coqBinder matchgroup=coqVernacCmd start="Record\|Structure" matchgroup=NONE end="\.\_s"
 syn region coqRecTerm    contained contains=@coqTerm,coqRecContent matchgroup=coqVernacPunctuation start=":"  end="\.\_s"
 syn region coqRecContent contained contains=coqConstructor,coqRecStart matchgroup=coqVernacPunctuation start=":=" end="\.\_s"
 syn region coqRecStart   contained contains=coqRecField,@coqTerm start="{" matchgroup=coqVernacPunctuation end="}" keepend
