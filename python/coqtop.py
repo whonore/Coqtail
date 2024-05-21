@@ -100,35 +100,36 @@ class Coqtop:
         self.logger.addHandler(self.handler)
         self.logger.setLevel(logging.INFO)
 
-    def get_dune_args(self,
-                      filename: str) -> str:
-      if self.xml.valid_module(filename):
-        # dune needs relative paths to work properly
-        basename = os.path.basename(filename)
-        filepath = os.path.dirname(filename)
+    def get_dune_args(self, filename: str) -> str:
+        if self.xml.valid_module(filename):
+            # dune needs relative paths to work properly
+            basename = os.path.basename(filename)
+            filepath = os.path.dirname(filename)
 
-        # check if the file is located in a dune project
-        self.logger.debug(("query dune in ", filepath))
-        dune_check = ("dune", "show", "workspace")
-        dune_check_result = subprocess.run(dune_check, cwd=filepath)
-        if dune_check_result.returncode != 0:
-          self.logger.debug("no dune project found")
-          return []
+            # check if the file is located in a dune project
+            self.logger.debug(("query dune in ", filepath))
+            dune_check = ("dune", "show", "workspace")
+            dune_check_result = subprocess.run(dune_check, cwd=filepath)
+            if dune_check_result.returncode != 0:
+                self.logger.debug("no dune project found")
+                return []
 
-        dune_launch = ("dune", "coq", "top", basename, "--toplevel", "echo")
-        self.logger.debug(dune_launch)
+            dune_launch = ("dune", "coq", "top", basename, "--toplevel", "echo")
+            self.logger.debug(dune_launch)
 
-        # run in `filepath` so that this also works if vim was not launched in a dune project directory
-        dune_result = subprocess.run(dune_launch, capture_output=True, cwd=filepath)
-        if dune_result.returncode == 0:
-          self.logger.debug("dune result")
-          args = dune_result.stdout.decode('utf-8')
-          self.logger.debug(args)
-          return args.split()
+            # run in `filepath` so that this also works if vim was not launched in a dune project directory
+            dune_result = subprocess.run(dune_launch, capture_output=True, cwd=filepath)
+            if dune_result.returncode == 0:
+                self.logger.debug("dune result")
+                args = dune_result.stdout.decode("utf-8")
+                self.logger.debug(args)
+                return args.split()
+            else:
+                self.logger.debug("dune error")
+                self.logger.debug(dune_result.stderr)
+                return []
         else:
-          self.logger.debug("dune error")
-          self.logger.debug(dune_result.stderr)
-          return []
+            return []
 
     # Coqtop Interface #
     def start(
@@ -143,14 +144,13 @@ class Coqtop:
         """Launch the Coqtop process."""
         assert self.coqtop is None
 
-
         try:
             self.logger.debug("start")
             self.xml, latest = XMLInterface(coq_path, coq_prog)
 
             # if we did not get any arguments from _CoqProject, try to use dune
             if len(args) == 0:
-              args = self.get_dune_args(filename)
+                args = self.get_dune_args(filename)
 
             launch = self.xml.launch(filename, args)
             self.logger.debug(launch)
