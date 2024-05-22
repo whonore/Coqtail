@@ -113,17 +113,16 @@ class Coqtop:
             # check if the file is located in a dune project
             self.logger.debug(("query dune in ", filepath))
             dune_check = ("dune", "describe", "workspace")
-            dune_check_result = subprocess.run(
-                dune_check, capture_output=True, cwd=filepath
-            )
-            if dune_check_result.returncode != 0:
+            try:
+                subprocess.run(
+                    dune_check, capture_output=True, cwd=filepath, check=True
+                )
+            except subprocess.CalledProcessError as e:
                 self.logger.debug("file is not in correctly configured dune project")
-                raise DuneError(dune_check_result.stderr.decode("utf-8"))
-            else:
-                self.logger.debug("found dune project")
-                return True
-        else:
-            return False
+                raise DuneError(e.stderr.decode("utf-8")) from e
+            self.logger.debug("found dune project")
+            return True
+        return False
 
     def get_dune_args(self, filename: str, dune_compile_deps: bool) -> Iterable[str]:
         """Get the arguments to pass to the coqtop process from dune.
@@ -140,16 +139,18 @@ class Coqtop:
         self.logger.debug(dune_launch)
 
         # run in `filepath` so that this also works if vim was not launched in a dune project directory
-        dune_result = subprocess.run(dune_launch, capture_output=True, cwd=filepath)
-        if dune_result.returncode == 0:
-            self.logger.debug("dune result")
-            args = dune_result.stdout.decode("utf-8")
-            self.logger.debug(args)
-            return args.split()
-        else:
+        dune_result = subprocess.run(
+            dune_launch, capture_output=True, cwd=filepath, check=False
+        )
+        if dune_result.returncode != 0:
             self.logger.debug("dune error")
             self.logger.debug(dune_result.stderr)
             raise DuneError(dune_result.stderr.decode("utf-8"))
+
+        self.logger.debug("dune result")
+        args = dune_result.stdout.decode("utf-8")
+        self.logger.debug(args)
+        return args.split()
 
     # Coqtop Interface #
     def start(
