@@ -200,7 +200,7 @@ class Coqtail:
     ) -> Any:
         # pylint: disable=unused-argument
         # opts is always passed by handle().
-        """Start a new Coqtop instance."""
+        """Find the Coqtop executable."""
         try:
             ver_or_err = self.coqtop.find_coq(
                 coq_path if coq_path != "" else None,
