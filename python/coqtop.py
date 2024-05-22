@@ -152,24 +152,45 @@ class Coqtop:
         self.logger.debug(args)
         return args.split()
 
-    # Coqtop Interface #
-    def start(
+    def find_coq(
         self,
         coq_path: Optional[str],
         coq_prog: Optional[str],
+    ) -> Union[VersionInfo, str]:
+        """Find the Coqtop executable."""
+        assert self.coqtop is None
+        assert self.xml is None
+
+        try:
+            self.logger.debug("locating coq")
+            self.xml, latest = XMLInterface(coq_path, coq_prog)
+
+            return {
+                "version": self.xml.version,
+                "str_version": self.xml.str_version,
+                "latest": latest,
+            }
+        except (OSError, FindCoqtopError) as e:
+            # Failed to find Coqtop
+            self.xml = None
+            return str(e)
+
+    # Coqtop Interface #
+    def start(
+        self,
         filename: str,
         coqproject_args: Iterable[str],
         use_dune: bool,
         dune_compile_deps: bool,
         timeout: Optional[int] = None,
         stderr_is_warning: bool = False,
-    ) -> Tuple[Union[VersionInfo, str], str]:
+    ) -> Tuple[Optional[str], str]:
         """Launch the Coqtop process."""
         assert self.coqtop is None
+        assert self.xml is not None
 
         try:
             self.logger.debug("start")
-            self.xml, latest = XMLInterface(coq_path, coq_prog)
 
             if use_dune and self.is_in_valid_dune_project(filename):
                 args = self.get_dune_args(filename, dune_compile_deps)
@@ -219,16 +240,9 @@ class Coqtop:
             self.root_state = response.val
             self.state_id = response.val
 
-            return (
-                {
-                    "version": self.xml.version,
-                    "str_version": self.xml.str_version,
-                    "latest": latest,
-                },
-                err,
-            )
-        except (OSError, FindCoqtopError, DuneError) as e:
-            # Failed to launch or find Coqtop
+            return (None, err)
+        except (OSError, DuneError) as e:
+            # Failed to launch Coqtop
             self.coqtop = None
             return str(e), ""
 

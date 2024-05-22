@@ -192,21 +192,35 @@ class Coqtail:
 
         return err
 
-    # Coqtop Interface #
-    def start(
+    def find_coq(
         self,
         coq_path: str,
         coq_prog: str,
+        opts: VimOptions,
+    ) -> Any:
+        # pylint: disable=unused-argument
+        # opts is always passed by handle().
+        """Start a new Coqtop instance."""
+        try:
+            ver_or_err = self.coqtop.find_coq(
+                coq_path if coq_path != "" else None,
+                coq_prog if coq_prog != "" else None,
+            )
+        except (ValueError, CT.CoqtopError) as e:
+            ver_or_err = str(e)
+        return ver_or_err
+
+    # Coqtop Interface #
+    def start(
+        self,
         coqproject_args: Iterable[str],
         use_dune: bool,
         dune_compile_deps: bool,
         opts: VimOptions,
-    ) -> Tuple[Union[CT.VersionInfo, str], str]:
+    ) -> Tuple[Optional[str], str]:
         """Start a new Coqtop instance."""
         try:
-            ver_or_err, stderr = self.coqtop.start(
-                coq_path if coq_path != "" else None,
-                coq_prog if coq_prog != "" else None,
+            err, stderr = self.coqtop.start(
                 opts["filename"],
                 coqproject_args,
                 use_dune,
@@ -216,8 +230,8 @@ class Coqtail:
             )
             self.print_stderr(stderr)
         except (ValueError, CT.CoqtopError) as e:
-            ver_or_err, stderr = str(e), ""
-        return ver_or_err, stderr
+            err, stderr = str(e), ""
+        return err, stderr
 
     def stop(self, opts: VimOptions) -> None:
         """Stop Coqtop."""
@@ -774,8 +788,6 @@ class Coqtail:
         opts: VimOptions,
     ) -> None:
         """Display the logo in the info panel."""
-        # pylint: disable=unused-argument
-        # opts is always passed by handle().
         msg = [
             "~~~~~~~~~~~~~~~~~~~~~~~",
             "λ                     /",
@@ -803,6 +815,7 @@ class Coqtail:
             msg = [""] * ((height // 2) - (len(msg) // 2 + 1)) + msg
         msg = [line.rstrip() for line in msg]
         self.set_info(msg, reset=False)
+        self.refresh(goals=False, opts=opts)
 
     def toggle_debug(self, opts: VimOptions) -> None:
         """Enable or disable logging of debug messages."""
@@ -930,6 +943,7 @@ class CoqtailHandler(StreamRequestHandler):
                 break
 
             handlers: Mapping[str, Callable[..., object]] = {
+                "find_coq": self.coq.find_coq,
                 "start": self.coq.start,
                 "stop": self.coq.stop,
                 "step": self.coq.step,

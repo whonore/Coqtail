@@ -370,6 +370,43 @@ function! coqtail#start(...) abort
       return 0
     endif
 
+    " Open auxiliary panels
+    call coqtail#panels#open(0)
+
+    " Find Coqtop
+    let [l:ok, l:ver_or_msg] = s:call('find_coq', 'sync', 0, {
+      \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', $COQBIN)),
+      \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', '')})
+    if !l:ok || type(l:ver_or_msg) == g:coqtail#compat#t_string
+    let l:msg = 'Failed to find Coq.'
+      if l:ok
+        " l:ver_or_msg is coqtail_error_message
+        let l:msg .= "\n" . l:ver_or_msg
+      endif
+      call coqtail#util#err(l:msg)
+      call coqtail#stop()
+      return 0
+    endif
+
+    " Check if version is supported
+    " l:ver_or_msg[0] is
+    " {version: [major, minor, patch], str_version: str, latest: str | None}
+    let b:coqtail_version = l:ver_or_msg
+    if b:coqtail_version.latest != v:null
+      call coqtail#util#warn(printf(
+        \ s:unsupported_msg,
+        \ b:coqtail_version.str_version,
+        \ b:coqtail_version.latest))
+    endif
+
+    " Draw the logo
+    let l:info_winid = bufwinid(b:coqtail_panel_bufs[g:coqtail#panels#info])
+    call s:call('splash', 'sync', 0, {
+      \ 'version': b:coqtail_version.str_version,
+      \ 'width': winwidth(l:info_winid),
+      \ 'height': winheight(l:info_winid)})
+
+
     " Locate CoqProject and dune-project files
     let [b:coqtail_project_files, l:proj_args] = coqtail#coqproject#locate()
     let b:coqtail_in_dune_project = coqtail#locate_dune()
@@ -384,7 +421,7 @@ function! coqtail#start(...) abort
         let b:coqtail_use_dune = 0
       endif
     elseif g:coqtail_build_system == 'dune'
-      let b:coqtail_use_dune = 1 
+      let b:coqtail_use_dune = 1
     elseif g:coqtail_build_system == 'coqproject'
       let b:coqtail_use_dune = 0
     else
@@ -403,50 +440,11 @@ function! coqtail#start(...) abort
       let l:args = map(copy(l:proj_args + a:000), 'expand(v:val)')
     endif
 
-    " Open auxiliary panels
-    call coqtail#panels#open(0)
-
-    " Launch Coqtop
-    let [l:ok, l:ver_or_msg] = s:call('start', 'sync', 0, {
-      \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', $COQBIN)),
-      \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', ''),
+    " Launch Coqtop asynchronously
+    call s:call('start', 'coqtail#after_startCB', 0, {
       \ 'coqproject_args': l:args,
       \ 'use_dune': coqtail#util#getvar([b:], 'coqtail_use_dune', 0),
       \ 'dune_compile_deps': coqtail#util#getvar([b:, g:], 'coqtail_dune_compile_deps', 0)})
-    if !l:ok || type(l:ver_or_msg[0]) == g:coqtail#compat#t_string
-      let l:msg = 'Failed to launch Coq.'
-      if l:ok
-        " l:ver_or_msg is [coqtail_error_message, coqtop_stderr]
-        let l:msg .= "\n" . l:ver_or_msg[0]
-        if l:ver_or_msg[1] !=# ''
-          let l:msg .= "\n" . l:ver_or_msg[1]
-        endif
-      endif
-      call coqtail#util#err(l:msg)
-      call coqtail#stop()
-      return 0
-    endif
-
-    " Check if version is supported
-    " l:ver_or_msg[0] is
-    " {version: [major, minor, patch], str_version: str, latest: str | None}
-    let b:coqtail_version = l:ver_or_msg[0]
-    if b:coqtail_version.latest != v:null
-      call coqtail#util#warn(printf(
-        \ s:unsupported_msg,
-        \ b:coqtail_version.str_version,
-        \ b:coqtail_version.latest))
-    endif
-
-    " Draw the logo
-    let l:info_winid = bufwinid(b:coqtail_panel_bufs[g:coqtail#panels#info])
-    call s:call('splash', 'sync', 0, {
-      \ 'version': b:coqtail_version.str_version,
-      \ 'width': winwidth(l:info_winid),
-      \ 'height': winheight(l:info_winid)})
-    call coqtail#refresh()
-
-    call s:init_proof_diffs(b:coqtail_version.str_version)
 
     " Sync edits to the buffer, close and restore the auxiliary panels
     augroup coqtail#Sync
@@ -460,6 +458,32 @@ function! coqtail#start(...) abort
   endif
 
   return 1
+endfunction
+
+" Callback to be run after Coqtop has launched.
+function! coqtail#after_startCB(chan, msg) abort
+  let l:pending = getbufvar(a:msg.buf, 'coqtail_cmds_pending')
+  call setbufvar(a:msg.buf, 'coqtail_cmds_pending', l:pending - 1)
+  if l:pending - 1 == 0
+    call setbufvar(a:msg.buf, '&modifiable', 1)
+  endif
+
+  let l:ret_msg = a:msg.ret
+  " l:ret_msg is [coqtail_error_message, coqtop_stderr]
+  if l:ret_msg[0] != v:null
+    let l:msg = 'Failed to launch Coq.'
+    let l:msg .= "\n" . l:ret_msg[0]
+    if l:ret_msg[1] !=# ''
+      let l:msg .= "\n" . l:ret_msg[1]
+    endif
+    call coqtail#util#err(l:msg)
+    call coqtail#stop()
+    return 0
+  endif
+
+  call coqtail#refresh()
+
+  call s:init_proof_diffs(b:coqtail_version.str_version)
 endfunction
 
 " Stop the Coqtop interface and clean up auxiliary panels.
