@@ -197,7 +197,9 @@ class Coqtail:
         self,
         coq_path: str,
         coq_prog: str,
-        args: Iterable[str],
+        coqproject_args: Iterable[str],
+        use_dune: bool,
+        dune_compile_deps: bool,
         opts: VimOptions,
     ) -> Tuple[Union[CT.VersionInfo, str], str]:
         """Start a new Coqtop instance."""
@@ -206,7 +208,9 @@ class Coqtail:
                 coq_path if coq_path != "" else None,
                 coq_prog if coq_prog != "" else None,
                 opts["filename"],
-                args,
+                coqproject_args,
+                use_dune,
+                dune_compile_deps,
                 timeout=opts["timeout"],
                 stderr_is_warning=opts["stderr_is_warning"],
             )

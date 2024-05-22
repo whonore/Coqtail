@@ -4,11 +4,11 @@
 
 import datetime
 import logging
+import os
 import signal
 import subprocess
 import threading
 import time
-import os
 from concurrent import futures
 from contextlib import contextmanager
 from queue import Empty, Queue
@@ -70,6 +70,10 @@ class CoqtopError(Exception):
     """An exception for when Coqtop stops unexpectedly."""
 
 
+class DuneError(Exception):
+    """An exception for when dune could not run."""
+
+
 class Coqtop:
     """Provide an interface to the background Coqtop process."""
 
@@ -100,36 +104,50 @@ class Coqtop:
         self.logger.addHandler(self.handler)
         self.logger.setLevel(logging.INFO)
 
-    def get_dune_args(self, filename: str) -> str:
+    def is_in_valid_dune_project(self, filename: str) -> bool:
+        """Query dune to assert that the given file is in a correctly configured dune project."""
         if self.xml.valid_module(filename):
             # dune needs relative paths to work properly
-            basename = os.path.basename(filename)
             filepath = os.path.dirname(filename)
 
             # check if the file is located in a dune project
             self.logger.debug(("query dune in ", filepath))
-            dune_check = ("dune", "show", "workspace")
-            dune_check_result = subprocess.run(dune_check, cwd=filepath)
+            dune_check = ("dune", "describe", "workspace")
+            dune_check_result = subprocess.run(
+                dune_check, capture_output=True, cwd=filepath
+            )
             if dune_check_result.returncode != 0:
-                self.logger.debug("no dune project found")
-                return []
-
-            dune_launch = ("dune", "coq", "top", basename, "--toplevel", "echo")
-            self.logger.debug(dune_launch)
-
-            # run in `filepath` so that this also works if vim was not launched in a dune project directory
-            dune_result = subprocess.run(dune_launch, capture_output=True, cwd=filepath)
-            if dune_result.returncode == 0:
-                self.logger.debug("dune result")
-                args = dune_result.stdout.decode("utf-8")
-                self.logger.debug(args)
-                return args.split()
+                self.logger.debug("file is not in correctly configured dune project")
+                raise DuneError(dune_check_result.stderr.decode("utf-8"))
             else:
-                self.logger.debug("dune error")
-                self.logger.debug(dune_result.stderr)
-                return []
+                self.logger.debug("found dune project")
+                return True
         else:
-            return []
+            return False
+
+    def get_dune_args(self, filename: str, dune_compile_deps: bool) -> Iterable[str]:
+        """Get the arguments to pass to the coqtop process from dune.
+        Assumes that the file is part of a correctly configured dune project."""
+        # dune needs relative paths to work properly
+        basename = os.path.basename(filename)
+        filepath = os.path.dirname(filename)
+
+        dune_launch = ("dune", "coq", "top", basename, "--toplevel", "echo")
+        if not dune_compile_deps:
+            dune_launch += ("--no-build",)
+        self.logger.debug(dune_launch)
+
+        # run in `filepath` so that this also works if vim was not launched in a dune project directory
+        dune_result = subprocess.run(dune_launch, capture_output=True, cwd=filepath)
+        if dune_result.returncode == 0:
+            self.logger.debug("dune result")
+            args = dune_result.stdout.decode("utf-8")
+            self.logger.debug(args)
+            return args.split()
+        else:
+            self.logger.debug("dune error")
+            self.logger.debug(dune_result.stderr)
+            raise DuneError(dune_result.stderr.decode("utf-8"))
 
     # Coqtop Interface #
     def start(
@@ -137,7 +155,9 @@ class Coqtop:
         coq_path: Optional[str],
         coq_prog: Optional[str],
         filename: str,
-        args: Iterable[str],
+        coqproject_args: Iterable[str],
+        use_dune: bool,
+        dune_compile_deps: bool,
         timeout: Optional[int] = None,
         stderr_is_warning: bool = False,
     ) -> Tuple[Union[VersionInfo, str], str]:
@@ -148,9 +168,10 @@ class Coqtop:
             self.logger.debug("start")
             self.xml, latest = XMLInterface(coq_path, coq_prog)
 
-            # if we did not get any arguments from _CoqProject, try to use dune
-            if len(args) == 0:
-                args = self.get_dune_args(filename)
+            if use_dune and self.is_in_valid_dune_project(filename):
+                args = self.get_dune_args(filename, dune_compile_deps)
+            else:
+                args = coqproject_args
 
             launch = self.xml.launch(filename, args)
             self.logger.debug(launch)
@@ -203,7 +224,7 @@ class Coqtop:
                 },
                 err,
             )
-        except (OSError, FindCoqtopError) as e:
+        except (OSError, FindCoqtopError, DuneError) as e:
             # Failed to launch or find Coqtop
             self.coqtop = None
             return str(e), ""
