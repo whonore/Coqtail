@@ -26,7 +26,7 @@ def coq() -> Generator[Coqtop, None, None]:
     """Return a Coqtop for each version."""
     ct = Coqtop()
     coqbin = os.getenv("COQBIN")
-    ver_or_err, _ = ct.start(coqbin, None, "", [])
+    ver_or_err, _ = ct.start(coqbin, None, "", [], False, False)
     if isinstance(ver_or_err, dict):
         yield ct
         ct.stop()
@@ -265,7 +265,7 @@ def test_recognize_not_query(coq: Coqtop) -> None:
 def test_start_invalid_option() -> None:
     """Passing an invalid option on startup fails gracefully."""
     ct = Coqtop()
-    res, stderr = ct.start(None, None, "", ["--fake"])
+    res, stderr = ct.start(None, None, "", ["--fake"], False, False)
     assert isinstance(res, str)
     assert stderr == ""
 
@@ -284,7 +284,7 @@ def test_start_invalid_option() -> None:
 def test_start_warning(args: List[str]) -> None:
     """Warnings do not cause startup to fail."""
     ct = Coqtop()
-    res, stderr = ct.start(None, None, "", args)
+    res, stderr = ct.start(None, None, "", args, False, False)
     assert isinstance(res, dict)
     assert ct.xml is not None
     # Some versions of Coq don't print warnings in the expected format.
@@ -304,7 +304,7 @@ def test_start_invalid_xml(fake_interface: MagicMock) -> None:
     fake_xml.init.return_value = ("Init", b"<bad_xml></bad_xml>")
     fake_interface.return_value = (fake_xml, "")
     ct = Coqtop()
-    res, stderr = ct.start(None, None, "", [])
+    res, stderr = ct.start(None, None, "", [], False, False)
     assert isinstance(res, str)
     assert stderr != ""
 
@@ -315,7 +315,7 @@ def test_start_noinit() -> None:
     if xml.version < (8, 5, 0):
         pytest.skip("Only 8.5+ supports -noinit")
     ct = Coqtop()
-    res, _ = ct.start(None, None, "", ["-noinit"])
+    res, _ = ct.start(None, None, "", ["-noinit"], False, False)
     assert isinstance(res, dict)
     assert ct.xml is not None
     succ, _, _, _ = ct.dispatch("Set Implicit Arguments.")

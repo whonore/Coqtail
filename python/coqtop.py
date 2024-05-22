@@ -106,7 +106,7 @@ class Coqtop:
 
     def is_in_valid_dune_project(self, filename: str) -> bool:
         """Query dune to assert that the given file is in a correctly configured dune project."""
-        if self.xml.valid_module(filename):
+        if self.xml is not None and self.xml.valid_module(filename):
             # dune needs relative paths to work properly
             filepath = os.path.dirname(filename)
 
@@ -132,9 +132,11 @@ class Coqtop:
         basename = os.path.basename(filename)
         filepath = os.path.dirname(filename)
 
-        dune_launch = ("dune", "coq", "top", basename, "--toplevel", "echo")
+        dune_launch_base = ("dune", "coq", "top", basename, "--toplevel", "echo")
         if not dune_compile_deps:
-            dune_launch += ("--no-build",)
+            dune_launch = dune_launch_base + ("--no-build",)
+        else:
+            dune_launch = dune_launch_base + ("",)
         self.logger.debug(dune_launch)
 
         # run in `filepath` so that this also works if vim was not launched in a dune project directory
