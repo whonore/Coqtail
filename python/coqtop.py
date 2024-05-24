@@ -3,9 +3,9 @@
 """Coqtop interface with functions to send commands and parse responses."""
 
 import datetime
+import io
 import logging
 import os
-import io
 import signal
 import subprocess
 import threading
@@ -18,12 +18,12 @@ from typing import (
     IO,
     TYPE_CHECKING,
     Any,
+    Callable,
     Generator,
     Iterable,
     Iterator,
     List,
     Mapping,
-    Callable,
     Optional,
     Tuple,
     Union,
