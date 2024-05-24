@@ -162,7 +162,7 @@ class Coqtail:
         goal_msg - Lines of text to display in the goal panel
         goal_hls - Highlight positions for each line of goal_msg
         """
-        self.coqtop = CT.Coqtop()
+        self.coqtop = CT.Coqtop(self.add_info_callback)
         self.handler = handler
         self.changedtick = 0
         self.buffer: List[bytes] = []
@@ -703,6 +703,11 @@ class Coqtail:
             self.goal_msg, self.goal_hls = msg
         if clear or "".join(self.goal_msg) == "":
             self.goal_msg, self.goal_hls = ["No goals."], []
+
+    def add_info_callback(self, msg: str) -> None:
+        """Callback for appending to the info panel and refreshing it."""
+        self.set_info([msg], reset=False)
+        self.handler.refresh(goals=False, force=True, scroll=True)
 
     def set_info(
         self,

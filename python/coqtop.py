@@ -5,6 +5,7 @@
 import datetime
 import logging
 import os
+import io
 import signal
 import subprocess
 import threading
@@ -22,6 +23,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    Callable,
     Optional,
     Tuple,
     Union,
@@ -77,7 +79,9 @@ class DuneError(Exception):
 class Coqtop:
     """Provide an interface to the background Coqtop process."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self, add_info_callback: Optional[Callable[[str], None]] = None
+    ) -> None:
         """Initialize Coqtop state.
 
         coqtop - The Coqtop process
@@ -96,6 +100,7 @@ class Coqtop:
         self.out_q: BytesQueue = Queue()
         self.err_q: BytesQueue = Queue()
         self.stopping = False
+        self.add_info_callback: Optional[Callable[[str], None]] = add_info_callback
 
         # Debugging
         self.log: Optional[IO[str]] = None
@@ -131,26 +136,76 @@ class Coqtop:
         basename = os.path.basename(filename)
         filepath = os.path.dirname(filename)
 
-        dune_launch_base = ("dune", "coq", "top", basename, "--toplevel", "echo")
+        dune_launch_base = (
+            "dune",
+            "coq",
+            "top",
+            basename,
+            "--toplevel",
+            "echo",
+            "--display=short",
+        )
         if not dune_compile_deps:
             dune_launch = dune_launch_base + ("--no-build",)
         else:
             dune_launch = dune_launch_base + ("",)
         self.logger.debug(dune_launch)
 
-        # run in `filepath` so that this also works if vim was not launched in a dune project directory
-        dune_result = subprocess.run(
-            dune_launch, capture_output=True, cwd=filepath, check=False
-        )
-        if dune_result.returncode != 0:
-            self.logger.debug("dune error")
-            self.logger.debug(dune_result.stderr)
-            raise DuneError(dune_result.stderr.decode("utf-8"))
+        with subprocess.Popen(
+            dune_launch,
+            cwd=filepath,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=0,
+        ) as dune_proc:
+            # read stderr output continuously using a separate thread
+            err_queue: BytesQueue = Queue()
+            threading.Thread(
+                target=self.capture_dune_out,
+                args=(err_queue, dune_proc.stderr),
+                daemon=True,
+            ).start()
 
-        self.logger.debug("dune result")
-        args = dune_result.stdout.decode("utf-8")
-        self.logger.debug(args)
-        return args.split()
+            # wait for dune to terminate
+            dune_proc.wait()
+
+            if dune_proc.returncode != 0:
+                self.logger.debug("dune error")
+                # get the error output
+                err_msg = b""
+                while not err_queue.empty():
+                    err_msg += err_queue.get_nowait()
+                decoded_err_msg = err_msg.decode("utf-8")
+                raise DuneError(decoded_err_msg)
+
+            # read the dune result from stdout
+            self.logger.debug("dune result")
+            assert dune_proc.stdout is not None
+            out = io.TextIOWrapper(dune_proc.stdout, encoding="utf-8")
+            args = out.read()
+            self.logger.debug(args)
+            return args.split()
+
+    def capture_dune_out(self, buffer: BytesQueue, stream: IO[bytes]) -> None:
+        """Continually read data from 'stream' into 'buffer' and add it to the info panel."""
+        data = b""
+        while not self.stopping:
+            try:
+                r = stream.read(0x10000)
+                buffer.put(r)
+                data += r
+            except (AttributeError, OSError, ValueError):
+                # dune stopped
+                return
+            try:
+                decoded = data.decode("utf-8").strip()
+                data = b""
+                if self.add_info_callback is not None:
+                    self.add_info_callback(decoded)
+            except (UnicodeDecodeError, AttributeError):
+                # not complete yet
+                pass
 
     def find_coq(
         self,
