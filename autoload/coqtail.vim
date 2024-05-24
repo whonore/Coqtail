@@ -199,24 +199,6 @@ function! s:querycomplete(arg, cmd, cursor) abort
   return len(split(a:cmd)) <= 2 ? join(s:queries, "\n") : ''
 endfunction
 
-" Clean up commands, panels, and autocommands.
-function! s:cleanup() abort
-  " Switch back to main buffer for cleanup
-  call coqtail#panels#switch(g:coqtail#panels#main)
-
-  " Clean up autocmds
-  silent! autocmd! coqtail#Quit * <buffer>
-  silent! autocmd! coqtail#Sync * <buffer>
-
-  " Close the channel
-  silent! call b:coqtail_chan.close()
-  let b:coqtail_chan = 0
-  let b:coqtail_started = 0
-
-  " Clean up auxiliary panels
-  call coqtail#panels#cleanup()
-endfunction
-
 " Check if the channel with Coqtail is open.
 function! s:initted() abort
   try
@@ -287,13 +269,17 @@ function! s:init_proof_diffs(coq_version) abort
     endif
 endfunction
 
+function! s:unlock_buffer(buf) abort
+  let l:pending = getbufvar(a:buf, 'coqtail_cmds_pending')
+  call setbufvar(a:buf, 'coqtail_cmds_pending', l:pending - 1)
+  if l:pending - 1 == 0
+    call setbufvar(a:buf, '&modifiable', 1)
+  endif
+endfunction
+
 " Unlock the buffer if there's no pending command and print any error messages.
 function! coqtail#defaultCB(chan, msg) abort
-  let l:pending = getbufvar(a:msg.buf, 'coqtail_cmds_pending')
-  call setbufvar(a:msg.buf, 'coqtail_cmds_pending', l:pending - 1)
-  if l:pending - 1 == 0
-    call setbufvar(a:msg.buf, '&modifiable', 1)
-  endif
+  call s:unlock_buffer(a:msg.buf)
   if a:msg.ret != v:null
     call coqtail#util#err(a:msg.ret)
   endif
@@ -462,11 +448,7 @@ endfunction
 
 " Callback to be run after Coqtop has launched.
 function! coqtail#after_startCB(chan, msg) abort
-  let l:pending = getbufvar(a:msg.buf, 'coqtail_cmds_pending')
-  call setbufvar(a:msg.buf, 'coqtail_cmds_pending', l:pending - 1)
-  if l:pending - 1 == 0
-    call setbufvar(a:msg.buf, '&modifiable', 1)
-  endif
+  call s:unlock_buffer(a:msg.buf)
 
   let l:ret_msg = a:msg.ret
   " l:ret_msg is [coqtail_error_message, coqtop_stderr]
@@ -488,8 +470,27 @@ endfunction
 
 " Stop the Coqtop interface and clean up auxiliary panels.
 function! coqtail#stop() abort
-  call s:call('stop', 'sync', 1, {})
-  call s:cleanup()
+  " Switch back to main buffer for cleanup
+  call coqtail#panels#switch(g:coqtail#panels#main)
+
+  " Clean up autocmds
+  silent! autocmd! coqtail#Quit * <buffer>
+  silent! autocmd! coqtail#Sync * <buffer>
+
+  call s:call('stop', 'coqtail#cleanupCB', 1, {})
+endfunction
+
+" Clean up commands, panels, and autocommands.
+function! coqtail#cleanupCB(chan, msg) abort
+  call s:unlock_buffer(a:msg.buf)
+
+  " Close the channel
+  silent! call b:coqtail_chan.close()
+  let b:coqtail_chan = 0
+  let b:coqtail_started = 0
+
+  " Clean up auxiliary panels
+  call coqtail#panels#cleanup()
 endfunction
 
 " Advance/rewind Coq to the specified position.
