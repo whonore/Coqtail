@@ -1890,8 +1890,77 @@ class XMLInterface818(XMLInterface817):
     """The version 8.18.* XML interface."""
 
 
-class XMLInterface819(XMLInterface817):
+class XMLInterface819(XMLInterface818):
     """The version 8.19.* XML interface."""
+
+
+class XMLInterface820(XMLInterface819):
+    """The version 8.20.* XML interface."""
+
+    Loc = NamedTuple(
+        "Loc",
+        [
+            ("start", int),
+            ("stop", int),
+            ("line_nb", int),
+            ("bol_pos", int),
+            ("line_nb_last", int),
+            ("bol_pos_last", int),
+        ],
+    )
+
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
+        """Update conversion maps with new types."""
+        super().__init__(version, str_version, coq_path, coq_prog)
+
+        self._to_py_funcs.update({"loc": self._to_loc})
+
+    def _to_loc(self, xml: ET.Element) -> Loc:
+        """Expect:
+        <loc start="int" stop="int" line_nb="int" bol_pos="int"
+             line_nb_last="int" bol_pos_last="int" />
+        """
+
+        def assert_int(v: Optional[str]) -> int:
+            assert v is not None
+            return int(v)
+
+        return self.Loc(
+            assert_int(xml.get("start")),
+            assert_int(xml.get("stop")),
+            assert_int(xml.get("line_nb")),
+            assert_int(xml.get("bol_pos")),
+            assert_int(xml.get("line_nb_last")),
+            assert_int(xml.get("bol_pos_last")),
+        )
+
+    # Overrides _to_response from XMLInterfaceBase
+    def _to_response(self, xml: ET.Element) -> Result:
+        """Expect:
+        <value val="good">val</value> |
+        <value val="fail">state_id (option loc) msg</value>
+        """
+        # pylint: disable=no-else-return
+        val = xml.get("val")
+
+        if val == "good":
+            return Ok(self._to_py(xml[0]))
+        elif val == "fail":
+            loc = self._to_py(xml[1])
+            loc_s, loc_e = (
+                (loc.val.start, loc.val.stop) if loc is not None else (-1, -1)
+            )
+
+            msg = "".join(xml.itertext())
+
+            return Err(msg, (loc_s, loc_e))
+        raise unexpected(("good", "fail"), val)
 
 
 XMLInterfaces = (
@@ -1911,6 +1980,7 @@ XMLInterfaces = (
     ((8, 17, 0), (8, 18, 0), XMLInterface817),
     ((8, 18, 0), (8, 19, 0), XMLInterface818),
     ((8, 19, 0), (8, 20, 0), XMLInterface819),
+    ((8, 20, 0), (8, 21, 0), XMLInterface820),
 )
 
 XMLInterfaceLatest = XMLInterfaces[-1][2]

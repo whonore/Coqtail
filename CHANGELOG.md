@@ -3,6 +3,9 @@
 ## Unreleased ([main])
 
 ### Added
+- Preliminary support for Coq 8.20 by adapting to the new type used to report
+  error locations.
+  (PR #358)
 - `g:coqtail_treat_stderr_as_warning` option to ignore unrecognized warnings on stderr.
   (PR #338)
 - Add a hook for more flexible keybindings.
