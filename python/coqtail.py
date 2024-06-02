@@ -197,7 +197,7 @@ class Coqtail:
         coq_path: str,
         coq_prog: str,
         opts: VimOptions,
-    ) -> Union[VersionInfo, str]:
+    ) -> Union[CT.VersionInfo, str]:
         # pylint: disable=unused-argument
         # opts is always passed by handle().
         """Find the Coqtop executable."""
