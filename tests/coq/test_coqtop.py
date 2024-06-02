@@ -3,6 +3,7 @@
 # pylint: disable=redefined-outer-name
 """Coq integration tests."""
 
+import os
 from typing import Generator, List, Tuple
 from unittest.mock import MagicMock, patch
 
@@ -24,7 +25,8 @@ def get_state(coq: Coqtop) -> Tuple[int, int, List[int]]:
 def coq() -> Generator[Coqtop, None, None]:
     """Return a Coqtop for each version."""
     ct = Coqtop()
-    ver_or_err, _ = ct.start(None, None, "", [])
+    coqbin = os.getenv("COQBIN")
+    ver_or_err, _ = ct.start(coqbin, None, "", [])
     if isinstance(ver_or_err, dict):
         yield ct
         ct.stop()
