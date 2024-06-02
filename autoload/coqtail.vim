@@ -335,7 +335,6 @@ function! coqtail#init() abort
 endfunction
 
 function! coqtail#locate_dune() abort
-  let l:files = []
   let l:file = findfile("dune-project", '.;')
   if l:file !=# ''
     return 1
@@ -364,7 +363,7 @@ function! coqtail#start(...) abort
       \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', $COQBIN)),
       \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', '')})
     if !l:ok || type(l:ver_or_msg) == g:coqtail#compat#t_string
-    let l:msg = 'Failed to find Coq.'
+      let l:msg = 'Failed to find Coq.'
       if l:ok
         " l:ver_or_msg is coqtail_error_message
         let l:msg .= "\n" . l:ver_or_msg
