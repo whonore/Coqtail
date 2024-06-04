@@ -348,6 +348,8 @@ function! coqtail#start(...) abort
   if s:running()
     call coqtail#util#warn('Coq is already running.')
   else
+    let after_start_cmd = get(a:, 1, v:null)
+
     " See comment in coqtail#init() about buffer-local variables
     let b:coqtail_started = coqtail#init()
     if !b:coqtail_started
@@ -425,8 +427,35 @@ function! coqtail#start(...) abort
       let l:args = map(copy(l:proj_args + a:000), 'expand(v:val)')
     endif
 
+    " Callback to be run after Coqtop has launched.
+    function! After_startCB(chan, msg) abort closure
+      call s:unlock_buffer(a:msg.buf)
+
+      let l:ret_msg = a:msg.ret
+      " l:ret_msg is [coqtail_error_message, coqtop_stderr]
+      if l:ret_msg[0] != v:null
+        let l:msg = 'Failed to launch Coq.'
+        let l:msg .= "\n" . l:ret_msg[0]
+        if l:ret_msg[1] !=# ''
+          let l:msg .= "\n" . l:ret_msg[1]
+        endif
+        call coqtail#util#err(l:msg)
+        call coqtail#stop()
+        return 0
+      endif
+
+      call coqtail#refresh()
+
+      call s:init_proof_diffs(b:coqtail_version.str_version)
+
+      " Call the after_start_cmd, if present
+      if after_start_cmd isnot v:null
+        execute after_start_cmd
+      endif
+    endfunction
+
     " Launch Coqtop asynchronously
-    call s:call('start', 'coqtail#after_startCB', 0, {
+    call s:call('start', 'After_startCB', 0, {
       \ 'coqproject_args': l:args,
       \ 'use_dune': coqtail#util#getvar([b:], 'coqtail_use_dune', 0),
       \ 'dune_compile_deps': coqtail#util#getvar([b:, g:], 'coqtail_dune_compile_deps', 0)})
@@ -445,27 +474,6 @@ function! coqtail#start(...) abort
   return 1
 endfunction
 
-" Callback to be run after Coqtop has launched.
-function! coqtail#after_startCB(chan, msg) abort
-  call s:unlock_buffer(a:msg.buf)
-
-  let l:ret_msg = a:msg.ret
-  " l:ret_msg is [coqtail_error_message, coqtop_stderr]
-  if l:ret_msg[0] != v:null
-    let l:msg = 'Failed to launch Coq.'
-    let l:msg .= "\n" . l:ret_msg[0]
-    if l:ret_msg[1] !=# ''
-      let l:msg .= "\n" . l:ret_msg[1]
-    endif
-    call coqtail#util#err(l:msg)
-    call coqtail#stop()
-    return 0
-  endif
-
-  call coqtail#refresh()
-
-  call s:init_proof_diffs(b:coqtail_version.str_version)
-endfunction
 
 " Stop the Coqtop interface and clean up auxiliary panels.
 function! coqtail#stop() abort
@@ -549,7 +557,7 @@ function! s:cmddef(name, act, precmd) abort
   " Start Coqtail first if needed
   let l:act = {
     \ '_': a:act,
-    \ 's': printf('if s:running() || coqtail#start() | %s | endif', a:act),
+    \ 's': printf('if s:running() | %s | else | call coqtail#start(%s) | endif', a:act, string(a:act)),
     \ 'i': printf('if s:initted() || coqtail#init() | %s | endif', a:act)
   \}[a:precmd ==# '' ? '_' : a:precmd]
   execute printf('command! -buffer %s %s %s', s:cmd_opts[a:name], a:name, l:act)
