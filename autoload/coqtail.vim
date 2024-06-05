@@ -484,6 +484,9 @@ function! coqtail#stop() abort
   silent! autocmd! coqtail#Quit * <buffer>
   silent! autocmd! coqtail#Sync * <buffer>
 
+  " Clean up auxiliary panels
+  call coqtail#panels#cleanup()
+
   call s:call('stop', 'coqtail#cleanupCB', 1, {})
 endfunction
 
@@ -495,9 +498,6 @@ function! coqtail#cleanupCB(chan, msg) abort
   silent! call b:coqtail_chan.close()
   let b:coqtail_chan = 0
   let b:coqtail_started = 0
-
-  " Clean up auxiliary panels
-  call coqtail#panels#cleanup()
 endfunction
 
 " Advance/rewind Coq to the specified position.
