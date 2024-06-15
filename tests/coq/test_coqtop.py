@@ -168,15 +168,33 @@ def test_goals_no_change(coq: Coqtop) -> None:
 def test_advance_fail(coq: Coqtop) -> None:
     """If advance fails then the state will not change."""
     old_state = get_state(coq)
-    fail, _, _, _ = coq.dispatch("SyntaxError")
-    assert not fail
+    succ, _, _, _ = coq.dispatch("SyntaxError.")
+    assert not succ
     assert old_state == get_state(coq)
     succ, _, _, _ = coq.dispatch("Lemma x : False.")
     assert succ
     old_state = get_state(coq)
-    fail, _, _, _ = coq.dispatch("reflexivity.")
-    assert not fail
+    succ, _, _, _ = coq.dispatch("reflexivity.")
+    assert not succ
     assert old_state == get_state(coq)
+
+
+def test_advance_fail_err_loc(coq: Coqtop) -> None:
+    """If advance fails then the error locations are correct."""
+    assert coq.xml is not None
+    succ, _, err_loc, _ = coq.dispatch("SyntaxError.")
+    assert not succ
+    assert err_loc is not None
+    if coq.xml.version < (8, 5, 0):
+        assert err_loc == (-1, -1)
+    elif (8, 5, 0) <= coq.xml.version < (8, 6, 0):
+        assert err_loc == (0, 12)
+    else:
+        assert err_loc == (0, 11)
+    succ, _, err_loc, _ = coq.dispatch("Definition α := not_defined.")
+    assert not succ
+    assert err_loc is not None
+    assert err_loc == (17, 28)
 
 
 # TODO: move interrupt tests to a separate file
