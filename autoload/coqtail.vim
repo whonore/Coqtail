@@ -348,7 +348,7 @@ function! coqtail#start(...) abort
   if s:running()
     call coqtail#util#warn('Coq is already running.')
   else
-    let after_start_cmd = get(a:, 1, v:null)
+    let l:after_start_cmd = get(a:, 1, v:null)
 
     " See comment in coqtail#init() about buffer-local variables
     let b:coqtail_started = coqtail#init()
@@ -427,6 +427,8 @@ function! coqtail#start(...) abort
       let l:args = map(copy(l:proj_args + a:000), 'expand(v:val)')
     endif
 
+    let l:coqtail_version_str = b:coqtail_version.str_version
+
     " Callback to be run after Coqtop has launched.
     function! After_startCB(chan, msg) abort closure
       call s:unlock_buffer(a:msg.buf)
@@ -446,11 +448,11 @@ function! coqtail#start(...) abort
 
       call coqtail#refresh()
 
-      call s:init_proof_diffs(b:coqtail_version.str_version)
+      call s:init_proof_diffs(l:coqtail_version_str)
 
       " Call the after_start_cmd, if present
-      if after_start_cmd isnot v:null
-        execute after_start_cmd
+      if l:after_start_cmd isnot v:null
+        execute l:after_start_cmd
       endif
     endfunction
 
