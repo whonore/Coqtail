@@ -348,7 +348,7 @@ function! coqtail#start(...) abort
   if s:running()
     call coqtail#util#warn('Coq is already running.')
   else
-    let l:after_start_cmd = get(a:, 1, v:null)
+    let b:after_start_cmd = get(a:, 1, v:null)
 
     " See comment in coqtail#init() about buffer-local variables
     let b:coqtail_started = coqtail#init()
@@ -427,37 +427,8 @@ function! coqtail#start(...) abort
       let l:args = map(copy(l:proj_args + a:000), 'expand(v:val)')
     endif
 
-    let l:coqtail_version_str = b:coqtail_version.str_version
-
-    " Callback to be run after Coqtop has launched.
-    function! After_startCB(chan, msg) abort closure
-      call s:unlock_buffer(a:msg.buf)
-
-      let l:ret_msg = a:msg.ret
-      " l:ret_msg is [coqtail_error_message, coqtop_stderr]
-      if l:ret_msg[0] != v:null
-        let l:msg = 'Failed to launch Coq.'
-        let l:msg .= "\n" . l:ret_msg[0]
-        if l:ret_msg[1] !=# ''
-          let l:msg .= "\n" . l:ret_msg[1]
-        endif
-        call coqtail#util#err(l:msg)
-        call coqtail#stop()
-        return 0
-      endif
-
-      call coqtail#refresh()
-
-      call s:init_proof_diffs(l:coqtail_version_str)
-
-      " Call the after_start_cmd, if present
-      if l:after_start_cmd isnot v:null
-        execute l:after_start_cmd
-      endif
-    endfunction
-
     " Launch Coqtop asynchronously
-    call s:call('start', 'After_startCB', 0, {
+    call s:call('start', 'coqtail#after_startCB', 0, {
       \ 'coqproject_args': l:args,
       \ 'use_dune': coqtail#util#getvar([b:], 'coqtail_use_dune', 0),
       \ 'dune_compile_deps': coqtail#util#getvar([b:, g:], 'coqtail_dune_compile_deps', 0)})
@@ -474,6 +445,42 @@ function! coqtail#start(...) abort
   endif
 
   return 1
+endfunction
+
+" Callback to be run after Coqtop has launched.
+function! coqtail#after_startCB(chan, msg) abort
+  call s:unlock_buffer(a:msg.buf)
+
+  " l:buf is the number of the current buffer
+  let l:buf = bufnr('')
+  " Hack: switch to the buffer that is running this Coq instance
+  execute 'noautocmd keepalt buffer' a:msg.buf
+
+  let l:ret_msg = a:msg.ret
+  " l:ret_msg is [coqtail_error_message, coqtop_stderr]
+  if l:ret_msg[0] != v:null
+    let l:msg = 'Failed to launch Coq.'
+    let l:msg .= "\n" . l:ret_msg[0]
+    if l:ret_msg[1] !=# ''
+      let l:msg .= "\n" . l:ret_msg[1]
+    endif
+    call coqtail#util#err(l:msg)
+    call coqtail#stop()
+    return 0
+  endif
+
+  call coqtail#refresh()
+
+  call s:init_proof_diffs(b:coqtail_version.str_version)
+
+  " Call the after_start_cmd, if present
+  if b:after_start_cmd != v:null
+    execute b:after_start_cmd
+  endfor
+
+  " Hack: switch back to the previous buffer
+  execute 'noautocmd keepalt buffer' l:buf
+
 endfunction
 
 

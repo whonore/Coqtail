@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 
     BytesQueue = Queue[bytes]
     CoqtopProcess = subprocess.Popen[bytes]
+    DuneProcess = subprocess.Popen[bytes]
     VersionInfo = TypedDict(
         "VersionInfo",
         {
@@ -60,6 +61,7 @@ if TYPE_CHECKING:
 else:
     BytesQueue = Queue
     CoqtopProcess = subprocess.Popen
+    DuneProcess = subprocess.Popen
     VersionInfo = Mapping[str, Any]
 
 
@@ -101,6 +103,7 @@ class Coqtop:
         self.err_q: BytesQueue = Queue()
         self.stopping = False
         self.add_info_callback: Optional[Callable[[str], None]] = add_info_callback
+        self.dune: Optional[DuneProcess] = None
 
         # Debugging
         self.log: Optional[IO[str]] = None
@@ -161,6 +164,7 @@ class Coqtop:
         ) as dune_proc:
             # read stderr output continuously using a separate thread
             err_queue: BytesQueue = Queue()
+            self.dune = dune_proc
             threading.Thread(
                 target=self.capture_dune_out,
                 args=(err_queue, dune_proc.stderr),
@@ -169,6 +173,7 @@ class Coqtop:
 
             # wait for dune to terminate
             dune_proc.wait()
+            self.dune = None
 
             if dune_proc.returncode != 0:
                 self.logger.debug("dune error")
@@ -831,10 +836,14 @@ class Coqtop:
         self.coqtop.stdin.flush()
 
     def interrupt(self) -> None:
-        """Send a SIGINT signal to Coqtop."""
-        if self.coqtop is None:
-            raise CoqtopError("Coqtop is not running.")
-        self.coqtop.send_signal(signal.SIGINT)
+        """Send a SIGINT signal to Coqtop or a SIGTERM signal to dune."""
+        if self.dune is not None:
+            # if dune is running, stop it
+            self.dune.send_signal(signal.SIGTERM)
+        else:
+            if self.coqtop is None:
+                raise CoqtopError("Coqtop is not running.")
+            self.coqtop.send_signal(signal.SIGINT)
 
     # Current State #
     def running(self) -> bool:
