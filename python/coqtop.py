@@ -82,7 +82,8 @@ class Coqtop:
     """Provide an interface to the background Coqtop process."""
 
     def __init__(
-        self, add_info_callback: Optional[Callable[[str], None]] = None
+        self,
+        add_info_callback: Optional[Callable[[str], None]] = None,
     ) -> None:
         """Initialize Coqtop state.
 
@@ -123,7 +124,10 @@ class Coqtop:
             dune_check = ("dune", "describe", "workspace")
             try:
                 subprocess.run(
-                    dune_check, capture_output=True, cwd=filepath, check=True
+                    dune_check,
+                    capture_output=True,
+                    cwd=filepath,
+                    check=True,
                 )
             except subprocess.CalledProcessError as e:
                 self.logger.debug("file is not in correctly configured dune project")
@@ -139,7 +143,7 @@ class Coqtop:
         basename = os.path.basename(filename)
         filepath = os.path.dirname(filename)
 
-        dune_launch_base = (
+        dune_launch = (
             "dune",
             "coq",
             "top",
@@ -147,11 +151,8 @@ class Coqtop:
             "--toplevel",
             "echo",
             "--display=short",
+            "--no-build" if not dune_compile_deps else "",
         )
-        if not dune_compile_deps:
-            dune_launch = dune_launch_base + ("--no-build",)
-        else:
-            dune_launch = dune_launch_base + ("",)
         self.logger.debug(dune_launch)
 
         with subprocess.Popen(

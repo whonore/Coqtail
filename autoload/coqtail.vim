@@ -126,7 +126,7 @@ endfunction
 
 " Patch the given filepath to refer to the source in case dune is used.
 function! s:patch_path_for_dune(path) abort
-  let l:patched = substitute(a:path, "/_build/default", "", "")
+  let l:patched = substitute(a:path, '/_build/default', '', '')
   return l:patched
 endfunction
 
@@ -334,13 +334,10 @@ function! coqtail#init() abort
   return 1
 endfunction
 
+" Search for a Dune project file.
 function! coqtail#locate_dune() abort
-  let l:file = findfile("dune-project", '.;')
-  if l:file !=# ''
-    return 1
-  else
-    return 0
-  endif
+  let l:file = findfile('dune-project', '.;')
+  return l:file !=# ''
 endfunction
 
 " Launch Coqtop and open the auxiliary panels.
@@ -376,7 +373,7 @@ function! coqtail#start(...) abort
     endif
 
     " Check if version is supported
-    " l:ver_or_msg[0] is
+    " l:ver_or_msg is
     " {version: [major, minor, patch], str_version: str, latest: str | None}
     let b:coqtail_version = l:ver_or_msg
     if b:coqtail_version.latest != v:null
@@ -393,23 +390,22 @@ function! coqtail#start(...) abort
       \ 'width': winwidth(l:info_winid),
       \ 'height': winheight(l:info_winid)})
 
-
     " Locate CoqProject and dune-project files
     let [b:coqtail_project_files, l:proj_args] = coqtail#coqproject#locate()
     let b:coqtail_in_dune_project = coqtail#locate_dune()
 
     " Determine which build system to use
-    if g:coqtail_build_system == 'prefer-dune'
+    if g:coqtail_build_system ==# 'prefer-dune'
       let b:coqtail_use_dune = b:coqtail_in_dune_project
-    elseif g:coqtail_build_system == 'prefer-coqproject'
+    elseif g:coqtail_build_system ==# 'prefer-coqproject'
       if b:coqtail_project_files == []
         let b:coqtail_use_dune = b:coqtail_in_dune_project
       else
         let b:coqtail_use_dune = 0
       endif
-    elseif g:coqtail_build_system == 'dune'
+    elseif g:coqtail_build_system ==# 'dune'
       let b:coqtail_use_dune = 1
-    elseif g:coqtail_build_system == 'coqproject'
+    elseif g:coqtail_build_system ==# 'coqproject'
       let b:coqtail_use_dune = 0
     else
       " invalid value
@@ -476,11 +472,10 @@ function! coqtail#after_startCB(chan, msg) abort
   " Call the after_start_cmd, if present
   if b:after_start_cmd != v:null
     execute b:after_start_cmd
-  endfor
+  endif
 
   " Hack: switch back to the previous buffer
   execute 'noautocmd keepalt buffer' l:buf
-
 endfunction
 
 
