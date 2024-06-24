@@ -309,6 +309,9 @@ class Coqtop:
 
     def stop(self) -> None:
         """End the Coqtop process."""
+        if self.dune is not None:
+            self.interrupt()
+
         if self.coqtop is not None:
             self.logger.debug("stop")
             self.stopping = True
@@ -841,6 +844,8 @@ class Coqtop:
         if self.dune is not None:
             # if dune is running, stop it
             self.dune.send_signal(signal.SIGTERM)
+            self.dune.wait()
+            self.dune = None
         else:
             if self.coqtop is None:
                 raise CoqtopError("Coqtop is not running.")

@@ -485,15 +485,24 @@ endfunction
 
 " Stop the Coqtop interface and clean up auxiliary panels.
 function! coqtail#stop() abort
+  " Set a 'coqtail_stopping' flag in order to prevent multiple stop signals or
+  " interrupts from being sent, in particular when calling this while a
+  " coqtail#start is ongoing
+  if !exists("b:coqtail_stopping") || !b:coqtail_stopping
+    let b:coqtail_stopping = 1
+  else
+    return
+  endif
+
+  " Interrupt the current command
+  call coqtail#interrupt()
+
   " Switch back to main buffer for cleanup
   call coqtail#panels#switch(g:coqtail#panels#main)
 
   " Clean up autocmds
   silent! autocmd! coqtail#Quit * <buffer>
   silent! autocmd! coqtail#Sync * <buffer>
-
-  " Clean up auxiliary panels
-  call coqtail#panels#cleanup()
 
   call s:call('stop', 'coqtail#cleanupCB', 1, {})
 endfunction
@@ -506,6 +515,10 @@ function! coqtail#cleanupCB(chan, msg) abort
   silent! call b:coqtail_chan.close()
   let b:coqtail_chan = 0
   let b:coqtail_started = 0
+  let b:coqtail_stopping = 0
+
+  " Clean up auxiliary panels
+  call coqtail#panels#cleanup()
 endfunction
 
 " Advance/rewind Coq to the specified position.
@@ -538,6 +551,11 @@ endfunction
 " Refresh the auxiliary panels.
 function! coqtail#refresh() abort
   call s:call('refresh', '', 0, {})
+endfunction
+
+" Interrupt the current command
+function! coqtail#interrupt() abort
+  call s:call('interrupt', 'sync', 1, {})
 endfunction
 
 " Define Coqtail commands with the correct options.
@@ -575,7 +593,7 @@ endfunction
 function! coqtail#define_commands() abort
   call s:cmddef('CoqStart', 'call coqtail#start(v:null, <f-args>)', '')
   call s:cmddef('CoqStop', 'call coqtail#stop()', '')
-  call s:cmddef('CoqInterrupt', 'call s:call("interrupt", "sync", 0, {})', '')
+  call s:cmddef('CoqInterrupt', 'call coqtail#interrupt()', '')
   call s:cmddef('CoqNext', 'call s:call("step", "", 0, {"steps": <count>})', 's')
   call s:cmddef('CoqUndo', 'call s:call("rewind", "", 0, {"steps": <count>})', 's')
   call s:cmddef('CoqToLine', 'call coqtail#toline(<count>, 0)', 's')
