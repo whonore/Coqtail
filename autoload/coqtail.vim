@@ -448,9 +448,9 @@ function! coqtail#after_startCB(chan, msg) abort
   call s:unlock_buffer(a:msg.buf)
 
   " l:buf is the number of the current buffer
-  let l:buf = bufnr('')
-  " Hack: switch to the buffer that is running this Coq instance
-  execute 'noautocmd keepalt buffer' a:msg.buf
+  let l:buf = bufnr('%')
+  " Switch to the buffer that is running this Coq instance
+  execute g:coqtail#util#bufchangepre 'buffer' a:msg.buf
 
   let l:ret_msg = a:msg.ret
   " l:ret_msg is [coqtail_error_message, coqtop_stderr]
@@ -474,8 +474,8 @@ function! coqtail#after_startCB(chan, msg) abort
     execute b:after_start_cmd
   endif
 
-  " Hack: switch back to the previous buffer
-  execute 'noautocmd keepalt buffer' l:buf
+  " Switch back to the previous buffer
+  execute g:coqtail#util#bufchangepre 'buffer' l:buf
 endfunction
 
 
