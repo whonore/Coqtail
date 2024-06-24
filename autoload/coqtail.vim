@@ -341,11 +341,13 @@ function! coqtail#locate_dune() abort
 endfunction
 
 " Launch Coqtop and open the auxiliary panels.
-function! coqtail#start(...) abort
+function! coqtail#start(after_start_cmd, coq_args) abort
   if s:running()
     call coqtail#util#warn('Coq is already running.')
   else
-    let b:after_start_cmd = get(a:, 1, v:null)
+    " Hack: buffer-local variable as we cannot easily pass this to
+    " coqtail#after_startCB
+    let b:after_start_cmd = a:after_start_cmd
 
     " See comment in coqtail#init() about buffer-local variables
     let b:coqtail_started = coqtail#init()
@@ -418,10 +420,11 @@ function! coqtail#start(...) abort
 
     " Determine the CoqProject args to pass
     if b:coqtail_use_dune
-      let l:args = []
+      let l:args_to_pass = copy(a:coq_args)
     else
-      let l:args = map(copy(l:proj_args + a:000), 'expand(v:val)')
+      let l:args_to_pass = copy(l:proj_args + a:coq_args)
     endif
+    let l:args = map(l:args_to_pass, 'expand(v:val)')
 
     " Launch Coqtop asynchronously
     call s:call('start', 'coqtail#after_startCB', 0, {
@@ -473,6 +476,7 @@ function! coqtail#after_startCB(chan, msg) abort
   if b:after_start_cmd != v:null
     execute b:after_start_cmd
   endif
+  let b:after_start_cmd = v:null
 
   " Switch back to the previous buffer
   execute g:coqtail#util#bufchangepre 'buffer' l:buf
@@ -561,7 +565,7 @@ function! s:cmddef(name, act, precmd) abort
   " Start Coqtail first if needed
   let l:act = {
     \ '_': a:act,
-    \ 's': printf('if s:running() | %s | else | call coqtail#start(%s) | endif', a:act, string(a:act)),
+    \ 's': printf('if s:running() | %s | else | call coqtail#start(%s, []) | endif', a:act, string(a:act)),
     \ 'i': printf('if s:initted() || coqtail#init() | %s | endif', a:act)
   \}[a:precmd ==# '' ? '_' : a:precmd]
   execute printf('command! -buffer %s %s %s', s:cmd_opts[a:name], a:name, l:act)
@@ -569,7 +573,7 @@ endfunction
 
 " Define Coqtail commands.
 function! coqtail#define_commands() abort
-  call s:cmddef('CoqStart', 'call coqtail#start(<f-args>)', '')
+  call s:cmddef('CoqStart', 'call coqtail#start(v:null, <f-args>)', '')
   call s:cmddef('CoqStop', 'call coqtail#stop()', '')
   call s:cmddef('CoqInterrupt', 'call s:call("interrupt", "sync", 0, {})', '')
   call s:cmddef('CoqNext', 'call s:call("step", "", 0, {"steps": <count>})', 's')

@@ -112,6 +112,7 @@ class Coqtop:
         self.logger = logging.getLogger(str(id(self)))
         self.logger.addHandler(self.handler)
         self.logger.setLevel(logging.INFO)
+        self.toggle_debug()
 
     def is_in_valid_dune_project(self, filename: str) -> bool:
         """Query dune to assert that the given file is in a correctly configured dune project."""
@@ -136,7 +137,7 @@ class Coqtop:
             return True
         return False
 
-    def get_dune_args(self, filename: str, dune_compile_deps: bool) -> Iterable[str]:
+    def get_dune_args(self, filename: str, dune_compile_deps: bool) -> List[str]:
         """Get the arguments to pass to the coqtop process from dune.
         Assumes that the file is part of a correctly configured dune project."""
         # dune needs relative paths to work properly
@@ -240,7 +241,7 @@ class Coqtop:
     def start(
         self,
         filename: str,
-        coqproject_args: Iterable[str],
+        coqproject_args: List[str],
         use_dune: bool,
         dune_compile_deps: bool,
         timeout: Optional[int] = None,
@@ -253,10 +254,9 @@ class Coqtop:
         try:
             self.logger.debug("start")
 
+            args = coqproject_args
             if use_dune and self.is_in_valid_dune_project(filename):
-                args = self.get_dune_args(filename, dune_compile_deps)
-            else:
-                args = coqproject_args
+                args += self.get_dune_args(filename, dune_compile_deps)
 
             launch = self.xml.launch(filename, args)
             self.logger.debug(launch)

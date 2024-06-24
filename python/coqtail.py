@@ -213,7 +213,7 @@ class Coqtail:
     # Coqtop Interface #
     def start(
         self,
-        coqproject_args: Iterable[str],
+        coqproject_args: List[str],
         use_dune: bool,
         dune_compile_deps: bool,
         opts: VimOptions,
