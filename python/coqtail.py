@@ -706,7 +706,7 @@ class Coqtail:
 
     def add_info_callback(self, msg: str) -> None:
         """Callback for appending to the info panel and refreshing it."""
-        self.set_info([msg], reset=False)
+        self.set_info(msg.split("\n"), reset=False)
         self.handler.refresh(goals=False, force=True, scroll=True)
 
     def set_info(
