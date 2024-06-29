@@ -846,9 +846,7 @@ class Coqtop:
             self.dune.send_signal(signal.SIGTERM)
             self.dune.wait()
             self.dune = None
-        else:
-            if self.coqtop is None:
-                raise CoqtopError("Coqtop is not running.")
+        elif self.coqtop is not None:
             self.coqtop.send_signal(signal.SIGINT)
 
     # Current State #

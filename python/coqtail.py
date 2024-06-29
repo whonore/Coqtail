@@ -886,7 +886,7 @@ class CoqtailHandler(StreamRequestHandler):
             try:
                 msg = self.rfile.readline()
                 msg_id, data = json.loads(msg)
-            except (json.JSONDecodeError, ConnectionError):
+            except (json.JSONDecodeError, ConnectionError, ValueError):
                 # Check if channel closed
                 self.closed = True
                 break
