@@ -256,7 +256,8 @@ class Coqtop:
 
             args = coqproject_args
             if use_dune and self.is_in_valid_dune_project(filename):
-                args += self.get_dune_args(filename, dune_compile_deps)
+                # Add user-provided args last so they take precedence.
+                args = self.get_dune_args(filename, dune_compile_deps) + args
 
             launch = self.xml.launch(filename, args)
             self.logger.debug(launch)
