@@ -235,7 +235,7 @@ b:coqtail_timeout	The time in seconds before interrupting Coqtop after
 						      *g:coqtail_build_system*
 g:coqtail_build_system	The build system to use in order to determine
 			arguments passed to Coqtop. Can be `dune`, `coqproject`,
-			`prefer-dune`, `prefer-coqproject`.
+			`prefer-dune`, or `prefer-coqproject`.
 			The `dune` mode always uses `dune` for determining
 			arguments for Coqtop.
 			The `coqproject` mode always looks for Coq project
@@ -268,7 +268,8 @@ b:coqtail_use_dune	Whether to use dune for Coqtop options after
 			available options.
 
 						   *g:coqtail_dune_compile_deps*
-g:coqtail_dune_compile_deps When using dune, compile dependencies of this file
+g:coqtail_dune_compile_deps
+			When using dune, compile dependencies of this file
 			before launching Coqtop.
 
 			Default: 0
