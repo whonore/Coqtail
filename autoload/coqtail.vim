@@ -591,7 +591,7 @@ endfunction
 
 " Define Coqtail commands.
 function! coqtail#define_commands() abort
-  call s:cmddef('CoqStart', 'call coqtail#start(v:null, <f-args>)', '')
+  call s:cmddef('CoqStart', 'call coqtail#start(v:null, [<f-args>])', '')
   call s:cmddef('CoqStop', 'call coqtail#stop()', '')
   call s:cmddef('CoqInterrupt', 'call coqtail#interrupt()', '')
   call s:cmddef('CoqNext', 'call s:call("step", "", 0, {"steps": <count>})', 's')
