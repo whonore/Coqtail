@@ -488,7 +488,7 @@ function! coqtail#stop() abort
   " Set a 'coqtail_stopping' flag in order to prevent multiple stop signals or
   " interrupts from being sent, in particular when calling this while a
   " coqtail#start is ongoing
-  if !exists("b:coqtail_stopping") || !b:coqtail_stopping
+  if !exists('b:coqtail_stopping') || !b:coqtail_stopping
     let b:coqtail_stopping = 1
   else
     return
