@@ -3,6 +3,9 @@
 ## Unreleased ([main])
 
 ### Added
+- Support for Coq projects configured with Dune.
+  See the [README](README.md#project-files) for more information.
+  (PR #347)
 - Preliminary support for Coq 8.20 by adapting to the new type used to report
   error locations.
   (PR #358)

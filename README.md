@@ -148,10 +148,30 @@ let b:coqtail_coq_path = '/path/to/HoTT'
 let b:coqtail_coq_prog = 'hoqidetop'
 ```
 
-### _CoqProject
+### Project Files
 
-Coqtail understands and will search for `_CoqProject` files on `:CoqStart`.
-Additional or different project files can be specified with `g:coqtail_project_files`.
+There are two standard methods for configuring Coq project settings:
+[`_CoqProject` files](https://coq.inria.fr/refman/practical-tools/utilities.html#building-a-project-with-coqproject-overview),
+and
+[dune projects](https://coq.inria.fr/refman/practical-tools/utilities.html#building-a-coq-project-with-dune).
+Coqtail supports both, and while it should usually do the right thing by
+default, its behavior can be controlled by setting the `g:coqtail_build_system`
+option to one of `'prefer-dune'` (default), `'prefer-coqproject'`, `'dune'`, or
+`'coqproject'`.
+Additional arguments can also be passed to the Coq executable through
+`:CoqStart` (e.g., `:CoqStart -w all`).
+
+#### Dune Settings
+
+Dune projects can be configured to automatically compile the dependencies for
+the current file on `:CoqStart` by setting `g:coqtail_dune_compile_deps = 1`.
+
+#### _CoqProject Settings
+
+By default, Coqtail searches the current and parent directories for a
+`_CoqProject` file, but additional or different project files can be specified
+with `g:coqtail_project_files`.
+If multiple files are found, their argument lists will be concatenated.
 For example, to include arguments from both `_CoqProject` and `_CoqProject.local`:
 
 ```vim
@@ -296,7 +316,7 @@ If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
 [matchup]: https://github.com/andymass/vim-matchup
 [matchit]: http://ftp.vim.org/pub/vim/runtime/macros/matchit.txt
 [endwise]: https://github.com/tpope/vim-endwise
-[proof diffs]: https://coq.inria.fr/distrib/current/refman/proofs/writing-proofs/proof-mode.html#coq:opt.Diffs
+[proof diffs]: https://coq.inria.fr/refman/proofs/writing-proofs/proof-mode.html#coq:opt.Diffs
 [Coquille]: https://github.com/the-lambda-church/coquille
 [YouCompleteMe]: https://github.com/ycm-core/YouCompleteMe/wiki/Building-Vim-from-source
 [universal-ctags]: https://github.com/universal-ctags/ctags

@@ -44,6 +44,16 @@ if !exists('g:coqtail_treat_stderr_as_warning')
   let g:coqtail_treat_stderr_as_warning = 0
 endif
 
+" Default to preferring dune if in a dune project.
+if !exists('g:coqtail_build_system')
+  let g:coqtail_build_system = 'prefer-dune'
+endif
+
+" Default to not compiling deps
+if !exists('g:coqtail_dune_compile_deps')
+  let g:coqtail_dune_compile_deps = 0
+endif
+
 " Find the path corresponding to 'lib'. Used by includeexpr.
 function! coqtail#findlib(lib) abort
   let [l:ok, l:lib] = s:call('find_lib', 'sync', 0, {'lib': a:lib})
@@ -114,6 +124,12 @@ function! s:finddef(target) abort
   return (!l:ok || type(l:loc) != g:coqtail#compat#t_list) ? v:null : l:loc
 endfunction
 
+" Patch the given filepath to refer to the source in case dune is used.
+function! s:patch_path_for_dune(path) abort
+  let l:patched = substitute(a:path, '/_build/default', '', '')
+  return l:patched
+endfunction
+
 " Populate the quickfix list with possible locations of the definition of
 " 'target'.
 function! coqtail#gotodef(target, bang) abort
@@ -124,9 +140,10 @@ function! coqtail#gotodef(target, bang) abort
     return
   endif
   let [l:path, l:searches] = l:loc
+  let l:patched_path = s:patch_path_for_dune(l:path)
 
   " Try progressively broader searches
-  if coqtail#util#qflist_search(b:coqtail_panel_bufs.main, l:path, l:searches)
+  if coqtail#util#qflist_search(b:coqtail_panel_bufs.main, l:patched_path, l:searches)
     " Set usetab instead of opening a new buffer
     let l:swb = &switchbuf
     set switchbuf+=usetab
@@ -156,7 +173,8 @@ function! coqtail#gettags(target, flags, info) abort
 
   let l:tags = []
   for l:search in l:searches
-    let l:tag = {'name': a:target, 'filename': l:path, 'cmd': '/\v' . l:search}
+    let l:patched_path = s:patch_path_for_dune(l:path)
+    let l:tag = {'name': a:target, 'filename': l:patched_path, 'cmd': '/\v' . l:search}
     let l:tags = add(l:tags, l:tag)
   endfor
 
@@ -179,24 +197,6 @@ let s:queries = [
 function! s:querycomplete(arg, cmd, cursor) abort
   " Only complete one command
   return len(split(a:cmd)) <= 2 ? join(s:queries, "\n") : ''
-endfunction
-
-" Clean up commands, panels, and autocommands.
-function! s:cleanup() abort
-  " Switch back to main buffer for cleanup
-  call coqtail#panels#switch(g:coqtail#panels#main)
-
-  " Clean up autocmds
-  silent! autocmd! coqtail#Quit * <buffer>
-  silent! autocmd! coqtail#Sync * <buffer>
-
-  " Close the channel
-  silent! call b:coqtail_chan.close()
-  let b:coqtail_chan = 0
-  let b:coqtail_started = 0
-
-  " Clean up auxiliary panels
-  call coqtail#panels#cleanup()
 endfunction
 
 " Check if the channel with Coqtail is open.
@@ -269,13 +269,17 @@ function! s:init_proof_diffs(coq_version) abort
     endif
 endfunction
 
+function! s:unlock_buffer(buf) abort
+  let l:pending = getbufvar(a:buf, 'coqtail_cmds_pending')
+  call setbufvar(a:buf, 'coqtail_cmds_pending', l:pending - 1)
+  if l:pending - 1 == 0
+    call setbufvar(a:buf, '&modifiable', 1)
+  endif
+endfunction
+
 " Unlock the buffer if there's no pending command and print any error messages.
 function! coqtail#defaultCB(chan, msg) abort
-  let l:pending = getbufvar(a:msg.buf, 'coqtail_cmds_pending')
-  call setbufvar(a:msg.buf, 'coqtail_cmds_pending', l:pending - 1)
-  if l:pending - 1 == 0
-    call setbufvar(a:msg.buf, '&modifiable', 1)
-  endif
+  call s:unlock_buffer(a:msg.buf)
   if a:msg.ret != v:null
     call coqtail#util#err(a:msg.ret)
   endif
@@ -330,11 +334,21 @@ function! coqtail#init() abort
   return 1
 endfunction
 
+" Search for a Dune project file.
+function! coqtail#locate_dune() abort
+  let l:file = findfile('dune-project', '.;')
+  return l:file !=# ''
+endfunction
+
 " Launch Coqtop and open the auxiliary panels.
-function! coqtail#start(...) abort
+function! coqtail#start(after_start_cmd, coq_args) abort
   if s:running()
     call coqtail#util#warn('Coq is already running.')
   else
+    " Hack: buffer-local variable as we cannot easily pass this to
+    " coqtail#after_startCB
+    let b:after_start_cmd = a:after_start_cmd
+
     " See comment in coqtail#init() about buffer-local variables
     let b:coqtail_started = coqtail#init()
     if !b:coqtail_started
@@ -342,25 +356,18 @@ function! coqtail#start(...) abort
       return 0
     endif
 
-    " Locate Coq project files
-    let [b:coqtail_project_files, l:proj_args] = coqtail#coqproject#locate()
-
     " Open auxiliary panels
     call coqtail#panels#open(0)
 
-    " Launch Coqtop
-    let [l:ok, l:ver_or_msg] = s:call('start', 'sync', 0, {
+    " Find Coqtop
+    let [l:ok, l:ver_or_msg] = s:call('find_coq', 'sync', 0, {
       \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', $COQBIN)),
-      \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', ''),
-      \ 'args': map(copy(l:proj_args + a:000), 'expand(v:val)')})
-    if !l:ok || type(l:ver_or_msg[0]) == g:coqtail#compat#t_string
-      let l:msg = 'Failed to launch Coq.'
+      \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', '')})
+    if !l:ok || type(l:ver_or_msg) == g:coqtail#compat#t_string
+      let l:msg = 'Failed to find Coq.'
       if l:ok
-        " l:ver_or_msg is [coqtail_error_message, coqtop_stderr]
-        let l:msg .= "\n" . l:ver_or_msg[0]
-        if l:ver_or_msg[1] !=# ''
-          let l:msg .= "\n" . l:ver_or_msg[1]
-        endif
+        " l:ver_or_msg is coqtail_error_message
+        let l:msg .= "\n" . l:ver_or_msg
       endif
       call coqtail#util#err(l:msg)
       call coqtail#stop()
@@ -368,9 +375,9 @@ function! coqtail#start(...) abort
     endif
 
     " Check if version is supported
-    " l:ver_or_msg[0] is
+    " l:ver_or_msg is
     " {version: [major, minor, patch], str_version: str, latest: str | None}
-    let b:coqtail_version = l:ver_or_msg[0]
+    let b:coqtail_version = l:ver_or_msg
     if b:coqtail_version.latest != v:null
       call coqtail#util#warn(printf(
         \ s:unsupported_msg,
@@ -384,9 +391,46 @@ function! coqtail#start(...) abort
       \ 'version': b:coqtail_version.str_version,
       \ 'width': winwidth(l:info_winid),
       \ 'height': winheight(l:info_winid)})
-    call coqtail#refresh()
 
-    call s:init_proof_diffs(b:coqtail_version.str_version)
+    " Locate CoqProject and dune-project files
+    let [b:coqtail_project_files, l:proj_args] = coqtail#coqproject#locate()
+    let b:coqtail_in_dune_project = coqtail#locate_dune()
+
+    " Determine which build system to use
+    if g:coqtail_build_system ==# 'prefer-dune'
+      let b:coqtail_use_dune = b:coqtail_in_dune_project
+    elseif g:coqtail_build_system ==# 'prefer-coqproject'
+      if b:coqtail_project_files == []
+        let b:coqtail_use_dune = b:coqtail_in_dune_project
+      else
+        let b:coqtail_use_dune = 0
+      endif
+    elseif g:coqtail_build_system ==# 'dune'
+      let b:coqtail_use_dune = 1
+    elseif g:coqtail_build_system ==# 'coqproject'
+      let b:coqtail_use_dune = 0
+    else
+      " invalid value
+      let l:msg = 'Invalid value for config g:coqtail_build_system: '
+      let l:msg .= g:coqtail_build_system
+      call coqtail#util#err(l:msg)
+      call coqtail#stop()
+      return 0
+    endif
+
+    " Determine the CoqProject args to pass
+    if b:coqtail_use_dune
+      let l:args_to_pass = copy(a:coq_args)
+    else
+      let l:args_to_pass = copy(l:proj_args + a:coq_args)
+    endif
+    let l:args = map(l:args_to_pass, 'expand(v:val)')
+
+    " Launch Coqtop asynchronously
+    call s:call('start', 'coqtail#after_startCB', 0, {
+      \ 'coqproject_args': l:args,
+      \ 'use_dune': coqtail#util#getvar([b:], 'coqtail_use_dune', 0),
+      \ 'dune_compile_deps': coqtail#util#getvar([b:, g:], 'coqtail_dune_compile_deps', 0)})
 
     " Sync edits to the buffer, close and restore the auxiliary panels
     augroup coqtail#Sync
@@ -402,10 +446,79 @@ function! coqtail#start(...) abort
   return 1
 endfunction
 
+" Callback to be run after Coqtop has launched.
+function! coqtail#after_startCB(chan, msg) abort
+  call s:unlock_buffer(a:msg.buf)
+
+  " l:buf is the number of the current buffer
+  let l:buf = bufnr('%')
+  " Switch to the buffer that is running this Coq instance
+  execute g:coqtail#util#bufchangepre 'buffer' a:msg.buf
+
+  let l:ret_msg = a:msg.ret
+  " l:ret_msg is [coqtail_error_message, coqtop_stderr]
+  if l:ret_msg[0] != v:null
+    let l:msg = 'Failed to launch Coq.'
+    let l:msg .= "\n" . l:ret_msg[0]
+    if l:ret_msg[1] !=# ''
+      let l:msg .= "\n" . l:ret_msg[1]
+    endif
+    call coqtail#util#err(l:msg)
+    call coqtail#stop()
+    return 0
+  endif
+
+  call coqtail#refresh()
+
+  call s:init_proof_diffs(b:coqtail_version.str_version)
+
+  " Call the after_start_cmd, if present
+  if b:after_start_cmd != v:null
+    execute b:after_start_cmd
+  endif
+  let b:after_start_cmd = v:null
+
+  " Switch back to the previous buffer
+  execute g:coqtail#util#bufchangepre 'buffer' l:buf
+endfunction
+
+
 " Stop the Coqtop interface and clean up auxiliary panels.
 function! coqtail#stop() abort
-  call s:call('stop', 'sync', 1, {})
-  call s:cleanup()
+  " Set a 'coqtail_stopping' flag in order to prevent multiple stop signals or
+  " interrupts from being sent, in particular when calling this while a
+  " coqtail#start is ongoing
+  if !exists('b:coqtail_stopping') || !b:coqtail_stopping
+    let b:coqtail_stopping = 1
+  else
+    return
+  endif
+
+  " Interrupt the current command
+  call coqtail#interrupt()
+
+  " Switch back to main buffer for cleanup
+  call coqtail#panels#switch(g:coqtail#panels#main)
+
+  " Clean up autocmds
+  silent! autocmd! coqtail#Quit * <buffer>
+  silent! autocmd! coqtail#Sync * <buffer>
+
+  call s:call('stop', 'coqtail#cleanupCB', 1, {})
+endfunction
+
+" Clean up commands, panels, and autocommands.
+function! coqtail#cleanupCB(chan, msg) abort
+  call s:unlock_buffer(a:msg.buf)
+
+  " Close the channel
+  silent! call b:coqtail_chan.close()
+  let b:coqtail_chan = 0
+  let b:coqtail_started = 0
+  let b:coqtail_stopping = 0
+
+  " Clean up auxiliary panels
+  call coqtail#panels#cleanup()
 endfunction
 
 " Advance/rewind Coq to the specified position.
@@ -440,6 +553,11 @@ function! coqtail#refresh() abort
   call s:call('refresh', '', 0, {})
 endfunction
 
+" Interrupt the current command
+function! coqtail#interrupt() abort
+  call s:call('interrupt', 'sync', 1, {})
+endfunction
+
 " Define Coqtail commands with the correct options.
 let s:cmd_opts = {
   \ 'CoqStart': '-bar -nargs=* -complete=file',
@@ -465,7 +583,7 @@ function! s:cmddef(name, act, precmd) abort
   " Start Coqtail first if needed
   let l:act = {
     \ '_': a:act,
-    \ 's': printf('if s:running() || coqtail#start() | %s | endif', a:act),
+    \ 's': printf('if s:running() | %s | else | call coqtail#start(%s, []) | endif', a:act, string(a:act)),
     \ 'i': printf('if s:initted() || coqtail#init() | %s | endif', a:act)
   \}[a:precmd ==# '' ? '_' : a:precmd]
   execute printf('command! -buffer %s %s %s', s:cmd_opts[a:name], a:name, l:act)
@@ -473,9 +591,9 @@ endfunction
 
 " Define Coqtail commands.
 function! coqtail#define_commands() abort
-  call s:cmddef('CoqStart', 'call coqtail#start(<f-args>)', '')
+  call s:cmddef('CoqStart', 'call coqtail#start(v:null, [<f-args>])', '')
   call s:cmddef('CoqStop', 'call coqtail#stop()', '')
-  call s:cmddef('CoqInterrupt', 'call s:call("interrupt", "sync", 0, {})', '')
+  call s:cmddef('CoqInterrupt', 'call coqtail#interrupt()', '')
   call s:cmddef('CoqNext', 'call s:call("step", "", 0, {"steps": <count>})', 's')
   call s:cmddef('CoqUndo', 'call s:call("rewind", "", 0, {"steps": <count>})', 's')
   call s:cmddef('CoqToLine', 'call coqtail#toline(<count>, 0)', 's')

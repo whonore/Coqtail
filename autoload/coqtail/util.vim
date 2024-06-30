@@ -1,6 +1,11 @@
 " Author: Wolf Honore
 " Utility functions.
 
+" A common prefix to silently switch buffers with commands like buffer, edit,
+" etc. Expected to be used as:
+" execute g:coqtail#util#bufchangepre 'buffer' l:buf
+let g:coqtail#util#bufchangepre = 'silent keepjumps keepalt'
+
 " Print a message with the specified highlighting.
 " NOTE: Without 'unsilent' messages triggered during autocmds don't display in
 " NeoVim because 'shortmess+=F' is set by default.

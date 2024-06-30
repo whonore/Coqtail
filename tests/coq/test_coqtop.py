@@ -26,10 +26,14 @@ def coq() -> Generator[Coqtop, None, None]:
     """Return a Coqtop for each version."""
     ct = Coqtop()
     coqbin = os.getenv("COQBIN")
-    ver_or_err, _ = ct.start(coqbin, None, "", [])
+    ver_or_err = ct.find_coq(coqbin, None)
     if isinstance(ver_or_err, dict):
-        yield ct
-        ct.stop()
+        res, _ = ct.start("", [], False, False)
+        if res is not None:
+            pytest.fail(f"Failed to create Coqtop instance\n{res}")
+        else:
+            yield ct
+            ct.stop()
     else:
         pytest.fail(f"Failed to create Coqtop instance\n{ver_or_err}")
 
@@ -265,7 +269,9 @@ def test_recognize_not_query(coq: Coqtop) -> None:
 def test_start_invalid_option() -> None:
     """Passing an invalid option on startup fails gracefully."""
     ct = Coqtop()
-    res, stderr = ct.start(None, None, "", ["--fake"])
+    res = ct.find_coq(None, None)
+    assert isinstance(res, dict)
+    res, stderr = ct.start("", ["--fake"], False, False)
     assert isinstance(res, str)
     assert stderr == ""
 
@@ -284,9 +290,11 @@ def test_start_invalid_option() -> None:
 def test_start_warning(args: List[str]) -> None:
     """Warnings do not cause startup to fail."""
     ct = Coqtop()
-    res, stderr = ct.start(None, None, "", args)
+    res = ct.find_coq(None, None)
     assert isinstance(res, dict)
     assert ct.xml is not None
+    res, stderr = ct.start("", args, False, False)
+    assert res is None
     # Some versions of Coq don't print warnings in the expected format.
     if ct.xml.warnings_wf and stderr != "":
         assert stderr.startswith("Warning:")
@@ -304,7 +312,9 @@ def test_start_invalid_xml(fake_interface: MagicMock) -> None:
     fake_xml.init.return_value = ("Init", b"<bad_xml></bad_xml>")
     fake_interface.return_value = (fake_xml, "")
     ct = Coqtop()
-    res, stderr = ct.start(None, None, "", [])
+    res = ct.find_coq(None, None)
+    assert isinstance(res, dict)
+    res, stderr = ct.start("", [], False, False)
     assert isinstance(res, str)
     assert stderr != ""
 
@@ -315,8 +325,10 @@ def test_start_noinit() -> None:
     if xml.version < (8, 5, 0):
         pytest.skip("Only 8.5+ supports -noinit")
     ct = Coqtop()
-    res, _ = ct.start(None, None, "", ["-noinit"])
+    res = ct.find_coq(None, None)
     assert isinstance(res, dict)
     assert ct.xml is not None
+    res, _ = ct.start("", ["-noinit"], False, False)
+    assert res is None
     succ, _, _, _ = ct.dispatch("Set Implicit Arguments.")
     assert succ

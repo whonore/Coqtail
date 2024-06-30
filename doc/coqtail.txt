@@ -232,16 +232,47 @@ b:coqtail_timeout	The time in seconds before interrupting Coqtop after
 
 			Default: 0
 
+						      *g:coqtail_build_system*
+g:coqtail_build_system	The build system to use in order to determine
+			arguments passed to Coqtop. Can be `dune`, `coqproject`,
+			`prefer-dune`, or `prefer-coqproject`.
+			The `dune` mode always uses `dune` for determining
+			arguments for Coqtop.
+			The `coqproject` mode always looks for Coq project
+			files.
+			The `prefer-dune` mode will use dune if a
+			`dune-project` file can be located and otherwise fall
+			back to `coqproject` mode.
+			The `prefer-coqproject` mode will use Coq project
+			files if any are found, or try to fall back to `dune`
+			if none are found.
+
+			Default: 'prefer-dune'
+
 				     *g:coqtail_project_names* *coq-project-files*
-g:coqtail_project_names	The names of Coq project files to search for. The
-			search begins in the current directory and proceeds
-			upwards. If found, project files are parsed and passed
-			as arguments to Coqtop by `:CoqStart`.
+g:coqtail_project_names	The names of Coq project files to search for in Coq
+			project mode. The search begins in the current
+			directory and proceeds upwards. If found, project
+			files are parsed and passed as arguments to Coqtop
+			by `:CoqStart`.
 
 			Default: ['_CoqProject']
 
 						       *b:coqtail_project_files*
 b:coqtail_project_files	Paths to the Coq project files found during `:CoqStart`.
+
+
+							   *b:coqtail_use_dune*
+b:coqtail_use_dune	Whether to use dune for Coqtop options after
+			`g:coqtail_build_system` has been evaluated with the
+			available options.
+
+						   *g:coqtail_dune_compile_deps*
+g:coqtail_dune_compile_deps
+			When using dune, compile dependencies of this file
+			before launching Coqtop.
+
+			Default: 0
 
 				   *g:coqtail_map_prefix* *coqtail-mapping-prefix*
 g:coqtail_map_prefix	The character(s) to begin Coqtail mappings.

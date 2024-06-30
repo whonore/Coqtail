@@ -3,7 +3,9 @@
 """Coqtop interface with functions to send commands and parse responses."""
 
 import datetime
+import io
 import logging
+import os
 import signal
 import subprocess
 import threading
@@ -16,6 +18,7 @@ from typing import (
     IO,
     TYPE_CHECKING,
     Any,
+    Callable,
     Generator,
     Iterable,
     Iterator,
@@ -46,6 +49,7 @@ if TYPE_CHECKING:
 
     BytesQueue = Queue[bytes]
     CoqtopProcess = subprocess.Popen[bytes]
+    DuneProcess = subprocess.Popen[bytes]
     VersionInfo = TypedDict(
         "VersionInfo",
         {
@@ -57,6 +61,7 @@ if TYPE_CHECKING:
 else:
     BytesQueue = Queue
     CoqtopProcess = subprocess.Popen
+    DuneProcess = subprocess.Popen
     VersionInfo = Mapping[str, Any]
 
 
@@ -69,10 +74,17 @@ class CoqtopError(Exception):
     """An exception for when Coqtop stops unexpectedly."""
 
 
+class DuneError(Exception):
+    """An exception for when dune could not run."""
+
+
 class Coqtop:
     """Provide an interface to the background Coqtop process."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        add_info_callback: Optional[Callable[[str], None]] = None,
+    ) -> None:
         """Initialize Coqtop state.
 
         coqtop - The Coqtop process
@@ -91,6 +103,8 @@ class Coqtop:
         self.out_q: BytesQueue = Queue()
         self.err_q: BytesQueue = Queue()
         self.stopping = False
+        self.add_info_callback: Optional[Callable[[str], None]] = add_info_callback
+        self.dune: Optional[DuneProcess] = None
 
         # Debugging
         self.log: Optional[IO[str]] = None
@@ -98,23 +112,153 @@ class Coqtop:
         self.logger = logging.getLogger(str(id(self)))
         self.logger.addHandler(self.handler)
         self.logger.setLevel(logging.INFO)
+        self.toggle_debug()
+
+    def is_in_valid_dune_project(self, filename: str) -> bool:
+        """Query dune to assert that the given file is in a correctly configured dune project."""
+        if self.xml is not None and self.xml.valid_module(filename):
+            # dune needs relative paths to work properly
+            filepath = os.path.dirname(filename)
+
+            # check if the file is located in a dune project
+            self.logger.debug(("query dune in ", filepath))
+            dune_check = ("dune", "describe", "workspace")
+            try:
+                subprocess.run(
+                    dune_check,
+                    capture_output=True,
+                    cwd=filepath,
+                    check=True,
+                )
+            except subprocess.CalledProcessError as e:
+                self.logger.debug("file is not in correctly configured dune project")
+                raise DuneError(e.stderr.decode("utf-8")) from e
+            self.logger.debug("found dune project")
+            return True
+        return False
+
+    def get_dune_args(self, filename: str, dune_compile_deps: bool) -> List[str]:
+        """Get the arguments to pass to the coqtop process from dune.
+        Assumes that the file is part of a correctly configured dune project."""
+        # dune needs relative paths to work properly
+        basename = os.path.basename(filename)
+        filepath = os.path.dirname(filename)
+
+        dune_launch = (
+            "dune",
+            "coq",
+            "top",
+            basename,
+            "--toplevel",
+            "echo",
+            "--display=short",
+            "--no-build" if not dune_compile_deps else "",
+        )
+        self.logger.debug(dune_launch)
+
+        with subprocess.Popen(
+            dune_launch,
+            cwd=filepath,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=0,
+        ) as dune_proc:
+            # read stderr output continuously using a separate thread
+            err_queue: BytesQueue = Queue()
+            self.dune = dune_proc
+            threading.Thread(
+                target=self.capture_dune_out,
+                args=(err_queue, dune_proc.stderr),
+                daemon=True,
+            ).start()
+
+            # wait for dune to terminate
+            dune_proc.wait()
+            self.dune = None
+
+            if dune_proc.returncode != 0:
+                self.logger.debug("dune error")
+                # get the error output
+                err_msg = b""
+                while not err_queue.empty():
+                    err_msg += err_queue.get_nowait()
+                decoded_err_msg = err_msg.decode("utf-8")
+                raise DuneError(decoded_err_msg)
+
+            # read the dune result from stdout
+            self.logger.debug("dune result")
+            assert dune_proc.stdout is not None
+            out = io.TextIOWrapper(dune_proc.stdout, encoding="utf-8")
+            args = out.read()
+            self.logger.debug(args)
+            return args.split()
+
+    def capture_dune_out(self, buffer: BytesQueue, stream: IO[bytes]) -> None:
+        """Continually read data from 'stream' into 'buffer' and add it to the info panel."""
+        data = b""
+        while not self.stopping:
+            try:
+                r = stream.read(0x10000)
+                buffer.put(r)
+                data += r
+            except (AttributeError, OSError, ValueError):
+                # dune stopped
+                return
+            try:
+                decoded = data.decode("utf-8").strip()
+                data = b""
+                if self.add_info_callback is not None:
+                    self.add_info_callback(decoded)
+            except (UnicodeDecodeError, AttributeError):
+                # not complete yet
+                pass
+
+    def find_coq(
+        self,
+        coq_path: Optional[str],
+        coq_prog: Optional[str],
+    ) -> Union[VersionInfo, str]:
+        """Find the Coqtop executable."""
+        assert self.coqtop is None
+        assert self.xml is None
+
+        try:
+            self.logger.debug("locating coq")
+            self.xml, latest = XMLInterface(coq_path, coq_prog)
+
+            return {
+                "version": self.xml.version,
+                "str_version": self.xml.str_version,
+                "latest": latest,
+            }
+        except (OSError, FindCoqtopError) as e:
+            # Failed to find Coqtop
+            self.xml = None
+            return str(e)
 
     # Coqtop Interface #
     def start(
         self,
-        coq_path: Optional[str],
-        coq_prog: Optional[str],
         filename: str,
-        args: Iterable[str],
+        coqproject_args: List[str],
+        use_dune: bool,
+        dune_compile_deps: bool,
         timeout: Optional[int] = None,
         stderr_is_warning: bool = False,
-    ) -> Tuple[Union[VersionInfo, str], str]:
+    ) -> Tuple[Optional[str], str]:
         """Launch the Coqtop process."""
         assert self.coqtop is None
+        assert self.xml is not None
 
         try:
             self.logger.debug("start")
-            self.xml, latest = XMLInterface(coq_path, coq_prog)
+
+            args = coqproject_args
+            if use_dune and self.is_in_valid_dune_project(filename):
+                # Add user-provided args last so they take precedence.
+                args = self.get_dune_args(filename, dune_compile_deps) + args
+
             launch = self.xml.launch(filename, args)
             self.logger.debug(launch)
             self.coqtop = subprocess.Popen(  # pylint: disable=consider-using-with
@@ -158,21 +302,17 @@ class Coqtop:
             self.root_state = response.val
             self.state_id = response.val
 
-            return (
-                {
-                    "version": self.xml.version,
-                    "str_version": self.xml.str_version,
-                    "latest": latest,
-                },
-                err,
-            )
-        except (OSError, FindCoqtopError) as e:
-            # Failed to launch or find Coqtop
+            return (None, err)
+        except (OSError, DuneError) as e:
+            # Failed to launch Coqtop
             self.coqtop = None
             return str(e), ""
 
     def stop(self) -> None:
         """End the Coqtop process."""
+        if self.dune is not None:
+            self.interrupt()
+
         if self.coqtop is not None:
             self.logger.debug("stop")
             self.stopping = True
@@ -701,10 +841,14 @@ class Coqtop:
         self.coqtop.stdin.flush()
 
     def interrupt(self) -> None:
-        """Send a SIGINT signal to Coqtop."""
-        if self.coqtop is None:
-            raise CoqtopError("Coqtop is not running.")
-        self.coqtop.send_signal(signal.SIGINT)
+        """Send a SIGINT signal to Coqtop or a SIGTERM signal to dune."""
+        if self.dune is not None:
+            # if dune is running, stop it
+            self.dune.send_signal(signal.SIGTERM)
+            self.dune.wait()
+            self.dune = None
+        elif self.coqtop is not None:
+            self.coqtop.send_signal(signal.SIGINT)
 
     # Current State #
     def running(self) -> bool:

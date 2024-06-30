@@ -162,7 +162,7 @@ class Coqtail:
         goal_msg - Lines of text to display in the goal panel
         goal_hls - Highlight positions for each line of goal_msg
         """
-        self.coqtop = CT.Coqtop()
+        self.coqtop = CT.Coqtop(self.add_info_callback)
         self.handler = handler
         self.changedtick = 0
         self.buffer: List[bytes] = []
@@ -192,28 +192,46 @@ class Coqtail:
 
         return err
 
-    # Coqtop Interface #
-    def start(
+    def find_coq(
         self,
         coq_path: str,
         coq_prog: str,
-        args: Iterable[str],
         opts: VimOptions,
-    ) -> Tuple[Union[CT.VersionInfo, str], str]:
-        """Start a new Coqtop instance."""
+    ) -> Union[CT.VersionInfo, str]:
+        # pylint: disable=unused-argument
+        # opts is always passed by handle().
+        """Find the Coqtop executable."""
         try:
-            ver_or_err, stderr = self.coqtop.start(
+            ver_or_err = self.coqtop.find_coq(
                 coq_path if coq_path != "" else None,
                 coq_prog if coq_prog != "" else None,
+            )
+        except (ValueError, CT.CoqtopError) as e:
+            ver_or_err = str(e)
+        return ver_or_err
+
+    # Coqtop Interface #
+    def start(
+        self,
+        coqproject_args: List[str],
+        use_dune: bool,
+        dune_compile_deps: bool,
+        opts: VimOptions,
+    ) -> Tuple[Optional[str], str]:
+        """Start a new Coqtop instance."""
+        try:
+            err, stderr = self.coqtop.start(
                 opts["filename"],
-                args,
+                coqproject_args,
+                use_dune,
+                dune_compile_deps,
                 timeout=opts["timeout"],
                 stderr_is_warning=opts["stderr_is_warning"],
             )
             self.print_stderr(stderr)
         except (ValueError, CT.CoqtopError) as e:
-            ver_or_err, stderr = str(e), ""
-        return ver_or_err, stderr
+            err, stderr = str(e), ""
+        return err, stderr
 
     def stop(self, opts: VimOptions) -> None:
         """Stop Coqtop."""
@@ -686,6 +704,11 @@ class Coqtail:
         if clear or "".join(self.goal_msg) == "":
             self.goal_msg, self.goal_hls = ["No goals."], []
 
+    def add_info_callback(self, msg: str) -> None:
+        """Callback for appending to the info panel and refreshing it."""
+        self.set_info(msg.split("\n"), reset=False)
+        self.handler.refresh(goals=False, force=True, scroll=True)
+
     def set_info(
         self,
         msg: Optional[Union[str, List[str]]] = None,
@@ -770,8 +793,6 @@ class Coqtail:
         opts: VimOptions,
     ) -> None:
         """Display the logo in the info panel."""
-        # pylint: disable=unused-argument
-        # opts is always passed by handle().
         msg = [
             "~~~~~~~~~~~~~~~~~~~~~~~",
             "λ                     /",
@@ -799,6 +820,7 @@ class Coqtail:
             msg = [""] * ((height // 2) - (len(msg) // 2 + 1)) + msg
         msg = [line.rstrip() for line in msg]
         self.set_info(msg, reset=False)
+        self.refresh(goals=False, opts=opts)
 
     def toggle_debug(self, opts: VimOptions) -> None:
         """Enable or disable logging of debug messages."""
@@ -864,7 +886,7 @@ class CoqtailHandler(StreamRequestHandler):
             try:
                 msg = self.rfile.readline()
                 msg_id, data = json.loads(msg)
-            except (json.JSONDecodeError, ConnectionError):
+            except (json.JSONDecodeError, ConnectionError, ValueError):
                 # Check if channel closed
                 self.closed = True
                 break
@@ -926,6 +948,7 @@ class CoqtailHandler(StreamRequestHandler):
                 break
 
             handlers: Mapping[str, Callable[..., object]] = {
+                "find_coq": self.coq.find_coq,
                 "start": self.coq.start,
                 "stop": self.coq.stop,
                 "step": self.coq.step,
