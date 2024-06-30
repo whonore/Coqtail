@@ -2,6 +2,8 @@
 
 ## Unreleased ([main])
 
+## [1.7.2]
+
 ### Added
 - Support for Coq projects configured with Dune.
   See the [README](README.md#project-files) for more information.
@@ -430,6 +432,7 @@
 
 [main]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
+[1.7.2]: https://github.com/whonore/Coqtail/tree/v1.7.2
 [1.7.1]: https://github.com/whonore/Coqtail/tree/v1.7.1
 [1.7.0]: https://github.com/whonore/Coqtail/tree/v1.7.0
 [1.6.4]: https://github.com/whonore/Coqtail/tree/v1.6.4
