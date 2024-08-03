@@ -116,6 +116,8 @@ elseif g:coqtail#compat#nvim
         if has_key(s:replies, l:msg_id)
           let s:replies[l:msg_id] = l:data
         elseif has_key(s:callbacks, l:msg_id)
+          " This will deadlock if the callback calls `s:evalexpr` since
+          " `s:chanrecv` can only handle one message at a time.
           call call(s:callbacks[l:msg_id], [a:handle, l:data])
           unlet s:callbacks[l:msg_id]
         endif
