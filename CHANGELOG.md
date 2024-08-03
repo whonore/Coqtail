@@ -2,6 +2,10 @@
 
 ## Unreleased ([main])
 
+### Fixed
+- A deadlock in NeoVim when executing certain commands before `:CoqStart`.
+  (PR #361)
+
 ## [1.7.2]
 
 ### Added

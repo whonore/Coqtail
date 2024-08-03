@@ -827,10 +827,8 @@ class Coqtail:
         log = self.coqtop.toggle_debug()
         if log is None:
             msg = "Debugging disabled."
-            self.log = ""
         else:
             msg = f"Debugging enabled. Log: {log}."
-            self.log = log
 
         self.set_info(msg, reset=True)
         self.refresh(goals=False, opts=opts)

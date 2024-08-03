@@ -340,18 +340,20 @@ function! coqtail#locate_dune() abort
   return l:file !=# ''
 endfunction
 
-" Launch Coqtop and open the auxiliary panels.
+" Launch Coqtop and open the auxiliary panels. `after_start_cmd` will be
+" executed by `coqtail#after_startCB` after Coqtop is started.
+" NOTE: It must not make a synchronous call or else NeoVim will deadlock. See
+" `s:chanrecv`.
 function! coqtail#start(after_start_cmd, coq_args) abort
   if s:running()
     call coqtail#util#warn('Coq is already running.')
   else
+    " See comment in coqtail#init() about buffer-local variables
     " Hack: buffer-local variable as we cannot easily pass this to
     " coqtail#after_startCB
     let b:after_start_cmd = a:after_start_cmd
 
-    " See comment in coqtail#init() about buffer-local variables
-    let b:coqtail_started = coqtail#init()
-    if !b:coqtail_started
+    if !coqtail#init()
       call coqtail#stop()
       return 0
     endif
@@ -360,7 +362,7 @@ function! coqtail#start(after_start_cmd, coq_args) abort
     call coqtail#panels#open(0)
 
     " Find Coqtop
-    let [l:ok, l:ver_or_msg] = s:call('find_coq', 'sync', 0, {
+    let [l:ok, l:ver_or_msg] = s:call('find_coq', 'sync', 1, {
       \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', $COQBIN)),
       \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', '')})
     if !l:ok || type(l:ver_or_msg) == g:coqtail#compat#t_string
@@ -387,7 +389,7 @@ function! coqtail#start(after_start_cmd, coq_args) abort
 
     " Draw the logo
     let l:info_winid = bufwinid(b:coqtail_panel_bufs[g:coqtail#panels#info])
-    call s:call('splash', 'sync', 0, {
+    call s:call('splash', 'sync', 1, {
       \ 'version': b:coqtail_version.str_version,
       \ 'width': winwidth(l:info_winid),
       \ 'height': winheight(l:info_winid)})
@@ -427,7 +429,7 @@ function! coqtail#start(after_start_cmd, coq_args) abort
     let l:args = map(l:args_to_pass, 'expand(v:val)')
 
     " Launch Coqtop asynchronously
-    call s:call('start', 'coqtail#after_startCB', 0, {
+    call s:call('start', 'coqtail#after_startCB', 1, {
       \ 'coqproject_args': l:args,
       \ 'use_dune': coqtail#util#getvar([b:], 'coqtail_use_dune', 0),
       \ 'dune_compile_deps': coqtail#util#getvar([b:, g:], 'coqtail_dune_compile_deps', 0)})
@@ -472,6 +474,7 @@ function! coqtail#after_startCB(chan, msg) abort
 
   call s:init_proof_diffs(b:coqtail_version.str_version)
 
+  let b:coqtail_started = 1
   " Call the after_start_cmd, if present
   if b:after_start_cmd != v:null
     execute b:after_start_cmd
@@ -481,7 +484,6 @@ function! coqtail#after_startCB(chan, msg) abort
   " Switch back to the previous buffer
   execute g:coqtail#util#bufchangepre 'buffer' l:buf
 endfunction
-
 
 " Stop the Coqtop interface and clean up auxiliary panels.
 function! coqtail#stop() abort
@@ -580,11 +582,26 @@ let s:cmd_opts = {
 \}
 
 function! s:cmddef(name, act, precmd) abort
-  " Start Coqtail first if needed
+  " '': Don't wait.
+  " 's' (start): Wait for everything to fully start (Coqtail server, Coqtop
+  "              server, Goal and Info panels, etc) by registering the command
+  "              as a callback to `coqtail#start`.
+  " 'i' (initialize): Wait for the Coqtail server to start. Only used for
+  "                   `CoqToggleDebug`.
+  " 'b' (busy-wait): Wait for everything to fully start by sleeping until
+  "                  `coqtail#start` completes. Only used for `CoqJumpToEnd`,
+  "                  `CoqJumpToError`, and `CoqGotoDef`. This avoids a deadlock
+  "                  in NeoVim from calling synchronous commands from callbacks.
   let l:act = {
     \ '_': a:act,
-    \ 's': printf('if s:running() | %s | else | call coqtail#start(%s, []) | endif', a:act, string(a:act)),
-    \ 'i': printf('if s:initted() || coqtail#init() | %s | endif', a:act)
+    \ 's': printf(
+      \ 'if s:running() | %s | else | call coqtail#start(%s, []) | endif',
+      \ a:act,
+      \ string(a:act)),
+    \ 'i': printf('if s:initted() || coqtail#init() | %s | endif', a:act),
+    \ 'b': printf(
+      \ 'if !s:running() | call coqtail#start(v:null, []) | endif | while !s:running() | sleep 10m | endwhile | %s',
+      \ a:act)
   \}[a:precmd ==# '' ? '_' : a:precmd]
   execute printf('command! -buffer %s %s %s', s:cmd_opts[a:name], a:name, l:act)
 endfunction
@@ -599,9 +616,9 @@ function! coqtail#define_commands() abort
   call s:cmddef('CoqToLine', 'call coqtail#toline(<count>, 0)', 's')
   call s:cmddef('CoqOmitToLine', 'call coqtail#toline(<count>, 1)', 's')
   call s:cmddef('CoqToTop', 'call s:call("to_top", "", 0, {})', 's')
-  call s:cmddef('CoqJumpToEnd', 'call coqtail#jumpto("endpoint")', 's')
-  call s:cmddef('CoqJumpToError', 'call coqtail#jumpto("errorpoint")', 's')
-  call s:cmddef('CoqGotoDef', 'call coqtail#gotodef(<f-args>, <bang>0)', 's')
+  call s:cmddef('CoqJumpToEnd', 'call coqtail#jumpto("endpoint")', 'b')
+  call s:cmddef('CoqJumpToError', 'call coqtail#jumpto("errorpoint")', 'b')
+  call s:cmddef('CoqGotoDef', 'call coqtail#gotodef(<f-args>, <bang>0)', 'b')
   call s:cmddef('Coq', 'call s:call("query", "", 0, {"args": [<f-args>]})', 's')
   call s:cmddef('CoqRestorePanels',
     \ 'call coqtail#panels#open(1) | call coqtail#refresh()', 's')

@@ -112,7 +112,6 @@ class Coqtop:
         self.logger = logging.getLogger(str(id(self)))
         self.logger.addHandler(self.handler)
         self.logger.setLevel(logging.INFO)
-        self.toggle_debug()
 
     def is_in_valid_dune_project(self, filename: str) -> bool:
         """Query dune to assert that the given file is in a correctly configured dune project."""
