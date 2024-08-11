@@ -59,6 +59,12 @@ See [here](#coq-executable) for help with pointing Coqtail to the appropriate lo
 
 ## Usage
 
+Once Coqtail has been installed, its commands are available whenever you edit
+a Coq file (with the `.v` extension).
+Alternatively, you can run `:setfiletype coq` when editing any buffer to tell
+Vim that you are writing Coq code, which will then make Coqtail's commands
+available.
+
 Coqtail provides the following commands (see `:help coqtail` for more details):
 
 | Command | Mapping | Description |
