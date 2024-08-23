@@ -3,6 +3,8 @@
 ## Unreleased ([main])
 
 ### Fixed
+- Avoid a race condition when calling commands before Coqtail is fully initialized.
+  (PR #366)
 - A deadlock in NeoVim when executing certain commands before `:CoqStart`.
   (PR #361)
 

@@ -347,6 +347,8 @@ endfunction
 function! coqtail#start(after_start_cmd, coq_args) abort
   if s:running()
     call coqtail#util#warn('Coq is already running.')
+  elseif s:initted()
+    call coqtail#util#warn('Coq is still starting.')
   else
     " See comment in coqtail#init() about buffer-local variables
     " Hack: buffer-local variable as we cannot easily pass this to
