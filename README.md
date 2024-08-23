@@ -59,7 +59,10 @@ See [here](#coq-executable) for help with pointing Coqtail to the appropriate lo
 
 ## Usage
 
-Coqtail provides the following commands (see `:help coqtail` for more details):
+Coqtail provides the following commands and mappings, which are available in any
+buffer with the `coq` filetype (set automatically for files with a `.v`
+extension, or manually with `:setfiletype coq`).
+See `:help coqtail` for more details.
 
 | Command | Mapping | Description |
 |---|---|---|
