@@ -967,7 +967,7 @@ class CoqtailHandler(StreamRequestHandler):
 
             try:
                 ret = handler(**args) if handler is not None else None
-                msg = [self.msg_id, {"buf": self.bnum, "ret": ret}]
+                msg = [self.msg_id, {"buf": self.bnum, "cmd": func, "ret": ret}]
                 self.wfile.write(_to_jsonl(msg))
             except (EOFError, ConnectionError):
                 break
@@ -1034,7 +1034,7 @@ class CoqtailHandler(StreamRequestHandler):
             while not self.reqs.empty():
                 try:
                     msg_id, bnum, _, _ = self.reqs.get_nowait()
-                    msg = [msg_id, {"buf": bnum, "ret": None}]
+                    msg = [msg_id, {"buf": bnum, "cmd": "interrupt", "ret": None}]
                     self.wfile.write(_to_jsonl(msg))
                 except Empty:
                     break

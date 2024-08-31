@@ -2,6 +2,12 @@
 
 ## Unreleased ([main])
 
+### Added
+- `CoqCommandComplete` autocommand event, which is triggered whenever a command
+  completes.
+  `g:coqtail#event` contains information about the command.
+  (PR #368)
+
 ### Fixed
 - Avoid a race condition when calling commands before Coqtail is fully initialized.
   (PR #366)
