@@ -3,6 +3,8 @@
 ## Unreleased ([main])
 
 ### Fixed
+- Correctly execute commands containing quotes (e.g., `Coq Check a'`).
+  (PR #371)
 - Avoid a race condition when calling commands before Coqtail is fully initialized.
   (PR #366)
 - A deadlock in NeoVim when executing certain commands before `:CoqStart`.
