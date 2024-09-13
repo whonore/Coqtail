@@ -135,9 +135,13 @@ def test_dispatch_unicode(coq: Coqtop) -> None:
 
 def test_dispatch_unprintable(coq: Coqtop) -> None:
     """Should be able to handle unprintable characters."""
-    succ, _, _, _ = coq.dispatch("Require Import String.")
+    succ, _, _, _ = coq.dispatch("Definition parse (x : Byte.byte) : option nat := None.")
     assert succ
-    succ, out, _, _ = coq.dispatch("Compute String (Ascii.ascii_of_nat 0) EmptyString.")
+    succ, _, _, _ = coq.dispatch("Definition print (x : nat) : list Byte.byte := cons Byte.x00 nil.")
+    assert succ
+    succ, _, _, _ = coq.dispatch("String Notation nat parse print : nat_scope.")
+    assert succ
+    succ, out, _, _ = coq.dispatch("Check O.")
     assert succ
     assert "\\x00" in out
 
