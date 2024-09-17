@@ -135,14 +135,23 @@ def test_dispatch_unicode(coq: Coqtop) -> None:
 
 def test_dispatch_unprintable(coq: Coqtop) -> None:
     """Should be able to handle unprintable characters."""
-    succ, _, _, _ = coq.dispatch("Definition parse (x : Byte.byte) : option nat := None.")
-    assert succ
-    succ, _, _, _ = coq.dispatch("Definition print (x : nat) : list Byte.byte := cons Byte.x00 nil.")
-    assert succ
-    succ, _, _, _ = coq.dispatch("String Notation nat parse print : nat_scope.")
-    assert succ
-    succ, out, _, _ = coq.dispatch("Check O.")
-    assert succ
+    assert coq.xml is not None
+    cmds = (
+        [
+            "Definition parse (x : Byte.byte) : option nat := None.",
+            "Definition print (x : nat) : list Byte.byte := cons Byte.x00 nil.",
+            "String Notation nat parse print : nat_scope.",
+            "Check O.",
+        ]
+        if coq.xml.version >= (8, 20, 0)
+        else [
+            "Require Import String.",
+            "Compute String (Ascii.ascii_of_nat 0) EmptyString.",
+        ]
+    )
+    for cmd in cmds:
+        succ, out, _, _ = coq.dispatch(cmd)
+        assert succ
     assert "\\x00" in out
 
 
