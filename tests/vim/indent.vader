@@ -90,6 +90,25 @@ Expect coq (indented-inductive-shift):
 Execute (indent-inductive-shift-option-post):
   unlet g:coqtail_inductive_shift
 
+Given coq (rewrite):
+  Rewrite Rule pplus_rewrite :=
+  | ?n ++ 0 => ?n
+  | ?n ++ S ?m =>
+  S (?n ++ ?m)
+  | 0 ++ ?n => ?n
+  | S ?n ++ ?m => S (?n ++ ?m).
+
+Do (indent-rewrite):
+  =ip
+
+Expect coq (indented-rewrite):
+  Rewrite Rule pplus_rewrite :=
+    | ?n ++ 0 => ?n
+    | ?n ++ S ?m =>
+        S (?n ++ ?m)
+    | 0 ++ ?n => ?n
+    | S ?n ++ ?m => S (?n ++ ?m).
+
 Given coq (match):
   Definition f (b : bool) :=
   match b with

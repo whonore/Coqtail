@@ -32,11 +32,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Nix
-        uses: cachix/install-nix-action@v25
+        uses: cachix/install-nix-action@v27
         with:
           nix_path: nixpkgs=channel:nixos-20.09
       - name: Install Cachix
-        uses: cachix/cachix-action@v14
+        uses: cachix/cachix-action@v15
         with:
           name: whonore-vim
           skipPush: true

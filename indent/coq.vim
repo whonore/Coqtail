@@ -41,6 +41,8 @@ let s:bullet = '[-+*]\+)\@!'
 let s:bulletline = '^\s*' . s:bullet
 let s:match = '\<\%(lazy\|multi\)\?match\>'
 let s:inductive = '\%(\%(Co\)\?Inductive\|Variant\)'
+let s:rewrite = '\<Rewrite\_s\+Rule\>'
+let s:vbar_cmd = '\%(' . s:inductive . '\|' . s:rewrite . '\)'
 let s:lineend = '\s*$'
 
 " Match syntax groups.
@@ -243,7 +245,7 @@ function! s:GetCoqIndent() abort
   if l:currentline =~# '^\s*|[|}]\@!'
     let l:match = s:indent_of_previous_pair(s:match, '', '\<end\>', 1, ['string', 'comment'])
     let l:off = get(g:, 'coqtail_inductive_shift', 1) * &sw
-    return l:match != -1 ? l:match : s:indent_of_previous('^\s*' . s:inductive) + l:off
+    return l:match != -1 ? l:match : s:indent_of_previous('^\s*' . s:vbar_cmd) + l:off
   endif
 
   " current line begins with terminating '|}', '}', or ')'

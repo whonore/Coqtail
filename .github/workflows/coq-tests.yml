@@ -43,23 +43,24 @@ jobs:
           - '8.17'
           - '8.18'
           - '8.19'
+          - '8.20'
           - 'master'
         py_version: ['3.6']
     steps:
       - uses: actions/checkout@v4
       - name: Install Nix
-        uses: cachix/install-nix-action@v25
+        uses: cachix/install-nix-action@v27
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
       - name: Install Cachix
-        uses: cachix/cachix-action@v14
+        uses: cachix/cachix-action@v15
         with:
           name: coq
           skipPush: true
       - name: Set up Nix cache
         # Only Coq master needs additional caching.
         if: ${{ matrix.coq_version == 'master' }}
-        uses: DeterminateSystems/magic-nix-cache-action@v2
+        uses: DeterminateSystems/magic-nix-cache-action@v8
       - name: Install Coq ${{ matrix.coq_version }}
         run: nix-env -j auto --cores 0 -i -f ci/coq.nix --argstr version ${{ matrix.coq_version }}
       - name: Install Python ${{ matrix.py_version }}
