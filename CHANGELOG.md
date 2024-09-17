@@ -2,6 +2,12 @@
 
 ## Unreleased ([main])
 
+### Added
+- `CoqCommandComplete` autocommand event, which is triggered whenever a command
+  completes.
+  `g:coqtail#event` contains information about the command.
+  (PR #368)
+
 ### Fixed
 - Correctly execute commands containing quotes (e.g., `Coq Check a'`).
   (PR #371)
