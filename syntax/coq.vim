@@ -267,7 +267,7 @@ syn region coqBinderTypeParen   contained contains=@coqTerm matchgroup=coqVernac
 syn region coqBinderTypeCurly   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" end="}"
 
 " Declarations
-syn region coqDecl       contains=coqIdent,coqDeclTerm,coqBinder matchgroup=coqVernacCmd start="\<\%(Axioms\?\|Conjectures\?\|Hypothes[ie]s\|Parameters\?\|Variables\?\|Context\)\>" matchgroup=coqVernacCmd end="\.\_s" keepend
+syn region coqDecl       contains=coqIdent,coqDeclTerm,coqBinder matchgroup=coqVernacCmd start="\<\%(Axioms\?\|Conjectures\?\|Hypothes[ie]s\|Parameters\?\|Variables\?\|Context\|Symbols\?\)\>" matchgroup=coqVernacCmd end="\.\_s" keepend
 syn region coqDeclTerm   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" end=")"
 syn region coqDeclTerm   contained contains=@coqTerm matchgroup=coqVernacPunctuation start=":" end="\.\_s"
 
@@ -490,6 +490,9 @@ syn region elpiComment contained start="%" end="$" extend
 syn region elpiString contained start=+"+ skip=+\\"+ end=+"+ extend
 syn match elpiMode contained "\<[io]:"
 syn match elpiNumber contained "[0-9]\+"
+
+" Rewrite Rules
+syn region coqRewrite contains=coqIdent,coqVernacPunctuation,coqLtacContents matchgroup=coqVernacCmd start="\<Rewrite\_s\+Rule\>" end="\.\_s" keepend
 
 " Various (High priority)
 syn region  coqComment           containedin=ALLBUT,coqString contains=coqComment,coqTodo,@Spell start="(\*" end="\*)" extend keepend

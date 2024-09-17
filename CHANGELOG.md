@@ -2,6 +2,10 @@
 
 ## Unreleased ([main])
 
+### Added
+- Basic support for `Rewrite Rule` syntax highlighting and indentation.
+  (PR #373)
+
 ### Fixed
 - Correctly execute commands containing quotes (e.g., `Coq Check a'`).
   (PR #371)
