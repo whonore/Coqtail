@@ -798,9 +798,9 @@ class XMLInterface84(XMLInterfaceBase):
                 "goal": self._to_goal,
                 "goals": self._to_goals,
                 "evar": self._to_evar,
-                "option_value": self._to_option_value,  # type: ignore
+                "option_value": self._to_option_value,
                 "option_state": self._to_option_state,
-                "status": self._to_status,  # type: ignore
+                "status": self._to_status,
                 "coq_info": self._to_coq_info,
                 "message": self._to_message,
                 "feedback": self._to_feedback,
@@ -1156,10 +1156,10 @@ class XMLInterface85(XMLInterfaceBase):
                 "goal": self._to_goal,
                 "goals": self._to_goals,
                 "evar": self._to_evar,
-                "option_value": self._to_option_value,  # type: ignore
+                "option_value": self._to_option_value,
                 "option_state": self._to_option_state,
                 "state_id": self._to_state_id,
-                "status": self._to_status,  # type: ignore
+                "status": self._to_status,
                 "coq_info": self._to_coq_info,
                 "message": self._to_message,
                 "feedback": self._to_feedback,
