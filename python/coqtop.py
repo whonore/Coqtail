@@ -342,6 +342,7 @@ class Coqtop:
     def advance(
         self,
         cmd: str,
+        in_script: bool,
         encoding: str = "utf-8",
         timeout: Optional[int] = None,
         stderr_is_warning: bool = False,
@@ -378,7 +379,10 @@ class Coqtop:
             )
             return False, msgs, status.loc, err
 
-        self.states.append(self.state_id)
+        # Only add the state id to the rewind list if the command is actually
+        # in the file so Coq and Coqtail stay in sync.
+        if in_script:
+            self.states.append(self.state_id)
         self.state_id = response.val["state_id"]
 
         return True, msgs, None, err
@@ -558,8 +562,40 @@ class Coqtop:
         assert self.xml is not None
         self.logger.debug("do_option: %s", cmd)
         vals, opt = self.xml.parse_option(cmd)
-        option_ok = True
 
+        # See: https://github.com/coq/coq/blob/6c18649e6c77fdae0dd92934929640dc1243541a/ide/coqide/idetop.ml#L57
+        scoldable = {
+            "Printing Implicit",
+            "Printing Coercions",
+            "Printing Matching",
+            "Printing Synth",
+            "Printing Notations",
+            "Printing Parentheses",
+            "Printing All",
+            "Printing Records",
+            "Printing Existential Instances",
+            "Printing Universes",
+            "Printing Unfocused",
+            "Printing Goal Names",
+            "Diffs",
+        }
+
+        # Since Coq split parsing and execution of vernacular commands, certain
+        # options, such as `Default Proof Mode` can't be set with SetOptions.
+        # So to make things easier, just use `Add` instead of `SetOptions` for
+        # all but a few options that Coq will otherwise scold you about not
+        # setting from the IDE menu.
+        # See: https://github.com/coq/coq/blob/40373610d6024510125405f53293809bc850b3af/library/goptions.ml#L437
+        if vals is not None and opt not in scoldable:
+            return self.advance(
+                cmd,
+                in_script,
+                encoding=encoding,
+                timeout=timeout,
+                stderr_is_warning=stderr_is_warning,
+            )
+
+        option_ok = True
         if vals is None:
             response, err = self.call(
                 self.xml.get_options(encoding=encoding),
@@ -600,6 +636,7 @@ class Coqtop:
             # executing a noop so it works correctly with rewinding
             success, _, _, _ = self.advance(
                 self.xml.noop,
+                in_script,
                 encoding=encoding,
                 stderr_is_warning=stderr_is_warning,
             )
@@ -607,10 +644,14 @@ class Coqtop:
         elif in_script and not option_ok:
             # Fall back to using `advance()` in case the best-effort attempt at
             # using `SetOptions` only failed because the option's value doesn't
-            # follow the usual pattern (e.g., `Firstorder Solver`)
+            # follow the usual pattern (e.g., `Firstorder Solver`).
+            # NOTE: This shouldn't be possible anymore since only options that
+            # are known to work with `SetOptions` can reach here, but I'm
+            # leaving it just in case.
             self.logger.warning("Failed to handle %s with Get/SetOptions", cmd)
             return self.advance(
                 cmd,
+                in_script,
                 encoding=encoding,
                 timeout=timeout,
                 stderr_is_warning=stderr_is_warning,
@@ -659,6 +700,7 @@ class Coqtop:
         elif in_script:
             return self.advance(
                 cmd,
+                in_script,
                 encoding=encoding,
                 timeout=timeout,
                 stderr_is_warning=stderr_is_warning,
