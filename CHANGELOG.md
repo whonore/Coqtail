@@ -7,6 +7,9 @@
   (PR #373)
 
 ### Fixed
+- Handle `Set Default Proof Mode` correctly in Coq >= 8.18 by using `Add`
+  instead of `SetOptions`.
+  (PR #377)
 - Correctly execute commands containing quotes (e.g., `Coq Check a'`).
   (PR #371)
 - Avoid a race condition when calling commands before Coqtail is fully initialized.
