@@ -7,6 +7,8 @@
   (PR #373)
 
 ### Fixed
+- Parse curly braces with named goal selectors correctly.
+  (PR #380)
 - Handle `Set Default Proof Mode` correctly in Coq >= 8.18 by using `Add`
   instead of `SetOptions`.
   (PR #377)

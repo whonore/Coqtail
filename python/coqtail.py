@@ -1262,6 +1262,18 @@ def _find_next_sentence(
     """Find the next sentence to send to Coq."""
     braces = {ord(c) for c in "{}"}
     bullets = {ord(c) for c in "-+*"}
+    digits = {ord(c) for c in "0123456789"}
+    spaces = b" \t\n\r\x0b\f"
+    # NOTE: This probably won't work correctly for some non-ascii identifiers,
+    # but we're parsing byte-by-byte so it would be annoying to do it the right
+    # way. Hopefully this is good enough.
+    ident = (
+        set(range(ord("A"), ord("Z") + 1))
+        | set(range(ord("a"), ord("z") + 1))
+        | digits
+        | {"_"}
+        | set(range(128, 256))
+    )
 
     line, col = (sline, scol)
     while True:
@@ -1304,8 +1316,8 @@ def _find_next_sentence(
         return (line, col)
 
     # Check if this is a bracketed goal selector
-    if _char_isdigit(first_line[0]):
-        state = "digit"
+    if first_line[0] in digits or first_line[0] == ord("["):
+        state = "start"
         selcol = col
         selline = line
         max_line = len(lines)
@@ -1316,20 +1328,60 @@ def _find_next_sentence(
                 continue
             c = lines[selline][selcol]
 
-            if state == "digit" and _char_isdigit(c):
+            # start -[0-9]-> digit
+            # start -[[]-> beforename
+            # digit -[0-9]-> digit
+            # digit -[ ]-> beforecolon
+            # digit -[:]-> aftercolon
+            # beforename -[ ]-> beforename
+            # beforename -[a-zA-Z0-9]-> name
+            # name -[a-zA-Z0-9]-> name
+            # name -[ ]-> aftername
+            # name -[]]-> beforecolon
+            # aftername -[ ]-> aftername
+            # aftername -[]]-> beforecolon
+            # beforecolon -[ ]-> beforecolon
+            # beforecolon -[:]-> aftercolon
+            # aftercolon -[ ]-> aftercolon
+            # aftercolon -[{]-> END
+            if state == "start" and c in digits:
+                state = "digit"
                 selcol += 1
-            elif state == "digit" and _char_isspace(c):
+            elif state == "start" and c == ord("["):
+                state = "beforename"
+                selcol += 1
+            elif state == "digit" and c in digits:
+                selcol += 1
+            elif state == "digit" and c in spaces:
                 state = "beforecolon"
                 selcol += 1
             elif state == "digit" and c == ord(":"):
                 state = "aftercolon"
                 selcol += 1
-            elif state == "beforecolon" and _char_isspace(c):
+            elif state == "beforename" and c in spaces:
+                selcol += 1
+            elif state == "beforename" and c in ident:
+                state = "name"
+                selcol += 1
+            elif state == "name" and c in ident:
+                selcol += 1
+            elif state == "name" and c in spaces:
+                state = "aftername"
+                selcol += 1
+            elif state == "name" and c == ord("]"):
+                state = "beforecolon"
+                selcol += 1
+            elif state == "aftername" and c in spaces:
+                selcol += 1
+            elif state == "aftername" and c == ord("]"):
+                state = "beforecolon"
+                selcol += 1
+            elif state == "beforecolon" and c in spaces:
                 selcol += 1
             elif state == "beforecolon" and c == ord(":"):
                 state = "aftercolon"
                 selcol += 1
-            elif state == "aftercolon" and _char_isspace(c):
+            elif state == "aftercolon" and c in spaces:
                 selcol += 1
             elif state == "aftercolon" and c == ord("{"):
                 return (selline, selcol)
@@ -1695,14 +1747,6 @@ def _diff_lines(
     if coldiff is None:
         return None
     return (linediff, coldiff)
-
-
-def _char_isdigit(c: int) -> bool:
-    return ord("0") <= c <= ord("9")
-
-
-def _char_isspace(c: int) -> bool:
-    return c in b" \t\n\r\x0b\f"
 
 
 def _to_jsonl(obj: Any) -> bytes:
