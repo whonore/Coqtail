@@ -211,7 +211,7 @@ function! s:scroll() abort
   endif
 endfunction
 
-" Clear Coqtop highlighting of the current window
+" Clear Rocq highlighting of the current window
 function! s:clearhl() abort
   if !exists('w:coqtail_highlights')
     return

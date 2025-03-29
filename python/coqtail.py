@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
-"""Classes and functions for managing auxiliary panels and Coqtop interfaces."""
+"""Classes and functions for managing auxiliary panels and Rocq interfaces."""
 
 import json
 import re
@@ -87,7 +87,7 @@ def lines_and_highlights(
     but this function expects line_no to be 0-indexed.
     """
     # If tagged_tokens turns out to already be a string (which is the case for
-    # older versions of Coq), just return it as is, with no highlights.
+    # older versions of Rocq), just return it as is, with no highlights.
     if isinstance(tagged_tokens, str):
         return tagged_tokens.splitlines(), []
 
@@ -132,12 +132,12 @@ class NoDotError(Exception):
 
 # Coqtail Server #
 class Coqtail:
-    """Manage Coqtop interfaces and auxiliary buffers for each Coq file."""
+    """Manage Rocq interfaces and auxiliary buffers for each Rocq file."""
 
     def __init__(self, handler: "CoqtailHandler") -> None:
         """Initialize variables.
 
-        coqtop - The Coqtop interface
+        coqtop - The Rocq interface
         handler - The Vim interface
         changedtick - The most recent value of `b:changedtick` that Coqtail has
                       observed. The positions stored in other variables
@@ -150,9 +150,9 @@ class Coqtail:
                       the buffer.
         buffer - The buffer corresponding to changedtick
         endpoints - A stack (grows to the right) of the end positions of the
-                    sentences checked by CoqTop. The end position of a sentence
+                    sentences checked by Rocq. The end position of a sentence
                     is the start position of its next sentence.
-        send_queue - A queue of the sentences to send to Coqtop. Each item
+        send_queue - A queue of the sentences to send to Rocq. Each item
                      contains the "start" and "end" (inclusive, including the
                      dot) position of the sentence.
         error_at - The position of the last error
@@ -175,7 +175,7 @@ class Coqtail:
         self.goal_hls: List[Highlight] = []
 
     def sync(self, opts: VimOptions) -> Optional[str]:
-        """Check if the buffer has been updated and rewind Coqtop if so."""
+        """Check if the buffer has been updated and rewind Rocq if so."""
         err = None
         newtick = self.get_changedtick()
         if newtick != self.changedtick:
@@ -200,7 +200,7 @@ class Coqtail:
     ) -> Union[CT.VersionInfo, str]:
         # pylint: disable=unused-argument
         # opts is always passed by handle().
-        """Find the Coqtop executable."""
+        """Find the Rocq executable."""
         try:
             ver_or_err = self.coqtop.find_coq(
                 coq_path if coq_path != "" else None,
@@ -210,7 +210,7 @@ class Coqtail:
             ver_or_err = str(e)
         return ver_or_err
 
-    # Coqtop Interface #
+    # Rocq Interface #
     def start(
         self,
         coqproject_args: List[str],
@@ -218,7 +218,7 @@ class Coqtail:
         dune_compile_deps: bool,
         opts: VimOptions,
     ) -> Tuple[Optional[str], str]:
-        """Start a new Coqtop instance."""
+        """Start a new Rocq instance."""
         try:
             err, stderr = self.coqtop.start(
                 opts["filename"],
@@ -234,13 +234,13 @@ class Coqtail:
         return err, stderr
 
     def stop(self, opts: VimOptions) -> None:
-        """Stop Coqtop."""
+        """Stop Rocq."""
         # pylint: disable=unused-argument
         # opts is always passed by handle().
         self.coqtop.stop()
 
     def step(self, steps: int, opts: VimOptions) -> Optional[str]:
-        """Advance Coq by 'steps' sentences."""
+        """Advance Rocq by 'steps' sentences."""
         self.sync(opts=opts)
 
         if steps < 1:
@@ -272,7 +272,7 @@ class Coqtail:
         return err
 
     def rewind(self, steps: int, opts: VimOptions) -> Optional[str]:
-        """Rewind Coq by 'steps' sentences."""
+        """Rewind Rocq by 'steps' sentences."""
         if steps < 1 or self.endpoints == []:
             return None
 
@@ -305,7 +305,7 @@ class Coqtail:
         admit: bool,
         opts: VimOptions,
     ) -> Optional[str]:
-        """Advance/rewind Coq to the specified position."""
+        """Advance/rewind Rocq to the specified position."""
         self.sync(opts=opts)
 
         # Get the location of the last '.'
@@ -353,7 +353,7 @@ class Coqtail:
         opts: VimOptions,
         silent: bool = False,
     ) -> None:
-        """Forward Coq query to Coqtop interface."""
+        """Forward query to Rocq interface."""
         success, msg, stderr = self.do_query(" ".join(args), opts=opts)
 
         if not success or not silent:
@@ -362,7 +362,7 @@ class Coqtail:
         self.refresh(goals=False, opts=opts)
 
     def endpoint(self, opts: VimOptions) -> Tuple[int, int]:
-        """Return the end of the Coq checked section."""
+        """Return the end of the Rocq checked section."""
         # pylint: disable=unused-argument
         # opts is always passed by handle().
         # Get the location of the last '.'
@@ -541,7 +541,7 @@ class Coqtail:
         tgt_type: str,
         opts: VimOptions,
     ) -> Optional[Tuple[str, str]]:
-        """Find the Coq file containing the qualified name 'qual_tgt'."""
+        """Find the Rocq file containing the qualified name 'qual_tgt'."""
         qual_comps = qual_tgt.split(".")
         base_name = qual_comps[-1]
 
@@ -728,7 +728,7 @@ class Coqtail:
                 self.info_msg = []
 
     def print_stderr(self, err: str) -> None:
-        """Display a message from Coqtop stderr."""
+        """Display a message from Rocq stderr."""
         if err != "":
             self.set_info("From stderr:\n" + err, reset=False)
 
@@ -798,7 +798,7 @@ class Coqtail:
             "λ                     /",
             " λ      Coqtail      / ",
             "  λ                 /  ",
-            f"   λ{('Coq ' + version).center(15)}/    ",
+            f"   λ{('Rocq ' + version).center(15)}/    ",
             "    λ             /    ",
             "     λ           /     ",
             "      λ         /      ",
@@ -1028,7 +1028,7 @@ class CoqtailHandler(StreamRequestHandler):
             )
 
     def interrupt(self) -> None:
-        """Interrupt Coqtop and clear the request queue."""
+        """Interrupt Rocq and clear the request queue."""
         if self.working:
             self.working = False
             while not self.reqs.empty():
@@ -1157,7 +1157,7 @@ class ChannelManager:
                 return None
 
 
-# Searching for Coq Definitions #
+# Searching for Rocq Definitions #
 # TODO: could search more intelligently by searching only within relevant
 # section/module, or sometimes by looking at the type (for constructors for
 # example, or record projections)
@@ -1215,7 +1215,7 @@ def get_searches(tgt_type: str, tgt_name: str) -> List[str]:
     ]
 
 
-# Finding Start and End of Coq Chunks #
+# Finding Start and End of Rocq Chunks #
 def _pos_from_offset(col: int, msg: bytes, offset: int) -> Tuple[int, int]:
     """Calculate the line and column of a given offset."""
     msg = msg[:offset]
@@ -1259,7 +1259,7 @@ def _find_next_sentence(
     sline: int,
     scol: int,
 ) -> Tuple[int, int]:
-    """Find the next sentence to send to Coq."""
+    """Find the next sentence to send to Rocq."""
     braces = {ord(c) for c in "{}"}
     bullets = {ord(c) for c in "-+*"}
     digits = {ord(c) for c in "0123456789"}
@@ -1464,7 +1464,7 @@ def _skip_comment(
 
 # In an elpi antiquotation lp:{{ }} we currently ignore strings "" and comments %
 # For example the lp:{{ }} may end in the middle of a string "}}" or a comment % }}
-# which is not ideal, but intentional to agree with the current Coq parser
+# which is not ideal, but intentional to agree with the current Rocq parser
 # https://github.com/coq/coq/blob/f2bf445b8f4f5241ebdc348b69961041b4e57883/parsing/cLexer.ml#L542
 # See also this discussion: https://github.com/whonore/Coqtail/pull/278#discussion_r841927125
 def _skip_elpi(
@@ -1623,7 +1623,7 @@ matcher = Matcher()
 def _strip_comments(msg: bytes) -> Tuple[bytes, List[Tuple[int, int]]]:
     """Replace all comments in 'msg' with whitespace."""
     # pylint: disable=no-else-break
-    # NOTE: Coqtop will ignore comments, but it makes it easier to inspect
+    # NOTE: Rocq will ignore comments, but it makes it easier to inspect
     # commands in Coqtail (e.g. options in coqtop.do_option) if we remove them.
     nocom = []
     com_pos = []  # Remember comment offset and length

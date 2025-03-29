@@ -24,7 +24,7 @@ py3 from coqtail import CoqtailServer
 let s:goal_lines = 5
 " Warning/error messages.
 let s:unsupported_msg =
-  \ "Coqtail does not officially support your version of Coq (%s).\n" .
+  \ "Coqtail does not officially support your version of Rocq (%s).\n" .
   \ 'Continuing with the interface for the latest supported version (%s).'
 " Server port.
 let s:port = -1
@@ -181,7 +181,7 @@ function! coqtail#gettags(target, flags, info) abort
   return l:tags
 endfunction
 
-" List query options for use in Coq command completion.
+" List query options for use in Rocq command completion.
 let s:queries = [
   \ 'Search',
   \ 'SearchAbout',
@@ -208,7 +208,7 @@ function! s:initted() abort
   endtry
 endfunction
 
-" Check if Coqtop has been started.
+" Check if Rocq has been started.
 function! s:running() abort
   try
     return s:initted() && coqtail#panels#getvar('coqtail_started')
@@ -322,7 +322,7 @@ function! coqtail#init() abort
     " Prepare auxiliary panels
     call coqtail#panels#init()
 
-    " Shutdown the Coqtop interface when the last instance of this buffer is
+    " Shutdown the Rocq interface when the last instance of this buffer is
     " closed
     augroup coqtail#Quit
       autocmd! * <buffer>
@@ -340,15 +340,15 @@ function! coqtail#locate_dune() abort
   return l:file !=# ''
 endfunction
 
-" Launch Coqtop and open the auxiliary panels. `after_start_func` will be
-" executed by `coqtail#after_startCB` after Coqtop is started.
+" Launch Rocq and open the auxiliary panels. `after_start_func` will be
+" executed by `coqtail#after_startCB` after Rocq is started.
 " NOTE: It must not make a synchronous call or else NeoVim will deadlock. See
 " `s:chanrecv`.
 function! coqtail#start(after_start_func, coq_args) abort
   if s:running()
-    call coqtail#util#warn('Coq is already running.')
+    call coqtail#util#warn('Rocq is already running.')
   elseif s:initted()
-    call coqtail#util#warn('Coq is still starting.')
+    call coqtail#util#warn('Rocq is still starting.')
   else
     " See comment in coqtail#init() about buffer-local variables
     " Hack: buffer-local variable as we cannot easily pass this to
@@ -363,12 +363,12 @@ function! coqtail#start(after_start_func, coq_args) abort
     " Open auxiliary panels
     call coqtail#panels#open(0)
 
-    " Find Coqtop
+    " Find Rocq
     let [l:ok, l:ver_or_msg] = s:call('find_coq', 'sync', 1, {
       \ 'coq_path': expand(coqtail#util#getvar([b:, g:], 'coqtail_coq_path', $COQBIN)),
       \ 'coq_prog': coqtail#util#getvar([b:, g:], 'coqtail_coq_prog', '')})
     if !l:ok || type(l:ver_or_msg) == g:coqtail#compat#t_string
-      let l:msg = 'Failed to find Coq.'
+      let l:msg = 'Failed to find Rocq.'
       if l:ok
         " l:ver_or_msg is coqtail_error_message
         let l:msg .= "\n" . l:ver_or_msg
@@ -430,7 +430,7 @@ function! coqtail#start(after_start_func, coq_args) abort
     endif
     let l:args = map(l:args_to_pass, 'expand(v:val)')
 
-    " Launch Coqtop asynchronously
+    " Launch Rocq asynchronously
     call s:call('start', 'coqtail#after_startCB', 1, {
       \ 'coqproject_args': l:args,
       \ 'use_dune': coqtail#util#getvar([b:], 'coqtail_use_dune', 0),
@@ -449,19 +449,19 @@ function! coqtail#start(after_start_func, coq_args) abort
   return 1
 endfunction
 
-" Callback to be run after Coqtop has launched.
+" Callback to be run after Rocq has launched.
 function! coqtail#after_startCB(chan, msg) abort
   call s:unlock_buffer(a:msg.buf)
 
   " l:buf is the number of the current buffer
   let l:buf = bufnr('%')
-  " Switch to the buffer that is running this Coq instance
+  " Switch to the buffer that is running this Rocq instance
   execute g:coqtail#util#bufchangepre 'buffer' a:msg.buf
 
   let l:ret_msg = a:msg.ret
   " l:ret_msg is [coqtail_error_message, coqtop_stderr]
   if l:ret_msg[0] != v:null
-    let l:msg = 'Failed to launch Coq.'
+    let l:msg = 'Failed to launch Rocq.'
     let l:msg .= "\n" . l:ret_msg[0]
     if l:ret_msg[1] !=# ''
       let l:msg .= "\n" . l:ret_msg[1]
@@ -486,7 +486,7 @@ function! coqtail#after_startCB(chan, msg) abort
   execute g:coqtail#util#bufchangepre 'buffer' l:buf
 endfunction
 
-" Stop the Coqtop interface and clean up auxiliary panels.
+" Stop the Rocq interface and clean up auxiliary panels.
 function! coqtail#stop() abort
   " Set a 'coqtail_stopping' flag in order to prevent multiple stop signals or
   " interrupts from being sent, in particular when calling this while a
@@ -524,7 +524,7 @@ function! coqtail#cleanupCB(chan, msg) abort
   call coqtail#panels#cleanup()
 endfunction
 
-" Advance/rewind Coq to the specified position.
+" Advance/rewind Rocq to the specified position.
 function! coqtail#toline(line, admit) abort
   " If no line was given then use the cursor's position,
   " otherwise use the last column in the line
@@ -535,7 +535,7 @@ function! coqtail#toline(line, admit) abort
 endfunction
 
 " Move the cursor to the specified target:
-" - "endpoint": the end of the region checked by Coq
+" - "endpoint": the end of the region checked by Rocq
 " - "errorpoint": the start of the error region
 function! coqtail#jumpto(target) abort
   let l:panel = coqtail#panels#switch(g:coqtail#panels#main)
@@ -590,14 +590,14 @@ let s:cmd_opts = {
 
 function! s:cmddef(name, func, precmd) abort
   " '': Don't wait.
-  " 's' (start): Wait for everything to fully start (Coqtail server, Coqtop
+  " 's' (start): Wait for everything to fully start (Coqtail server, Rocq
   "              server, Goal and Info panels, etc) by registering the command
   "              as a callback to `coqtail#start`.
   " 'i' (initialize): Wait for the Coqtail server to start. Only used for
-  "                   `CoqToggleDebug`.
+  "                   `RocqToggleDebug`.
   " 'b' (busy-wait): Wait for everything to fully start by sleeping until
-  "                  `coqtail#start` completes. Only used for `CoqJumpToEnd`,
-  "                  `CoqJumpToError`, and `CoqGotoDef`. This avoids a deadlock
+  "                  `coqtail#start` completes. Only used for `RocqJumpToEnd`,
+  "                  `RocqJumpToError`, and `RocqGotoDef`. This avoids a deadlock
   "                  in NeoVim from calling synchronous commands from callbacks.
   let l:action = {
     \ '_': printf('call %s()', a:func),
@@ -613,7 +613,9 @@ function! s:cmddef(name, func, precmd) abort
   " Strip quotes from special command escape sequences (<count>, <f-args>, etc).
   let l:action = substitute(l:action, "'<\\([a-z-]\\+\\)>'", '<\1>', 'g')
   let l:action = substitute(l:action, "'<bang>\\([01]\\)'", '<bang>\1', 'g')
+  let l:rocq_name = substitute(a:name, '^Coq', 'Rocq', '')
   execute printf('command! -buffer %s %s %s', s:cmd_opts[a:name], a:name, l:action)
+  execute printf('command! -buffer %s %s %s', s:cmd_opts[a:name], l:rocq_name, l:action)
 endfunction
 
 " Define Coqtail commands.
@@ -639,52 +641,42 @@ endfunction
 
 " Define <Plug> and default mappings for Coqtail commands.
 function! coqtail#define_mappings() abort
-  nnoremap <buffer> <silent> <Plug>CoqStart :CoqStart<CR>
-  nnoremap <buffer> <silent> <Plug>CoqStop :CoqStop<CR>
-  nnoremap <buffer> <silent> <Plug>CoqInterrupt :CoqInterrupt<CR>
+  nnoremap <buffer> <silent> <Plug>CoqStart :RocqStart<CR>
+  nnoremap <buffer> <silent> <Plug>CoqStop :RocqStop<CR>
+  nnoremap <buffer> <silent> <Plug>CoqInterrupt :RocqInterrupt<CR>
   nnoremap <buffer> <silent> <Plug>CoqNext :<C-U>execute v:count1 'CoqNext'<CR>
   nnoremap <buffer> <silent> <Plug>CoqUndo :<C-U>execute v:count1 'CoqUndo'<CR>
   nnoremap <buffer> <silent> <Plug>CoqToLine :<C-U>execute v:count 'CoqToLine'<CR>
   nnoremap <buffer> <silent> <Plug>CoqOmitToLine :<C-U>execute v:count 'CoqOmitToLine'<CR>
-  nnoremap <buffer> <silent> <Plug>CoqToTop :CoqToTop<CR>
-  nnoremap <buffer> <silent> <Plug>CoqJumpToEnd :CoqJumpToEnd<CR>
-  nnoremap <buffer> <silent> <Plug>CoqJumpToError :CoqJumpToError<CR>
-  inoremap <buffer> <silent> <Plug>CoqNext <C-\><C-o>:CoqNext<CR>
-  inoremap <buffer> <silent> <Plug>CoqUndo <C-\><C-o>:CoqUndo<CR>
-  inoremap <buffer> <silent> <Plug>CoqToLine <C-\><C-o>:CoqToLine<CR>
-  inoremap <buffer> <silent> <Plug>CoqOmitToLine <C-\><C-o>:CoqOmitToLine<CR>
-  inoremap <buffer> <silent> <Plug>CoqToTop <C-\><C-o>:CoqToTop<CR>
-  inoremap <buffer> <silent> <Plug>CoqJumpToEnd <C-\><C-o>:CoqJumpToEnd<CR>
-  inoremap <buffer> <silent> <Plug>CoqJumpToError <C-\><C-o>:CoqJumpToError<CR>
-  nnoremap <buffer> <silent> <Plug>CoqGotoDef :CoqGotoDef <C-r>=coqtail#util#getcurword()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqSearch :Coq Search <C-r>=coqtail#util#getcurword()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqCheck :Coq Check <C-r>=coqtail#util#getcurword()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqAbout :Coq About <C-r>=coqtail#util#getcurword()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqPrint :Coq Print <C-r>=coqtail#util#getcurword()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqLocate :Coq Locate <C-r>=coqtail#util#getcurword()<CR><CR>
-  xnoremap <buffer> <silent> <Plug>CoqSearch <ESC>:Coq Search <C-r>=coqtail#util#getvisual()<CR><CR>
-  xnoremap <buffer> <silent> <Plug>CoqCheck <ESC>:Coq Check <C-r>=coqtail#util#getvisual()<CR><CR>
-  xnoremap <buffer> <silent> <Plug>CoqAbout <ESC>:Coq About <C-r>=coqtail#util#getvisual()<CR><CR>
-  xnoremap <buffer> <silent> <Plug>CoqPrint <ESC>:Coq Print <C-r>=coqtail#util#getvisual()<CR><CR>
-  xnoremap <buffer> <silent> <Plug>CoqLocate <ESC>:Coq Locate <C-r>=coqtail#util#getvisual()<CR><CR>
-  nnoremap <buffer> <silent> <Plug>CoqRestorePanels :CoqRestorePanels<CR>
+  nnoremap <buffer> <silent> <Plug>CoqToTop :RocqToTop<CR>
+  nnoremap <buffer> <silent> <Plug>CoqJumpToEnd :RocqJumpToEnd<CR>
+  nnoremap <buffer> <silent> <Plug>CoqJumpToError :RocqJumpToError<CR>
+  inoremap <buffer> <silent> <Plug>CoqNext <C-\><C-o>:RocqNext<CR>
+  inoremap <buffer> <silent> <Plug>CoqUndo <C-\><C-o>:RocqUndo<CR>
+  inoremap <buffer> <silent> <Plug>CoqToLine <C-\><C-o>:RocqToLine<CR>
+  inoremap <buffer> <silent> <Plug>CoqOmitToLine <C-\><C-o>:RocqOmitToLine<CR>
+  inoremap <buffer> <silent> <Plug>CoqToTop <C-\><C-o>:RocqToTop<CR>
+  inoremap <buffer> <silent> <Plug>CoqJumpToEnd <C-\><C-o>:RocqJumpToEnd<CR>
+  inoremap <buffer> <silent> <Plug>CoqJumpToError <C-\><C-o>:RocqJumpToError<CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoDef :RocqGotoDef <C-r>=coqtail#util#getcurword()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqSearch :Rocq Search <C-r>=coqtail#util#getcurword()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqCheck :Rocq Check <C-r>=coqtail#util#getcurword()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqAbout :Rocq About <C-r>=coqtail#util#getcurword()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqPrint :Rocq Print <C-r>=coqtail#util#getcurword()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqLocate :Rocq Locate <C-r>=coqtail#util#getcurword()<CR><CR>
+  xnoremap <buffer> <silent> <Plug>CoqSearch <ESC>:Rocq Search <C-r>=coqtail#util#getvisual()<CR><CR>
+  xnoremap <buffer> <silent> <Plug>CoqCheck <ESC>:Rocq Check <C-r>=coqtail#util#getvisual()<CR><CR>
+  xnoremap <buffer> <silent> <Plug>CoqAbout <ESC>:Rocq About <C-r>=coqtail#util#getvisual()<CR><CR>
+  xnoremap <buffer> <silent> <Plug>CoqPrint <ESC>:Rocq Print <C-r>=coqtail#util#getvisual()<CR><CR>
+  xnoremap <buffer> <silent> <Plug>CoqLocate <ESC>:Rocq Locate <C-r>=coqtail#util#getvisual()<CR><CR>
+  nnoremap <buffer> <silent> <Plug>CoqRestorePanels :RocqRestorePanels<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalStart :<C-U>execute v:count1 'CoqGotoGoal'<CR>
   nnoremap <buffer> <silent> <Plug>CoqGotoGoalEnd :<C-U>execute v:count1 'CoqGotoGoal!'<CR>
-  nnoremap <buffer> <silent> <Plug>CoqGotoGoalNextStart :CoqGotoGoalNext<CR>
-  nnoremap <buffer> <silent> <Plug>CoqGotoGoalNextEnd :CoqGotoGoalNext!<CR>
-  nnoremap <buffer> <silent> <Plug>CoqGotoGoalPrevStart :CoqGotoGoalPrev<CR>
-  nnoremap <buffer> <silent> <Plug>CoqGotoGoalPrevEnd :CoqGotoGoalPrev!<CR>
-  nnoremap <buffer> <silent> <Plug>CoqToggleDebug :CoqToggleDebug<CR>
-
-  " Use default mappings unless user opted out
-  if get(g:, 'coqtail_nomap', 0)
-    return
-  endif
-  let l:imap = !get(g:, 'coqtail_noimap', 0)
-
-  " Use custom mapping prefix if set
-  let l:map_prefix = get(g:, 'coqtail_map_prefix', '<leader>c')
-  let l:imap_prefix = get(g:, 'coqtail_imap_prefix', l:map_prefix)
+  nnoremap <buffer> <silent> <Plug>CoqGotoGoalNextStart :RocqGotoGoalNext<CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoGoalNextEnd :RocqGotoGoalNext!<CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoGoalPrevStart :RocqGotoGoalPrev<CR>
+  nnoremap <buffer> <silent> <Plug>CoqGotoGoalPrevEnd :RocqGotoGoalPrev!<CR>
+  nnoremap <buffer> <silent> <Plug>CoqToggleDebug :RocqToggleDebug<CR>
 
   let l:maps = {
     \ 'Start': ['c', 'n'],
@@ -712,6 +704,27 @@ function! coqtail#define_mappings() abort
     \ 'ToggleDebug': ['d', 'n']
   \}
 
+  " Define <Plug>Rocq* aliases.
+  for [l:cmd, l:info] in items(l:maps)
+    for l:type in split(l:info[1], '\zs')
+      execute printf(
+        \ '%smap <buffer> <silent> <Plug>Rocq%s <Plug>Coq%s',
+        \ l:type,
+        \ l:cmd,
+        \ l:cmd)
+    endfor
+  endfor
+
+  " Use default mappings unless user opted out
+  if get(g:, 'coqtail_nomap', 0)
+    return
+  endif
+  let l:imap = !get(g:, 'coqtail_noimap', 0)
+
+  " Use custom mapping prefix if set
+  let l:map_prefix = get(g:, 'coqtail_map_prefix', '<leader>c')
+  let l:imap_prefix = get(g:, 'coqtail_imap_prefix', l:map_prefix)
+
   " Use v1.5 mappings
   let l:compat15 = index(get(g:, 'coqtail_version_compat', []), '1.5') != -1
   if l:compat15
@@ -728,7 +741,7 @@ function! coqtail#define_mappings() abort
 
   for [l:cmd, l:info] in items(l:maps)
     let [l:key, l:types] = l:info
-    let l:cmd = '<Plug>Coq' . l:cmd
+    let l:cmd = '<Plug>Rocq' . l:cmd
     for l:type in split(l:types, '\zs')
       if !hasmapto(l:cmd, l:type) && (l:type !=# 'i' || l:imap)
         let l:prefix = l:type ==# 'i' ? l:imap_prefix : l:map_prefix
@@ -759,7 +772,7 @@ function! coqtail#register() abort
 
     " Only define commands + mappings for main buffer for now;
     " these will be redefined for the goal and info buffers
-    " when those are created (when :CoqStart is called)
+    " when those are created (when :RocqStart is called)
     call coqtail#define_commands()
     call coqtail#define_mappings()
   endif

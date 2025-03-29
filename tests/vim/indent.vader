@@ -1,5 +1,5 @@
 " Author: Wolf Honore
-" Coq indentation unit tests.
+" Rocq indentation unit tests.
 
 Given coq (inductive):
   Inductive ind :=

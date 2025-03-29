@@ -194,7 +194,7 @@ else
     let l:res = v:null
     let l:did_int = 0
 
-    " Retry until Coqtop responds
+    " Retry until Rocq responds
     while 1
       try
         let l:res = s:send_wait(self.handle, l:session, a:expr, 0)
@@ -205,7 +205,7 @@ else
           let l:res = s:send_wait(self.handle, l:session, [-1, l:val, {}], l:res[-1])
         endwhile
       catch /^Vim:Interrupt$/
-        " Interrupt Coqtop and retry
+        " Interrupt Rocq and retry
         if l:did_int
           call coqtail#util#err('Coqtail is stuck. Try restarting to fix.')
           return v:null

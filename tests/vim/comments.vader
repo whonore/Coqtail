@@ -1,5 +1,5 @@
 " Author: Wolf Honore
-" Coq comment formatting unit tests.
+" Rocq comment formatting unit tests.
 
 Before:
   set textwidth=40

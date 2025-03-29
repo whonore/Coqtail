@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
-"""Classes to handle differences in the Coqtop XML interface across versions
+"""Classes to handle differences in the Rocq XML interface across versions
 and provide a uniform interface.
 
 https://github.com/coq/coq/blob/master/dev/doc/xml-protocol.md
@@ -66,10 +66,10 @@ WARNING_RE = re.compile("^(Warning:[^]]+])$", flags=re.MULTILINE)
 
 
 class FindCoqtopError(Exception):
-    """An exception for when a coqtop executable could not be found."""
+    """An exception for when a Rocq executable could not be found."""
 
 
-# Coqtop Response Types #
+# Rocq Response Types #
 class Ok:
     """A response representing success."""
 
@@ -92,7 +92,7 @@ Result = Union[Ok, Err]
 
 # The error in case of a timeout
 TIMEOUT_ERR = Err(
-    "Coq timed out. You can change the timeout with <leader>ct and try again."
+    "Rocq timed out. You can change the timeout with <leader>ct and try again."
 )
 
 # The error in case of a message on stderr
@@ -146,7 +146,7 @@ def _parse_tagged_tokens(
     Helper function to parse_tagged_tokens.
 
     Written to support richpp tags, and thus supports .start and .end tags
-    used by Coqtop to highlight ranges that are not properly nested
+    used by Rocq to highlight ranges that are not properly nested
     (i.e., <start.a/>...<start.b/>...<end.a/>...<end.b/> is allowed).
     This is somewhat documented here: https://github.com/coq/coq/blob/master/dev/doc/xml-protocol.md#highlighting-text
     Documentation neglects to mention the semantics of start. and end. tags
@@ -231,7 +231,7 @@ def join_tagged_tokens(tagged_tokens: Iterable[TaggedToken]) -> str:
 
 
 def partition_warnings(stderr: str) -> Tuple[str, str]:
-    """Partition Coq stderr messages into warnings and errors.
+    """Partition Rocq stderr messages into warnings and errors.
 
     Warnings are assumed to have the following form:
     Warning: message_with_newlines [warning_type]\n
@@ -264,7 +264,7 @@ def prettyxml(xml: bytes) -> str:
 class XMLInterfaceBase(metaclass=ABCMeta):
     """Provide methods and types common to all XML interface versions."""
 
-    # Coqtop Types #
+    # Rocq Types #
     sentinel = object()
 
     # Option Type
@@ -290,7 +290,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         self.version = version
         self.str_version = str_version
 
-        # Coqtop launch arguments
+        # Rocq launch arguments
         self.coq_path = coq_path
         assert coq_prog is not None
         self.coq_prog = coq_prog
@@ -336,7 +336,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
             "Inr": self._of_union,
         }
 
-        # Map from coqtop command to standardization function
+        # Map from Rocq command to standardization function
         self._standardize_funcs: Dict[str, Callable[[Result], Result]] = {}
 
         # A command that can safely and quickly be executed just to get a new state id
@@ -347,7 +347,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         self.warnings_wf = False
 
     def launch(self, filename: str, args: Iterable[str]) -> Tuple[str, ...]:
-        """The command to launch coqtop with the appropriate arguments."""
+        """The command to launch Rocq with the appropriate arguments."""
         # Find the executable
         try:
             coqs = (
@@ -371,7 +371,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         version = parse_version(extract_version(coq))
         if version != self.version:
             raise FindCoqtopError(
-                f"{coq} version does not match version reported by coqc.\n"
+                f"{coq} version does not match version reported by coqc/rocq.\n"
                 f"Expected: {self.version} Got: {version}"
             )
 
@@ -573,7 +573,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         return b"</value>" in data
 
     def raw_response(self, data: bytes) -> Optional[Result]:
-        """Try to parse an XML response from Coqtop into an Ok or Err."""
+        """Try to parse an XML response from Rocq into an Ok or Err."""
         res = None
         msgs: List[str] = []
 
@@ -629,10 +629,10 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         except KeyError:
             return res
 
-    # Coqtop Commands #
+    # Rocq Commands #
     @abstractmethod
     def init(self, encoding: str = "utf-8") -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to initialize Coqtop."""
+        """Create an XML string to initialize Rocq."""
 
     @abstractmethod
     def add(
@@ -641,7 +641,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         state: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to advance Coqtop."""
+        """Create an XML string to advance Rocq."""
 
     @abstractmethod
     def edit_at(
@@ -650,7 +650,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         steps: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to move Coqtop to a specific location."""
+        """Create an XML string to move Rocq to a specific location."""
 
     @abstractmethod
     def query(
@@ -659,7 +659,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         state: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to pose a query to Coqtop."""
+        """Create an XML string to pose a query to Rocq."""
 
     @abstractmethod
     def goal(self, encoding: str = "utf-8") -> Tuple[str, Optional[bytes]]:
@@ -667,11 +667,11 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 
     @abstractmethod
     def status(self, encoding: str = "utf-8") -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to check Coqtop's status."""
+        """Create an XML string to check Rocq's status."""
 
     @abstractmethod
     def get_options(self, encoding: str = "utf-8") -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to check the state of Coqtop's options."""
+        """Create an XML string to check the state of Rocq's options."""
 
     @abstractmethod
     def set_options(
@@ -680,7 +680,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
         val: OptionArg,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to set one of Coqtop's options."""
+        """Create an XML string to set one of Rocq's options."""
 
     # Helpers #
     @staticmethod
@@ -738,7 +738,7 @@ class XMLInterfaceBase(metaclass=ABCMeta):
 class XMLInterface84(XMLInterfaceBase):
     """The version 8.4.* XML interface."""
 
-    # Coqtop Types #
+    # Rocq Types #
     CoqGoal = NamedTuple("CoqGoal", [("id", str), ("hyp", List[str]), ("ccl", str)])
     CoqGoals = NamedTuple(
         "CoqGoals",
@@ -893,9 +893,9 @@ class XMLInterface84(XMLInterfaceBase):
             # TODO: maybe make use of this info?
             return ""
 
-    # Coqtop Commands #
+    # Rocq Commands #
     def init(self, _encoding: str = "utf-8") -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to initialize Coqtop.
+        """Create an XML string to initialize Rocq.
         Not a command in 8.4 so return dummy command.
         """
         return ("Init", None)
@@ -913,7 +913,7 @@ class XMLInterface84(XMLInterfaceBase):
         state: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to advance Coqtop.
+        """Create an XML string to advance Rocq.
         Attrs:
           verbose: bool - Verbose output
           id: int - The current state id
@@ -947,7 +947,7 @@ class XMLInterface84(XMLInterfaceBase):
         steps: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to move Coqtop to a specific location.
+        """Create an XML string to move Rocq to a specific location.
         Attrs:
           steps: int - The number of steps to rewind
         """
@@ -962,7 +962,7 @@ class XMLInterface84(XMLInterfaceBase):
         state: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to pose a query to Coqtop.
+        """Create an XML string to pose a query to Rocq.
         Attrs:
           raw: bool - ?
           verbose: bool - Verbose output
@@ -1023,14 +1023,14 @@ class XMLInterface84(XMLInterfaceBase):
         return res
 
     def status(self, encoding: str = "utf-8") -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to check Coqtop's status.
+        """Create an XML string to check Rocq's status.
         Args:
           _: unit - Empty arg
         """
         return ("Status", self._make_call(encoding, "status", children=()))
 
     def get_options(self, encoding: str = "utf-8") -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to check the state of Coqtop's options.
+        """Create an XML string to check the state of Rocq's options.
         Args:
           _: unit - Empty arg
         """
@@ -1057,7 +1057,7 @@ class XMLInterface84(XMLInterfaceBase):
         val: XMLInterfaceBase.OptionArg,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to set one of Coqtop's options.
+        """Create an XML string to set one of Rocq's options.
         Args:
           options: list (option_name * option_value) - The options to update and
                                                        the values to set them to
@@ -1070,7 +1070,7 @@ class XMLInterface84(XMLInterfaceBase):
         else:
             optval = val
 
-        # TODO: Coq source (toplevel/interface.mli) looks like the argument
+        # TODO: Rocq source (toplevel/interface.mli) looks like the argument
         # should be a list like in version 8.5 and on, but it only seems to
         # work if it is a single element
         return (
@@ -1088,7 +1088,7 @@ class XMLInterface84(XMLInterfaceBase):
 class XMLInterface85(XMLInterfaceBase):
     """The version 8.5.* XML interface."""
 
-    # Coqtop Types #
+    # Rocq Types #
     CoqGoal = NamedTuple("CoqGoal", [("id", str), ("hyp", List[str]), ("ccl", str)])
     CoqGoals = NamedTuple(
         "CoqGoals",
@@ -1281,11 +1281,11 @@ class XMLInterface85(XMLInterfaceBase):
             # TODO: maybe make use of this info?
             return ""
 
-    # Coqtop Commands #
+    # Rocq Commands #
     def init(self, encoding: str = "utf-8") -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to initialize Coqtop.
+        """Create an XML string to initialize Rocq.
         Args:
-          option string - A Coq file to add to the LoadPath to do ?
+          option string - A Rocq file to add to the LoadPath to do ?
         """
         return ("Init", self._make_call(encoding, "Init", children=None))
 
@@ -1305,7 +1305,7 @@ class XMLInterface85(XMLInterfaceBase):
         state: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to advance Coqtop.
+        """Create an XML string to advance Rocq.
         Args:
           cmd: string - The command to evaluate
           edit_id: int - The current edit id ?
@@ -1338,7 +1338,7 @@ class XMLInterface85(XMLInterfaceBase):
         _steps: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to move Coqtop to a specific location.
+        """Create an XML string to move Rocq to a specific location.
         Args:
           state_id: CoqStateId - The state id to move to
         """
@@ -1362,7 +1362,7 @@ class XMLInterface85(XMLInterfaceBase):
         state: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to pose a query to Coqtop.
+        """Create an XML string to pose a query to Rocq.
         Args:
           query: string - The query to evaluate
           state_id: CoqStateId - The current state id
@@ -1409,14 +1409,14 @@ class XMLInterface85(XMLInterfaceBase):
         return res
 
     def status(self, encoding: str = "utf-8") -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to check Coqtop's status.
+        """Create an XML string to check Rocq's status.
         Args:
           force: bool - Force all pending evaluations
         """
         return ("Status", self._make_call(encoding, "Status", children=True))
 
     def get_options(self, encoding: str = "utf-8") -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to check the state of Coqtop's options.
+        """Create an XML string to check the state of Rocq's options.
         Args:
           _: unit - Empty arg
         """
@@ -1443,7 +1443,7 @@ class XMLInterface85(XMLInterfaceBase):
         val: XMLInterfaceBase.OptionArg,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to set one of Coqtop's options.
+        """Create an XML string to set one of Rocq's options.
         Args:
           options: list (option_name * option_value) - The options to update and
                                                        the values to set them to
@@ -1558,7 +1558,7 @@ class XMLInterface87(XMLInterface86):
         """Expect: CoqRouteId(int)"""
         return self._build_xml("route_id", str(val.id))
 
-    # Coqtop Commands #
+    # Rocq Commands #
     # Overrides query() from 8.6
     def query(
         self,
@@ -1566,7 +1566,7 @@ class XMLInterface87(XMLInterface86):
         state: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to pose a query to Coqtop.
+        """Create an XML string to pose a query to Rocq.
         Args:
           route_id: CoqRouteId - The route id ?
           query: string - The query to evaluate
@@ -1597,7 +1597,7 @@ class XMLInterface89(XMLInterface88):
         coq_prog: Optional[str],
     ) -> None:
         """Update launch arguments."""
-        # Coq 8.9 split 'coqtop -ideslave' into a separate coqidetop binary
+        # Rocq 8.9 split 'coqtop -ideslave' into a separate coqidetop binary
         super().__init__(
             version,
             str_version,
@@ -1793,7 +1793,7 @@ class XMLInterface815(XMLInterface814):
         state: int,
         encoding: str = "utf-8",
     ) -> Tuple[str, Optional[bytes]]:
-        """Create an XML string to advance Coqtop.
+        """Create an XML string to advance Rocq.
         Args:
           cmd: string - The command to evaluate
           edit_id: int - The current edit id ?
@@ -1963,6 +1963,22 @@ class XMLInterface820(XMLInterface819):
         raise unexpected(("good", "fail"), val)
 
 
+class XMLInterface90(XMLInterface820):
+    """The version 9.0.* XML interface."""
+
+    def __init__(
+        self,
+        version: Tuple[int, int, int],
+        str_version: str,
+        coq_path: str,
+        coq_prog: Optional[str],
+    ) -> None:
+        """Add new queries."""
+        super().__init__(version, str_version, coq_path, coq_prog)
+
+        self.queries += ["Guarded", "Validate Proof"]
+
+
 XMLInterfaces = (
     ((8, 4, 0), (8, 5, 0), XMLInterface84),
     ((8, 5, 0), (8, 6, 0), XMLInterface85),
@@ -1981,22 +1997,24 @@ XMLInterfaces = (
     ((8, 18, 0), (8, 19, 0), XMLInterface818),
     ((8, 19, 0), (8, 20, 0), XMLInterface819),
     ((8, 20, 0), (8, 21, 0), XMLInterface820),
+    ((9, 0, 0), (9, 1, 0), XMLInterface90),
 )
 
 XMLInterfaceLatest = XMLInterfaces[-1][2]
 
 
 def find_coq(coq_path: Optional[str], coq_prog: Optional[str]) -> str:
-    """Find the path to the Coq executable."""
-    coq_prog = "coqc" if coq_prog is None else coq_prog
-    coq = which(coq_prog, path=coq_path)
-    if coq is None:
-        path = "$PATH" if coq_path is None else coq_path
-        raise FindCoqtopError(
-            f"Could not find {coq_prog} in {path}. Perhaps you need "
-            "to set g:coqtail_coq_path or g:coqtail_coq_prog."
-        )
-    return coq
+    """Find the path to the Rocq executable."""
+    coq_progs = ("coqc", "rocq") if coq_prog is None else (coq_prog,)
+    for prog in coq_progs:
+        coq = which(prog, path=coq_path)
+        if coq is not None:
+            return coq
+    path = "$PATH" if coq_path is None else coq_path
+    raise FindCoqtopError(
+        f"Could not find {' or '.join(coq_progs)} in {path}. Perhaps you need "
+        "to set g:coqtail_coq_path or g:coqtail_coq_prog."
+    )
 
 
 def extract_version(coq: str) -> str:
