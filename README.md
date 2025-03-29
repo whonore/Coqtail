@@ -1,9 +1,9 @@
 # Coqtail
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-[![Vim Tests](https://github.com/whonore/Coqtail/workflows/Vim%20Tests/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions?query=workflow%3AVim%20Tests)
-[![Python Tests](https://github.com/whonore/Coqtail/workflows/Python%20Tests/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions?query=workflow%3APython%20Tests)
-[![Rocq Tests](https://github.com/whonore/Coqtail/workflows/Coq%20Tests/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions?query=workflow%3ACoq%20Tests)
+[![Vim Tests](https://github.com/whonore/Coqtail/actions/workflows/vim-tests.yml/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions/workflows/vim-tests.yml)
+[![Python Tests](https://github.com/whonore/Coqtail/actions/workflows/python-tests.yml/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions/workflows/python-tests.yml)
+[![Rocq Tests](https://github.com/whonore/Coqtail/actions/workflows/coq-tests.yml/badge.svg?branch=main)](https://github.com/whonore/Coqtail/actions/workflows/coq-tests.yml)
 
 ## Interactive Rocq Proofs in Vim
 
