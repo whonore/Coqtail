@@ -2,6 +2,8 @@
 
 ## Unreleased ([main])
 
+## [1.8.0]
+
 ### Added
 - Support for Rocq 9.0.
   Created `Rocq*` aliases of all the `Coq*` commands.
@@ -452,6 +454,7 @@
 
 [main]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
+[1.8.0]: https://github.com/whonore/Coqtail/tree/v1.8.0
 [1.7.2]: https://github.com/whonore/Coqtail/tree/v1.7.2
 [1.7.1]: https://github.com/whonore/Coqtail/tree/v1.7.1
 [1.7.0]: https://github.com/whonore/Coqtail/tree/v1.7.0
