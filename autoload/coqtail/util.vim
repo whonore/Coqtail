@@ -100,7 +100,7 @@ endfunction
 " Perform a sequence of searches and put the results in the quickfix list.
 function! coqtail#util#qflist_search(buf, path, searches) abort
   " Temporarily set the global value of 'iskeyword' to the local value (which
-  " should be Coq's). Otherwise ' is not handled properly by vimgrep.
+  " should be Rocq's). Otherwise ' is not handled properly by vimgrep.
   let l:isk = &g:iskeyword
   let &g:iskeyword = &l:iskeyword
 

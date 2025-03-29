@@ -99,7 +99,7 @@ function! s:process_extra_args(arg) abort
   return l:out_list
 endfunction
 
-" Parse a _CoqProject file into options that can be passed to Coqtop.
+" Parse a _CoqProject file into options that can be passed to Rocq.
 function! coqtail#coqproject#parse(file) abort
   let l:dir = fnamemodify(a:file, ':p:h')
   let l:dir_opts = {'-R': 2, '-Q': 2, '-I': 1, '-include': 1}
@@ -140,9 +140,9 @@ function! coqtail#coqproject#parse(file) abort
   return l:proj_args
 endfunction
 
-" Find Coq project files in 'g:coqtail_project_names' searching upwards from
+" Find Rocq project files in 'g:coqtail_project_names' searching upwards from
 " the current directory. Return the file names and a list of arguments to pass
-" to Coqtop.
+" to Rocq.
 function! coqtail#coqproject#locate() abort
   let l:files = []
   let l:args = []

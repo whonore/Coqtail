@@ -1,16 +1,16 @@
-*coqtail.txt*	Interactive Coq Proofs in Vim
+*coqtail.txt*	Interactive Rocq Proofs in Vim
 
 Author:  Wolf Honore
 License: MIT (see LICENSE)
 
-Coqtail provides an interface to Coqtop to enable interactive Coq proof
-development. Coqtail uses a separate instance of Coqtop for each buffer, so
-you can have multiple open Coq sessions and switch between them seamlessly
-using standard Vim methods (e.g., the |argument-list| or |buffer-list|).
+Coqtail provides an interface to Rocq to enable interactive proof development.
+Coqtail uses a separate instance of Rocq for each buffer, so you can have
+multiple open sessions and switch between them seamlessly using standard Vim
+methods (e.g., the |argument-list| or |buffer-list|).
 
 1. Starting and Stopping Coqtail	|coqtail-start-stop|
 2. Movement Commands			|coqtail-movement|
-3. Coq Queries				|coqtail-queries|
+3. Rocq Queries				|coqtail-queries|
 4. Panel Management			|coqtail-panels|
 5. Configuration			|coqtail-configuration|
 6. Backwards Compatibility		|coqtail-backwards-compatibility|
@@ -19,28 +19,35 @@ using standard Vim methods (e.g., the |argument-list| or |buffer-list|).
 =============================
 Starting and Stopping Coqtail				    *coqtail-start-stop*
 
-					    *<leader>cc* *:CoqStart* *coqtail-start*
-:CoqStart	or
-<leader>cc		Start the plugin. Spawn Coqtop in the background and
+					       *<leader>cc* *:RocqStart* *:CoqStart*
+								 *coqtail-start*
+:RocqStart
+:CoqStart
+<leader>cc		Start the plugin. Spawn Rocq in the background and
 			open two windows on the right of the screen for the
 			Goal and Info panels.
 
-					      *<leader>cq* *:CoqStop* *coqtail-stop*
-:CoqStop	or
-<leader>cq		Stop the plugin. Stop Coqtop and close the Goal and
-			Info panels.
+						 *<leader>cq* *:RocqStop* *:CoqStop*
+								  *coqtail-stop*
+:RocqStop
+:CoqStop
+<leader>cq		Stop the plugin. Stop Rocq and close the Goal and Info
+			panels.
 
-					*CTRL-C* *:CoqInterrupt* *coqtail-interrupt*
-:CoqInterrupt	or
-CTRL-C			Send SIGINT to Coqtop and clear any pending commands.
+					   *CTRL-C* *:RocqInterrupt* *:CoqInterrupt*
+							     *coqtail-interrupt*
+:RocqInterrupt
+:CoqInterrupt
+CTRL-C			Send SIGINT to Rocq and clear any pending commands.
 
 =================
 Movement Commands					      *coqtail-movement*
 
-					      *<leader>cj* *i_<leader>cj* *:CoqNext*
+				    *<leader>cj* *i_<leader>cj* *:RocqNext* *:CoqNext*
 								  *coqtail-next*
-:[count]CoqNext	or
-[count]<leader>cj	Submit the next [count] sentences to Coqtop for
+:[count]RocqNext
+:[count]CoqNext
+[count]<leader>cj	Submit the next [count] sentences to Rocq for
 			checking. If successful, highlight the sentences and
 			update the Goal and Info panels accordingly.
 			Otherwise, highlight the error and display the error
@@ -48,33 +55,36 @@ Movement Commands					      *coqtail-movement*
 
 			[count] default: 1.
 
-					      *<leader>ck* *i_<leader>ck* *:CoqUndo*
+				    *<leader>ck* *i_<leader>ck* *:RocqUndo* *:CoqUndo*
 								  *coqtail-undo*
-:[count]CoqUndo	or
+:[count]RocqUndo
+:[count]CoqUndo
 [count]<leader>ck	Rewind by [count] steps. Un-highlight the previous
 			sentences and update the Goal and Info panels.
 
 			[count] default: 1.
 
-					    *<leader>cl* *i_<leader>cl* *:CoqToLine*
+				*<leader>cl* *i_<leader>cl* *:RocqToLine* *:CoqToLine*
 							       *coqtail-to-line*
-:[count]CoqToLine or
+:[count]RocqToLine
+:[count]CoqToLine
 [count]<leader>cl	Check/rewind all sentences up to the end of line
 			[count]. If no [count] is given, use the cursor
 			position instead. For example, given the line below,
-			where '^' represents the cursor position, `:CoqToLine`
+			where '^' represents the cursor position, `:RocqToLine`
 			will position the end of the checked section just
-			after '1' whereas `:27CoqToLine` will put it after '2'. >
+			after '1' whereas `:27RocqToLine` will put it after '2'. >
     line 27:	   Let x := 1.^Let y := 2.
 <
 			You can use this command to clear the error
 			highlighting for a failed sentence. The cursor has to
 			be moved inside the sentence first, for instance by
-			using `:CoqJumpToError` first.
+			using `:RocqJumpToError` first.
 
-								*:CoqOmitToLine*
+						*:RocqOmitToLine* *:CoqOmitToLine*
 							  *coqtail-omit-to-line*
-:[count]CoqOmitToLine	Behaves the same as `:CoqToLine`, but the bodies of
+:[count]RocqOmitToLine
+:[count]CoqOmitToLine	Behaves the same as `:RocqToLine`, but the bodies of
 			all opaque proofs (those ending with "Qed" or
 			"Admitted") are omitted and admitted. This can be
 			useful for quickly jumping to a point towards the end
@@ -89,31 +99,36 @@ Movement Commands					      *coqtail-movement*
 			NOTE: Proofs inside sections may need to list the
 			variables they depend on with `Proof using` in order
 			to get the right type when the proof body is omitted.
-			See https://coq.inria.fr/distrib/current/refman/proofs/writing-proofs/proof-mode.html#coq:cmd.Proof-using.
+			See https://rocq-prover.org/doc/master/refman/proofs/writing-proofs/proof-mode.html#coq:cmd.Proof-using.
 
-					     *<leader>cT* *i_<leader>cT* *:CoqToTop*
+				  *<leader>cT* *i_<leader>cT* *:RocqToTop* *:CoqToTop*
 								*coqtail-to-top*
-:CoqToTop	or
-<leader>cT		Rewind to the top of the file. Unlike `:1CoqToLine`
+:RocqToTop
+:CoqToTop
+<leader>cT		Rewind to the top of the file. Unlike `:1RocqToLine`
 			it rewinds to the beginning of the line.
 
-						      *<leader>cG* *:CoqJumpToEnd*
+				       *<leader>cG* *:RocqJumpToEnd* *:CoqJumpToEnd*
 							   *coqtail-jump-to-end*
-:CoqJumpToEnd	or
+:RocqJumpToEnd
+:CoqJumpToEnd
 <leader>cG		Move the cursor to the end of the checked region. This
 			does not move the checked region.
 
-						    *<leader>cE* *:CoqJumpToError*
+				   *<leader>cE* *:RocqJumpToError* *:CoqJumpToError*
 							 *coqtail-jump-to-error*
-:CoqJumpToError	or
+:RocqJumpToError
+:CoqJumpToError
 <leader>cE		Move the cursor to the start of the error region. This
 			does not move the checked region.
 
-				      *<leader>cgd* *:CoqGotoDef* *coqtail-goto-def*
+					  *<leader>cgd* *:RocqGotoDef* *:CoqGotoDef*
+							      *coqtail-goto-def*
+:RocqGotoDef[!] {arg}
 :CoqGotoDef[!] {arg}
 <leader>cgd		Populate the |quickfix| list with possible locations
-			of the definition of a Coq term and try to jump to the
-			first one. If jumping is impossible open the
+			of the definition of a Rocq term and try to jump to
+			the first one. If jumping is impossible open the
 			|quickfix-window| instead. The first version uses
 			{arg}, while the second uses the term under the cursor.
 			If 'tagfunc' is supported and `g:coqtail_tagfunc` is
@@ -121,46 +136,54 @@ Movement Commands					      *coqtail-movement*
 			(`:tag`, `CTRL-]`, etc).
 
 ===========
-Coq Queries						       *coqtail-queries*
+Rocq Queries						       *coqtail-queries*
 
-							    *:Coq* *coqtail-query*
-:Coq {args}		Send an arbitrary query to Coqtop and write the
-			response to the Info panel. Commands and mappings for
-			the common queries are listed below.
+						      *:Rocq* *:Coq* *coqtail-query*
+:Rocq {args}
+:Coq {args}		Send an arbitrary query to Rocq and write the response
+			to the Info panel. Commands and mappings for the
+			common queries are listed below.
 
 						     *<leader>cs* *coqtail-search*
+:Rocq Search {arg}
 :Coq Search {arg}
-<leader>cs		The first version uses {arg}, while the second uses the
+<leader>cs		The command uses {arg}, while the mapping uses the
 			term under the cursor or the highlighted range in
 			visual mode.
 
 						      *<leader>ch* *coqtail-check*
+:Rocq Check {arg}
 :Coq Check {arg}
 <leader>ch
 
 						      *<leader>ca* *coqtail-about*
+:Rocq About {arg}
 :Coq About {arg}
 <leader>ca
 
 						      *<leader>cp* *coqtail-print*
+:Rocq Print {arg}
 :Coq Print {arg}
 <leader>cp
 
 						     *<leader>cf* *coqtail-locate*
+:Rocq Locate {arg}
 :Coq Locate {arg}
 <leader>cf
 
 ================
 Panel Management						*coqtail-panels*
 
-						  *<leader>cr* *:CoqRestorePanels*
+			       *<leader>cr* *:RocqRestorePanels* *:CoqRestorePanels*
 							*coqtail-restore-panels*
+:RocqRestorePanels
 :CoqRestorePanels
 <leader>cr		Re-open the Goal and Info panels in their original
 			configuration.
 
-						      *<leader>cgg* *:CoqGotoGoal*
+					*<leader>cgg* *:RocqGotoGoal* *:CoqGotoGoal*
 						       *coqtail-goto-goal-start*
+:[count]RocqGotoGoal
 :[count]CoqGotoGoal
 <count><leader>cgg	Scroll the Goal panel to the start of goal [count].
 			Control the number of goal lines to display with
@@ -168,30 +191,35 @@ Panel Management						*coqtail-panels*
 
 			[count] default: 1.
 
-						     *<leader>cgG* *:CoqGotoGoal!*
+				      *<leader>cgG* *:RocqGotoGoal!* *:CoqGotoGoal!*
 							 *coqtail-goto-goal-end*
+:[count]RocqGotoGoal!
 :[count]CoqGotoGoal!
-<count><leader>cgG	Same as `:CoqGotoGoal` but scroll to the end of the
+<count><leader>cgG	Same as `:RocqGotoGoal` but scroll to the end of the
 			goal.
 
-							   *]g* *:CoqGotoGoalNext*
+					 *]g* *:RocqGotoGoalNext* *:CoqGotoGoalNext*
 						  *coqtail-goto-goal-next-start*
+:RocqGotoGoalNext
 :CoqGotoGoalNext
 ]g			Scroll the Goal panel to the start of the next goal.
 
-							  *]G* *:CoqGotoGoalNext!*
+				       *]G* *:RocqGotoGoalNext!* *:CoqGotoGoalNext!*
 						    *coqtail-goto-goal-next-end*
+:RocqGotoGoalNext!
 :CoqGotoGoalNext!
 ]G			Scroll the Goal panel to the end of the next goal.
 
-							   *[g* *:CoqGotoGoalPrev*
+					 *[g* *:RocqGotoGoalPrev* *:CoqGotoGoalPrev*
 						  *coqtail-goto-goal-prev-start*
+:RocqGotoGoalPrev
 :CoqGotoGoalPrev
 [g			Scroll the Goal panel to the start of the previous
 			goal.
 
-							  *[G* *:CoqGotoGoalPrev!*
+				       *[G* *:RocqGotoGoalPrev!* *:CoqGotoGoalPrev!*
 						    *coqtail-goto-goal-prev-end*
+:RocqGotoGoalPrev!
 :CoqGotoGoalPrev!
 [G			Scroll the Goal panel to the end of the previous goal.
 
@@ -210,9 +238,9 @@ b:coqtail_coq_path	The path to search for the coq(ide)top(.opt) binary.
 				         *g:coqtail_coq_prog* *b:coqtail_coq_prog*
 							      *coqtail-coq-prog*
 g:coqtail_coq_prog
-b:coqtail_coq_prog	The name of the Coq executable to run. If empty then
+b:coqtail_coq_prog	The name of the Rocq executable to run. If empty then
 			it defaults to coqtop or coqidetop depending on the
-			Coq version. For example, to use the HoTT library: >
+			Rocq version. For example, to use the HoTT library: >
 		    let b:coqtail_coq_path = '/path/to/HoTT'
 		    let b:coqtail_coq_prog = 'hoqidetop'
 <
@@ -220,57 +248,57 @@ b:coqtail_coq_prog	The name of the Coq executable to run. If empty then
 
 				       *g:coqtail_goal-lines* *coqtail-goal-lines*
 g:coqtail_goal_lines	The number of lines from the start of a goal to
-			display. Used by `:CoqGotoGoal`.
+			display. Used by `:RocqGotoGoal`.
 
 			Default: 5.
 
 					     *b:coqtail_timeout* *coqtail-timeout*
-b:coqtail_timeout	The time in seconds before interrupting Coqtop after
+b:coqtail_timeout	The time in seconds before interrupting Rocq after
 			issuing a command. A value of 0 disables the timeout.
 			Coqtail can also be manually interrupted with
-			`:CoqInterrupt`.
+			`:RocqInterrupt`.
 
 			Default: 0
 
 						      *g:coqtail_build_system*
 g:coqtail_build_system	The build system to use in order to determine
-			arguments passed to Coqtop. Can be `dune`, `coqproject`,
+			arguments passed to Rocq. Can be `dune`, `coqproject`,
 			`prefer-dune`, or `prefer-coqproject`.
 			The `dune` mode always uses `dune` for determining
-			arguments for Coqtop.
-			The `coqproject` mode always looks for Coq project
+			arguments for Rocq.
+			The `coqproject` mode always looks for Rocq project
 			files.
 			The `prefer-dune` mode will use dune if a
 			`dune-project` file can be located and otherwise fall
 			back to `coqproject` mode.
-			The `prefer-coqproject` mode will use Coq project
+			The `prefer-coqproject` mode will use Rocq project
 			files if any are found, or try to fall back to `dune`
 			if none are found.
 
 			Default: 'prefer-dune'
 
 				     *g:coqtail_project_names* *coq-project-files*
-g:coqtail_project_names	The names of Coq project files to search for in Coq
+g:coqtail_project_names	The names of Rocq project files to search for in Rocq
 			project mode. The search begins in the current
 			directory and proceeds upwards. If found, project
-			files are parsed and passed as arguments to Coqtop
-			by `:CoqStart`.
+			files are parsed and passed as arguments to Rocq
+			by `:RocqStart`.
 
 			Default: ['_CoqProject']
 
 						       *b:coqtail_project_files*
-b:coqtail_project_files	Paths to the Coq project files found during `:CoqStart`.
+b:coqtail_project_files	Paths to the Rocq project files found during `:RocqStart`.
 
 
 							   *b:coqtail_use_dune*
-b:coqtail_use_dune	Whether to use dune for Coqtop options after
+b:coqtail_use_dune	Whether to use dune for Rocq options after
 			`g:coqtail_build_system` has been evaluated with the
 			available options.
 
 						   *g:coqtail_dune_compile_deps*
 g:coqtail_dune_compile_deps
 			When using dune, compile dependencies of this file
-			before launching Coqtop.
+			before launching Rocq.
 
 			Default: 0
 
@@ -364,23 +392,23 @@ g:coqtail_indent_on_dot	If true then trigger auto-indentation when a '.' is
 							   *coqtail-proof-diffs*
 g:coqtail_auto_set_proof_diffs
 b:coqtail_auto_set_proof_diffs
-			The argument to automatically pass to `:Coq Set Diffs`
+			The argument to automatically pass to `:Rocq Set Diffs`
 			on every new Coqtail session. For example, if
 			`g:coqtail_auto_set_proof_diffs` is `'on'` then
-			`:CoqStart` calls `:Coq Set Diffs "on"` immediately
-			after launching Coqtop. The argument is ignored if it
-			is set to `''` (the default) or if using a version of
-			Coq that does not support proof diffs.
-			Note: Changing this option after `:CoqStart` has no
+			`:RocqStart` calls `:Rocq Set Diffs "on"` immediately
+			after launching Rocq. The argument is ignored if it is
+			set to `''` (the default) or if using a version of
+			Rocq that does not support proof diffs.
+			Note: Changing this option after `:RocqStart` has no
 			effect on the current proof. To manually toggle diffs
-			mid-proof use `:Coq Set Diffs "{arg}"` where `{arg}`
+			mid-proof use `:Rocq Set Diffs "{arg}"` where `{arg}`
 			is `on`, `off`, or `removed`.
 
 			Default: ''
 
 			     *g:coqtail_update_tagstack* *coqtail-update-tagstack*
 g:coqtail_update_tagstack
-			If true then update the |tagstack| when `:CoqGotoDef`
+			If true then update the |tagstack| when `:RocqGotoDef`
 			jumps to a definition.
 
 			Default: 1
@@ -393,7 +421,7 @@ g:coqtail_tagfunc	If true then set 'tagfunc' to `coqtail#gettags`.
 					     *g:coqtail_treat_stderr_as_warning*
 					       *coqtail-treat-stderr-as-warning*
 g:coqtail_treat_stderr_as_warning
-			If true then assume all messages received from Coq on
+			If true then assume all messages received from Rocq on
 			stderr are only warnings. Warnings are reported in the
 			Info panel, but do not prevent checking subsequent
 			sentences. This shouldn't be necessary in most cases
@@ -426,7 +454,9 @@ Version	Effect~
 =========
 Debugging							 *coqtail-debug*
 
-			       *<leader>cd* *:CoqToggleDebug* *coqtail-toggle-debug*
+				   *<leader>cd* *:RocqToggleDebug* *:CoqToggleDebug*
+							  *coqtail-toggle-debug*
+:RocqToggleDebug
 :CoqToggleDebug
 <leader>cd		Enable or disable logging of debugging statements to a
 			file. Enabling creates a temporary file and displays
@@ -436,7 +466,7 @@ Debugging							 *coqtail-debug*
 
 					   *b:coqtail_log_name* *coqtail-log-name*
 b:coqtail_log_name	The name of the debugging log file. Set automatically
-			by enabling/disabling debugging with `:CoqToggleDebug`.
+			by enabling/disabling debugging with `:RocqToggleDebug`.
 
 			Default: ''
 

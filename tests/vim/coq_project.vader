@@ -153,7 +153,7 @@ Execute (arg):
   let args = coqtail#coqproject#parse(f)
   AssertEqual ['-w', 'all'], args
 
-" See https://coq.inria.fr/doc/v8.19/refman/practical-tools/utilities.html#quoting-arguments-to-coqc
+" See https://rocq-prover.org/doc/v8.19/refman/practical-tools/utilities.html#quoting-arguments-to-coqc
 Execute (double-quote-arg):
   let f = tempname()
   call writefile(['-arg "-w all"'], f)

@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
-"""Coqtop interface with functions to send commands and parse responses."""
+"""Rocq interface with functions to send commands and parse responses."""
 
 import datetime
 import io
@@ -71,7 +71,7 @@ def join_not_empty(msgs: Iterable[str], joiner: str = "\n\n") -> str:
 
 
 class CoqtopError(Exception):
-    """An exception for when Coqtop stops unexpectedly."""
+    """An exception for when Rocq stops unexpectedly."""
 
 
 class DuneError(Exception):
@@ -79,20 +79,20 @@ class DuneError(Exception):
 
 
 class Coqtop:
-    """Provide an interface to the background Coqtop process."""
+    """Provide an interface to the background Rocq process."""
 
     def __init__(
         self,
         add_info_callback: Optional[Callable[[str], None]] = None,
     ) -> None:
-        """Initialize Coqtop state.
+        """Initialize Rocq state.
 
-        coqtop - The Coqtop process
+        coqtop - The Rocq process
         states - A stack of previous state_ids (grows to the right)
         state_id - The current (tip) state_id
         root_state - The starting state_id
-        out_q - A thread-safe queue of data read from Coqtop
-        err_q - A thread-safe queue of error messages read from Coqtop
+        out_q - A thread-safe queue of data read from Rocq
+        err_q - A thread-safe queue of error messages read from Rocq
         xml - The XML interface for the given version
         """
         self.coqtop: Optional[CoqtopProcess] = None
@@ -137,7 +137,7 @@ class Coqtop:
         return False
 
     def get_dune_args(self, filename: str, dune_compile_deps: bool) -> List[str]:
-        """Get the arguments to pass to the coqtop process from dune.
+        """Get the arguments to pass to the Rocq process from dune.
         Assumes that the file is part of a correctly configured dune project."""
         # dune needs relative paths to work properly
         basename = os.path.basename(filename)
@@ -218,12 +218,12 @@ class Coqtop:
         coq_path: Optional[str],
         coq_prog: Optional[str],
     ) -> Union[VersionInfo, str]:
-        """Find the Coqtop executable."""
+        """Find the Rocq executable."""
         assert self.coqtop is None
         assert self.xml is None
 
         try:
-            self.logger.debug("locating coq")
+            self.logger.debug("locating rocq")
             self.xml, latest = XMLInterface(coq_path, coq_prog)
 
             return {
@@ -232,11 +232,11 @@ class Coqtop:
                 "latest": latest,
             }
         except (OSError, FindCoqtopError) as e:
-            # Failed to find Coqtop
+            # Failed to find Rocq
             self.xml = None
             return str(e)
 
-    # Coqtop Interface #
+    # Rocq Interface #
     def start(
         self,
         filename: str,
@@ -246,7 +246,7 @@ class Coqtop:
         timeout: Optional[int] = None,
         stderr_is_warning: bool = False,
     ) -> Tuple[Optional[str], str]:
-        """Launch the Coqtop process."""
+        """Launch the Rocq process."""
         assert self.coqtop is None
         assert self.xml is not None
 
@@ -268,7 +268,7 @@ class Coqtop:
                 bufsize=0,
             )
 
-            # Ensure that Coqtop spawned correctly
+            # Ensure that Rocq spawned correctly
             try:
                 self.coqtop.wait(timeout=0.1)
                 assert self.coqtop.stderr is not None
@@ -276,7 +276,7 @@ class Coqtop:
             except subprocess.TimeoutExpired:
                 pass
 
-            # Spawn threads to monitor Coqtop's stdout and stderr
+            # Spawn threads to monitor Rocq's stdout and stderr
             for buf, stream in (
                 (self.out_q, self.coqtop.stdout),
                 (self.err_q, self.coqtop.stderr),
@@ -288,7 +288,7 @@ class Coqtop:
                 ).start()
             threading.Thread(target=self.capture_dead, daemon=True).start()
 
-            # Initialize Coqtop
+            # Initialize Rocq
             response, err = self.call(
                 self.xml.init(),
                 timeout=timeout,
@@ -303,12 +303,12 @@ class Coqtop:
 
             return (None, err)
         except (OSError, DuneError) as e:
-            # Failed to launch Coqtop
+            # Failed to launch Rocq
             self.coqtop = None
             return str(e), ""
 
     def stop(self) -> None:
-        """End the Coqtop process."""
+        """End the Rocq process."""
         if self.dune is not None:
             self.interrupt()
 
@@ -317,13 +317,13 @@ class Coqtop:
             self.stopping = True
 
             try:
-                # Try to terminate Coqtop cleanly
+                # Try to terminate Rocq cleanly
                 # TODO: use Quit call
                 self.coqtop.terminate()
                 self.coqtop.communicate()
             except (OSError, ValueError, AttributeError):
                 try:
-                    # Force Coqtop to stop
+                    # Force Rocq to stop
                     self.coqtop.kill()
                 except (OSError, AttributeError):
                     pass
@@ -347,7 +347,7 @@ class Coqtop:
         timeout: Optional[int] = None,
         stderr_is_warning: bool = False,
     ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
-        """Advance Coqtop by sending 'cmd'."""
+        """Advance Rocq by sending 'cmd'."""
         assert self.xml is not None
         self.logger.debug("advance: %s", cmd)
         response, err1 = self.call(
@@ -380,7 +380,7 @@ class Coqtop:
             return False, msgs, status.loc, err
 
         # Only add the state id to the rewind list if the command is actually
-        # in the file so Coq and Coqtail stay in sync.
+        # in the file so Rocq and Coqtail stay in sync.
         if in_script:
             self.states.append(self.state_id)
         self.state_id = response.val["state_id"]
@@ -402,7 +402,7 @@ class Coqtop:
         else:
             # In 8.4 query and option commands will be recorded with
             # state_id = -1. Need to count them and reduce number of steps to
-            # rewind so Coqtop doesn't go too far back
+            # rewind so Rocq doesn't go too far back
             fake_steps = sum(s == -1 for s in self.states[-steps:])
             if self.states[-steps] != -1:
                 self.state_id = self.states[-steps]
@@ -430,7 +430,7 @@ class Coqtop:
         timeout: Optional[int] = None,
         stderr_is_warning: bool = False,
     ) -> Tuple[bool, str, Optional[Tuple[int, int]], str]:
-        """Query Coqtop with 'cmd'."""
+        """Query Rocq with 'cmd'."""
         assert self.xml is not None
         self.logger.debug("query: %s", cmd)
         response, err = self.call(
@@ -580,11 +580,11 @@ class Coqtop:
             "Diffs",
         }
 
-        # Since Coq split parsing and execution of vernacular commands, certain
-        # options, such as `Default Proof Mode` can't be set with SetOptions.
-        # So to make things easier, just use `Add` instead of `SetOptions` for
-        # all but a few options that Coq will otherwise scold you about not
-        # setting from the IDE menu.
+        # Since Rocq split parsing and execution of vernacular commands,
+        # certain options, such as `Default Proof Mode` can't be set with
+        # SetOptions. So to make things easier, just use `Add` instead of
+        # `SetOptions` for all but a few options that Rocq will otherwise scold
+        # you about not setting from the IDE menu.
         # See: https://github.com/coq/coq/blob/40373610d6024510125405f53293809bc850b3af/library/goptions.ml#L437
         if vals is not None and opt not in scoldable:
             return self.advance(
@@ -756,18 +756,18 @@ class Coqtop:
             if not ok:
                 self.logger.warning("Failed to re-enable Diffs option: %s", err)
 
-    # Interacting with Coqtop #
+    # Interacting with Rocq #
     def call(
         self,
         cmdtype_msg: Tuple[str, Optional[bytes]],
         timeout: Optional[int] = None,
         stderr_is_warning: bool = False,
     ) -> Tuple[Result, str]:
-        """Send 'msg' to the Coqtop process and wait for the response."""
+        """Send 'msg' to the Rocq process and wait for the response."""
         assert self.xml is not None
-        # Check if Coqtop has stopped
+        # Check if Rocq has stopped
         if not self.running():
-            raise CoqtopError("Coqtop is not running.")
+            raise CoqtopError("Rocq is not running.")
 
         # Throw away any unread messages
         self.empty_out()
@@ -805,7 +805,7 @@ class Coqtop:
 
         while True:
             # Abort if an error is printed to stderr, but ignore warnings.
-            # NOTE: If `warnings_wf` is False because this version of Coq does
+            # NOTE: If `warnings_wf` is False because this version of Rocq does
             # not follow the pattern expected by `partition_warnings` then
             # pretend everything is a warning and hope for the best.
             # The `stderr_is_warning` option also causes any any message
@@ -862,17 +862,17 @@ class Coqtop:
             try:
                 buffer.put(stream.read(0x10000))
             except (AttributeError, OSError, ValueError):
-                # Coqtop died
+                # Rocq died
                 return
 
     def capture_dead(self) -> None:
-        """Continually check if Coqtop has died."""
+        """Continually check if Rocq has died."""
         while self.running():
             time.sleep(1)
         self.stop()
 
     def send_cmd(self, cmd: bytes) -> None:
-        """Write to Coqtop's stdin."""
+        """Write to Rocq's stdin."""
         if self.coqtop is None:
             raise CoqtopError("coqtop must not be None in send_cmd()")
         if self.coqtop.stdin is None:
@@ -882,7 +882,7 @@ class Coqtop:
         self.coqtop.stdin.flush()
 
     def interrupt(self) -> None:
-        """Send a SIGINT signal to Coqtop or a SIGTERM signal to dune."""
+        """Send a SIGINT signal to Rocq or a SIGTERM signal to dune."""
         if self.dune is not None:
             # if dune is running, stop it
             self.dune.send_signal(signal.SIGTERM)
@@ -893,7 +893,7 @@ class Coqtop:
 
     # Current State #
     def running(self) -> bool:
-        """Check if Coqtop has already been started."""
+        """Check if Rocq has already been started."""
         return self.coqtop is not None and self.coqtop.poll() is None
 
     # Debugging #

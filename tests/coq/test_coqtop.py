@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 # Author: Wolf Honore
 # pylint: disable=redefined-outer-name
-"""Coq integration tests."""
+"""Rocq integration tests."""
 
 import os
 from typing import Generator, List, Tuple
@@ -14,7 +14,7 @@ from xmlInterface import XMLInterface, join_tagged_tokens
 
 
 # Test Helpers #
-# TODO: Should also look at current goal, messages returned by Coqtop
+# TODO: Should also look at current goal, messages returned by Rocq
 def get_state(coq: Coqtop) -> Tuple[int, int, List[int]]:
     """Collect the state variables for coq."""
     return coq.root_state, coq.state_id, coq.states[:]
@@ -30,12 +30,12 @@ def coq() -> Generator[Coqtop, None, None]:
     if isinstance(ver_or_err, dict):
         res, _ = ct.start("", [], False, False)
         if res is not None:
-            pytest.fail(f"Failed to create Coqtop instance\n{res}")
+            pytest.fail(f"Failed to create Rocq instance\n{res}")
         else:
             yield ct
             ct.stop()
     else:
-        pytest.fail(f"Failed to create Coqtop instance\n{ver_or_err}")
+        pytest.fail(f"Failed to create Rocq instance\n{ver_or_err}")
 
 
 # Test Cases #
@@ -308,7 +308,7 @@ def test_start_warning(args: List[str]) -> None:
     assert ct.xml is not None
     res, stderr = ct.start("", args, False, False)
     assert res is None
-    # Some versions of Coq don't print warnings in the expected format.
+    # Some versions of Rocq don't print warnings in the expected format.
     if ct.xml.warnings_wf and stderr != "":
         assert stderr.startswith("Warning:")
 

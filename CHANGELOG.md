@@ -3,6 +3,9 @@
 ## Unreleased ([main])
 
 ### Added
+- Support for Rocq 9.0.
+  Created `Rocq*` aliases of all the `Coq*` commands.
+  (PR #383)
 - Basic support for `Rewrite Rule` syntax highlighting and indentation.
   (PR #373)
 

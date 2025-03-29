@@ -1,5 +1,5 @@
 " Author: Wolf Honore
-" Coq version parsing tests.
+" Rocq version parsing tests.
 
 Execute (match-exact):
   Assert coqtail#version#match('1.2.3', '1.2.3')
