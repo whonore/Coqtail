@@ -347,7 +347,16 @@ endfunction
 function! coqtail#start(after_start_func, coq_args) abort
   if s:running()
     call coqtail#util#warn('Rocq is already running.')
-  elseif s:initted()
+  elseif s:initted() && b:coqtail_log_name ==# ''
+    " Hack: The left side of this condition is here to ensure that no commands
+    " can run before `RocqStart` has completed, which avoids possible race
+    " conditions. See https://github.com/whonore/Coqtail/issues/364 and
+    " https://github.com/whonore/Coqtail/pull/366 for details. The right side
+    " is a hack to make an exception for `RocqToggleDebug`, which we do want to
+    " allow before `RocqStart` in order to log errors during startup. This
+    " means you can trigger the race condition with something like
+    " `RocqToggleDebug | RocqStop` followed by `RocqToLine | RocqToLine`, but
+    " maybe just don't and everything should be fine.
     call coqtail#util#warn('Rocq is still starting.')
   else
     " See comment in coqtail#init() about buffer-local variables
