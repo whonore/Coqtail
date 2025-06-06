@@ -2,6 +2,11 @@
 
 ## Unreleased ([main])
 
+### Fixed
+- Allow calling `:RocqToggleDebug` before `:RocqStart` and store the path to the
+  log file in `b:coqtail_log_name`.
+  (PR #388)
+
 ## [1.8.0]
 
 ### Added
