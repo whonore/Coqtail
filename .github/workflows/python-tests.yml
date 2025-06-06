@@ -19,12 +19,11 @@ concurrency:
 jobs:
   py-tests:
     name: Python unit tests
-    # Allow installing Python 3.6 (actions/setup-python#544).
-    runs-on: ubuntu-20.04
-    # runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        py_version: ['3.6']
+        # See the comment in coq-tests.yml for why this is 3.10 instead of 3.6.
+        py_version: ['3.10']
     steps:
       - uses: actions/checkout@v4
       - name: Install Python ${{ matrix.py_version }}
@@ -38,4 +37,4 @@ jobs:
       - name: Run Python tests
         run: |
           python --version
-          tox -e unit-py36
+          tox -e unit-py310

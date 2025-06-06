@@ -21,9 +21,7 @@ concurrency:
 jobs:
   coq-tests:
     name: Coq integration tests
-    # Allow installing Python 3.6 (actions/setup-python#544).
-    runs-on: ubuntu-20.04
-    # runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         coq_version:
@@ -46,22 +44,32 @@ jobs:
           - '8.20'
           - '9.0'
           - 'master'
-        py_version: ['3.6']
+        # I'd like to test the oldest version that Coqtail supports (3.6), but
+        # setup-python doesn't support it except on ubuntu-20.04, which is
+        # deprecated as of 2025-04-15. Using 3.10 instead as that should
+        # hopefully be supported without any issues for a while.
+        # https://github.com/actions/setup-python/issues/544
+        # https://github.com/actions/runner-images/issues/11101
+        py_version: ['3.10']
     steps:
       - uses: actions/checkout@v4
       - name: Install Nix
-        uses: cachix/install-nix-action@v27
+        uses: cachix/install-nix-action@v31
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
       - name: Install Cachix
-        uses: cachix/cachix-action@v15
+        uses: cachix/cachix-action@v16
         with:
           name: coq
           skipPush: true
-      - name: Set up Nix cache
-        # Only Coq master needs additional caching.
-        if: ${{ matrix.coq_version == 'master' }}
-        uses: DeterminateSystems/magic-nix-cache-action@v8
+      # magic-nix-cache is deprecated as of 2025-02-1. Build times for Rocq
+      # master don't seem to be too bad without it, so we can go with that for
+      # now.
+      # https://dtr.mn/magic-nix-cache-eol
+      # - name: Set up Nix cache
+      #   # Only Coq master needs additional caching.
+      #   if: ${{ matrix.coq_version == 'master' }}
+      #   uses: DeterminateSystems/magic-nix-cache-action@v9
       - name: Install Coq ${{ matrix.coq_version }}
         run: nix-env -j auto --cores 0 -i -f ci/coq.nix --argstr version ${{ matrix.coq_version }}
       - name: Install Python ${{ matrix.py_version }}
@@ -76,4 +84,4 @@ jobs:
         run: |
           coqtop --version
           python --version
-          tox -e coq-py36
+          tox -e coq-py310
