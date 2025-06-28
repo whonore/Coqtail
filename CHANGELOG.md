@@ -2,6 +2,12 @@
 
 ## Unreleased ([main])
 
+### Added
+- `CoqCommandComplete` autocommand event, which is triggered whenever a command
+  completes.
+  `g:coqtail#event` contains information about the command.
+  (PR #368)
+
 ### Fixed
 - Allow calling `:RocqToggleDebug` before `:RocqStart` and store the path to the
   log file in `b:coqtail_log_name`.
