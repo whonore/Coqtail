@@ -174,13 +174,13 @@ the current file on `:RocqStart` by setting `g:coqtail_dune_compile_deps = 1`.
 #### _CoqProject Settings
 
 By default, Coqtail searches the current and parent directories for a
-`_CoqProject` file, but additional or different project files can be specified
-with `g:coqtail_project_files`.
+`_CoqProject` or `_RocqProject` file, but additional or different project files can be specified
+with `g:coqtail_project_names`.
 If multiple files are found, their argument lists will be concatenated.
 For example, to include arguments from both `_CoqProject` and `_CoqProject.local`:
 
 ```vim
-let g:coqtail_project_files = ['_CoqProject', '_CoqProject.local']
+let g:coqtail_project_names = ['_CoqProject', '_CoqProject.local']
 ```
 
 ### Syntax Highlighting and Indentation
