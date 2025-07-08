@@ -31,7 +31,7 @@ let s:port = -1
 
 " Default CoqProject file name.
 if !exists('g:coqtail_project_names')
-  let g:coqtail_project_names = ['_CoqProject']
+  let g:coqtail_project_names = ['_CoqProject', '_RocqProject']
 endif
 
 " Default to updating the tagstack on coqtail#gotodef.

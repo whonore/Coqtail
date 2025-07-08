@@ -284,7 +284,7 @@ g:coqtail_project_names	The names of Rocq project files to search for in Rocq
 			files are parsed and passed as arguments to Rocq
 			by `:RocqStart`.
 
-			Default: ['_CoqProject']
+			Default: ['_CoqProject', '_RocqProject']
 
 						       *b:coqtail_project_files*
 b:coqtail_project_files	Paths to the Rocq project files found during `:RocqStart`.
