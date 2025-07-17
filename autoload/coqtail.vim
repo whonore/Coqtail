@@ -528,7 +528,6 @@ function! coqtail#stop() abort
   call coqtail#panels#cleanup()
 endfunction
 
-" Clean up commands, panels, and autocommands.
 function! coqtail#cleanupCB(chan, msg) abort
   call s:unlock_buffer(a:msg.buf)
 endfunction
