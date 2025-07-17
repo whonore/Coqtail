@@ -517,11 +517,6 @@ function! coqtail#stop() abort
   silent! autocmd! coqtail#Sync * <buffer>
 
   call s:call('stop', 'coqtail#cleanupCB', 1, {})
-endfunction
-
-" Clean up commands, panels, and autocommands.
-function! coqtail#cleanupCB(chan, msg) abort
-  call s:unlock_buffer(a:msg.buf)
 
   " Close the channel
   silent! call b:coqtail_chan.close()
@@ -531,6 +526,11 @@ function! coqtail#cleanupCB(chan, msg) abort
 
   " Clean up auxiliary panels
   call coqtail#panels#cleanup()
+endfunction
+
+" Clean up commands, panels, and autocommands.
+function! coqtail#cleanupCB(chan, msg) abort
+  call s:unlock_buffer(a:msg.buf)
 endfunction
 
 " Advance/rewind Rocq to the specified position.
