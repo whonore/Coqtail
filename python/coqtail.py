@@ -1055,6 +1055,10 @@ class CoqtailServer:
         CoqtailHandler.sync = sync
         CoqtailServer.serv = ThreadingTCPServer(("localhost", 0), CoqtailHandler)
         CoqtailServer.serv.daemon_threads = True
+
+        # This is necessary to convince MyPy that this is a 2-element IPv4
+        # address, not a 4-element IPv6 one.
+        assert len(CoqtailServer.serv.server_address) == 2
         _, port = CoqtailServer.serv.server_address
 
         threading.Thread(target=CoqtailServer.serv.serve_forever, daemon=True).start()
