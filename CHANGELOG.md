@@ -3,6 +3,8 @@
 ## Unreleased ([main])
 
 ### Fixed
+- `:q` actually exits Vim/NeoVim instead of just stopping Rocq.
+  (PR #398)
 - Allow calling `:RocqToggleDebug` before `:RocqStart` and store the path to the
   log file in `b:coqtail_log_name`.
   (PR #388)

@@ -516,6 +516,10 @@ function! coqtail#stop() abort
   silent! autocmd! coqtail#Quit * <buffer>
   silent! autocmd! coqtail#Sync * <buffer>
 
+  " Clean up auxiliary panels. This must come before coqtail#cleanupCB to
+  " ensure that the channel cleanup happens in the main buffer.
+  call coqtail#panels#cleanup()
+
   call s:call('stop', 'coqtail#cleanupCB', 1, {})
 endfunction
 
@@ -523,14 +527,12 @@ endfunction
 function! coqtail#cleanupCB(chan, msg) abort
   call s:unlock_buffer(a:msg.buf)
 
-  " Close the channel
+  " Close the channel. The auxiliary panels should be closed at this point, so
+  " we can assume the current buffer is the main one.
   silent! call b:coqtail_chan.close()
   let b:coqtail_chan = 0
   let b:coqtail_started = 0
   let b:coqtail_stopping = 0
-
-  " Clean up auxiliary panels
-  call coqtail#panels#cleanup()
 endfunction
 
 " Advance/rewind Rocq to the specified position.
