@@ -3,6 +3,9 @@
 ## Unreleased ([main])
 
 ### Fixed
+- Print an error message on `:RocqStart` if `coqidetop` (or
+  `b:coqtail_coq_prog`) cannot be found.
+  (PR #401)
 - `:q` actually exits Vim/NeoVim instead of just stopping Rocq.
   (PR #398)
 - Allow calling `:RocqToggleDebug` before `:RocqStart` and store the path to the
