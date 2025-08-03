@@ -302,7 +302,7 @@ class Coqtop:
             self.state_id = response.val
 
             return (None, err)
-        except (OSError, DuneError) as e:
+        except (OSError, DuneError, FindCoqtopError) as e:
             # Failed to launch Rocq
             self.coqtop = None
             return str(e), ""
