@@ -2,6 +2,12 @@
 
 ## Unreleased ([main])
 
+### Added
+- `CoqCommandComplete` autocommand event, which is triggered whenever a command
+  completes.
+  `g:coqtail#event` contains information about the command.
+  (PR #368)
+
 ### Fixed
 - Print an error message on `:RocqStart` if `coqidetop` (or
   `b:coqtail_coq_prog`) cannot be found.

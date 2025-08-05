@@ -432,6 +432,25 @@ g:coqtail_treat_stderr_as_warning
 
 			Default: 0
 
+				   *CoqCommandComplete* *coqtail-command-complete*
+						 *g:coqtail#event* *coqtail-event*
+CoqCommandComplete
+g:coqtail#event		An autocommand event that is triggered whenever an
+			asynchronous command is completed, and a dictionary
+			containing information about the command. Currently, the
+			only field is `cmd`, the name of the command, which is
+			one of: `step`, `rewind`, `to_line`, `to_top`, `query`, `refresh`,
+		        `toggle_debug`. This allows an autocommand to filter for
+			specific commands. For example, to have the cursor
+			follow the end of the checked region: >
+		    augroup CoqtailFollowChecked
+		      autocmd!
+		      autocmd! User CoqCommandComplete
+		        \  if g:coqtail#event.cmd =~# 'step\|rewind\|to_line\|to_top'
+			\|   CoqJumpToEnd
+			\| endif
+		    augroup END
+<
 =======================
 Backwards Compatibility			       *coqtail-backwards-compatibility*
 

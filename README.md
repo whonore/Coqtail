@@ -256,6 +256,13 @@ hi def link CoqtailDiffRemovedBg DiffDelete
 See the [above instructions](#syntax-highlighting-and-indentation) on how to
 override these defaults.
 
+### Autocommands
+
+The `CoqCommandComplete` event is triggered by most of the movement/query
+commands and allows user-defined actions to be executed using `autocmd User
+CoqCommandComplete`.
+See `:help CoqCommandComplete` for more information.
+
 ### More Options
 
 See `:help coqtail-configuration` for a description of all the configuration options.

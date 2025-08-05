@@ -283,6 +283,11 @@ function! coqtail#defaultCB(chan, msg) abort
   if a:msg.ret != v:null
     call coqtail#util#err(a:msg.ret)
   endif
+  if exists('#User#CoqCommandComplete')
+    let g:coqtail#event = {'cmd': a:msg.cmd}
+    doautocmd <nomodeline> User CoqCommandComplete
+    unlet g:coqtail#event
+  endif
 endfunction
 
 " Initialize Python interface.
