@@ -121,9 +121,13 @@ class UnmatchedError(Exception):
     """An unmatched comment or string was found."""
 
     def __init__(self, token: str, loc: Tuple[int, int]) -> None:
-        super().__init__(f"Found unmatched {token}.")
+        super().__init__(token, loc)
         line, col = loc
+        self.token = token
         self.range = (loc, (line, col + len(token)))
+
+    def __str__(self) -> str:
+        return f"Found unmatched {self.token}."
 
 
 class NoDotError(Exception):
