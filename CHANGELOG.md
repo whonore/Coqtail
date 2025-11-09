@@ -7,6 +7,13 @@
   (PR #407)
 
 ### Fixed
+- After starting, stopping, and restarting Rocq, `:RocqStop` still works.
+  (PR #409)
+- Proof diffs are once again enabled at `:RocqStart` if
+  `g/b:coqtail_auto_set_proof_diffs` is set to `on`.
+  (PR #409)
+
+### Fixed
 - Print an error message on `:RocqStart` if `coqidetop` (or
   `b:coqtail_coq_prog`) cannot be found.
   (PR #401)

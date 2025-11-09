@@ -143,7 +143,7 @@ function! coqtail#gotodef(target, bang) abort
   let l:patched_path = s:patch_path_for_dune(l:path)
 
   " Try progressively broader searches
-  if coqtail#util#qflist_search(b:coqtail_panel_bufs.main, l:patched_path, l:searches)
+  if coqtail#util#qflist_search(coqtail#panels#getmain(), l:patched_path, l:searches)
     " Set usetab instead of opening a new buffer
     let l:swb = &switchbuf
     set switchbuf+=usetab
@@ -229,10 +229,10 @@ function! s:call(cmd, cb, nocoq, args) abort
   let a:args.opts = {
     \ 'encoding': &encoding,
     \ 'timeout': coqtail#panels#getvar('coqtail_timeout'),
-    \ 'filename': expand('#' . b:coqtail_panel_bufs.main . ':p'),
+    \ 'filename': expand('#' . coqtail#panels#getmain() . ':p'),
     \ 'stderr_is_warning': g:coqtail_treat_stderr_as_warning
   \}
-  let l:args = [b:coqtail_panel_bufs.main, a:cmd, a:args]
+  let l:args = [coqtail#panels#getmain(), a:cmd, a:args]
 
   if a:cb !=# 'sync' && g:coqtail#compat#has_channel
     " Async
@@ -250,7 +250,7 @@ function! s:call(cmd, cb, nocoq, args) abort
     let l:opts = a:cmd ==# 'interrupt' ? {'timeout': 0} : {}
     let l:res = coqtail#panels#getvar('coqtail_chan').evalexpr(l:args, l:opts)
     return type(l:res) == g:coqtail#compat#t_dict
-      \ ? [l:res.buf == b:coqtail_panel_bufs.main, l:res.ret]
+      \ ? [l:res.buf == coqtail#panels#getmain(), l:res.ret]
       \ : [0, -1]
   endif
 endfunction
@@ -480,11 +480,13 @@ function! coqtail#after_startCB(chan, msg) abort
     return 0
   endif
 
+  " Must come before any calls that expect s:running() to be true.
+  let b:coqtail_started = 1
+
   call coqtail#refresh()
 
   call s:init_proof_diffs(b:coqtail_version.str_version)
 
-  let b:coqtail_started = 1
   " Call the after_start_func, if present
   if b:after_start_func != v:null
     call b:after_start_func()

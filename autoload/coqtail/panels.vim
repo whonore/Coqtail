@@ -390,12 +390,23 @@ function! coqtail#panels#cleanup() abort
   endtry
 endfunction
 
+" Get the main panel's buffer number.
+function! coqtail#panels#getmain() abort
+  if exists('b:coqtail_panel_bufs')
+    return b:coqtail_panel_bufs.main
+  else
+    " If b:coqtail_panel_bufs doesn't exist, then the other panels aren't
+    " initialized and this must be the main buffer.
+    return bufnr('%')
+  endif
+endfunction
+
 " Getter for variables local to the main buffer
 function! coqtail#panels#getvar(var) abort
-  return getbufvar(b:coqtail_panel_bufs.main, a:var)
+  return getbufvar(coqtail#panels#getmain(), a:var)
 endfunction
 
 " Setter for variables local to the main buffer
 function! coqtail#panels#setvar(var, val) abort
-  return setbufvar(b:coqtail_panel_bufs.main, a:var, a:val)
+  return setbufvar(coqtail#panels#getmain(), a:var, a:val)
 endfunction
