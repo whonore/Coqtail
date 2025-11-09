@@ -13,8 +13,16 @@ let
   else
     concatStringsSep "."
     (filter (s: s != "") (match "coq([0-9]|master)([0-9]*)-.*" tox_version));
-  pkg_name = "coq_" + replaceStrings [ "." ] [ "_" ] dot_version;
-in if hasAttr dot_version pkg_urls then
-  (import (fetchTarball pkg_urls.${dot_version}) { }).${pkg_name}
+  pkgs' = if hasAttr dot_version pkg_urls then
+    import (fetchTarball pkg_urls.${dot_version}) { }
+  else
+    pkgs;
+in if dot_version != "master" then
+  let pkg_name = "coq_" + replaceStrings [ "." ] [ "_" ] dot_version;
+  in pkgs'.${pkg_name}
 else
-  pkgs.coq.override ({ version = dot_version; })
+  let
+    version = "master";
+    rocqPackages =
+      pkgs'.mkRocqPackages (pkgs'.rocq-core.override { inherit version; });
+  in pkgs'.coq.override ({ inherit version rocqPackages; })

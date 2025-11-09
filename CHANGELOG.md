@@ -2,6 +2,10 @@
 
 ## Unreleased ([main])
 
+### Added
+- Support for Rocq 9.1.
+  (PR #407)
+
 ### Fixed
 - Print an error message on `:RocqStart` if `coqidetop` (or
   `b:coqtail_coq_prog`) cannot be found.
