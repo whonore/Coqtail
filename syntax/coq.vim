@@ -62,9 +62,12 @@ if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight
     autocmd ColorScheme * call s:CoqtailHighlight()
 
     " This file is sourced before Vim detects the correct background value,
-    " the autocommand updates the highlight groups after Vim receives the
-    " response with the value from the terminal.
-    autocmd TermResponseAll * if expand("<amatch>") ==# 'background' | hi clear | call s:CoqtailHighlight() | endif
+    " the autocommand updates the highlights after Vim receives the response
+    " from the terminal.
+    autocmd TermResponseAll *
+          \ if expand("<amatch>") ==# 'background'
+          \ |   hi clear CoqtailChecked CoqtailSent | call s:CoqtailHighlight()
+          \ | endif
   augroup END
 endif
 let b:coqtail_did_highlight = 1
