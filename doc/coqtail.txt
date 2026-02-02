@@ -144,6 +144,13 @@ Navigation Maps
 ]]			Jump [count] commands forward. Works also in visual
 			mode.
 
+							*coqtail_[]*
+[]			Jump [count] backward to the beginning of a proof.
+			Works also in visual mode.
+							*coqtail_][*
+][			Jump [count] forward to the end of a proof. Works also
+			in visual mode.
+
 ===========
 Rocq Queries						       *coqtail-queries*
 
