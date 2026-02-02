@@ -37,29 +37,42 @@ if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight
     elseif &t_Co > 16
       if &background ==# 'dark'
         hi def CoqtailChecked ctermbg=17 guibg=#113311
-        hi def CoqtailSent ctermbg=60 guibg=#007630
+        hi def CoqtailSent    ctermbg=60 guibg=#007630
       else
-        hi def CoqtailChecked ctermbg=17 guibg=LightGreen
-        hi def CoqtailSent ctermbg=60 guibg=LimeGreen
+        hi def CoqtailChecked ctermbg=157 guibg=LightGreen
+        hi def CoqtailSent    ctermbg=40  guibg=LimeGreen
       endif
     else
       hi def CoqtailChecked ctermbg=4 guibg=LightGreen
-      hi def CoqtailSent ctermbg=7 guibg=LimeGreen
+      hi def CoqtailSent    ctermbg=7 guibg=LimeGreen
     endif
-    hi def link CoqtailDiffAdded DiffText
-    hi def link CoqtailDiffAddedBg DiffChange
-    hi def link CoqtailDiffRemoved DiffDelete
+    hi def link CoqtailDiffAdded     DiffText
+    hi def link CoqtailDiffAddedBg   DiffChange
+    hi def link CoqtailDiffRemoved   DiffDelete
     hi def link CoqtailDiffRemovedBg DiffDelete
-    hi def link CoqtailError Error
-    hi def link CoqtailOmitted coqProofAdmit
+    hi def link CoqtailError         Error
+    hi def link CoqtailOmitted       coqProofAdmit
   endfunction
 
   call s:CoqtailHighlight()
-  " NOTE: Setting a colorscheme usually calls 'syntax clear' so have to set
+  " NOTE: Setting a colorscheme usually calls 'hi clear' so have to set
   " Coqtail highlighting colors again
   augroup coqtail_highlight
     autocmd!
     autocmd ColorScheme * call s:CoqtailHighlight()
+
+    if exists('##TermResponseAll')
+      " This file is sourced before Vim detects the correct background value,
+      " the autocommand updates the highlights after Vim receives the response
+      " from the terminal.
+      autocmd TermResponseAll *
+            \ if expand("<amatch>") ==# 'background'
+            \ |   hi clear CoqtailChecked
+            \ |   hi clear CoqtailSent
+            \ |   call s:CoqtailHighlight()
+            \ | endif
+    endif
+
   augroup END
 endif
 let b:coqtail_did_highlight = 1
