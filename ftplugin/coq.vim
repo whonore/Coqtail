@@ -34,6 +34,31 @@ if exists('+tagfunc') && g:coqtail#supported && get(g:, 'coqtail_tagfunc', 1)
   let b:undo_ftplugin = add(b:undo_ftplugin, 'setl tfu<')
 endif
 
+" Move among commands
+if !get(g:, 'coqtail_nomap', 0)
+  let s:command_pattern = '\C^\s*\zs\%(Axiom\|\%(Co\)\?Fixpoint\|Corollary\|Definition\|Example\|Goal\|Lemma\|Proposition\|Theorem\)\>'
+
+  function! s:command_search(flags, count, visual) abort
+    mark '
+
+    if a:visual
+      normal! gv
+    endif
+
+    for i in range(a:count)
+      if !search(s:command_pattern, a:flags)
+        break
+      endif
+    endfor
+  endfunction
+
+  nnoremap <buffer> <silent> [[ :<C-u>exe "call <Sid>command_search('Wb', v:count1, 0)"<CR>
+  xnoremap <buffer> <silent> [[ :<C-u>exe "call <Sid>command_search('Wb', v:count1, 1)"<CR>
+
+  nnoremap <buffer> <silent> ]] :<C-u>exe "call <Sid>command_search('W' , v:count1, 0)"<CR>
+  xnoremap <buffer> <silent> ]] :<C-u>exe "call <Sid>command_search('W' , v:count1, 1)"<CR>
+endif
+
 " matchit/matchup patterns
 if (exists('g:loaded_matchit') || exists('g:loaded_matchup')) && !exists('b:match_words')
   let b:match_ignorecase = 0
