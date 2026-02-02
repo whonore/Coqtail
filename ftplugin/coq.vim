@@ -76,6 +76,16 @@ if !get(g:, 'coqtail_nomap', 0)
 
   nnoremap <buffer> <silent> ][ :<C-u>call <Sid>proof_search('W', v:count1, 0)<CR>
   xnoremap <buffer> <silent> ][ :<C-u>call <Sid>proof_search('W', v:count1, 1)<CR>
+
+  let b:undo_ftplugin = b:undo_ftplugin
+        \->add('silent! nunmap <buffer> [[')
+        \->add('silent! xunmap <buffer> [[')
+        \->add('silent! nunmap <buffer> ]]')
+        \->add('silent! xunmap <buffer> ]]')
+        \->add('silent! nunmap <buffer> []')
+        \->add('silent! xunmap <buffer> []')
+        \->add('silent! nunmap <buffer> ][')
+        \->add('silent! xunmap <buffer> ][')
 endif
 
 " matchit/matchup patterns
