@@ -201,22 +201,22 @@ By default these are defined as:
 if &t_Co > 16
   if &background ==# 'dark'
     hi def CoqtailChecked ctermbg=17 guibg=#113311
-    hi def CoqtailSent ctermbg=60 guibg=#007630
+    hi def CoqtailSent    ctermbg=60 guibg=#007630
   else
     hi def CoqtailChecked ctermbg=157 guibg=LightGreen
-    hi def CoqtailSent ctermbg=40 guibg=LimeGreen
+    hi def CoqtailSent    ctermbg=40  guibg=LimeGreen
   endif
 else
   hi def CoqtailChecked ctermbg=4 guibg=LightGreen
-  hi def CoqtailSent ctermbg=7 guibg=LimeGreen
+  hi def CoqtailSent    ctermbg=7 guibg=LimeGreen
 endif
-hi def link CoqtailError Error
-hi def link CoqtailOmitted coqProofAdmit
+hi def link CoqtailError         Error
+hi def link CoqtailOmitted       coqProofAdmit
 ```
 
 To override these defaults simply set your own highlighting (`:help :hi`) before
 `syntax/coq.vim` is sourced (e.g., in your `.vimrc`).
-Note, however, that many colorschemes call `syntax clear`, which clears
+Note, however, that many colorschemes call `hi clear`, which clears
 user-defined highlighting, so it is recommended to place your settings in a
 `ColorScheme` autocommand.
 For example:
