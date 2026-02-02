@@ -135,6 +135,15 @@ Movement Commands					      *coqtail-movement*
 			true then the usual tag commands will also work
 			(`:tag`, `CTRL-]`, etc).
 
+===============
+Navigation Maps
+							*coqtail_[[*
+[[			Jump [count] commands backward. Works also in visual
+			mode.
+							*coqtail_]]*
+]]			Jump [count] commands forward. Works also in visual
+			mode.
+
 ===========
 Rocq Queries						       *coqtail-queries*
 
