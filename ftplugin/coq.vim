@@ -36,46 +36,17 @@ endif
 
 " Jump around commands and proofs
 if !get(g:, 'coqtail_nomap', 0)
-  let s:command_pattern    = '\C^\s*\zs\%(Axiom\|\%(Co\)\?Fixpoint\|Corollary\|Definition\|Example\|Goal\|Lemma\|Proposition\|Theorem\)\>'
-  let s:proofstart_pattern = '\C\%(\<Fail\_s\+\)\@<!\<\%(Proof\|Next Obligation\|Final Obligation\|Obligation \d\+\)\>[^.]*\.'
-  let s:proofend_pattern   = '\C\<\%(Qed\|Defined\|Abort\|Admitted\|Save\)\>'
+  nnoremap <buffer> <silent> [[ :<C-u>call coqtail#search_command('Wb', v:count1, 0)<CR>
+  xnoremap <buffer> <silent> [[ :<C-u>call coqtail#search_command('Wb', v:count1, 1)<CR>
 
-  function! s:command_search(flags, count, visual) abort
-    mark '
-    if a:visual
-      normal! gv
-    endif
-    for i in range(a:count)
-      if !search(s:command_pattern, a:flags)
-        break
-      endif
-    endfor
-  endfunction
+  nnoremap <buffer> <silent> ]] :<C-u>call coqtail#search_command('W' , v:count1, 0)<CR>
+  xnoremap <buffer> <silent> ]] :<C-u>call coqtail#search_command('W' , v:count1, 1)<CR>
 
-  function! s:proof_search(flags, count, visual) abort
-    let pattern = a:flags =~# 'b' ? s:proofstart_pattern : s:proofend_pattern
-    mark '
-    if a:visual
-      normal! gv
-    endif
-    for i in range(a:count)
-      if !search(pattern, a:flags)
-        break
-      endif
-    endfor
-  endfunction
+  nnoremap <buffer> <silent> [] :<C-u>call coqtail#search_proof('Wb', v:count1, 0)<CR>
+  xnoremap <buffer> <silent> [] :<C-u>call coqtail#search_proof('Wb', v:count1, 1)<CR>
 
-  nnoremap <buffer> <silent> [[ :<C-u>call <Sid>command_search('Wb', v:count1, 0)<CR>
-  xnoremap <buffer> <silent> [[ :<C-u>call <Sid>command_search('Wb', v:count1, 1)<CR>
-
-  nnoremap <buffer> <silent> ]] :<C-u>call <Sid>command_search('W' , v:count1, 0)<CR>
-  xnoremap <buffer> <silent> ]] :<C-u>call <Sid>command_search('W' , v:count1, 1)<CR>
-
-  nnoremap <buffer> <silent> [] :<C-u>call <Sid>proof_search('Wb', v:count1, 0)<CR>
-  xnoremap <buffer> <silent> [] :<C-u>call <Sid>proof_search('Wb', v:count1, 1)<CR>
-
-  nnoremap <buffer> <silent> ][ :<C-u>call <Sid>proof_search('W', v:count1, 0)<CR>
-  xnoremap <buffer> <silent> ][ :<C-u>call <Sid>proof_search('W', v:count1, 1)<CR>
+  nnoremap <buffer> <silent> ][ :<C-u>call coqtail#search_proof('W', v:count1, 0)<CR>
+  xnoremap <buffer> <silent> ][ :<C-u>call coqtail#search_proof('W', v:count1, 1)<CR>
 
   let b:undo_ftplugin = b:undo_ftplugin
         \->add('silent! nunmap <buffer> [[')

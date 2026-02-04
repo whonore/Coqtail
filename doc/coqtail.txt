@@ -143,7 +143,6 @@ Navigation Maps
 							*coqtail_]]*
 ]]			Jump [count] commands forward. Works also in visual
 			mode.
-
 							*coqtail_[]*
 []			Jump [count] backward to the beginning of a proof.
 			Works also in visual mode.
