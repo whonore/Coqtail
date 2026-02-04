@@ -136,6 +136,42 @@ class Coqtop:
             return True
         return False
 
+    def can_run_dune_toplevel(self, toplevel: str, filename: str) -> bool:
+        """Check whether we can run the given dune toplevel (coq or rocq) on the given filename.
+        Assumes that it has already been determined that this is a valid dune project.
+        """
+        basename = os.path.basename(filename)
+        filepath = os.path.dirname(filename)
+        # run echo as the toplevel. We just care about checking whether `dune toplevel top` runs without errors.
+        dune_check = (
+            "dune",
+            toplevel,
+            "top",
+            "--no-build",
+            "--toplevel",
+            "echo",
+            basename,
+        )
+        try:
+            subprocess.run(
+                dune_check,
+                capture_output=True,
+                cwd=filepath,
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            return False
+        return True
+
+    def get_dune_toplevel(self, filename: str) -> str:
+        """Determine the correct dune toplevel (coq or rocq) for the dune project the given filename is located in,
+        which depends on whether the dune project is configured for the `coq` language or the `rocq` language.
+        Assumes that the file is part of a correctly configured dune project."""
+        if self.can_run_dune_toplevel("rocq", filename):
+            return "rocq"
+        else:
+            return "coq"
+
     def get_dune_args(self, filename: str, dune_compile_deps: bool) -> List[str]:
         """Get the arguments to pass to the Rocq process from dune.
         Assumes that the file is part of a correctly configured dune project."""
@@ -143,9 +179,10 @@ class Coqtop:
         basename = os.path.basename(filename)
         filepath = os.path.dirname(filename)
 
+        dune_toplevel = self.get_dune_toplevel(filename)
         dune_launch = (
             "dune",
-            "coq",
+            dune_toplevel,
             "top",
             basename,
             "--toplevel",
