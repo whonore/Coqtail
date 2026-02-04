@@ -218,9 +218,7 @@ PEndIn = str
 PEndOut = Optional[Mapping[str, Tuple[int, int]]]
 PEndTest = Tuple[str, PEndIn, PEndOut]
 
-pend_buffer = (
-    (
-        b"""
+pend_buffer = (b"""
 Lemma L1 : True.
 Proof.
   idtac "L1".
@@ -346,11 +344,7 @@ Proof.
 Lemma L22 : True.
 Proof.
   idtac "L22".
-"""
-    )
-    .strip()
-    .splitlines()
-)
+""").strip().splitlines()
 
 pend_tests: Sequence[PEndTest] = (
     ("qed", "L1", {"start": (4, 0), "stop": (4, 3)}),
