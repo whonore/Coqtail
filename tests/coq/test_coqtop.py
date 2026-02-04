@@ -160,7 +160,7 @@ def test_goals_no_change(coq: Coqtop) -> None:
     succ, _, _, _ = coq.dispatch("Lemma x (n: nat) : False.")
     assert succ
     old_state = get_state(coq)
-    (succ, _, goals, _) = coq.goals()
+    succ, _, goals, _ = coq.goals()
     assert succ
     assert goals is not None
     assert goals.bg == []
