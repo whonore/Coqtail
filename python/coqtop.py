@@ -159,7 +159,7 @@ class Coqtop:
                 cwd=filepath,
                 check=True,
             )
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             return False
         return True
 
@@ -169,8 +169,7 @@ class Coqtop:
         Assumes that the file is part of a correctly configured dune project."""
         if self.can_run_dune_toplevel("rocq", filename):
             return "rocq"
-        else:
-            return "coq"
+        return "coq"
 
     def get_dune_args(self, filename: str, dune_compile_deps: bool) -> List[str]:
         """Get the arguments to pass to the Rocq process from dune.
