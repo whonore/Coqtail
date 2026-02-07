@@ -34,6 +34,30 @@ if exists('+tagfunc') && g:coqtail#supported && get(g:, 'coqtail_tagfunc', 1)
   let b:undo_ftplugin = add(b:undo_ftplugin, 'setl tfu<')
 endif
 
+" Jump around commands and proofs
+if !get(g:, 'coqtail_nomap', 0)
+  nnoremap <buffer> <silent> [[ :<C-u>call coqtail#search#command('Wb', v:count1, 0)<CR>
+  xnoremap <buffer> <silent> [[ :<C-u>call coqtail#search#command('Wb', v:count1, 1)<CR>
+
+  nnoremap <buffer> <silent> ]] :<C-u>call coqtail#search#command('W' , v:count1, 0)<CR>
+  xnoremap <buffer> <silent> ]] :<C-u>call coqtail#search#command('W' , v:count1, 1)<CR>
+
+  nnoremap <buffer> <silent> [] :<C-u>call coqtail#search#proof('Wb', v:count1, 0)<CR>
+  xnoremap <buffer> <silent> [] :<C-u>call coqtail#search#proof('Wb', v:count1, 1)<CR>
+
+  nnoremap <buffer> <silent> ][ :<C-u>call coqtail#search#proof('W', v:count1, 0)<CR>
+  xnoremap <buffer> <silent> ][ :<C-u>call coqtail#search#proof('W', v:count1, 1)<CR>
+
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! nunmap <buffer> [[')
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> [[')
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! nunmap <buffer> ]]')
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> ]]')
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! nunmap <buffer> []')
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> []')
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! nunmap <buffer> ][')
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> ][')
+endif
+
 " matchit/matchup patterns
 if (exists('g:loaded_matchit') || exists('g:loaded_matchup')) && !exists('b:match_words')
   let b:match_ignorecase = 0
