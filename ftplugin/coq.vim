@@ -36,17 +36,17 @@ endif
 
 " Jump around commands and proofs
 if !get(g:, 'coqtail_nomap', 0)
-  nnoremap <buffer> <silent> [[ :<C-u>call coqtail#search_command('Wb', v:count1, 0)<CR>
-  xnoremap <buffer> <silent> [[ :<C-u>call coqtail#search_command('Wb', v:count1, 1)<CR>
+  nnoremap <buffer> <silent> [[ :<C-u>call coqtail#search#command('Wb', v:count1, 0)<CR>
+  xnoremap <buffer> <silent> [[ :<C-u>call coqtail#search#command('Wb', v:count1, 1)<CR>
 
-  nnoremap <buffer> <silent> ]] :<C-u>call coqtail#search_command('W' , v:count1, 0)<CR>
-  xnoremap <buffer> <silent> ]] :<C-u>call coqtail#search_command('W' , v:count1, 1)<CR>
+  nnoremap <buffer> <silent> ]] :<C-u>call coqtail#search#command('W' , v:count1, 0)<CR>
+  xnoremap <buffer> <silent> ]] :<C-u>call coqtail#search#command('W' , v:count1, 1)<CR>
 
-  nnoremap <buffer> <silent> [] :<C-u>call coqtail#search_proof('Wb', v:count1, 0)<CR>
-  xnoremap <buffer> <silent> [] :<C-u>call coqtail#search_proof('Wb', v:count1, 1)<CR>
+  nnoremap <buffer> <silent> [] :<C-u>call coqtail#search#proof('Wb', v:count1, 0)<CR>
+  xnoremap <buffer> <silent> [] :<C-u>call coqtail#search#proof('Wb', v:count1, 1)<CR>
 
-  nnoremap <buffer> <silent> ][ :<C-u>call coqtail#search_proof('W', v:count1, 0)<CR>
-  xnoremap <buffer> <silent> ][ :<C-u>call coqtail#search_proof('W', v:count1, 1)<CR>
+  nnoremap <buffer> <silent> ][ :<C-u>call coqtail#search#proof('W', v:count1, 0)<CR>
+  xnoremap <buffer> <silent> ][ :<C-u>call coqtail#search#proof('W', v:count1, 1)<CR>
 
   let b:undo_ftplugin = b:undo_ftplugin
         \->add('silent! nunmap <buffer> [[')

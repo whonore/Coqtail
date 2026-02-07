@@ -790,36 +790,3 @@ function! coqtail#register() abort
     call coqtail#define_mappings()
   endif
 endfunction
-
-" Search patterns to navigate code
-let s:command_pattern    = '\C^\s*\zs\%(Axiom\|\%(Co\)\?Fixpoint\|Corollary\|Definition\|Example\|Goal\|Lemma\|Proposition\|Theorem\)\>'
-let s:proofstart_pattern = '\C\%(\<Fail\_s\+\)\@<!\<\%(Proof\|Next Obligation\|Final Obligation\|Obligation \d\+\)\>[^.]*\.'
-let s:proofend_pattern   = '\C\<\%(Qed\|Defined\|Abort\|Admitted\|Save\)\>'
-
-function! coqtail#search_command(flags, count, visual) abort
-  call coqtail#search_pattern(
-        \ s:command_pattern,
-        \ a:flags,
-        \ a:count,
-        \ a:visual)
-endfunction
-
-function! coqtail#search_proof(flags, count, visual) abort
-  call coqtail#search_pattern(
-        \ a:flags =~# 'b' ? s:proofstart_pattern : s:proofend_pattern,
-        \ a:flags,
-        \ a:count,
-        \ a:visual)
-endfunction
-
-function! coqtail#search_pattern(pattern, flags, count, visual) abort
-  mark '
-  if a:visual
-    normal! gv
-  endif
-  for i in range(a:count)
-    if !search(a:pattern, a:flags)
-      break
-    endif
-  endfor
-endfunction
