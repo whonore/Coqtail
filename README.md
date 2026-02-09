@@ -138,6 +138,26 @@ Those bindings would be active in all Rocq buffers, including Coqtail panels,
 but inactive in other buffers.
 The standard Coqtail bindings (`<leader>cj`, etc) would remain active.
 
+### Proof text object
+
+Coqtail define a text object for proof blocks. The following `<Plug>` mappings
+are included, which you can use to create new ones.
+
+| Mapping | Description |
+|---|---|
+| `<Plug>(proof-text-object-inner)` | Operator pending and visual modes, mapped to iP by default. |
+| `<Plug>(proof-text-object-outer)` | Operator pending and visual modes, mapped to aP by default. |
+
+The default mappings are shown below, you can copy these if you wish
+to customise them in your `.vimrc`:
+
+```vim
+	omap iP <Plug>(proof-text-object-inner)
+	xmap iP <Plug>(proof-text-object-inner)
+	omap aP <Plug>(proof-text-object-outer)
+	xmap aP <Plug>(proof-text-object-outer)
+```
+
 ### Rocq Executable
 
 By default Coqtail uses the first `coq(ide)top(.opt)` found in your `PATH`.
