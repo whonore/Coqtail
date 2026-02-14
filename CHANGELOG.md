@@ -3,10 +3,20 @@
 ## Unreleased ([main])
 
 ### Added
+- A text object for proofs (`iP`/`aP`).
+  (PR #417)
+- Mappings for jumping between statements and proofs (`[[`, `]]`, `[]`, `][`).
+  (PR #412)
+- Support for Dune 3.21's `rocq` toplevel command.
+  (PR #413)
 - Support for Rocq 9.1.
   (PR #407)
 
 ### Fixed
+- More accurate filetype detection for other `.v` languages.
+  (PR #414)
+- Use a light green background for checked proof lines by default for light backgrounds.
+  (PR #411)
 - After starting, stopping, and restarting Rocq, `:RocqStop` still works.
   (PR #409)
 - Proof diffs are once again enabled at `:RocqStart` if

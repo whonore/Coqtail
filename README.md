@@ -140,7 +140,7 @@ The standard Coqtail bindings (`<leader>cj`, etc) would remain active.
 
 ### Proof text object
 
-Coqtail define a text object for proof blocks. The following `<Plug>` mappings
+Coqtail defines a text object for proof blocks. The following `<Plug>` mappings
 are included, which you can use to create new ones.
 
 | Mapping | Description |
