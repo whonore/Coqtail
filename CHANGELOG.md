@@ -2,6 +2,8 @@
 
 ## Unreleased ([main])
 
+## [1.9.0]
+
 ### Added
 - A text object for proofs (`iP`/`aP`).
   (PR #417)
@@ -483,6 +485,7 @@
 
 [main]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
+[1.9.0]: https://github.com/whonore/Coqtail/tree/v1.9.0
 [1.8.0]: https://github.com/whonore/Coqtail/tree/v1.8.0
 [1.7.2]: https://github.com/whonore/Coqtail/tree/v1.7.2
 [1.7.1]: https://github.com/whonore/Coqtail/tree/v1.7.1
