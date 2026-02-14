@@ -135,8 +135,8 @@ Movement Commands					      *coqtail-movement*
 			true then the usual tag commands will also work
 			(`:tag`, `CTRL-]`, etc).
 
-===============
-Navigation Maps
+========
+Mappings
 							*coqtail_[[*
 [[			Jump [count] commands backward. Works also in visual
 			mode.
@@ -150,6 +150,24 @@ Navigation Maps
 ][			Jump [count] forward to the end of a proof. Works also
 			in visual mode.
 
+						   *coqtail-proof-text-object*
+The following <Plug> mappings are included, which you can use to create new
+ones.
+
+*<Plug>(proof-text-object-inner)*
+		Operator pending and visual modes, mapped to iP by default.
+
+*<Plug>(proof-text-object-outer)*
+		Operator pending and visual modes, mapped to aP by default.
+
+The default mappings are shown below, you can copy these if you wish to
+customise them in your .vimrc:
+>
+	omap iP <Plug>(proof-text-object-inner)
+	xmap iP <Plug>(proof-text-object-inner)
+	omap aP <Plug>(proof-text-object-outer)
+	xmap aP <Plug>(proof-text-object-outer)
+<
 ===========
 Rocq Queries						       *coqtail-queries*
 

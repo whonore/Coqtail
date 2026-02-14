@@ -34,8 +34,9 @@ if exists('+tagfunc') && g:coqtail#supported && get(g:, 'coqtail_tagfunc', 1)
   let b:undo_ftplugin = add(b:undo_ftplugin, 'setl tfu<')
 endif
 
-" Jump around commands and proofs
+" Maps
 if !get(g:, 'coqtail_nomap', 0)
+  " Jump around commands and proofs
   nnoremap <buffer> <silent> [[ :<C-u>call coqtail#search#command('Wb', v:count1, 0)<CR>
   xnoremap <buffer> <silent> [[ :<C-u>call coqtail#search#command('Wb', v:count1, 1)<CR>
 
@@ -56,6 +57,24 @@ if !get(g:, 'coqtail_nomap', 0)
   let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> []')
   let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! nunmap <buffer> ][')
   let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> ][')
+endif
+
+" Proof text object
+onoremap <buffer> <silent> <Plug>(proof-text-object-inner) :<C-u>call coqtail#search#select_i()<CR>
+xnoremap <buffer> <silent> <Plug>(proof-text-object-inner) :<C-u>call coqtail#search#select_i()<CR>
+onoremap <buffer> <silent> <Plug>(proof-text-object-outer) :<C-u>call coqtail#search#select_a()<CR>
+xnoremap <buffer> <silent> <Plug>(proof-text-object-outer) :<C-u>call coqtail#search#select_a()<CR>
+
+if !get(g:, 'coqtail_nomap', 0)
+  omap <buffer> iP <Plug>(proof-text-object-inner)
+  xmap <buffer> iP <Plug>(proof-text-object-inner)
+  omap <buffer> aP <Plug>(proof-text-object-outer)
+  xmap <buffer> aP <Plug>(proof-text-object-outer)
+
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! ounmap <buffer> iP')
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> iP')
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! ounmap <buffer> aP')
+  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> aP')
 endif
 
 " matchit/matchup patterns
