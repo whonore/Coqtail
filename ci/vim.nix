@@ -25,8 +25,12 @@ let
       sha256 = "sha256-U2zRIJssBO8PcludMn7h25XsTBgypU/WcshSmiFVdmg=";
     };
     "9.1" = {
-      patch = "0059";
-      sha256 = "sha256-68PhcTlCJ0wVFZ0Rnx8ckOe/fjwQuQMH1Eu3pyCH35A=";
+      patch = "2148";
+      sha256 = "sha256-4ZEbfpffPp6kqSQRp7NFioWGRdG+JsVf7unU0Hqn/Xk=";
+    };
+    "9.2" = {
+      patch = "0043";
+      sha256 = "sha256-sNPVC34mLJJBjGMlRIopIXiw9SQWs76rSHhTs7j88gA=";
     };
   }.${version};
 in stdenv.mkDerivation {
