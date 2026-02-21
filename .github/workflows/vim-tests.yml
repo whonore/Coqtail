@@ -9,6 +9,7 @@ on:
       - '**'
     paths:
       - '.github/workflows/vim-tests.yml'
+      - 'ci/vim.nix'
       - '**.vim'
       - 'tests/vim/**'
 
@@ -29,6 +30,7 @@ jobs:
           - '8.2'
           - '9.0'
           - '9.1'
+          - '9.2'
     steps:
       - uses: actions/checkout@v4
       - name: Install Nix
