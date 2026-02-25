@@ -120,11 +120,19 @@ syn cluster coqTerm            contains=coqKwd,coqTermPunctuation,coqKwdMatch,co
 syn region coqKwdMatch         contained contains=@coqTerm matchgroup=coqKwd start="\<match\>" end="\<with\>"
 syn region coqKwdLet           contained contains=@coqTerm matchgroup=coqKwd start="\<let\>"   end=":="
 syn region coqKwdParen         contained contains=@coqTerm matchgroup=coqTermPunctuation start="(" end=")" keepend extend
-syn keyword coqKwd             contained else end exists2 fix cofix forall fun if in struct then as return
+syn keyword coqKwd             contained else end exists2 fix cofix if in struct then as return
+syn keyword coqKwd             contained forall conceal cchar=∀
+syn keyword coqKwd             contained fun conceal cchar=λ
+syn match coqKwd               contained /\/\\/ conceal cchar=∧
+syn match coqKwd               contained /\\\// conceal cchar=∨
+syn match   coqKwd             contained "\~" conceal cchar=¬
 syn match   coqKwd             contained "\<where\>"
-syn match   coqKwd             contained "\<exists!\?\>"
-syn match   coqKwd             contained "|\|/\\\|\\/\|<->\|\~\|->\|=>\|{\|}\|&\|+\|-\|*\|=\|>\|<\|<="
+syn match   coqKwd             contained "\<exists!\?\>" conceal cchar=∃
+syn match   coqKwd             contained "|\|<->\|->\|=>\|{\|}\|&\|+\|-\|*\|=\|>\|<\|<="
 syn match coqTermPunctuation   contained ":=\|:>\|:\|;\|,\|||\|\[\|\]\|@\|?\|\<_\>\|<+"
+
+highlight clear Conceal
+highlight link Conceal coqKwd
 
 " Various
 syn region coqRequire contains=coqString matchgroup=coqVernacCmd start="\<Require\>\%(\_s\+\%(Export\|Import\)\>\)\?" matchgroup=coqVernacPunctuation end="\.\_s"
