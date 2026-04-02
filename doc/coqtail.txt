@@ -465,6 +465,12 @@ g:coqtail_treat_stderr_as_warning
 
 			Default: 0
 
+                                                         *g:coqtail_joinspaces*
+g:coqtail_joinspaces
+			A local version of 'joinspaces' for Rocq buffers.
+
+			Default: 0
+
 =======================
 Backwards Compatibility			       *coqtail-backwards-compatibility*
 

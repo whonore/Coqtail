@@ -10,6 +10,14 @@ if g:coqtail#supported
   call coqtail#register()
 endif
 
+if !get(g:, 'coqtail_joinspaces', 0)
+  augroup coqtail_joinspaces
+    autocmd!
+    autocmd BufEnter <buffer> let b:coqtail_save_js = &joinspaces | set nojoinspaces
+    autocmd BufLeave <buffer> let &joinspaces = get(b:, 'coqtail_save_js', 1)
+  augroup END
+endif
+
 " Comments
 if has('comments')
   setlocal commentstring=(*%s*)
