@@ -2,6 +2,14 @@
 
 ## Unreleased ([main])
 
+### Added
+- Support for Rocq 9.2.
+  (PR #423)
+- Set `joinspaces` for Rocq buffers.
+  (PR #422)
+- Set `wildignore` for Rocq compilation artifacts (`.vo`, `.glob`, etc).
+  (PR #421)
+
 ## [1.9.0]
 
 ### Added
