@@ -11,7 +11,7 @@ Coqtail enables interactive Rocq (née Coq) proof development in Vim similar to
 [RocqIDE] or [ProofGeneral].
 
 It supports:
-- [Rocq 8.4 - 9.1]
+- [Rocq 8.4 - 9.2]
 - Python >=3.6 (see [here](#python-2-support) for older versions)
 - Vim >=7.4 and Neovim >=0.3
 - Simultaneous Rocq sessions in different buffers
@@ -49,7 +49,7 @@ vim +PlugInstall +qa
 - Vim compiled with `+python3` (3.6 or later) or the `pynvim` Python package for Neovim
 - Vim configuration options `filetype plugin on`, and optionally `filetype
   indent on` and `syntax on` (e.g. in `.vimrc`)
-- [Rocq 8.4 - 9.1]
+- [Rocq 8.4 - 9.2]
 
 Newer versions of Rocq have not yet been tested, but should still work as long
 as there are no major changes made to the [XML protocol].
@@ -330,7 +330,7 @@ See [YouCompleteMe] for help building Vim with Python 3 support.
 If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
 
 [python2]: https://github.com/whonore/Coqtail/tree/python2
-[Rocq 8.4 - 9.1]: https://rocq-prover.org/install
+[Rocq 8.4 - 9.2]: https://rocq-prover.org/install
 [RocqIDE]: https://rocq-prover.org/doc/master/refman/practical-tools/coqide.html
 [ProofGeneral]: https://proofgeneral.github.io/
 [XML protocol]: https://github.com/coq/coq/blob/master/dev/doc/xml-protocol.md
