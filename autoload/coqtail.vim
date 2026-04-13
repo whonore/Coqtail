@@ -1,25 +1,14 @@
 " Author: Wolf Honore
 " Coqtail Python interface and window management.
 
-let s:python_dir = expand('<sfile>:p:h:h') . '/python'
-let g:coqtail#supported = coqtail#compat#init(s:python_dir)
-if !g:coqtail#supported
-  call coqtail#util#warn(
-    \ "Coqtail requires Python 3.6 or later.\n" .
-    \ 'See https://github.com/whonore/Coqtail/blob/main/README.md#python-2-support.'
-  \)
-  finish
-endif
-
-py3 from coqtail import CoqtailServer
-
-" Initialize global variables.
 " Default number of lines of a goal to show.
 let s:goal_lines = 5
+
 " Warning/error messages.
 let s:unsupported_msg =
   \ "Coqtail does not officially support your version of Rocq (%s).\n" .
   \ 'Continuing with the interface for the latest supported version (%s).'
+
 " Server port.
 let s:port = -1
 

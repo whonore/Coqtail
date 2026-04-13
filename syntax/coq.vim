@@ -57,7 +57,7 @@ if !exists('b:coqtail_did_highlight') || !b:coqtail_did_highlight
   call s:CoqtailHighlight()
   " NOTE: Setting a colorscheme usually calls 'hi clear' so have to set
   " Coqtail highlighting colors again
-  augroup coqtail_highlight
+  augroup CoqtailHighlight
     autocmd!
     autocmd ColorScheme * call s:CoqtailHighlight()
 

@@ -4,6 +4,19 @@ if exists('g:loaded_coqtail')
 endif
 let g:loaded_coqtail = 1
 
+let s:python_dir = expand('<sfile>:p:h:h') . '/python'
+let g:coqtail_supported = coqtail#compat#init(s:python_dir)
+
+if !g:coqtail_supported
+  call coqtail#util#warn(
+        \ "Coqtail requires Python 3.6 or later.\n" .
+        \ 'See https://github.com/whonore/Coqtail/blob/main/README.md#python-2-support.'
+        \)
+  finish
+endif
+
+py3 from coqtail import CoqtailServer
+
 " Initialize global variables.
 " Default CoqProject file name.
 if !exists('g:coqtail_project_names')
