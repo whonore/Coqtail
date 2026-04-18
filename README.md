@@ -26,22 +26,30 @@ git clone https://github.com/whonore/Coqtail.git ~/.vim/pack/coq/start/Coqtail
 vim +helptags\ ~/.vim/pack/coq/start/Coqtail/doc +q
 ```
 
-Using [pathogen]:
+Using [vim-plug]:
+```vim
+" Add this line in your .vimrc
+Plug 'whonore/Coqtail'
+```
+and in the command line run
+```sh
+vim +PlugInstall +qa
+```
+
+Using [vim-pathogen]:
 ```sh
 git clone https://github.com/whonore/Coqtail.git ~/.vim/bundle/Coqtail
 vim +Helptags +q
 ```
 
 Using [Vundle]:
-```sh
-Plugin 'whonore/Coqtail' (add this line in .vimrc)
-vim +PluginInstall +qa
+```vim
+" Add this line in your .vimrc
+Plugin 'whonore/Coqtail'
 ```
-
-Using [VimPlug]:
+and in the command line run
 ```sh
-Plug 'whonore/Coqtail' (add this line in .vimrc)
-vim +PlugInstall +qa
+vim +PluginInstall +qa
 ```
 
 ### Requirements
@@ -145,17 +153,17 @@ are included, which you can use to create new ones.
 
 | Mapping | Description |
 |---|---|
-| `<Plug>(proof-text-object-inner)` | Operator pending and visual modes, mapped to iP by default. |
-| `<Plug>(proof-text-object-outer)` | Operator pending and visual modes, mapped to aP by default. |
+| `<Plug>(proof-text-object-inner)` | Operator pending and visual modes |
+| `<Plug>(proof-text-object-outer)` | Operator pending and visual modes |
 
 The default mappings are shown below, you can copy these if you wish
 to customise them in your `.vimrc`:
 
 ```vim
-	omap iP <Plug>(proof-text-object-inner)
-	xmap iP <Plug>(proof-text-object-inner)
-	omap aP <Plug>(proof-text-object-outer)
-	xmap aP <Plug>(proof-text-object-outer)
+omap iP <Plug>(proof-text-object-inner)
+xmap iP <Plug>(proof-text-object-inner)
+omap aP <Plug>(proof-text-object-outer)
+xmap aP <Plug>(proof-text-object-outer)
 ```
 
 ### Rocq Executable
@@ -280,18 +288,27 @@ override these defaults.
 
 See `:help coqtail-configuration` for a description of all the configuration options.
 
-## Vim Plugin Interoperability
+## Supported Plugins
 
-### Jumping between matches
+### matchit / vim-matchup
 
 Coqtail defines `b:match_words` patterns to support jumping between matched text
-with `%` using the [matchup] or [matchit] plugins.
+with `%` using the [vim-matchup] or [matchit] plugins.
 
-### Automatically closing blocks
+> [!TIP]
+> The matchit plugin is already shipped with your Vim installation, to use it add this line to your .vimrc:
+> ```vim
+> packadd! matchit
+> ```
+> See `:h matchit` for more.
+
+### vim-endwise
 
 Coqtail defines patterns to enable automatic insertion of the appropriate `End`
 command for code blocks such as `Section`s, `Module`s, and `match` expressions
-with [endwise].
+with [vim-endwise].
+
+## Editor Improvements
 
 ### Tags
 
@@ -302,17 +319,17 @@ where the term is defined has already been evaluated by Rocq.
 An alternative is to disable Coqtail's default `tagfunc` (`let g:coqtail_tagfunc
 = 0`) and instead use [universal-ctags] in conjunction with [coq.ctags], to
 statically generate a `tags` file.
-This works especially well with something like the [gutentags] plugin to
+This works especially well with something like the [vim-gutentags] plugin to
 automatically keep the `tags` file in sync with the Rocq source.
 
-### Latex/Unicode input
+### Unicode input
 
 Coqtail and Rocq can handle non-ASCII characters in identifiers, notations,
 etc., but Coqtail does not provide a method for inputting these characters itself.
 Instead one can use one of the native Vim options (e.g.,
 [`i_CTRL-K`](https://vimhelp.org/insert.txt.html#i_CTRL-K) or
 [`i_CTRL-V_digit`](https://vimhelp.org/insert.txt.html#i_CTRL-V_digit)) or a
-plugin like [latex-unicoder] or [unicode.vim].
+plugin like [latex-unicoder.vim] or [unicode.vim].
 
 ## Thanks
 
@@ -323,11 +340,12 @@ License, Copyright (c) 2013, Thomas Refis).
 
 #### Python 2 Support
 
-Python 2 and 3.5 have reached their [end-of-life](https://pythonclock.org/) so
-Coqtail no longer supports them in order to simplify the code and take advantage
-of newer features.
-See [YouCompleteMe] for help building Vim with Python 3 support.
-If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
+> [!WARNING]
+> Python 2 and 3.5 have reached their [end-of-life](https://pythonclock.org/) so
+> Coqtail no longer supports them in order to simplify the code and take advantage
+> of newer features.
+> See [YouCompleteMe] for help building Vim with Python 3 support.
+> If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
 
 [python2]: https://github.com/whonore/Coqtail/tree/python2
 [Rocq 8.4 - 9.2]: https://rocq-prover.org/install
@@ -335,19 +353,19 @@ If you cannot upgrade Vim, the [python2] branch still supports older Pythons.
 [ProofGeneral]: https://proofgeneral.github.io/
 [XML protocol]: https://github.com/coq/coq/blob/master/dev/doc/xml-protocol.md
 [vim package]: https://vimhelp.org/repeat.txt.html#packages
-[pathogen]: https://github.com/tpope/vim-pathogen
+[vim-pathogen]: https://github.com/tpope/vim-pathogen
 [Vundle]: https://github.com/VundleVim/Vundle.vim
-[VimPlug]: https://github.com/junegunn/vim-plug
+[vim-plug]: https://github.com/junegunn/vim-plug
 [syntax]: http://www.vim.org/scripts/script.php?script_id=2063
 [indent]: http://www.vim.org/scripts/script.php?script_id=2079
-[matchup]: https://github.com/andymass/vim-matchup
-[matchit]: http://ftp.vim.org/pub/vim/runtime/macros/matchit.txt
-[endwise]: https://github.com/tpope/vim-endwise
+[vim-matchup]: https://github.com/andymass/vim-matchup
+[matchit]: https://vimhelp.org/matchit.txt.html
+[vim-endwise]: https://github.com/tpope/vim-endwise
 [proof diffs]: https://rocq-prover.org/doc/master/refman/proofs/writing-proofs/proof-mode.html#coq:opt.Diffs
 [Coquille]: https://github.com/the-lambda-church/coquille
 [YouCompleteMe]: https://github.com/ycm-core/YouCompleteMe/wiki/Building-Vim-from-source
 [universal-ctags]: https://github.com/universal-ctags/ctags
 [coq.ctags]: https://github.com/tomtomjhj/coq.ctags
-[gutentags]: https://github.com/ludovicchabant/vim-gutentags
-[latex-unicoder]: https://github.com/joom/latex-unicoder.vim
+[vim-gutentags]: https://github.com/ludovicchabant/vim-gutentags
+[latex-unicoder.vim]: https://github.com/joom/latex-unicoder.vim
 [unicode.vim]: https://github.com/chrisbra/unicode.vim

@@ -4,18 +4,19 @@ if exists('b:did_ftplugin')
 endif
 let b:did_ftplugin = 1
 
-let b:undo_ftplugin = []
-
-if g:coqtail#supported
+if g:coqtail_supported
   call coqtail#register()
 endif
 
-if !get(g:, 'coqtail_joinspaces', 0)
-  augroup coqtail_joinspaces
-    autocmd!
-    autocmd BufEnter <buffer> let b:coqtail_save_js = &joinspaces | set nojoinspaces
-    autocmd BufLeave <buffer> let &joinspaces = get(b:, 'coqtail_save_js', 1)
-  augroup END
+let b:undo_ftplugin = 'setl sua< inc<'
+
+setlocal suffixesadd=.v
+setlocal include=\\<Require\\>\\(\\_s*\\(Import\\\|Export\\)\\>\\)\\?
+
+" Follow imports
+if g:coqtail_supported
+  setlocal includeexpr=coqtail#findlib(v:fname)
+  let b:undo_ftplugin .= ' | setl inex<'
 endif
 
 " Comments
@@ -25,21 +26,13 @@ if has('comments')
   " NOTE: The 'r' and 'o' flags mistake the '*' bullet as a middle comment and
   " will automatically add an extra one after <Enter>, 'o' or 'O'.
   setlocal formatoptions-=t formatoptions-=r formatoptions-=o formatoptions+=cql
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'setl cms< com< fo<')
-endif
-
-" Follow imports
-if g:coqtail#supported
-  setlocal includeexpr=coqtail#findlib(v:fname)
-  setlocal suffixesadd=.v
-  setlocal include=\\<Require\\>\\(\\_s*\\(Import\\\|Export\\)\\>\\)\\?
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'setl inex< sua< inc<')
+  let b:undo_ftplugin .= ' | setl cms< com< fo<'
 endif
 
 " Tags
-if exists('+tagfunc') && g:coqtail#supported && get(g:, 'coqtail_tagfunc', 1)
+if exists('+tagfunc') && g:coqtail_supported && get(g:, 'coqtail_tagfunc', 1)
   setlocal tagfunc=coqtail#gettags
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'setl tfu<')
+  let b:undo_ftplugin .= ' | setl tfu<'
 endif
 
 " Maps
@@ -57,14 +50,14 @@ if !get(g:, 'coqtail_nomap', 0)
   nnoremap <buffer> <silent> ][ :<C-u>call coqtail#search#proof('W', v:count1, 0)<CR>
   xnoremap <buffer> <silent> ][ :<C-u>call coqtail#search#proof('W', v:count1, 1)<CR>
 
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! nunmap <buffer> [[')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> [[')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! nunmap <buffer> ]]')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> ]]')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! nunmap <buffer> []')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> []')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! nunmap <buffer> ][')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> ][')
+  let b:undo_ftplugin .= ' | silent! nunmap <buffer> [['
+  let b:undo_ftplugin .= ' | silent! xunmap <buffer> [['
+  let b:undo_ftplugin .= ' | silent! nunmap <buffer> ]]'
+  let b:undo_ftplugin .= ' | silent! xunmap <buffer> ]]'
+  let b:undo_ftplugin .= ' | silent! nunmap <buffer> []'
+  let b:undo_ftplugin .= ' | silent! xunmap <buffer> []'
+  let b:undo_ftplugin .= ' | silent! nunmap <buffer> ]['
+  let b:undo_ftplugin .= ' | silent! xunmap <buffer> ]['
 endif
 
 " Proof text object
@@ -79,10 +72,10 @@ if !get(g:, 'coqtail_nomap', 0)
   omap <buffer> aP <Plug>(proof-text-object-outer)
   xmap <buffer> aP <Plug>(proof-text-object-outer)
 
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! ounmap <buffer> iP')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> iP')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! ounmap <buffer> aP')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'silent! xunmap <buffer> aP')
+  let b:undo_ftplugin .= ' | silent! ounmap <buffer> iP'
+  let b:undo_ftplugin .= ' | silent! xunmap <buffer> iP'
+  let b:undo_ftplugin .= ' | silent! ounmap <buffer> aP'
+  let b:undo_ftplugin .= ' | silent! xunmap <buffer> aP'
 endif
 
 " matchit/matchup patterns
@@ -93,13 +86,13 @@ if (exists('g:loaded_matchit') || exists('g:loaded_matchup')) && !exists('b:matc
   let s:proof_start = '\%(' . join(map(s:proof_starts, '"\\<" . v:val . "\\>"'), '\|') . '\)'
   let s:proof_end = '\%(' . join(map(s:proof_ends, '"\\<" . v:val . "\\>"'), '\|') . '\)'
   let b:match_words = join([
-    \ '\<if\>:\<then\>:\<else\>',
-    \ '\<let\>:\<in\>',
-    \ '\<\%(lazy\|multi\)\?match\>:\<with\>:\<end\>',
-    \ '\%(\<Section\>\|\<Module\>\):\<End\>',
-    \ s:proof_start . ':' . s:proof_end
-  \], ',')
-  let b:undo_ftplugin = add(b:undo_ftplugin, 'unlet! b:match_ignorecase b:match_words')
+        \ '\<if\>:\<then\>:\<else\>',
+        \ '\<let\>:\<in\>',
+        \ '\<\%(lazy\|multi\)\?match\>:\<with\>:\<end\>',
+        \ '\%(\<Section\>\|\<Module\>\):\<End\>',
+        \ s:proof_start . ':' . s:proof_end
+        \], ',')
+  let b:undo_ftplugin .= ' | unlet! b:match_ignorecase b:match_words'
 endif
 
 " endwise
@@ -111,9 +104,19 @@ if exists('g:loaded_endwise')
   let b:endwise_pattern = '\%(' . s:section_pat . '\|' . s:match_pat . '\)'
   let b:endwise_syngroups = 'coqVernacCmd,coqKwd,coqLtac'
   unlet! b:endwise_end_pattern
-  let b:undo_ftplugin = add(
-    \ b:undo_ftplugin,
-    \ 'unlet! b:endwise_addition b:endwise_words b:endwise_pattern b:endwise_syngroups')
+  let b:undo_ftplugin .= ' | unlet! b:endwise_addition b:endwise_words b:endwise_pattern b:endwise_syngroups'
 endif
 
-let b:undo_ftplugin = join(b:undo_ftplugin, ' | ')
+" Use g:coqtail_joinspaces as the local version of 'joinspaces'
+augroup CoqtailJoinspaces
+  autocmd!
+  autocmd BufEnter <buffer>
+        \ if !exists('b:_coqtail_save_js')
+        \ |   let b:_coqtail_save_js = &js
+        \ | endif
+        \ | let &joinspaces = get(g:, 'coqtail_joinspaces', 0)
+
+  autocmd BufLeave <buffer>
+        \ let &joinspaces = get(b:, '_coqtail_save_js', 1)
+        \ | unlet b:_coqtail_save_js
+augroup END
