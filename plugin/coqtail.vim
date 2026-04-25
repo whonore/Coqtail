@@ -15,8 +15,6 @@ if !g:coqtail_supported
   finish
 endif
 
-py3 from coqtail import CoqtailServer
-
 " Initialize global variables.
 " Default CoqProject file name.
 if !exists('g:coqtail_project_names')
