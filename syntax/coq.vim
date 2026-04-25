@@ -518,80 +518,76 @@ syn sync minlines=50
 syn sync maxlines=500
 
 " Define the default highlighting.
-command -nargs=+ HiLink hi def link <args>
-
 " PROOFS
-HiLink coqTactic            Keyword
-HiLink coqLtac              coqTactic
-HiLink coqProofKwd          coqTactic
-HiLink coqProofPunctuation  coqTactic
-HiLink coqTacticKwd         coqTactic
-HiLink coqTacNotationKwd    coqTactic
-HiLink coqEvalFlag          coqTactic
-HiLink coqEqnKwd            coqTactic
-HiLink coqTacticAdmit       coqProofAdmit
+hi def link coqTactic            Keyword
+hi def link coqLtac              coqTactic
+hi def link coqProofKwd          coqTactic
+hi def link coqProofPunctuation  coqTactic
+hi def link coqTacticKwd         coqTactic
+hi def link coqTacNotationKwd    coqTactic
+hi def link coqEvalFlag          coqTactic
+hi def link coqEqnKwd            coqTactic
+hi def link coqTacticAdmit       coqProofAdmit
 " Exception
-HiLink coqProofDot          coqVernacular
+hi def link coqProofDot          coqVernacular
 
 " PROOF DELIMITERS ("Proof", "Qed", "Defined", "Save")
-HiLink coqProofDelim        Underlined
+hi def link coqProofDelim        Underlined
 
 " TERMS AND TYPES
-HiLink coqTerm              Type
-HiLink coqKwd               coqTerm
-HiLink coqTermPunctuation   coqTerm
+hi def link coqTerm              Type
+hi def link coqKwd               coqTerm
+hi def link coqTermPunctuation   coqTerm
 
 " VERNACULAR COMMANDS
-HiLink coqVernacular        PreProc
-HiLink coqVernacCmd         coqVernacular
-HiLink coqVernacPunctuation coqVernacular
-HiLink coqHint              coqVernacular
-HiLink coqFeedback          coqVernacular
-HiLink coqTopLevel          coqVernacular
-HiLink coqRegisterKwd       coqVernacular
+hi def link coqVernacular        PreProc
+hi def link coqVernacCmd         coqVernacular
+hi def link coqVernacPunctuation coqVernacular
+hi def link coqHint              coqVernacular
+hi def link coqFeedback          coqVernacular
+hi def link coqTopLevel          coqVernacular
+hi def link coqRegisterKwd       coqVernacular
 
 " DEFINED OBJECTS
-HiLink coqIdent             Identifier
-HiLink coqNotationString    coqIdent
+hi def link coqIdent             Identifier
+hi def link coqNotationString    coqIdent
 
 " CONSTRUCTORS AND FIELDS
-HiLink coqConstructor       Keyword
-HiLink coqField             coqConstructor
+hi def link coqConstructor       Keyword
+hi def link coqField             coqConstructor
 
 " NOTATION SPECIFIC ("at level", "format", etc)
-HiLink coqNotationKwd       Special
-HiLink coqEqnOptions        coqNotationKwd
+hi def link coqNotationKwd       Special
+hi def link coqEqnOptions        coqNotationKwd
 
 " ATTRIBUTES
-HiLink coqAttribute         coqVernacular
-HiLink coqAttrBool          Boolean
-HiLink coqAttrPunc          coqAttribute
+hi def link coqAttribute         coqVernacular
+hi def link coqAttrBool          Boolean
+hi def link coqAttrPunc          coqAttribute
 
 " USUAL VIM HIGHLIGHTINGS
 " Comments
-HiLink coqComment           Comment
-HiLink coqProofComment      coqComment
+hi def link coqComment           Comment
+hi def link coqProofComment      coqComment
 
 " Todo
-HiLink coqTodo              Todo
+hi def link coqTodo              Todo
 
 " Errors
-HiLink coqError             Error
-HiLink coqProofAdmit        coqError
+hi def link coqError             Error
+hi def link coqProofAdmit        coqError
 
 " Strings
-HiLink coqString            String
+hi def link coqString            String
 
 " Elpi
-HiLink elpiKeyword          Keyword
-HiLink elpiMetavar          Identifier
-HiLink elpiComment          Comment
-HiLink elpiString           String
-HiLink elpiSymbol           Operator
-HiLink elpiMode             Special
-HiLink elpiNumber           Number
-HiLink elpiPunctuation      Type
-
-delcommand HiLink
+hi def link elpiKeyword          Keyword
+hi def link elpiMetavar          Identifier
+hi def link elpiComment          Comment
+hi def link elpiString           String
+hi def link elpiSymbol           Operator
+hi def link elpiMode             Special
+hi def link elpiNumber           Number
+hi def link elpiPunctuation      Type
 
 let b:current_syntax = 'coq'
