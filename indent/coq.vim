@@ -45,6 +45,14 @@ let s:rewrite = '\<Rewrite\_s\+Rule\>'
 let s:vbar_cmd = '\%(' . s:inductive . '\|' . s:rewrite . '\)'
 let s:lineend = '\s*$'
 
+" Get effective value of 'shiftwidth'
+function! s:shiftwidth() abort
+  if has('patch-7.3.694')
+    return shiftwidth()
+  else
+    return &sw ? &sw : &ts
+endfunction
+
 " Match syntax groups.
 function! s:matchsyn(line, col, syns) abort
   return printf(
@@ -244,7 +252,7 @@ function! s:GetCoqIndent() abort
   " current line begins with '|':
   if l:currentline =~# '^\s*|[|}]\@!'
     let l:match = s:indent_of_previous_pair(s:match, '', '\<end\>', 1, ['string', 'comment'])
-    let l:off = get(g:, 'coqtail_inductive_shift', 1) * &sw
+    let l:off = get(g:, 'coqtail_inductive_shift', 1) * s:shiftwidth()
     return l:match != -1 ? l:match : s:indent_of_previous('^\s*' . s:vbar_cmd) + l:off
   endif
 
@@ -264,7 +272,7 @@ function! s:GetCoqIndent() abort
 
   " start of proof
   if l:previousline =~# s:proofstart . s:lineend
-    return l:ind + &sw
+    return l:ind + s:shiftwidth()
   endif
 
   " bullet on current line
@@ -293,7 +301,7 @@ function! s:GetCoqIndent() abort
   if l:previousline =~# '^\s*\%(Section\|Module\)\>'
     " don't indent if Section/Module is empty or is defined on one line
     if l:currentline !~# '^\s*End\>' && l:previousline !~# ':=.*\.\s*$' && l:previousline !~# '\<End\>'
-      return l:ind + &sw
+      return l:ind + s:shiftwidth()
     endif
     " fall through
   endif
@@ -310,17 +318,17 @@ function! s:GetCoqIndent() abort
 
   " previous line has the form '|...'
   if l:previousline =~# '[{|]\@1<!|\%([^|}]\%(\.\|\<end\>\)\@!\)*$'
-    return l:ind + get(g:, 'coqtail_match_shift', 2) * &sw
+    return l:ind + get(g:, 'coqtail_match_shift', 2) * s:shiftwidth()
   endif
 
   " previous line has '{|' or '{' with no matching '|}' or '}'
   if l:previousline =~# '{|\?[^}]*\s*$'
-    return l:ind + &sw
+    return l:ind + s:shiftwidth()
   endif
 
   " unterminated vernacular sentences
   if l:previousline =~# s:vernac . '.*[^.[:space:]]\s*$' && l:previousline !~# '^\s*$'
-    return l:ind + &sw
+    return l:ind + s:shiftwidth()
   endif
 
   " back to normal indent after lines ending with '.'
@@ -334,12 +342,12 @@ function! s:GetCoqIndent() abort
 
   " previous line ends with 'with'
   if l:previousline =~# '\<with\s*$'
-    return l:ind + &sw
+    return l:ind + s:shiftwidth()
   endif
 
   " unterminated 'let ... in'
   if l:previousline =~# '\<let\>\%(.\%(\<in\>\)\@!\)*$'
-    return l:ind + &sw
+    return l:ind + s:shiftwidth()
   endif
 
   " else

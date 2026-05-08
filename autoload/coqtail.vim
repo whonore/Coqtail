@@ -246,6 +246,7 @@ endfunction
 " Initialize Python interface.
 function! coqtail#init() abort
   if s:port == -1
+    py3 from coqtail import CoqtailServer
     let s:port = py3eval(printf(
       \ 'CoqtailServer.start_server(bool(%d))',
       \ !g:coqtail#compat#has_channel))

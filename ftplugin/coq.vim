@@ -4,14 +4,20 @@ if exists('b:did_ftplugin')
 endif
 let b:did_ftplugin = 1
 
-if g:coqtail_supported
-  call coqtail#register()
+if !g:coqtail_supported
+  call coqtail#util#warn(
+        \ "Coqtail requires Python 3.6 or later.\n" .
+        \ 'See https://github.com/whonore/Coqtail/blob/main/README.md#python-2-support.'
+        \)
 endif
-
-let b:undo_ftplugin = 'setl sua< inc<'
 
 setlocal suffixesadd=.v
 setlocal include=\\<Require\\>\\(\\_s*\\(Import\\\|Export\\)\\>\\)\\?
+let b:undo_ftplugin = 'setl sua< inc<'
+
+if g:coqtail_supported
+  call coqtail#register()
+endif
 
 " Follow imports
 if g:coqtail_supported
