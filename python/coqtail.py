@@ -1050,7 +1050,7 @@ class CoqtailHandler(StreamRequestHandler):
 class CoqtailServer:
     """A server through which Vim and Coqtail communicate."""
 
-    serv = None
+    serv: Optional[ThreadingTCPServer] = None
 
     @staticmethod
     def start_server(sync: bool) -> int:
