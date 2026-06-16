@@ -186,3 +186,9 @@ Execute (ignore-comments):
   call writefile(['# abc', '-arg a', '# def', '-arg b', '# ghi'], f)
   let args = coqtail#coqproject#parse(f)
   AssertEqual ['a', 'b'], args
+
+Execute (comment-in-unquoted-string):
+  let f = tempname()
+  call writefile(['-arg a#b', '-arg c'], f)
+  let args = coqtail#coqproject#parse(f)
+  AssertEqual ['a', 'c'], args
