@@ -124,5 +124,5 @@ augroup CoqtailJoinspaces
 
   autocmd BufLeave <buffer>
         \ let &joinspaces = get(b:, '_coqtail_save_js', 1)
-        \ | unlet b:_coqtail_save_js
+        \ | unlet! b:_coqtail_save_js
 augroup END
