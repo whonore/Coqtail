@@ -40,6 +40,7 @@ function! s:parse_string(s) abort
       break
     elseif l:c ==# '#'
       let l:s = s:parse_skip_comment(l:s)
+      break
     else
       let l:buf .= l:c
     endif
