@@ -106,6 +106,14 @@ See `:help coqtail` for more details.
 
 ## Configuration
 
+### Filetype Detection
+
+For Vim >=9.0, Coqtail relies on
+[Vim's filetype detection logic](https://github.com/vim/vim/blob/master/runtime/autoload/dist/ft.vim)
+to distinguish between Rocq, Verilog and V, which all use the `.v` extension.
+If this misidentifies your files, you can override it by setting `g:filetype_v = coq`.
+This is also the default behavior for empty files and Vim <9.0.
+
 ### Mappings
 
 The mappings above are set by default, but you can disable them all and define
