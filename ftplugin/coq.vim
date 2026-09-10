@@ -130,3 +130,66 @@ augroup CoqtailJoinspaces
         \ let &joinspaces = get(b:, '_coqtail_save_js', 1)
         \ | unlet! b:_coqtail_save_js
 augroup END
+
+" Define Coqtail-specific highlighting groups.
+function! s:CoqtailHighlight() abort
+  if exists('*g:CoqtailHighlight')
+    " Use user-defined colors if they exist.
+    " NOTE: This is only for backwards compatability. Use the ColorScheme
+    " autocommand instead.
+    call g:CoqtailHighlight()
+  else
+    let l:t_Co = exists('&t_Co') && !empty(&t_Co) && &t_Co > 1 ? &t_Co : 1
+    let l:checked = {}
+    let l:sent = {}
+
+    if &background ==# 'dark'
+      " Dark GUI colors
+      let l:checked.guibg = '#000087'
+      let l:sent.guibg    = '#5F5F87'
+
+      if l:t_Co >= 256
+        " Dark 256-color terminal
+        let l:checked.ctermbg = '18'
+        let l:sent.ctermbg    = '60'
+      else
+        " Dark 16-color terminal
+        let l:checked.ctermbg = '4'
+        let l:sent.ctermbg    = '6'
+      endif
+    else
+      " Light GUI colors
+      let l:checked.guibg = '#90EE90'
+      let l:sent.guibg    = '#32CD32'
+
+      if l:t_Co >= 256
+        " Light 256-color terminal
+        let l:checked.ctermbg = '120'
+        let l:sent.ctermbg    = '40'
+      else
+        " Light 16-color terminal
+        let l:checked.ctermbg = '10'
+        let l:sent.ctermbg    = '2'
+      endif
+    endif
+  endif
+
+  exe printf("hi def CoqtailChecked ctermbg=%s guibg=%s", l:checked.ctermbg, l:checked.guibg)
+  exe printf("hi def CoqtailSent    ctermbg=%s guibg=%s", l:sent.ctermbg   , l:sent.guibg)
+
+  hi def link CoqtailDiffAdded     DiffText
+  hi def link CoqtailDiffAddedBg   DiffChange
+  hi def link CoqtailDiffRemoved   DiffDelete
+  hi def link CoqtailDiffRemovedBg DiffDelete
+  hi def link CoqtailError         Error
+  hi def link CoqtailOmitted       coqProofAdmit
+endfunction
+
+" Apply colors at least once here
+call s:CoqtailHighlight()
+
+augroup CoqtailHighlight
+  autocmd!
+  " Reapply highlighting when the colorscheme changes
+  autocmd ColorScheme * call <Sid>CoqtailHighlight()
+augroup END
