@@ -26,6 +26,12 @@ git clone https://github.com/whonore/Coqtail.git ~/.vim/pack/coq/start/Coqtail
 vim +helptags\ ~/.vim/pack/coq/start/Coqtail/doc +q
 ```
 
+As a [vim package using Neovim]
+```lua
+-- Add this line to ~/.config/nvim/init.lua
+vim.pack.add({{ src = "https://github.com/whonore/Coqtail.git" }})
+```
+
 Using [vim-plug]:
 ```vim
 " Add this line in your .vimrc
@@ -343,6 +349,7 @@ License, Copyright (c) 2013, Thomas Refis).
 [ProofGeneral]: https://proofgeneral.github.io/
 [XML protocol]: https://github.com/coq/coq/blob/master/dev/doc/xml-protocol.md
 [vim package]: https://vimhelp.org/repeat.txt.html#packages
+[vim package using Neovim]: https://neovim.io/doc/user/pack/#vim.pack
 [vim-pathogen]: https://github.com/tpope/vim-pathogen
 [Vundle]: https://github.com/VundleVim/Vundle.vim
 [vim-plug]: https://github.com/junegunn/vim-plug
