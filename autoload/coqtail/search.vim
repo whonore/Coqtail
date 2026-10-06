@@ -2,7 +2,7 @@
 
 let s:command_pattern    = '\C^\s*\zs\%(Axiom\|\%(Co\)\?Fixpoint\|Corollary\|Definition\|Example\|Goal\|Lemma\|Proposition\|Theorem\)\>'
 let s:proofstart_pattern = '\C\%(\<Fail\_s\+\)\@<!\<\%(Proof\|Next Obligation\|Final Obligation\|Obligation \d\+\)\>[^.]*\.'
-let s:proofend_pattern   = '\C\<\%(Qed\|Defined\|Abort\|Admitted\|Save\)\>'
+let s:proofend_pattern   = '\C\<\%(Qed\|Defined\|Abort\|Admitted\|Save\)\>\.'
 
 function! coqtail#search#command(flags, count, visual) abort
   call s:search_count(
@@ -32,9 +32,23 @@ function! s:search_count(pattern, flags, count, visual) abort
   endfor
 endfunction
 
-function! s:find_range() abort
-  let block = searchpairpos(s:proofstart_pattern, '', s:proofend_pattern, 'cW')
+function! s:get_proofs_delim() abort
   let origpos = getpos('.')
+
+  " Accept a match even if the cursor isn't exactly at the beginning of a word
+  let combined = '\%(' . s:proofstart_pattern . '\|' . s:proofend_pattern . '\)'
+  let matchstart = searchpos(combined, 'bcW')
+  if matchstart != [0, 0]
+    let matchend = searchpos(combined, 'ce')
+    if matchend[0] < origpos[1]
+          \ || (matchend[0] == origpos[1] && matchend[1] < origpos[2])
+      call setpos('.', origpos)
+    else
+      call cursor(matchstart)
+    endif
+  endif
+
+  let block = searchpairpos(s:proofstart_pattern, '', s:proofend_pattern, 'cW')
 
   if block == [0, 0]
     call search(s:proofstart_pattern, 'cW')
@@ -51,8 +65,9 @@ function! s:find_range() abort
   return [start, end]
 endfunction
 
+
 function! s:select_i() abort
-  let [start, end] = s:find_range()
+  let [start, end] = s:get_proofs_delim()
   let start_max_col = match(getline(start[1]), '^[^.]\+\.\zs', start[2]) + 1
 
   " For indented proof blocks find the first non-whitespace character
@@ -92,7 +107,7 @@ function! s:select_i() abort
 endfunction
 
 function! s:select_a() abort
-  let [start, end] = s:find_range()
+  let [start, end] = s:get_proofs_delim()
   let end_max_col = match(getline(end[1]), '^[^.]\+\.\zs', end[2]) + 1
 
   " For indented proof blocks find the first non-whitespace character
@@ -117,9 +132,9 @@ function! s:select_wrapper(args) abort
 endfunction
 
 function! coqtail#search#select_i() abort
-  return s:select_wrapper(s:select_i())
+  call s:select_wrapper(s:select_i())
 endfunction
 
 function! coqtail#search#select_a() abort
-  return s:select_wrapper(s:select_a())
+  call s:select_wrapper(s:select_a())
 endfunction
