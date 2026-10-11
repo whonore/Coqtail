@@ -1017,7 +1017,6 @@ class CoqtailHandler(StreamRequestHandler):
         scroll: bool = False,
     ) -> None:
         """Refresh the highlighting and auxiliary panels."""
-        # pylint: disable=attribute-defined-outside-init
         # refresh_time is defined in handle() when the connection is opened.
         if not force:
             cur_time = time.time()
