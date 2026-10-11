@@ -190,11 +190,17 @@ function! coqtail#panels#open(force) abort
   " Resize
   for l:panel in l:opened
     let l:buf = b:coqtail_panel_bufs[l:panel]
-    let l:winnr = bufwinnr(l:buf)
     let l:size = getbufvar(l:buf, 'coqtail_panel_size')
     if l:size != [-1, -1]
-      execute printf('vertical %dresize %d', l:winnr, l:size[0])
-      execute printf('%dresize %d', l:winnr, l:size[1])
+      if g:coqtail#compat#has_win_execute
+        let l:winid = bufwinid(l:buf)
+        call win_execute(l:winid, printf('vertical resize %d', l:size[0]))
+        call win_execute(l:winid, printf('resize %d', l:size[1]))
+      else
+        let l:winnr = bufwinnr(l:buf)
+        execute printf('vertical %dresize %d', l:winnr, l:size[0])
+        execute printf('%dresize %d', l:winnr, l:size[1])
+      endif
     endif
   endfor
 endfunction
@@ -273,7 +279,11 @@ function! coqtail#panels#hide() abort
   endfor
 
   for l:buf in l:toclose
-    execute bufwinnr(l:buf) . 'close!'
+    if g:coqtail#compat#has_win_execute
+      call win_execute(bufwinid(l:buf), 'close!')
+    else
+      execute bufwinnr(l:buf) . 'close!'
+    endif
   endfor
 endfunction
 
