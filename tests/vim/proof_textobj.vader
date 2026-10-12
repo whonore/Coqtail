@@ -118,3 +118,451 @@ Expect coq (empty):
   Goal True.
   Proof.
   Qed.
+
+Given coq (cursor-in-second-body-i):
+  Lemma a : True.
+  Proof.
+    auto.
+  Qed.
+  Lemma b : True.
+  Proof.
+    auto.
+    auto.
+  Qed.
+
+Do (cursor-in-second-body-i):
+  7GdiP
+
+Expect coq (cursor-in-second-body-i):
+  Lemma a : True.
+  Proof.
+    auto.
+  Qed.
+  Lemma b : True.
+  Proof.
+  Qed.
+
+Given coq (cursor-before-proof-i):
+  Lemma a : True.
+  Proof.
+    auto.
+  Qed.
+  Lemma b : True.
+  Proof.
+    auto.
+    auto.
+  Qed.
+
+Do (cursor-before-proof-i):
+  5GdiP
+
+Expect coq (cursor-before-proof-i):
+  Lemma a : True.
+  Proof.
+    auto.
+  Qed.
+  Lemma b : True.
+  Proof.
+  Qed.
+
+Given coq (cursor-on-proof-keyword-i):
+  Lemma a : True.
+  Proof.
+    auto.
+  Qed.
+  Lemma b : True.
+  Proof.
+    auto.
+    auto.
+  Qed.
+
+Do (cursor-on-proof-keyword-i):
+  2GdiP
+
+Expect coq (cursor-on-proof-keyword-i):
+  Lemma a : True.
+  Proof.
+  Qed.
+  Lemma b : True.
+  Proof.
+    auto.
+    auto.
+  Qed.
+
+Given coq (cursor-on-qed-a):
+  Lemma a : True.
+  Proof.
+    auto.
+  Qed.
+  Lemma b : True.
+  Proof.
+    auto.
+    auto.
+  Qed.
+
+Do (cursor-on-qed-a):
+  4GdaP
+
+Expect coq (cursor-on-qed-a):
+  Lemma a : True.
+  Lemma b : True.
+  Proof.
+    auto.
+    auto.
+  Qed.
+
+Given coq (cursor-end-of-qed-a):
+  Lemma a : True.
+  Proof.
+    auto.
+  Qed.
+  Lemma b : True.
+  Proof.
+    auto.
+    auto.
+  Qed.
+
+Do (cursor-end-of-qed-a):
+  4G$daP
+
+Expect coq (cursor-end-of-qed-a):
+  Lemma a : True.
+  Lemma b : True.
+  Proof.
+    auto.
+    auto.
+  Qed.
+
+Given coq (after-last-proof-i):
+  Goal True.
+  Proof.
+    auto.
+  Qed.
+  Goal False.
+
+Do (after-last-proof-i):
+  GdiP
+
+Expect coq (after-last-proof-i):
+  Goal True.
+  Proof.
+    auto.
+  Qed.
+  Goal False.
+
+" No proof ahead of or around the cursor; start == end == cursor, and
+" s:select_a falls through to a linewise selection of the current line.
+Given coq (after-last-proof-a):
+  Goal True.
+  Proof.
+    auto.
+  Qed.
+  Goal False.
+
+Do (after-last-proof-a):
+  GdaP
+
+Expect coq (after-last-proof-a):
+  Goal True.
+  Proof.
+    auto.
+  Qed.
+  Goal False.
+
+Given coq (admitted-i):
+  Goal True.
+  Proof.
+    auto.
+  Admitted.
+
+Do (admitted-i):
+  diP
+
+Expect coq (admitted-i):
+  Goal True.
+  Proof.
+  Admitted.
+
+Given coq (defined-a):
+  Goal True.
+  Proof.
+    auto.
+  Defined.
+
+Do (defined-a):
+  daP
+
+Expect coq (defined-a):
+  Goal True.
+
+Given coq (abort-i):
+  Goal True.
+  Proof.
+    auto.
+  Abort.
+
+Do (abort-i):
+  diP
+
+Expect coq (abort-i):
+  Goal True.
+  Proof.
+  Abort.
+
+Given coq (proof-using-i):
+  Goal True.
+  Proof using Type.
+    auto.
+  Qed.
+
+Do (proof-using-i):
+  diP
+
+Expect coq (proof-using-i):
+  Goal True.
+  Proof using Type.
+  Qed.
+
+Given coq (next-obligation-i):
+  Program Definition foo : nat := _.
+  Next Obligation.
+    exact 0.
+  Qed.
+
+Do (next-obligation-i):
+  diP
+
+Expect coq (next-obligation-i):
+  Program Definition foo : nat := _.
+  Next Obligation.
+  Qed.
+
+Given coq (indented-i):
+  Section S.
+    Lemma foo : True.
+    Proof.
+      auto.
+    Qed.
+  End S.
+
+Do (indented-i):
+  diP
+
+Expect coq (indented-i):
+  Section S.
+    Lemma foo : True.
+    Proof.
+    Qed.
+  End S.
+
+Given coq (indented-a):
+  Section S.
+    Lemma foo : True.
+    Proof.
+      auto.
+    Qed.
+  End S.
+
+Do (indented-a):
+  daP
+
+Expect coq (indented-a):
+  Section S.
+    Lemma foo : True.
+  End S.
+
+Given coq (empty-a):
+  Goal True.
+  Proof.
+  Qed.
+
+Do (empty-a):
+  daP
+
+Expect coq (empty-a):
+  Goal True.
+
+Given coq (inline-empty-i):
+  Goal True. Proof. Qed.
+
+Do (inline-empty-i):
+  diP
+
+Expect coq (inline-empty-i):
+  Goal True. Proof. Qed.
+
+Given coq (inline-empty-a):
+  Goal True. Proof. Qed.
+
+Do (inline-empty-a):
+  daP
+
+Expect coq (inline-empty-a):
+  Goal True. 
+
+Given coq (trailing-comment-a):
+  Goal True.
+  Proof.
+    auto.
+  Qed. (* done *)
+
+Do (trailing-comment-a):
+  daP
+
+Expect coq (trailing-comment-a):
+  Goal True.
+  (* done *)
+
+" A constructor named Abort matches the end pattern before the proof.
+Given coq (constructor-named-abort-i):
+  Inductive op := Commit | Abort.
+  Goal True.
+  Proof.
+    auto.
+  Qed.
+
+Do (constructor-named-abort-i):
+  diP
+
+Expect coq (constructor-named-abort-i):
+  Inductive op := Commit | Abort.
+  Goal True.
+  Proof.
+  Qed.
+
+" Nested proofs. The end is found with searchpairpos, but the start is
+" found with a plain backward search, which stops at the inner Proof.
+Given coq (nested-outer-i):
+  Lemma outer : True.
+  Proof.
+    Lemma inner : True.
+    Proof.
+      auto.
+    Qed.
+    auto.
+  Qed.
+
+Do (nested-outer-i):
+  7GdiP
+
+Expect coq (nested-outer-i):
+  Lemma outer : True.
+  Proof.
+  Qed.
+
+Given coq (cursor-mid-qed-i):
+  Goal True.
+  Proof.
+    auto.
+  Qed.
+
+Do (cursor-mid-qed-i):
+  4GldiP
+
+Expect coq (cursor-mid-qed-i):
+  Goal True.
+  Proof.
+  Qed.
+
+Given coq (cursor-end-of-qed-i):
+  Goal True.
+  Proof.
+    auto.
+  Qed.
+
+Do (cursor-end-of-qed-i):
+  G$diP
+
+Expect coq (cursor-end-of-qed-i):
+  Goal True.
+  Proof.
+  Qed.
+
+Given coq (cursor-on-proof-dot-a):
+  Goal True.
+  Proof.
+    auto.
+  Qed.
+
+Do (cursor-on-proof-dot-a):
+  2G$daP
+
+Expect coq (cursor-on-proof-dot-a):
+  Goal True.
+
+Given coq (cursor-on-proof-dot-second-i):
+  Lemma a : True.
+  Proof.
+    auto.
+  Qed.
+  Lemma b : True.
+  Proof.
+    auto.
+    auto.
+  Qed.
+
+Do (cursor-on-proof-dot-second-i):
+  6G$diP
+
+Expect coq (cursor-on-proof-dot-second-i):
+  Lemma a : True.
+  Proof.
+    auto.
+  Qed.
+  Lemma b : True.
+  Proof.
+  Qed.
+
+" Once the cursor is moved to the start of Proof., searchpairpos('c')
+" counts that Proof. as a nested start, so the pairing is shifted by one: it
+" returns the first UNMATCHED terminator after the proof. Here that is the Qed of
+" a lemma that has no Proof., so the range swallows the next lemma.
+Given coq (proof-kw-before-proofless-qed-i):
+  Lemma a : True.
+  Proof.
+    auto.
+  Qed.
+  Lemma b : True.
+    auto.
+  Qed.
+
+Do (proof-kw-before-proofless-qed-i):
+  2GldiP
+
+Expect coq (proof-kw-before-proofless-qed-i):
+  Lemma a : True.
+  Proof.
+  Qed.
+  Lemma b : True.
+    auto.
+  Qed.
+
+" Same mechanism, with a constructor named Abort after the proof.
+Given coq (constructor-named-abort-after-i):
+  Goal True.
+  Proof.
+    auto.
+  Qed.
+  Inductive op := Commit | Abort.
+
+Do (constructor-named-abort-after-i):
+  2GldiP
+
+Expect coq (constructor-named-abort-after-i):
+  Goal True.
+  Proof.
+  Qed.
+  Inductive op := Commit | Abort.
+
+Given coq (unterminated-proof-i):
+  Goal True.
+  Proof.
+    auto.
+
+Do (unterminated-proof-i):
+  3GdiP
+
+Expect coq (unterminated-proof-i):
+  Goal True.
+  Proof.
+    auto.
