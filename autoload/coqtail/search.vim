@@ -2,7 +2,7 @@
 
 let s:command_pattern    = '\C^\s*\zs\%(Axiom\|\%(Co\)\?Fixpoint\|Corollary\|Definition\|Example\|Goal\|Lemma\|Proposition\|Theorem\)\>'
 let s:proofstart_pattern = '\C\%(\<Fail\_s\+\)\@<!\<\%(Proof\|Next Obligation\|Final Obligation\|Obligation \d\+\)\>[^.]*\.'
-let s:proofend_pattern   = '\C\<\%(Qed\|Defined\|Abort\|Admitted\|Save\)\>'
+let s:proofend_pattern   = '\C\<\%(Qed\|Defined\|Abort\|Admitted\|Save\)\>\_s*\.'
 
 function! coqtail#search#command(flags, count, visual) abort
   call s:search_count(
@@ -32,27 +32,61 @@ function! s:search_count(pattern, flags, count, visual) abort
   endfor
 endfunction
 
-function! s:find_range() abort
-  let block = searchpairpos(s:proofstart_pattern, '', s:proofend_pattern, 'cW')
+function! s:get_proofs_delim() abort
   let origpos = getpos('.')
+  let start = [0, 0]
 
-  if block == [0, 0]
-    call search(s:proofstart_pattern, 'cW')
-    let start = getpos('.')
-    call search(s:proofend_pattern, 'W')
-    let end = getpos('.')
-  else
-    let end = getpos('.')
-    call search(s:proofstart_pattern, 'bW')
-    let start = getpos('.')
+  " Accept a match even if the cursor isn't exactly at the beginning of a word
+  let combined = '\%(' . s:proofstart_pattern . '\|' . s:proofend_pattern . '\)'
+  let matchstart = searchpos(combined, 'bcW')
+  if matchstart != [0, 0]
+    let is_start = searchpos(s:proofstart_pattern, 'cnW') == matchstart
+    let matchend = searchpos(combined, 'ceW')
+    if matchend[0] < origpos[1]
+          \ || (matchend[0] == origpos[1] && matchend[1] < origpos[2])
+      call setpos('.', origpos)
+    elseif is_start
+      " The cursor is inside a start delimiter
+      let start = matchstart
+    else
+      " The cursor is inside an end delimiter
+      call cursor(matchstart)
+    endif
   endif
 
+  if start == [0, 0]
+    " The enclosing proof (searchpairpos skips nested proofs) or else the next one
+    let start = searchpairpos(s:proofstart_pattern, '', s:proofend_pattern, 'bW')
+    if start == [0, 0]
+      let start = searchpos(s:proofstart_pattern, 'W')
+    endif
+  endif
+
+  if start == [0, 0]
+    call setpos('.', origpos)
+    return []
+  endif
+
+  " Find the matching end from the end of the start delimiter. Counting the
+  " start delimiter itself as nested would pair it with the wrong end.
+  call cursor(start)
+  call searchpos(s:proofstart_pattern, 'ceW')
+  let end = searchpairpos(s:proofstart_pattern, '', s:proofend_pattern, 'W')
+
   call setpos('.', origpos)
-  return [start, end]
+  if end == [0, 0]
+    return []
+  endif
+  return [[0, start[0], start[1], 0], [0, end[0], end[1], 0]]
 endfunction
 
+
 function! s:select_i() abort
-  let [start, end] = s:find_range()
+  let range = s:get_proofs_delim()
+  if empty(range)
+    return 0
+  endif
+  let [start, end] = range
   let start_max_col = match(getline(start[1]), '^[^.]\+\.\zs', start[2]) + 1
 
   " For indented proof blocks find the first non-whitespace character
@@ -71,7 +105,7 @@ function! s:select_i() abort
   else
     if start_max_col == col([start[1], '$'])
       let start[1] += 1
-      let start[2]  = start_first_col
+      let start[2]  = max([match(getline(start[1]), '\S') + 1, 1])
     else
       let start[2] = start_max_col
     endif
@@ -92,7 +126,11 @@ function! s:select_i() abort
 endfunction
 
 function! s:select_a() abort
-  let [start, end] = s:find_range()
+  let range = s:get_proofs_delim()
+  if empty(range)
+    return 0
+  endif
+  let [start, end] = range
   let end_max_col = match(getline(end[1]), '^[^.]\+\.\zs', end[2]) + 1
 
   " For indented proof blocks find the first non-whitespace character
@@ -117,9 +155,9 @@ function! s:select_wrapper(args) abort
 endfunction
 
 function! coqtail#search#select_i() abort
-  return s:select_wrapper(s:select_i())
+  call s:select_wrapper(s:select_i())
 endfunction
 
 function! coqtail#search#select_a() abort
-  return s:select_wrapper(s:select_a())
+  call s:select_wrapper(s:select_a())
 endfunction

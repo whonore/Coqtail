@@ -60,14 +60,14 @@ if !get(g:, 'coqtail_nomap', 0)
   nnoremap <buffer> <silent> ][ :<C-u>call coqtail#search#proof('W', v:count1, 0)<CR>
   xnoremap <buffer> <silent> ][ :<C-u>call coqtail#search#proof('W', v:count1, 1)<CR>
 
-  let b:undo_ftplugin .= ' | silent! nunmap <buffer> [['
-  let b:undo_ftplugin .= ' | silent! xunmap <buffer> [['
-  let b:undo_ftplugin .= ' | silent! nunmap <buffer> ]]'
-  let b:undo_ftplugin .= ' | silent! xunmap <buffer> ]]'
-  let b:undo_ftplugin .= ' | silent! nunmap <buffer> []'
-  let b:undo_ftplugin .= ' | silent! xunmap <buffer> []'
-  let b:undo_ftplugin .= ' | silent! nunmap <buffer> ]['
-  let b:undo_ftplugin .= ' | silent! xunmap <buffer> ]['
+  let b:undo_ftplugin .= ' | silent! exe "nunmap <buffer> [["'
+  let b:undo_ftplugin .= ' | silent! exe "xunmap <buffer> [["'
+  let b:undo_ftplugin .= ' | silent! exe "nunmap <buffer> ]]"'
+  let b:undo_ftplugin .= ' | silent! exe "xunmap <buffer> ]]"'
+  let b:undo_ftplugin .= ' | silent! exe "nunmap <buffer> []"'
+  let b:undo_ftplugin .= ' | silent! exe "xunmap <buffer> []"'
+  let b:undo_ftplugin .= ' | silent! exe "nunmap <buffer> ]["'
+  let b:undo_ftplugin .= ' | silent! exe "xunmap <buffer> ]["'
 endif
 
 " Proof text object
@@ -82,10 +82,10 @@ if !get(g:, 'coqtail_nomap', 0)
   omap <buffer> aP <Plug>(proof-text-object-outer)
   xmap <buffer> aP <Plug>(proof-text-object-outer)
 
-  let b:undo_ftplugin .= ' | silent! ounmap <buffer> iP'
-  let b:undo_ftplugin .= ' | silent! xunmap <buffer> iP'
-  let b:undo_ftplugin .= ' | silent! ounmap <buffer> aP'
-  let b:undo_ftplugin .= ' | silent! xunmap <buffer> aP'
+  let b:undo_ftplugin .= ' | silent! exe "ounmap <buffer> iP"'
+  let b:undo_ftplugin .= ' | silent! exe "xunmap <buffer> iP"'
+  let b:undo_ftplugin .= ' | silent! exe "ounmap <buffer> aP"'
+  let b:undo_ftplugin .= ' | silent! exe "xunmap <buffer> aP"'
 endif
 
 " matchit/matchup patterns
