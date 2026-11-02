@@ -233,6 +233,8 @@ class Coqtail:
                 stderr_is_warning=opts["stderr_is_warning"],
             )
             self.print_stderr(stderr)
+            for warning in self.coqtop.startup_warnings:
+                self.handler.vimcall("coqtail#util#warn", True, warning)
         except (ValueError, CT.CoqtopError) as e:
             err, stderr = str(e), ""
         return err, stderr

@@ -4,10 +4,12 @@
 
 import datetime
 import io
+import json
 import logging
 import os
 import signal
 import subprocess
+import sys
 import threading
 import time
 from concurrent import futures
@@ -105,6 +107,7 @@ class Coqtop:
         self.stopping = False
         self.add_info_callback: Optional[Callable[[str], None]] = add_info_callback
         self.dune: Optional[DuneProcess] = None
+        self.startup_warnings: List[str] = []
 
         # Debugging
         self.log: Optional[IO[str]] = None
@@ -170,6 +173,21 @@ class Coqtop:
         if self.can_run_dune_toplevel("rocq", filename):
             return "rocq"
         return "coq"
+
+    def get_dune_env(self, filename: str) -> Mapping[str, str]:
+        """Get the environment dune gives to commands run in this project."""
+        cmd = "import json,os; print(json.dumps(dict(os.environ)))"
+        try:
+            proc = subprocess.run(
+                ("dune", "exec", "--no-build", "--", sys.executable, "-c", cmd),
+                cwd=os.path.dirname(filename),
+                capture_output=True,
+                check=True,
+            )
+            return dict(json.loads(proc.stdout))
+        except (OSError, subprocess.SubprocessError, ValueError) as e:
+            self.startup_warnings.append(f"Could not read dune's environment: {e}")
+            return {}
 
     def get_dune_args(self, filename: str, dune_compile_deps: bool) -> List[str]:
         """Get the arguments to pass to the Rocq process from dune.
@@ -288,11 +306,14 @@ class Coqtop:
 
         try:
             self.logger.debug("start")
+            self.startup_warnings = []
 
             args = coqproject_args
+            env = None
             if use_dune and self.is_in_valid_dune_project(filename):
                 # Add user-provided args last so they take precedence.
                 args = self.get_dune_args(filename, dune_compile_deps) + args
+                env = {**os.environ, **self.get_dune_env(filename)}
 
             launch = self.xml.launch(filename, args)
             self.logger.debug(launch)
@@ -302,6 +323,7 @@ class Coqtop:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 bufsize=0,
+                env=env,
             )
 
             # Ensure that Rocq spawned correctly
@@ -337,6 +359,8 @@ class Coqtop:
             self.root_state = response.val
             self.state_id = response.val
 
+            if err != "":
+                self.startup_warnings.append(err)
             return (None, err)
         except (OSError, DuneError, FindCoqtopError) as e:
             # Failed to launch Rocq
