@@ -45,6 +45,7 @@ jobs:
           - '9.0'
           - '9.1'
           - '9.2'
+          - '9.3'
           - 'master'
         # I'd like to test the oldest version that Coqtail supports (3.6), but
         # setup-python doesn't support it except on ubuntu-20.04, which is
