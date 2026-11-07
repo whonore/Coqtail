@@ -1987,6 +1987,10 @@ class XMLInterface92(XMLInterface91):
     """The version 9.2.* XML interface."""
 
 
+class XMLInterface93(XMLInterface92):
+    """The version 9.3.* XML interface."""
+
+
 XMLInterfaces = (
     ((8, 4, 0), (8, 5, 0), XMLInterface84),
     ((8, 5, 0), (8, 6, 0), XMLInterface85),
@@ -2008,6 +2012,7 @@ XMLInterfaces = (
     ((9, 0, 0), (9, 1, 0), XMLInterface90),
     ((9, 1, 0), (9, 2, 0), XMLInterface91),
     ((9, 2, 0), (9, 3, 0), XMLInterface92),
+    ((9, 3, 0), (9, 4, 0), XMLInterface92),
 )
 
 XMLInterfaceLatest = XMLInterfaces[-1][2]

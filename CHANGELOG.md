@@ -2,6 +2,10 @@
 
 ## Unreleased ([main])
 
+### Added
+- Support for Rocq 9.3.
+  (PR #440)
+
 ## [1.10.0]
 
 ### Added
