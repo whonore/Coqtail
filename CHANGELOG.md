@@ -2,9 +2,24 @@
 
 ## Unreleased ([main])
 
+## [1.11.0]
+
 ### Added
 - Support for Rocq 9.3.
   (PR #440)
+- Set Vim `path` to Rocq's library location.
+  (PR #431)
+
+### Fixed
+- Pass Dune environment variables to support plugins.
+  (PR #439)
+- Handle floating windows correctly when opening and closing the Goal and Info panels.
+  (PR #437)
+- Set reasonable default colors for `CoqtailChecked` and `CoqtailSent` for all
+  combinations of light/dark, 16/256-color, GUI/terminal.
+  (PR #434)
+- Handle indented proof blocks correctly when using proof text objects.
+  (PR #433)
 
 ## [1.10.0]
 
@@ -505,6 +520,7 @@
 
 [main]: https://github.com/whonore/Coqtail
 [python2]: https://github.com/whonore/Coqtail/tree/python2
+[1.11.0]: https://github.com/whonore/Coqtail/tree/v1.11.0
 [1.10.0]: https://github.com/whonore/Coqtail/tree/v1.10.0
 [1.9.0]: https://github.com/whonore/Coqtail/tree/v1.9.0
 [1.8.0]: https://github.com/whonore/Coqtail/tree/v1.8.0
